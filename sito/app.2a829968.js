@@ -89,6 +89,7 @@ function statoNuovo() {
     stats: { vittorie: 0, sconfitte: 0, punti: 0, bustine: 0 },
     pass: { xp: 0, riscossi: [], scelte: {}, bonus: 0, potInSospeso: 0 },
     storia: { stelle: {}, scrigni: [] },
+    tutorial: { fatto: false },
     liv: {},      // livello di ogni carta (1–30): sale solo potenziandola a mano
     pot: {},      // potenziatori di ogni carta (arrivano dai doppioni)
     lodeXp: {},   // esperienza verso la lode, per le carte arrivate al 30
@@ -536,7 +537,7 @@ function vistaStrada() {
     <div class="riquadro"><span>Punti classifica</span><b>${S.stats.punti}</b></div>
   </section>
   <section class="regole">
-    <h2>Come si gioca</h2>
+    <div class="titolo-riga"><h2>Come si gioca</h2><button class="btn piccolo" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button></div>
     <ol>
       <li><b>Bustine.</b> Ogni giorno ricevi una bustina gratis; le altre costano ${PREZZO_BUSTINA} monete o arrivano dal pass. La prima è di benvenuto: 5 carte tutte diverse.</li>
       <li><b>Potenziare.</b> Le carte salgono di livello solo se le potenzi tu, dal dettaglio della carta (il segno ▲ verde dice quando puoi). Ogni doppione dà potenziatori per quella carta: ${POT_DOPPIONE.comune} se è Comune, ${POT_DOPPIONE.rara} Rara, ${POT_DOPPIONE.epica} Epica, ${POT_DOPPIONE.leggendaria} Leggendaria. Ogni livello costa potenziatori e monete, sempre di più: da ${potPerLivello(1)} potenziatori e ${monetePerLivello(1)} monete per il livello 2 fino a ${potPerLivello(29)} e ${monetePerLivello(29)} per il 30. Ogni livello dà +2% a PV e danni.</li>
@@ -1146,6 +1147,7 @@ async function entra(slot, profiloLocale) {
   vai(S.admin ? "admin" : VISTE.includes(location.hash.slice(1)) && location.hash.slice(1) !== "admin" ? location.hash.slice(1) : "strada");
   if (nuova && S.stats.bustine > 0 && !S.admin) setTimeout(() => mostraAvviso("È arrivata la bustina del giorno!"), 500);
   if (slot === "admin") setTimeout(() => mostraAvviso("Modalità admin: monete infinite e tutte le carte. Questi progressi non vanno in classifica."), 400);
+  Tutorial.allIngresso();
 }
 
 async function inviaProfilo(form) {
@@ -1214,6 +1216,7 @@ function apriProfilo() {
       <h3>Account</h3>
       <div class="azioni">
         ${Archivio.proprietario && Archivio.modo === "cloud" ? (S.admin ? `<button class="btn" data-fx="onda" data-azione="esci-admin">Torna al tuo profilo</button>` : `<button class="btn oro" data-fx="coriandoli" data-azione="entra-admin">Passa ad admin</button>`) : ""}
+        <button class="btn" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button>
         <button class="btn" data-fx="salto" data-azione="vai-accesso">${Archivio.modo === "cloud" ? "Torna all'accesso" : "Cambia giocatore"}</button>
         ${window.NOIVERSO_SUPABASE && !matchMedia("(display-mode: fullscreen), (display-mode: standalone)").matches && !navigator.standalone ? `<a class="btn oro" data-fx="salto" href="installa.html" target="_blank" rel="noopener">Installa l'app</a>` : ""}
         ${window.NOIVERSO_SUPABASE ? `<button class="btn" data-fx="scuoti" data-azione="esci-account">Esci dall'account</button>` : ""}
@@ -2106,6 +2109,7 @@ document.addEventListener("click", e => {
     case "vai-storia": vai("storia"); break;
     case "centra-mappa": centraMappa(); break;
     case "potenzia": potenziaCarta(t.dataset.id, t); break;
+    case "rifai-tutorial": chiudiModale(); if (!B) setTimeout(() => Tutorial.avvia(), 150); break;
     case "esci-account": (async () => { chiudiModale(); try { await Archivio.aspettaScritture(); } catch (e) {} try { await window.NoiversoAccesso.esci(); } catch (e) {} ImmaginiCarte.dimentica(); location.reload(); })(); break;
     case "ricarica": Archivio.aspettaScritture().catch(() => {}).then(() => location.reload()); break;
     case "controlla-versione": controllaAggiornamento().then(v => mostraAvviso(!v ? "Non riesco a controllare la versione da qui." : v === VERSIONE ? `Hai l'ultima versione (${VERSIONE}).` : "Versione nuova trovata: aggiorno…")); break;
@@ -2179,6 +2183,8 @@ function applicaSalvataggio(salvato) {
       profilo: Object.assign(n.profilo, salvato.profilo || {}),
       impostazioni: Object.assign(n.impostazioni, salvato.impostazioni || {}),
       storia: { stelle: Object.assign({}, (salvato.storia || {}).stelle), scrigni: [...((salvato.storia || {}).scrigni || [])], visti: [...((salvato.storia || {}).visti || [])] },
+      // chi giocava già prima che ci fosse il tutorial non se lo vede partire: riceve solo un avviso
+      tutorial: Object.assign({}, salvato.tutorial || (salvato.stats && salvato.stats.bustine > 0 ? { fatto: true, nuovoPerTe: true } : { fatto: false })),
     });
     S.carte = Object.assign({}, S.carte || {});
     // recupero: una carta con un livello è stata trovata in una bustina, anche se la collezione non l'ha registrata
