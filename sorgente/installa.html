@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0a0c">
+<title>Installa Noiverso</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icone/favicon.png">
+<link rel="apple-touch-icon" href="icone/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --neon: #ff2e46; --azzurro: #3fd8ff; --testo: #f4ece8; --spento: #a99ca6; --linea: #3a2c36; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: radial-gradient(120% 80% at 50% 0%, #3a1426, #0d0a0c 60%); color: var(--testo); font-family: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif; font-size: 17px; line-height: 1.45; padding: max(24px, env(safe-area-inset-top)) 18px 40px; }
+  main { max-width: 620px; margin: 0 auto; display: grid; gap: 18px; }
+  .testa { display: grid; justify-items: center; gap: 10px; text-align: center; padding-top: 8px; }
+  .testa img { width: 96px; height: 96px; border-radius: 22px; box-shadow: 0 0 40px rgba(255, 46, 70, .45); }
+  h1 { margin: 0; font-family: "Bungee", Impact, sans-serif; font-weight: 400; font-size: 2.6rem; color: #fff; text-shadow: 0 0 8px var(--neon), 0 0 22px var(--neon); }
+  .sotto { margin: 0; color: var(--spento); }
+  .riquadro { background: rgba(23, 18, 26, .92); border: 1px solid var(--linea); border-radius: 18px; padding: 18px; display: grid; gap: 12px; }
+  .riquadro.tuo { border-color: var(--neon); box-shadow: 0 0 30px rgba(255, 46, 70, .2); }
+  h2 { margin: 0; font-size: 1.25rem; display: flex; align-items: center; gap: 8px; }
+  h2 small { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em; color: var(--neon); border: 1px solid var(--neon); border-radius: 999px; padding: 1px 8px; }
+  ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+  .btn { display: inline-flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none; font: inherit; font-weight: 700; font-size: 1.05rem; color: #fff; background: var(--neon); border: 0; border-radius: 12px; padding: 12px 18px; cursor: pointer; box-shadow: 0 0 18px rgba(255, 46, 70, .4); }
+  .btn.secondario { background: transparent; border: 1px solid var(--linea); box-shadow: none; color: var(--testo); }
+  .btn[hidden] { display: none; }
+  .azioni { display: flex; flex-wrap: wrap; gap: 10px; }
+  .nota { color: var(--spento); font-size: .9rem; margin: 0; }
+  details { border-top: 1px solid var(--linea); padding-top: 10px; }
+  summary { cursor: pointer; font-weight: 600; }
+  .icona-ios { display: inline-block; width: 18px; height: 18px; vertical-align: -3px; border: 2px solid var(--azzurro); border-radius: 4px; position: relative; }
+  .icona-ios::after { content: "↑"; position: absolute; top: -9px; left: 2px; color: var(--azzurro); font-weight: 700; }
+  .altri h2 { font-size: 1.05rem; }
+</style>
+</head>
+<body>
+<main>
+  <div class="testa">
+    <img src="icone/icona-192.png" alt="">
+    <h1>Noiverso</h1>
+    <p class="sotto">Il gioco di carte del gruppo. Installalo e giocaci a schermo intero, come un'app.</p>
+  </div>
+
+  <section class="riquadro" data-per="iphone">
+    <h2>iPhone e iPad</h2>
+    <ol>
+      <li>Apri questa pagina con <b>Safari</b> (con Chrome sull'iPhone non si può installare).</li>
+      <li>Tocca <span class="icona-ios" aria-hidden="true"></span> <b>Condividi</b> in basso.</li>
+      <li>Scorri e tocca <b>"Aggiungi alla schermata Home"</b>, poi <b>Aggiungi</b>.</li>
+      <li>Apri Noiverso dall'icona sulla Home: si apre a schermo intero.</li>
+    </ol>
+    <p class="nota">Il gioco si aggiorna da solo: non devi reinstallarlo mai.</p>
+  </section>
+
+  <section class="riquadro" data-per="android">
+    <h2>Android</h2>
+    <div class="azioni">
+      <button class="btn" data-installa hidden>Installa l'app</button>
+      <a class="btn secondario" data-scarica="Noiverso-Android.apk">Scarica il file .apk</a>
+    </div>
+    <ol>
+      <li>Il modo più semplice: tocca <b>"Installa l'app"</b> (oppure menu ⋮ di Chrome → <b>"Installa app"</b>).</li>
+      <li>In alternativa scarica il file <b>.apk</b>, aprilo e consenti l'installazione da "origini sconosciute" quando te lo chiede.</li>
+    </ol>
+  </section>
+
+  <section class="riquadro" data-per="windows">
+    <h2>Windows</h2>
+    <div class="azioni">
+      <a class="btn" data-scarica="Noiverso-Windows.exe">Scarica per Windows</a>
+      <button class="btn secondario" data-installa hidden>Installa dal browser</button>
+    </div>
+    <ol>
+      <li>Apri il file scaricato. Se compare <b>"Windows ha protetto il PC"</b>, clicca <b>Ulteriori informazioni → Esegui comunque</b> (succede perché l'app non è firmata da un'azienda).</li>
+      <li>Noiverso si installa e trovi l'icona sul desktop e nel menu Start.</li>
+    </ol>
+  </section>
+
+  <section class="riquadro" data-per="mac">
+    <h2>Mac</h2>
+    <div class="azioni">
+      <a class="btn" data-scarica="Noiverso-Mac.dmg">Scarica per Mac</a>
+      <button class="btn secondario" data-installa hidden>Installa dal browser</button>
+    </div>
+    <ol>
+      <li>Apri il file <b>.dmg</b> e trascina Noiverso nella cartella <b>Applicazioni</b>.</li>
+      <li>La prima volta: tasto destro sull'app → <b>Apri</b> → <b>Apri</b>. Se il Mac la blocca, vai in <b>Impostazioni di Sistema → Privacy e sicurezza → Apri comunque</b>.</li>
+    </ol>
+    <p class="nota">Con Safari puoi anche usare <b>File → Aggiungi al Dock</b>.</p>
+  </section>
+
+  <div class="azioni" style="justify-content:center">
+    <a class="btn secondario" href="./">Gioca subito nel browser</a>
+  </div>
+
+  <details class="altri">
+    <summary>Altri dispositivi</summary>
+    <div id="altri"></div>
+  </details>
+</main>
+<script>
+  // Mostra in cima il dispositivo che stai usando, gli altri sotto "Altri dispositivi"
+  const ua = navigator.userAgent, ipad = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+  const tuo = /iPhone|iPad|iPod/.test(ua) || ipad ? "iphone" : /Android/.test(ua) ? "android" : /Windows/.test(ua) ? "windows" : /Mac/.test(ua) ? "mac" : null;
+  const altri = document.getElementById("altri");
+  document.querySelectorAll("[data-per]").forEach(s => { if (tuo && s.dataset.per !== tuo) altri.appendChild(s); else s.classList.add("tuo"); });
+  if (!tuo) document.querySelector(".altri").open = true;
+  // File da scaricare: le ultime versioni pubblicate su GitHub
+  const [proprietario] = location.hostname.split(".");
+  const repo = location.pathname.split("/").filter(Boolean)[0] || "noiverso";
+  document.querySelectorAll("[data-scarica]").forEach(a => { a.href = `https://github.com/${proprietario}/${repo}/releases/latest/download/${a.dataset.scarica}`; });
+  // Installazione dal browser (Chrome, Edge, Android)
+  let richiesta = null;
+  window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); richiesta = e; document.querySelectorAll("[data-installa]").forEach(b => b.hidden = false); });
+  document.querySelectorAll("[data-installa]").forEach(b => b.onclick = async () => { if (!richiesta) return; richiesta.prompt(); await richiesta.userChoice; richiesta = null; });
+  if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>

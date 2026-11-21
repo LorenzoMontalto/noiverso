@@ -1,0 +1,121 @@
+# Crea le app per Windows (.exe), Mac (.dmg) e Android (.apk) e le mette nella pagina "Releases".
+# Le app aprono il gioco pubblicato, quindi vanno ricreate solo se cambia questa parte (non a ogni aggiornamento del gioco).
+name: Crea le app
+on:
+  push:
+    branches: [main]
+    paths: ["desktop/**", "android/**", ".github/workflows/app.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  indirizzo:
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.u.outputs.url }}
+    steps:
+      - id: u
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          REPO="${{ github.event.repository.name }}"
+          echo "url=https://${OWNER}.github.io/${REPO}/" >> "$GITHUB_OUTPUT"
+
+  windows:
+    needs: indirizzo
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Indirizzo del gioco
+        run: |
+          echo '{ "url": "${{ needs.indirizzo.outputs.url }}" }' > indirizzo.json
+      - run: npm install --no-audit --no-fund
+      - run: npx electron-builder --win --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: desktop/dist/Noiverso-Windows.exe
+
+  mac:
+    needs: indirizzo
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: desktop
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Indirizzo del gioco
+        run: |
+          echo '{ "url": "${{ needs.indirizzo.outputs.url }}" }' > indirizzo.json
+      - run: npm install --no-audit --no-fund
+      - run: npx electron-builder --mac --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac
+          path: desktop/dist/Noiverso-Mac.dmg
+
+  android:
+    needs: indirizzo
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: android
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Indirizzo del gioco
+        run: |
+          node -e 'const f="capacitor.config.json",c=require("./"+f);c.server.url=process.argv[1];require("fs").writeFileSync(f,JSON.stringify(c,null,2))' "${{ needs.indirizzo.outputs.url }}"
+      - run: npm install --no-audit --no-fund
+      - run: npx cap add android
+      - run: npx capacitor-assets generate --android --assetPath assets
+      - name: Firma sempre uguale (gli aggiornamenti si installano sopra la versione vecchia)
+        run: mkdir -p ~/.android && cp firma.keystore ~/.android/debug.keystore
+      - run: chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+        working-directory: android/android
+      - run: cp android/app/build/outputs/apk/debug/app-debug.apk Noiverso-Android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: android/Noiverso-Android.apk
+
+  pubblica:
+    needs: [windows, mac, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: file
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: app
+          name: Noiverso — app da installare
+          body: |
+            Scarica la versione per il tuo dispositivo. Le istruzioni sono nella pagina "Installa" del gioco.
+            - Windows: Noiverso-Windows.exe
+            - Mac: Noiverso-Mac.dmg
+            - Android: Noiverso-Android.apk
+            - iPhone: apri il gioco con Safari → Condividi → "Aggiungi alla schermata Home"
+          make_latest: true
+          files: |
+            file/Noiverso-Windows.exe
+            file/Noiverso-Mac.dmg
+            file/Noiverso-Android.apk

@@ -1,0 +1,7 @@
+{
+  "appId": "app.noiverso.gioco",
+  "appName": "Noiverso",
+  "webDir": "www",
+  "server": { "url": "https://NOME.github.io/noiverso/", "androidScheme": "https" },
+  "android": { "backgroundColor": "#0d0a0c" }
+}

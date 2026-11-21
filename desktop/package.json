@@ -1,0 +1,28 @@
+{
+  "name": "noiverso",
+  "productName": "Noiverso",
+  "version": "1.0.0",
+  "description": "Noiverso: il gioco di carte del gruppo",
+  "author": "Noiverso",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "avvia": "electron .",
+    "windows": "electron-builder --win --publish never",
+    "mac": "electron-builder --mac --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "app.noiverso.gioco",
+    "productName": "Noiverso",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "offline.html", "indirizzo.json", "build/icon.png"],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "artifactName": "Noiverso-Windows.${ext}" },
+    "nsis": { "oneClick": true, "perMachine": false, "createDesktopShortcut": true, "createStartMenuShortcut": true, "shortcutName": "Noiverso" },
+    "mac": { "target": [{ "target": "dmg", "arch": ["universal"] }], "category": "public.app-category.card-games", "artifactName": "Noiverso-Mac.${ext}", "identity": null },
+    "dmg": { "title": "Noiverso" }
+  }
+}

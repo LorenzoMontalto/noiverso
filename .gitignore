@@ -1,0 +1,10 @@
+node_modules/
+desktop/dist/
+android/android/
+android/node_modules/
+*.log
+.DS_Store
+# immagini delle carte: stanno nello spazio privato di Supabase, mai su GitHub
+sorgente/img/
+sito/img/
+img/
