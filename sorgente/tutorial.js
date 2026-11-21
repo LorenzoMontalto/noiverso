@@ -19,13 +19,14 @@ const Tutorial = (() => {
     const nome = esc(S.profilo.nome || "giocatore");
     return [
       { titolo: `Ciao ${nome}!`, testo: `Benvenuto in <b>Noiverso</b>, il gioco di carte del gruppo. In un paio di minuti ti faccio vedere tutto: bustine, album, squadra e la tua prima battaglia.<br><span class="tut-nota">Puoi saltare quando vuoi e rifarlo dal tuo profilo.</span>` },
-      { vista: "strada", bersaglio: ".testa .monete", titolo: "Le monete", testo: `Servono per comprare bustine (${PREZZO_BUSTINA} l'una) e per potenziare le carte. Le guadagni vincendo battaglie, con la storia e con il pass.` },
+      { vista: "strada", bersaglio: ".testa .monete", titolo: "Le monete", testo: `Servono per comprare bustine nel negozio e per potenziare le carte. Le guadagni vincendo battaglie, con la storia e con il pass.` },
       { vista: "strada", bersaglio: ".nav", titolo: "Le sezioni", testo: "Da questa barra ti sposti tra le parti del gioco. Il numerino su una sezione vuol dire che lì c'è qualcosa da fare." },
       { vista: "bustine", bersaglio: '[data-apri="benvenuto"]', titolo: "Le bustine",
         aspetta: () => !S.inventario.benvenuto && $("#apertura").hidden,
         compito: "Hai una <b>bustina di benvenuto</b>: 5 carte tutte diverse. Tocca <b>Apri</b>!",
-        testo: `Qui apri le bustine. Ne ricevi una gratis ogni giorno; le altre costano ${PREZZO_BUSTINA} monete o arrivano dal pass. Le carte sono <span class="r-comune">Comuni</span>, <span class="r-rara">Rare</span>, <span class="r-epica">Epiche</span> o <span class="r-leggendaria">Leggendarie</span>.`,
+        testo: `Qui apri le bustine che hai. Ne ricevi una gratis ogni giorno; le altre le compri nel negozio o arrivano dal pass. Le carte sono <span class="r-comune">Comuni</span>, <span class="r-rara">Rare</span>, <span class="r-epica">Epiche</span> o <span class="r-leggendaria">Leggendarie</span>.`,
         bersaglioInfo: ".scaffale" },
+      { vista: "negozio", bersaglio: '.nav [data-vista="negozio"]', titolo: "Il negozio", testo: "Qui compri le bustine con le monete: classiche, di una sola serie o di un solo stile, più un'offerta scontata ogni giorno. In fondo c'è il riquadro per i <b>codici promozionali</b>… alcuni nascondono delle sorprese." },
       { vista: "album", bersaglio: ".serie-copertine", titolo: "L'album", testo: "Le carte sono divise in serie. Tocca una serie per vederne le carte: quelle scure non le hai ancora trovate." },
       { vista: "album", bersaglio: "#vista .griglia", titolo: "Potenziare le carte", testo: "Tocca una carta per vedere mosse e statistiche. Le carte salgono di livello solo se le potenzi tu: ogni <b>doppione</b> ti dà potenziatori per quella carta, e con potenziatori + monete la porti al livello dopo, fino al <b>30 e lode</b>. Il <b class=\"tut-su\">▲</b> verde ti dice quando puoi." },
       { vista: "squadra", bersaglio: "#vista .griglia", bolla: "alto", titolo: "La squadra",

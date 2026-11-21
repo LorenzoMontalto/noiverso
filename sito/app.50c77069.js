@@ -28,7 +28,20 @@ const TIPI_BUSTINA = {
   epica:       { nome: "Bustina Epica",        carte: 4, ultima: { epica: 80, leggendaria: 20 }, desc: "4 carte, l'ultima almeno Epica." },
   leggendaria: { nome: "Bustina Leggendaria",  carte: 5, ultima: { leggendaria: 100 }, desc: "5 carte, l'ultima è Leggendaria." },
 };
-const ORDINE_BUSTINE = ["benvenuto", "leggendaria", "epica", "normale"];
+// Bustine del negozio: classiche, mega, una per ogni serie e una per ogni stile (prezzi in monete)
+Object.assign(TIPI_BUSTINA.benvenuto, { colore: "#ff6b7d" });
+Object.assign(TIPI_BUSTINA.normale, { prezzo: PREZZO_BUSTINA, gruppo: "classiche", colore: "#ff2e46" });
+Object.assign(TIPI_BUSTINA.epica, { prezzo: 300, gruppo: "classiche", colore: "#b866ff" });
+Object.assign(TIPI_BUSTINA.leggendaria, { prezzo: 900, gruppo: "classiche", colore: "#f2c14e" });
+TIPI_BUSTINA.mega = { nome: "Mega bustina", carte: 8, ultima: { epica: 85, leggendaria: 15 }, desc: "8 carte, l'ultima almeno Epica.", prezzo: 450, gruppo: "classiche", colore: "#3fd8ff", simbolo: "✚" };
+for (const id of Object.keys(SERIE)) TIPI_BUSTINA[`serie-${id}`] = { serie: id, carte: 4, ultima: "peso4", prezzo: 150, gruppo: "serie",
+  get nome() { return `Bustina ${SERIE[id].nome}`; }, get desc() { return `4 carte solo della serie ${SERIE[id].nome}, l'ultima almeno Rara.`; },
+  get colore() { return SERIE[id].colore; }, get simbolo() { return SERIE[id].simbolo; } };
+const COLORI_STILE = { FOR: "#ff7a45", VEL: "#3fd8ff", MEN: "#d08cff" };
+for (const [id, st] of Object.entries(STILI)) TIPI_BUSTINA[`stile-${id}`] = { stile: id, nome: `Bustina ${st.nome}`, carte: 4, ultima: "peso4", prezzo: 150, gruppo: "stile",
+  colore: COLORI_STILE[id], simbolo: id, desc: `4 carte di stile ${st.nome}, l'ultima almeno Rara.` };
+const ORDINE_BUSTINE = ["benvenuto", "leggendaria", "epica", "mega", "normale", ...Object.keys(TIPI_BUSTINA).filter(t => /^(serie|stile)-/.test(t))];
+const SCONTO_OFFERTA = .3;
 
 // Pass battaglia: 100 livelli. Ogni 10 livelli scegli tu tra due premi.
 // Finito il pass, ogni 500 XP in più si apre uno scrigno a sorpresa (all'infinito).
@@ -471,7 +484,7 @@ function mostraAvviso(testo) {
 // ============================================================
 //  VISTE
 // ============================================================
-const VISTE = ["strada", "storia", "bustine", "album", "squadra", "sfida", "pass", "classifica", "admin"];
+const VISTE = ["strada", "storia", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin"];
 let vista = "strada";
 let filtroAlbum = "tutte", filtroSquadra = "tutte";
 
@@ -497,7 +510,7 @@ function spostaIndicatore() {
 function disegna() {
   aggiornaTesta();
   const main = $("#vista");
-  main.innerHTML = ({ strada: vistaStrada, bustine: vistaBustine, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria })[vista]();
+  main.innerHTML = ({ strada: vistaStrada, bustine: vistaBustine, negozio: vistaNegozio, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria })[vista]();
   if (vista === "classifica") avviaClassifica();
   if (vista === "pass") dopoPass();
   if (vista === "storia") dopoStoria();
@@ -539,7 +552,7 @@ function vistaStrada() {
   <section class="regole">
     <div class="titolo-riga"><h2>Come si gioca</h2><button class="btn piccolo" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button></div>
     <ol>
-      <li><b>Bustine.</b> Ogni giorno ricevi una bustina gratis; le altre costano ${PREZZO_BUSTINA} monete o arrivano dal pass. La prima è di benvenuto: 5 carte tutte diverse.</li>
+      <li><b>Bustine.</b> Ogni giorno ricevi una bustina gratis; le altre le compri nel <b>Negozio</b> (classiche, per serie e per stile) o arrivano dal pass. Le apri dalla pagina Bustine. La prima è di benvenuto: 5 carte tutte diverse.</li>
       <li><b>Potenziare.</b> Le carte salgono di livello solo se le potenzi tu, dal dettaglio della carta (il segno ▲ verde dice quando puoi). Ogni doppione dà potenziatori per quella carta: ${POT_DOPPIONE.comune} se è Comune, ${POT_DOPPIONE.rara} Rara, ${POT_DOPPIONE.epica} Epica, ${POT_DOPPIONE.leggendaria} Leggendaria. Ogni livello costa potenziatori e monete, sempre di più: da ${potPerLivello(1)} potenziatori e ${monetePerLivello(1)} monete per il livello 2 fino a ${potPerLivello(29)} e ${monetePerLivello(29)} per il 30. Ogni livello dà +2% a PV e danni.</li>
       <li><b>30 e lode.</b> Una carta al 30 fa esperienza in battaglia: dopo ${XP_LODE} XP prende la lode, che la potenzia di un altro 5%. I doppioni di una carta al 30 danno monete.</li>
       <li><b>Squadre.</b> Prepari fino a ${NUM_SQUADRE} squadre da ${CARTE_SQUADRA}, nell'ordine che vuoi: la prima entra in campo per prima.</li>
@@ -551,34 +564,162 @@ function vistaStrada() {
 }
 
 // ---------- BUSTINE ----------
+function htmlBustina(t, spenta) {
+  const T = TIPI_BUSTINA[t];
+  return `<div class="bustina-3d b-${t}${spenta ? " spenta" : ""}" style="--c:${T.colore || "var(--neon)"}" data-inclina><div class="bustina-faccia">${T.simbolo ? `<i class="bustina-simbolo">${T.simbolo}</i>` : ""}<span>NOI<br>VERSO</span><small>${T.carte} carte</small></div></div>`;
+}
 function vistaBustine() {
-  const peso = ORDINE_RARITA.reduce((a, r) => a + RARITA[r].peso, 0);
   const disponibili = ORDINE_BUSTINE.filter(t => S.inventario[t] > 0);
+  const tot = disponibili.reduce((a, t) => a + S.inventario[t], 0);
   return `
   <section>
-    <div class="titolo-riga"><h2>Edicola</h2><p class="nota">Hai ${S.monete} monete. Ogni bustina aperta dà ${XP_BUSTINA} XP al pass.</p></div>
-    <div class="scaffale">
+    <div class="titolo-riga"><h2>Le tue bustine</h2><p class="nota">${tot ? `Ne hai ${tot} da aprire. Ogni bustina aperta dà ${XP_BUSTINA} XP al pass.` : "Non hai bustine da aprire."}</p>
+      <button class="btn oro" data-fx="salto" data-azione="vai-negozio">Vai al negozio</button></div>
+    ${disponibili.length ? `<div class="scaffale">
       ${disponibili.map(t => `
         <div class="bustina-box">
-          <div class="bustina-3d b-${t}" data-inclina><div class="bustina-faccia"><span>NOI<br>VERSO</span><small>${TIPI_BUSTINA[t].carte} carte</small></div></div>
-          <b>${TIPI_BUSTINA[t].nome}</b>
-          <span class="nota">${TIPI_BUSTINA[t].desc}</span>
+          ${htmlBustina(t)}
+          <b>${esc(TIPI_BUSTINA[t].nome)}</b>
+          <span class="nota">${esc(TIPI_BUSTINA[t].desc)}</span>
           <button class="btn primario" data-fx="onda" data-apri="${t}">Apri${S.inventario[t] > 1 ? ` · ne hai ${S.inventario[t]}` : ""}</button>
         </div>`).join("")}
-      <div class="bustina-box">
-        <div class="bustina-3d b-normale spenta" data-inclina><div class="bustina-faccia"><span>NOI<br>VERSO</span><small>4 carte</small></div></div>
-        <b>Compra una bustina</b>
-        <span class="nota">${TIPI_BUSTINA.normale.desc}</span>
-        <button class="btn" data-fx="monete" data-azione="compra" ${S.monete < PREZZO_BUSTINA ? "disabled" : ""}>Compra e apri · ${PREZZO_BUSTINA} monete</button>
-        ${S.monete < PREZZO_BUSTINA ? `<span class="nota">Non bastano le monete: vinci una sfida o riscuoti il pass.</span>` : ""}
+    </div>` : `<div class="vuoto-bustine">
+      ${htmlBustina("normale", true)}
+      <p>Ogni giorno ne ricevi una gratis. Le altre le trovi nel negozio, nel pass e negli scrigni della storia.</p>
+      <button class="btn primario" data-fx="onda" data-azione="vai-negozio">Compra bustine</button>
+    </div>`}
+  </section>`;
+}
+
+// ---------- NEGOZIO ----------
+function offertaDelGiorno() {
+  const tipi = ORDINE_BUSTINE.filter(t => TIPI_BUSTINA[t].prezzo && t !== "normale");
+  let h = 0; for (const ch of oggi()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const t = tipi[h % tipi.length];
+  return { t, prezzo: Math.round(TIPI_BUSTINA[t].prezzo * (1 - SCONTO_OFFERTA) / 10) * 10, presa: S.offerta === oggi() };
+}
+function htmlProdotto(t) {
+  const T = TIPI_BUSTINA[t], n = S.inventario[t] || 0;
+  return `<div class="prodotto" style="--c:${T.colore}">
+    ${htmlBustina(t)}
+    <b>${esc(T.nome)}</b>
+    <span class="nota">${esc(T.desc)}</span>
+    ${n ? `<span class="ne-hai">Ne hai ${n}</span>` : ""}
+    <div class="prodotto-prezzi">
+      <button class="btn primario" data-fx="monete" data-compra="${t}:1" ${S.admin || S.monete >= T.prezzo ? "" : "disabled"}>${T.prezzo} <i class="moneta-ico"></i></button>
+      <button class="btn" data-fx="monete" data-compra="${t}:5" ${S.admin || S.monete >= T.prezzo * 5 ? "" : "disabled"}>×5 · ${T.prezzo * 5}</button>
+    </div>
+  </div>`;
+}
+function vistaNegozio() {
+  const off = offertaDelGiorno(), TO = TIPI_BUSTINA[off.t];
+  const peso = ORDINE_RARITA.reduce((a, r) => a + RARITA[r].peso, 0);
+  const gruppo = (g, titolo, nota) => `<div class="titolo-riga piccola"><h3>${titolo}</h3><p class="nota">${nota}</p></div>
+    <div class="vetrina">${ORDINE_BUSTINE.filter(t => TIPI_BUSTINA[t].gruppo === g).map(htmlProdotto).join("")}</div>`;
+  const segreti = (S.codici || []).filter(x => x.titolo);
+  return `
+  <section class="negozio">
+    <div class="titolo-riga"><h2>Negozio</h2><p class="nota">Hai <b>${S.admin ? "∞" : S.monete}</b> monete. Le bustine che compri finiscono in <b>Bustine</b>, pronte da aprire.</p></div>
+    <div class="offerta" style="--c:${TO.colore}">
+      <div class="offerta-etichetta">Offerta del giorno · −${Math.round(SCONTO_OFFERTA * 100)}%</div>
+      ${htmlBustina(off.t, off.presa)}
+      <div class="offerta-info">
+        <b>${esc(TO.nome)}</b><span class="nota">${esc(TO.desc)}</span>
+        <div class="prodotto-prezzi">${off.presa ? `<span class="nota">Presa! Domani arriva un'altra offerta.</span>`
+          : `<s>${TO.prezzo}</s><button class="btn oro" data-fx="monete" data-compra="${off.t}:offerta" ${S.admin || S.monete >= off.prezzo ? "" : "disabled"}>${off.prezzo} <i class="moneta-ico"></i></button><small class="nota">una sola al giorno</small>`}</div>
       </div>
     </div>
+    ${gruppo("classiche", "Classiche", "Da tutte le serie.")}
+    ${gruppo("serie", "Per serie", "Solo carte di una serie: per completare l'album.")}
+    ${gruppo("stile", "Per stile", "Solo carte di uno stile: per costruire la squadra.")}
+    <div class="codice-box">
+      <h3>Codice promozionale</h3>
+      <p class="nota">Hai un codice? Scrivilo qui. Alcuni nascondono delle sorprese…</p>
+      <form id="form-codice-promo" class="codice-riga" autocomplete="off">
+        <input id="codice-input" maxlength="40" placeholder="Scrivi il codice" autocapitalize="characters" spellcheck="false">
+        <button class="btn primario" data-fx="onda" type="submit">Usa</button>
+      </form>
+      <p id="codice-esito" class="nota" aria-live="polite"></p>
+      ${segreti.length ? `<div class="segreti"><span class="nota">Sorprese trovate:</span> ${segreti.map(x => `<button class="chip" data-fx="gelatina" data-riapri-codice="${esc(x.codice)}">${esc(x.titolo)}</button>`).join("")}</div>` : ""}
+    </div>
     <table class="probabilita">
-      <caption>Probabilità per carta nella bustina normale</caption>
+      <caption>Probabilità per carta nella bustina classica</caption>
       <thead><tr><th>Rarità</th><th>Prime carte</th><th>Ultima carta</th></tr></thead>
       <tbody>${ORDINE_RARITA.map(r => `<tr><td><span class="pallino r-${r}"></span>${RARITA[r].nome}</td><td>${(RARITA[r].peso / peso * 100).toFixed(1)}%</td><td>${RARITA[r].peso4}%</td></tr>`).join("")}</tbody>
     </table>
   </section>`;
+}
+function compraBustina(arg, el) {
+  const [t, q] = arg.split(":"), T = TIPI_BUSTINA[t];
+  if (!T || !T.prezzo) return;
+  const off = offertaDelGiorno();
+  let n = 1, costo = T.prezzo;
+  if (q === "offerta") { if (off.t !== t || off.presa) return; costo = off.prezzo; S.offerta = oggi(); }
+  else { n = +q || 1; costo = T.prezzo * n; }
+  if (!S.admin && S.monete < costo) { mostraAvviso("Non hai abbastanza monete."); return; }
+  if (!S.admin) S.monete -= costo;
+  S.inventario[t] = (S.inventario[t] || 0) + n;
+  salva(); aggiornaTesta();
+  FX.volaIcona(el, $('[data-vista="bustine"]'), "b-normale");
+  mostraAvviso(`${n > 1 ? n + " × " : ""}${T.nome} ${n > 1 ? "aggiunte" : "aggiunta"}: la apri nella pagina Bustine.`);
+  disegna();
+}
+
+// ---------- CODICI PROMOZIONALI ----------
+// I codici e le sorprese stanno solo su Supabase (tabella "codici"): qui nel codice del gioco non c'è nessun segreto.
+async function chiediCodice(c) {
+  if (!window.NOIVERSO_SUPABASE) throw new Error("I codici funzionano solo nella versione online del gioco.");
+  const { data, error } = await window.NoiversoAccesso.sb.rpc("riscatta_codice", { c, prova: !!S.admin });
+  if (error) throw new Error(/non valido|già usato|esaurito|accesso/i.test(error.message) ? error.message : "Non riesco a controllare il codice. Sei collegato a internet?");
+  return data;
+}
+async function usaCodice() {
+  const inp = $("#codice-input"), out = $("#codice-esito"), c = (inp.value || "").trim();
+  if (!c) return;
+  out.textContent = "Controllo il codice…";
+  try { const p = await chiediCodice(c); inp.value = ""; out.textContent = ""; applicaCodice(p); }
+  catch (e) { out.innerHTML = `<b class="errore">${esc(e.message)}</b>`; FX.riavvia(inp, "fx-scuoti"); }
+}
+async function riapriCodice(c) {
+  try { applicaCodice(await chiediCodice(c)); } catch (e) { mostraAvviso(e.message); }
+}
+function applicaCodice(p) {
+  const parti = [];
+  if (!p.gia) {
+    if (p.monete) { S.monete += +p.monete; parti.push(`${p.monete} monete`); }
+    for (const [t, n] of Object.entries(p.bustine || {})) if (TIPI_BUSTINA[t] && n > 0) { S.inventario[t] = (S.inventario[t] || 0) + +n; parti.push(`${n > 1 ? n + " × " : ""}${TIPI_BUSTINA[t].nome}`); }
+  }
+  if (p.ripetibile && p.titolo && !p.prova) {   // le sorprese ripetibili si possono riaprire dal negozio
+    const lista = (S.codici || []).filter(x => x.codice !== p.codice);
+    S.codici = [...lista, { codice: p.codice, titolo: String(p.titolo).slice(0, 40) }];
+  }
+  salva(); aggiornaTesta();
+  effettoCodice(p.effetto);
+  const premio = parti.length ? `<p class="codice-premio">Hai ricevuto: <b>${parti.map(esc).join(" · ")}</b></p>` : "";
+  if (p.pagina) { apriPaginaSegreta(p.pagina, p.titolo); if (parti.length) mostraAvviso(`Hai ricevuto: ${parti.join(" · ")}`); }
+  else apriModale(`<div class="codice-modale">
+      <span class="codice-tag">${p.prova ? "Prova admin · " : ""}Codice ${esc(p.codice)}</span>
+      <h2>${esc(p.titolo || "Codice valido!")}</h2>
+      ${p.messaggio ? `<div class="codice-testo">${esc(p.messaggio).replace(/\n/g, "<br>")}</div>` : ""}
+      ${premio || (p.gia ? `<p class="nota">I premi di questo codice li avevi già ricevuti.</p>` : "")}
+      <div class="azioni centro"><button class="btn primario" data-azione="chiudi">Grande!</button></div>
+    </div>`);
+  if (vista === "negozio") setTimeout(disegna, 50);
+}
+function effettoCodice(tipo) {
+  if (!tipo || ridotto) return;
+  const W = innerWidth, H = innerHeight;
+  const colori = { coriandoli: ["#f2c14e", "#ff2e46", "#3fd8ff", "#ffffff"], girasoli: ["#FFC21A", "#F2A400", "#FFD84D", "#557A26"], stelle: ["#ffffff", "#f2c14e", "#d08cff"] }[tipo];
+  if (tipo === "monete") { for (let k = 0; k < 4; k++) setTimeout(() => FX.volaMonete($("#vista"), $(".monete"), 12), k * 250); return; }
+  if (colori) for (let k = 0; k < 4; k++) setTimeout(() => FX.esplosione(W * (.2 + .2 * k), H * .35, { n: 50, forma: tipo === "stelle" ? "stella" : "coriandolo", colori, velocita: 9, dimensione: 5 }), k * 180);
+}
+function apriPaginaSegreta(html, titolo) {
+  const ov = document.createElement("div");
+  ov.id = "pagina-segreta";
+  ov.innerHTML = `<iframe sandbox="allow-scripts" title="${esc(titolo || "Sorpresa")}"></iframe><button class="btn pagina-chiudi" type="button">✕ Torna al gioco</button>`;
+  ov.querySelector("iframe").srcdoc = html;
+  ov.querySelector(".pagina-chiudi").addEventListener("click", () => ov.remove());
+  document.body.appendChild(ov);
 }
 
 function pescaDa(pesi) {
@@ -594,7 +735,12 @@ function apriBustina(tipo) {
   const uscite = [];
   for (let i = 0; i < T.carte; i++) {
     const r = pescaDa(i < T.carte - 1 ? "peso" : T.ultima);
-    let pool = CARTE.filter(c => c.rarita === r);
+    const vale = c => (!T.serie || c.serie === T.serie) && (!T.stile || c.stile === T.stile);
+    let pool = CARTE.filter(c => c.rarita === r && vale(c));
+    // se la serie (o lo stile) non ha carte di quella rarità, prende la rarità più vicina
+    const k = ORDINE_RARITA.indexOf(r);
+    for (let d = 1; !pool.length && d < ORDINE_RARITA.length; d++)
+      for (const kk of [k - d, k + d]) if (!pool.length && ORDINE_RARITA[kk]) pool = CARTE.filter(c => c.rarita === ORDINE_RARITA[kk] && vale(c));
     if (T.distinte) { const libere = pool.filter(c => !uscite.includes(c.id)); if (libere.length) pool = libere; }
     uscite.push(pool[Math.floor(Math.random() * pool.length)].id);
   }
@@ -1243,7 +1389,7 @@ function vistaAdmin() {
         <div class="azioni"><button class="btn oro" data-fx="coriandoli" data-admin="carte-lode">Tutte al 30 e lode</button><button class="btn" data-fx="stelle" data-admin="carte-max">Tutte al livello 30</button><button class="btn" data-fx="salto" data-admin="carte-15">Tutte al livello 15</button><button class="btn" data-fx="salto" data-admin="carte-1">Tutte al livello 1</button><button class="btn" data-fx="monete" data-admin="pot-100">+100 potenziatori a tutte</button><button class="btn" data-fx="scuoti" data-admin="carte-zero">Svuota collezione</button></div></div>
       <div class="admin-box"><h3>Bustine</h3>
         <div class="azioni"><button class="btn" data-fx="onda" data-admin="bustine">+10 di ogni tipo</button><button class="btn oro" data-fx="coriandoli" data-apri="leggendaria">Apri una leggendaria</button></div>
-        <p class="nota">Ne hai: ${ORDINE_BUSTINE.map(t => `${TIPI_BUSTINA[t].nome.replace("Bustina ", "").replace("Bustina", "Normali")} ${S.inventario[t]}`).join(" · ")}</p></div>
+        <p class="nota">Ne hai: ${ORDINE_BUSTINE.filter(t => S.inventario[t]).map(t => `${TIPI_BUSTINA[t].nome.replace("Bustina ", "").replace("Bustina", "Normali")} ${S.inventario[t]}`).join(" · ") || "nessuna"}</p></div>
       <div class="admin-box"><h3>Pass battaglia</h3>
         <label for="admin-pass">Livello: <b id="admin-pass-val">${livelloPass()}</b></label>
         <input type="range" id="admin-pass" min="0" max="${PASS.livelli}" value="${livelloPass()}">
@@ -1260,6 +1406,7 @@ function vistaAdmin() {
         <p class="nota">Versione del gioco: <b>${VERSIONE}</b> · ${CARTE.length} carte. Il gioco si aggiorna da solo quando pubblico una versione nuova. <button class="btn piccolo" data-fx="salto" data-azione="controlla-versione">Controlla adesso</button></p></div>
       <div class="admin-box largo" id="editor-carte">${htmlEditorCarte()}</div>
       <div class="admin-box largo" id="admin-immagini">${htmlAdminImmagini()}</div>
+      <div class="admin-box largo" id="admin-codici">${htmlAdminCodici()}</div>
       <div class="admin-box"><h3>Il tuo profilo normale</h3>
         <p class="nota">Riparte da zero il tuo profilo da giocatore (non quello admin).</p>
         <button class="btn" data-fx="scuoti" data-admin="reset-normale">Azzera profilo normale</button></div>
@@ -1311,6 +1458,117 @@ async function caricaFileImmagini(files) {
   }
   await dopoImmagini(ok, ko, "Caricamento");
 }
+
+// ---------- Codici promozionali (solo admin) ----------
+let codiciAdmin = null, usiCodici = {}, codiceModifica = null, paginaCodice = null;
+const EFFETTI_CODICE = { "": "Nessuno", coriandoli: "Coriandoli", monete: "Pioggia di monete", stelle: "Stelle", girasoli: "Girasoli" };
+async function caricaCodiciAdmin() {
+  const sb = window.NoiversoAccesso.sb;
+  try {
+    const [{ data: cod, error: e1 }, { data: usi }] = await Promise.all([sb.from("codici").select("*").order("creato"), sb.from("codici_usati").select("codice")]);
+    if (e1) throw e1;
+    codiciAdmin = cod || []; usiCodici = {};
+    for (const u of usi || []) usiCodici[u.codice] = (usiCodici[u.codice] || 0) + 1;
+  } catch (e) { codiciAdmin = { errore: true }; }
+  const box = $("#admin-codici"); if (box) box.innerHTML = htmlAdminCodici();
+}
+function riassuntoPremio(p) {
+  const v = [];
+  if (p.monete) v.push(`${p.monete} monete`);
+  for (const [t, n] of Object.entries(p.bustine || {})) v.push(`${n} × ${TIPI_BUSTINA[t] ? TIPI_BUSTINA[t].nome : t}`);
+  if (p.pagina) v.push("pagina segreta");
+  if (p.messaggio) v.push("messaggio");
+  if (p.effetto) v.push(EFFETTI_CODICE[p.effetto] || p.effetto);
+  return v.join(" · ") || "—";
+}
+function htmlAdminCodici() {
+  const titolo = `<h3>Codici promozionali</h3>`;
+  if (!window.NOIVERSO_SUPABASE) return titolo + `<p class="nota">Si gestiscono nella versione pubblicata su Supabase.</p>`;
+  if (!codiciAdmin) { setTimeout(caricaCodiciAdmin, 0); return titolo + `<p class="nota">Carico i codici…</p>`; }
+  if (codiciAdmin.errore) return titolo + `<p class="errore">Non riesco a leggere i codici. Hai eseguito di nuovo schema.sql su Supabase?</p>`;
+  const k = codiceModifica || { premio: {}, attivo: true }, p = k.premio || {};
+  const [bt, bn] = Object.entries(p.bustine || {})[0] || ["", 1];
+  const pag = paginaCodice !== null ? paginaCodice : (p.pagina || "");
+  return titolo + `
+    <p class="nota">Li vedi solo tu: nel codice del gioco non c'è nessun segreto. Ogni giocatore riceve i premi di un codice una volta sola; un codice <b>ripetibile</b> si può riaprire per rivedere la sorpresa. Se lo provi da admin non viene segnato come usato.</p>
+    <div class="tab-scorri"><table class="tab-codici">
+      <thead><tr><th>Codice</th><th>Cosa dà</th><th>Usato da</th><th></th></tr></thead>
+      <tbody>${codiciAdmin.length ? codiciAdmin.map(c => `<tr class="${c.attivo ? "" : "spento"}">
+        <td><b>${esc(c.codice)}</b>${c.attivo ? "" : ` <small class="nota">(spento)</small>`}${c.premio && c.premio.ripetibile ? ` <small class="nota">ripetibile</small>` : ""}</td>
+        <td>${esc(riassuntoPremio(c.premio || {}))}</td>
+        <td>${usiCodici[c.codice] || 0}${c.usi_max ? ` / ${c.usi_max}` : ""}</td>
+        <td class="azioni-riga"><button class="btn piccolo" data-admin="cod-modifica:${esc(c.codice)}">Modifica</button><button class="btn piccolo" data-admin="cod-elimina:${esc(c.codice)}">Elimina</button></td></tr>`).join("")
+        : `<tr><td colspan="4" class="nota">Nessun codice. Creane uno qui sotto.</td></tr>`}</tbody>
+    </table></div>
+    <form id="form-codice" class="form-codice" autocomplete="off">
+      <h4>${codiceModifica ? `Modifica ${esc(k.codice)}` : "Nuovo codice"}</h4>
+      <label>Codice <input name="codice" required maxlength="40" value="${esc(k.codice || "")}" placeholder="ES. NATALE2026" autocapitalize="characters"></label>
+      <div class="campi-2">
+        <label>Monete <input name="monete" type="number" min="0" max="50000" value="${p.monete || ""}" placeholder="0"></label>
+        <label>Bustine <span class="campi-2"><select name="bustina"><option value="">nessuna</option>${ORDINE_BUSTINE.filter(t => t !== "benvenuto").map(t => `<option value="${t}" ${t === bt ? "selected" : ""}>${esc(TIPI_BUSTINA[t].nome)}</option>`).join("")}</select><input name="quante" type="number" min="1" max="50" value="${bn}"></span></label>
+      </div>
+      <label>Titolo della sorpresa <input name="titolo" maxlength="40" value="${esc(p.titolo || "")}" placeholder="Compare nel messaggio e tra le sorprese trovate"></label>
+      <label>Messaggio <textarea name="messaggio" rows="3" maxlength="2000" placeholder="Facoltativo">${esc(p.messaggio || "")}</textarea></label>
+      <div class="campi-2">
+        <label>Effetto <select name="effetto">${Object.entries(EFFETTI_CODICE).map(([v, n]) => `<option value="${v}" ${v === (p.effetto || "") ? "selected" : ""}>${n}</option>`).join("")}</select></label>
+        <label>Quante persone possono usarlo <input name="usi" type="number" min="1" value="${k.usi_max || ""}" placeholder="senza limite"></label>
+      </div>
+      <div class="pagina-codice">
+        <span class="nota">Pagina segreta (un file .html che si apre a schermo intero): <b>${pag ? `caricata · ${Math.round(pag.length / 1024)} KB` : "nessuna"}</b></span>
+        <label class="btn piccolo">Scegli file…<input type="file" id="codice-pagina" accept=".html,text/html" hidden></label>
+        ${pag ? `<button type="button" class="btn piccolo" data-admin="cod-togli-pagina">Togli</button>` : ""}
+      </div>
+      <label class="spunta"><input type="checkbox" name="ripetibile" ${p.ripetibile ? "checked" : ""}> Ripetibile (si può riaprire la sorpresa)</label>
+      <label class="spunta"><input type="checkbox" name="attivo" ${k.attivo !== false ? "checked" : ""}> Attivo</label>
+      <div class="azioni"><button class="btn primario" type="submit">Salva codice</button>${codiceModifica ? `<button type="button" class="btn" data-admin="cod-nuovo">Annulla</button>` : ""}</div>
+      <p id="codice-admin-esito" class="nota"></p>
+    </form>`;
+}
+function ridisegnaCodici() { const box = $("#admin-codici"); if (box) box.innerHTML = htmlAdminCodici(); }
+async function azioneCodici(cosa, el) {
+  const [az, ...resto] = cosa.split(":"), cod = resto.join(":");
+  if (az === "cod-modifica") { codiceModifica = codiciAdmin.find(c => c.codice === cod) || null; paginaCodice = null; ridisegnaCodici(); $("#form-codice").scrollIntoView({ block: "start", behavior: "smooth" }); }
+  if (az === "cod-nuovo") { codiceModifica = null; paginaCodice = null; ridisegnaCodici(); }
+  if (az === "cod-togli-pagina") { paginaCodice = ""; ridisegnaCodici(); }
+  if (az === "cod-elimina") {
+    if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro?"; return; }
+    const { error } = await window.NoiversoAccesso.sb.from("codici").delete().eq("codice", cod);
+    if (error) mostraAvviso("Non sono riuscito a eliminarlo."); else { if (codiceModifica && codiceModifica.codice === cod) codiceModifica = null; mostraAvviso(`Codice ${cod} eliminato.`); }
+    caricaCodiciAdmin();
+  }
+}
+async function salvaCodiceAdmin(form) {
+  const f = new FormData(form), esito = $("#codice-admin-esito");
+  const codice = String(f.get("codice") || "").toUpperCase().replace(/\s+/g, "");
+  if (!codice) return;
+  const premio = {};
+  const monete = Math.min(50000, Math.max(0, parseInt(f.get("monete")) || 0)); if (monete) premio.monete = monete;
+  if (f.get("bustina")) premio.bustine = { [f.get("bustina")]: Math.min(50, Math.max(1, parseInt(f.get("quante")) || 1)) };
+  for (const k of ["titolo", "messaggio", "effetto"]) { const v = String(f.get(k) || "").trim(); if (v) premio[k] = v; }
+  const pag = paginaCodice !== null ? paginaCodice : (codiceModifica && codiceModifica.premio && codiceModifica.premio.pagina) || "";
+  if (pag) premio.pagina = pag;
+  if (f.get("ripetibile")) premio.ripetibile = true;
+  if ((premio.pagina || premio.messaggio) && !premio.titolo) premio.titolo = "Sorpresa";
+  const riga = { codice, premio, attivo: !!f.get("attivo"), usi_max: parseInt(f.get("usi")) || null };
+  esito.textContent = "Salvo…";
+  const sb = window.NoiversoAccesso.sb;
+  const { error } = await sb.from("codici").upsert(riga);
+  if (error) { esito.innerHTML = `<b class="errore">Non salvato: ${esc(error.message)}</b>`; return; }
+  if (codiceModifica && codiceModifica.codice !== codice) await sb.from("codici").delete().eq("codice", codiceModifica.codice);
+  codiceModifica = null; paginaCodice = null;
+  mostraAvviso(`Codice ${codice} salvato.`);
+  caricaCodiciAdmin();
+}
+document.addEventListener("change", async e => {
+  if (e.target.id !== "codice-pagina" || !e.target.files.length) return;
+  const f = e.target.files[0];
+  if (f.size > 900 * 1024) { mostraAvviso("La pagina è troppo grande (massimo 900 KB)."); return; }
+  paginaCodice = await f.text();
+  const form = $("#form-codice"), vals = form ? Object.fromEntries(new FormData(form)) : null;
+  ridisegnaCodici();
+  // rimette quello che avevi già scritto nel modulo
+  if (vals) { const nf = $("#form-codice"); for (const [k, v] of Object.entries(vals)) { const c = nf.elements[k]; if (!c || c.type === "file") continue; if (c.type === "checkbox") c.checked = true; else c.value = v; } for (const c of nf.querySelectorAll("input[type=checkbox]")) c.checked = c.name in vals; }
+});
 
 // ---------- Editor carte: persona, serie e rarità (solo admin) ----------
 let bozza = null, edFiltro = "tutte", edCerca = "";
@@ -1401,6 +1659,7 @@ async function azioneAdmin(cosa, el) {
   if (!S.admin) return;
   if (cosa === "ed-salva") { salvaEditor(el); return; }
   if (cosa === "img-trasferisci") { trasferisciImmagini(); return; }
+  if (cosa.startsWith("cod-")) { azioneCodici(cosa, el); return; }
   if (cosa === "ed-annulla") { bozza = nuovaBozza(); aggiornaEditor(true); return; }
   if (cosa === "ed-originali") { bozza = Object.fromEntries(CARTE.map(c => [c.id, { ...CARTE_ORIGINALI[c.id] }])); aggiornaEditor(true); mostraAvviso("Valori di partenza caricati: premi Salva per applicarli a tutti."); return; }
   const metti = (L, lx = 0) => CARTE.forEach(c => { S.carte[c.id] = Math.max(1, S.carte[c.id] || 0); S.liv[c.id] = L; S.lodeXp[c.id] = lx; });
@@ -2022,7 +2281,7 @@ function esciBattaglia() {
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2065,6 +2324,8 @@ document.addEventListener("click", e => {
   }
   if (t.dataset.togli !== undefined) { squadraAttiva().carte.splice(+t.dataset.togli, 1); salva(); setTimeout(disegna, ridotto ? 0 : 200); return; }
   if (t.dataset.apri) { usaBustina(t.dataset.apri, false); return; }
+  if (t.dataset.compra) { compraBustina(t.dataset.compra, t); return; }
+  if (t.dataset.riapriCodice) { riapriCodice(t.dataset.riapriCodice); return; }
   if (t.dataset.riscuoti) { riscuoti([+t.dataset.riscuoti], t); return; }
   if (t.dataset.passScelta) { const [l, j] = t.dataset.passScelta.split(":").map(Number); scegliPremioPass(l, j, t); return; }
   if (t.dataset.potCarta) { datiPotenziatori(t.dataset.potCarta, t); return; }
@@ -2088,7 +2349,7 @@ document.addEventListener("click", e => {
     case "vai-sfida": vai("sfida"); break;
     case "vai-squadra": vai("squadra"); break;
     case "vai-pass": vai("pass"); break;
-    case "compra": usaBustina("normale", true); break;
+    case "vai-negozio": vai("negozio"); break;
     case "gira-tutte": if (apertura) apertura.giraTutte(); break;
     case "gira-tutte-2d": $$(".gira").forEach((g, i) => setTimeout(() => g.classList.add("girata"), ridotto ? 0 : i * 180)); break;
     case "chiudi-apertura": chiudiApertura(); break;
@@ -2120,6 +2381,8 @@ document.addEventListener("click", e => {
 document.addEventListener("submit", e => {
   e.preventDefault();
   if (e.target.id === "form-profilo") inviaProfilo(e.target);
+  if (e.target.id === "form-codice-promo") usaCodice();
+  if (e.target.id === "form-codice") salvaCodiceAdmin(e.target);
   if (e.target.id === "form-modifica") {
     const nome = $("#nome-modifica").value.trim().slice(0, 20);
     if (nome) S.profilo.nome = nome;

@@ -8,3 +8,6 @@ android/node_modules/
 sorgente/img/
 sito/img/
 img/
+# codici promozionali e sorprese: solo su Supabase
+supabase/*segreti*
+*segreti*.sql

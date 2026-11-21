@@ -142,7 +142,8 @@ begin
     raise exception 'Salvataggio non valido (monete)';
   end if;
   inv := coalesce(d->'inventario', '{}'::jsonb);
-  if coalesce((inv->>'normale')::int, 0) > 300 or coalesce((inv->>'epica')::int, 0) > 100 or coalesce((inv->>'leggendaria')::int, 0) > 50 then
+  if coalesce((inv->>'leggendaria')::int, 0) > 100
+     or exists (select 1 from jsonb_each_text(inv) where value ~ '^-?[0-9.]+$' and (value::numeric > 300 or value::numeric < 0)) then
     raise exception 'Salvataggio non valido (bustine)';
   end if;
   if exists (select 1 from jsonb_each_text(coalesce(d->'liv', '{}'::jsonb)) where value::numeric > 30) then
@@ -183,6 +184,59 @@ end $$;
 drop trigger if exists classifica_vera on public.classifica;
 create trigger classifica_vera before insert or update on public.classifica
   for each row execute function public.classifica_vera();
+
+-- ---------------- Codici promozionali ----------------
+-- I codici (e le sorprese che nascondono) stanno solo qui: il codice del gioco su GitHub non li contiene.
+-- Nessun giocatore può leggere la tabella: un codice si può solo "provare" con riscatta_codice().
+create table if not exists public.codici (
+  codice  text primary key check (codice = upper(codice) and codice !~ '\s'),
+  premio  jsonb not null default '{}'::jsonb,
+  attivo  boolean not null default true,
+  usi_max integer,                        -- quante persone diverse possono usarlo (vuoto = senza limite)
+  creato  timestamptz not null default now()
+);
+create table if not exists public.codici_usati (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  codice  text not null references public.codici (codice) on delete cascade on update cascade,
+  quando  timestamptz not null default now(),
+  primary key (user_id, codice)
+);
+alter table public.codici enable row level security;
+alter table public.codici_usati enable row level security;
+drop policy if exists "codici: solo l'admin" on public.codici;
+create policy "codici: solo l'admin" on public.codici for all to authenticated
+  using (public.sono_admin()) with check (public.sono_admin());
+drop policy if exists "codici usati: i miei, o tutti per l'admin" on public.codici_usati;
+create policy "codici usati: i miei, o tutti per l'admin" on public.codici_usati for select to authenticated
+  using (user_id = auth.uid() or public.sono_admin());
+grant select, insert, update, delete on public.codici to authenticated;
+grant select on public.codici_usati to authenticated;
+revoke all on public.codici, public.codici_usati from anon;
+
+create or replace function public.riscatta_codice(c text, prova boolean default false) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare k public.codici; gia boolean;
+begin
+  if auth.uid() is null then raise exception 'Devi fare l''accesso per usare un codice'; end if;
+  select * into k from public.codici where codice = upper(regexp_replace(coalesce(c, ''), '\s', '', 'g'));
+  if not found or not k.attivo then raise exception 'Codice non valido'; end if;
+  -- l'admin può provare un codice senza consumarlo
+  if prova and public.sono_admin() then return k.premio || jsonb_build_object('codice', k.codice, 'prova', true); end if;
+  gia := exists (select 1 from public.codici_usati where user_id = auth.uid() and codice = k.codice);
+  if gia then
+    if coalesce((k.premio->>'ripetibile')::boolean, false) then
+      return (k.premio - 'monete' - 'bustine') || jsonb_build_object('codice', k.codice, 'gia', true);
+    end if;
+    raise exception 'Hai già usato questo codice';
+  end if;
+  if k.usi_max is not null and (select count(*) from public.codici_usati where codice = k.codice) >= k.usi_max then
+    raise exception 'Codice esaurito: l''hanno già usato tutti quelli che potevano';
+  end if;
+  insert into public.codici_usati (user_id, codice) values (auth.uid(), k.codice);
+  return k.premio || jsonb_build_object('codice', k.codice);
+end $$;
+revoke all on function public.riscatta_codice(text, boolean) from public, anon;
+grant execute on function public.riscatta_codice(text, boolean) to authenticated;
 
 -- Fine. Dopo esserti registrato nel gioco, esegui supabase/importa-progressi.sql
 -- (porta i tuoi progressi e ti rende admin).

@@ -128,7 +128,8 @@ const Scena3D = (() => {
     const W = 512, H = 720, cv = document.createElement("canvas");
     cv.width = W; cv.height = H;
     const g = cv.getContext("2d");
-    const colori = { benvenuto: ["#ff2e46", "#3a0a14"], normale: ["#ff2e46", "#2a0c14"], epica: ["#b866ff", "#1e0c2e"], leggendaria: ["#f2c14e", "#2e2208"] }[tipo] || ["#ff2e46", "#2a0c14"];
+    const T = typeof TIPI_BUSTINA !== "undefined" ? TIPI_BUSTINA[tipo] : null;
+    const colori = { benvenuto: ["#ff2e46", "#3a0a14"], normale: ["#ff2e46", "#2a0c14"], epica: ["#b866ff", "#1e0c2e"], leggendaria: ["#f2c14e", "#2e2208"] }[tipo] || (T && T.colore ? [T.colore, "#1c1018"] : ["#ff2e46", "#2a0c14"]);
     const gr = g.createLinearGradient(0, 0, W, H);
     gr.addColorStop(0, colori[1]); gr.addColorStop(.5, "#120c10"); gr.addColorStop(1, colori[1]);
     g.fillStyle = gr; g.fillRect(0, 0, W, H);
@@ -143,7 +144,7 @@ const Scena3D = (() => {
     g.font = '86px "Bungee", Impact, sans-serif'; g.fillText("NOI", W / 2, H / 2 - 40); g.fillText("VERSO", W / 2, H / 2 + 60);
     g.shadowBlur = 0; g.fillStyle = "#f4ece8"; g.font = '600 34px "Barlow Semi Condensed", sans-serif';
     const nomi = { benvenuto: "BENVENUTO · 5 CARTE", normale: "4 CARTE", epica: "EPICA · 4 CARTE", leggendaria: "LEGGENDARIA · 5 CARTE" };
-    g.fillText(nomi[tipo] || "4 CARTE", W / 2, H - 70);
+    g.fillText(nomi[tipo] || (T ? `${T.nome.replace(/^Bustina\s*/, "").toUpperCase() || "BUSTINA"} · ${T.carte} CARTE` : "4 CARTE"), W / 2, H - 70);
     return nuovaTexture(cv);
   }
 
