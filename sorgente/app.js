@@ -396,6 +396,7 @@ function htmlCarta(c, opz = {}) {
     ${info && info.puoi ? `<span class="potenziabile" title="Puoi potenziarla" aria-label="Puoi potenziarla">▲</span>` : ""}
     ${info && !opz.piccola && !opz.mini ? `<div class="carta-xp ${info.liv >= LIVELLO_MAX ? "verso-lode" : ""} ${info.lode ? "piena" : ""}"><i style="width:${info.lode ? 100 : Math.round(info.dentro / info.serve * 100)}%"></i></div>` : ""}
     <div class="carta-piede">
+      ${!coperta && !opz.mini && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? `<div class="olo-scritta">✦ Olografica</div>` : ""}
       <div class="carta-nome">${esc(c.nome)}</div>
       <div class="carta-sotto"><span class="ruolo-tag">${esc(RUOLI[c.ruolo].nome)}</span> ${opz.piccola ? "" : `<span class="ruolo-cosa">${esc(RUOLI[c.ruolo].cosa)}</span>`}</div>
     </div>`}

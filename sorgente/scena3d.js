@@ -78,9 +78,18 @@ const Scena3D = (() => {
     g.lineWidth = 18; g.strokeStyle = col; g.strokeRect(9, 9, W - 18, H - 18);
     if (c.rarita === "leggendaria") { g.lineWidth = 3; g.strokeStyle = "#fff3c4"; g.strokeRect(24, 24, W - 48, H - 48); }
     // nome e ruolo
-    g.fillStyle = "#f4ece8";
     g.font = '40px "Bungee", Impact, sans-serif';
     let fs = 40; while (g.measureText(c.nome).width > W - 70 && fs > 22) { fs -= 2; g.font = `${fs}px "Bungee", Impact, sans-serif`; }
+    if (olo) {   // olografica: nome arcobaleno e scritta sopra, come nella carta dell'album
+      const lw = g.measureText(c.nome).width, arc = g.createLinearGradient(34, 0, 34 + lw, 0);
+      ["#ff7a9a", "#ffd25a", "#6fffb8", "#6ccaff", "#d08cff"].forEach((col, i, a) => arc.addColorStop(i / (a.length - 1), col));
+      g.fillStyle = arc;
+      g.save(); g.font = '800 22px "Barlow Semi Condensed", sans-serif'; g.shadowColor = "#c86eff"; g.shadowBlur = 10;
+      const sw = g.measureText("✦ OLOGRAFICA").width, arc2 = g.createLinearGradient(34, 0, 34 + sw, 0);
+      ["#ff7a9a", "#ffd25a", "#6fffb8", "#6ccaff", "#d08cff"].forEach((col, i, a) => arc2.addColorStop(i / (a.length - 1), col));
+      g.fillStyle = arc2; g.fillText("✦ OLOGRAFICA", 36, H - 74 - fs - 6); g.restore();
+      g.fillStyle = arc;
+    } else g.fillStyle = "#f4ece8";
     g.fillText(c.nome, 34, H - 74);
     g.fillStyle = col;
     g.font = '600 24px "Barlow Semi Condensed", "Arial Narrow", sans-serif';
@@ -111,8 +120,6 @@ const Scena3D = (() => {
       const bordo = g.createLinearGradient(0, 0, W, H);
       ["#ff5078", "#ffd25a", "#5affaa", "#50beff", "#c86eff", "#ff5078"].forEach((col, i, a) => bordo.addColorStop(i / (a.length - 1), col));
       g.lineWidth = 18; g.strokeStyle = bordo; g.strokeRect(9, 9, W - 18, H - 18);
-      g.font = '700 22px "Barlow Semi Condensed", sans-serif'; g.fillStyle = "#ffffff"; g.shadowColor = "#c86eff"; g.shadowBlur = 12;
-      g.fillText("✦ OLOGRAFICA", 36, 100); g.shadowBlur = 0;
     }
     const tf = tieni(nuovaTexture(cv));
     return (cacheFronte[k] = tf);

@@ -1138,8 +1138,13 @@ body.in-accesso { overflow: hidden; }
 .carta.olo::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; border-radius: inherit;
   background: linear-gradient(115deg, transparent 20%, rgba(255, 80, 120, .28) 30%, rgba(255, 210, 90, .26) 38%, rgba(90, 255, 170, .26) 46%, rgba(80, 190, 255, .28) 54%, rgba(200, 110, 255, .28) 62%, transparent 72%);
   background-size: 300% 300%; mix-blend-mode: color-dodge; animation: olo-scorre 4.5s ease-in-out infinite; }
-.carta.olo::before { content: "✦"; position: absolute; z-index: 4; bottom: 46px; right: 8px; color: #fff; font-size: .9rem; text-shadow: 0 0 6px #c86eff, 0 0 12px #50beff; pointer-events: none; }
-.carta.olo.mini::before, .carta.olo.piccola::before { bottom: auto; top: 4px; right: 5px; font-size: .7rem; }
+.carta.olo.mini::before { content: "✦"; position: absolute; z-index: 4; top: 3px; right: 4px; color: #fff; font-size: .6rem; text-shadow: 0 0 6px #c86eff, 0 0 12px #50beff; pointer-events: none; }
+.olo-scritta, .carta.olo .carta-nome { background: linear-gradient(90deg, #ff7a9a, #ffd25a, #6fffb8, #6ccaff, #d08cff, #ff7a9a); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: olo-testo 4s linear infinite; }
+.olo-scritta { font-weight: 800; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 2px; filter: drop-shadow(0 0 4px rgba(200, 110, 255, .55)); }
+.carta.olo .carta-nome { filter: drop-shadow(0 1px 0 rgba(0, 0, 0, .6)) drop-shadow(0 0 6px rgba(108, 202, 255, .35)); }
+.carta.piccola .olo-scritta { font-size: .52rem; letter-spacing: .1em; margin-bottom: 1px; }
+@keyframes olo-testo { to { background-position: 200% 0; } }
+@media (prefers-reduced-motion: reduce) { .olo-scritta, .carta.olo .carta-nome { animation: none; } }
 @keyframes olo-scorre { 0% { background-position: 100% 100%; } 50% { background-position: 0% 0%; } 100% { background-position: 100% 100%; } }
 @media (prefers-reduced-motion: reduce) { .carta.olo::after { animation: none; background-position: 50% 50%; } }
 .etichetta.olo-tag { background: linear-gradient(90deg, #ff5078, #ffd25a, #5affaa, #50beff, #c86eff); color: #1a0f16; text-shadow: none; box-shadow: 0 0 14px rgba(200, 110, 255, .7); }
@@ -1280,14 +1285,14 @@ body.in-accesso { overflow: hidden; }
 <script src="carte.e6d9b44b.js"></script>
 <script src="motore.fbe70bdf.js"></script>
 <script src="effetti.a35ec068.js"></script>
-<script src="scena3d.d7893e5f.js"></script>
+<script src="scena3d.3fa28f56.js"></script>
 <script src="mappe.44fde78a.js"></script>
 <script src="storia.495ac110.js"></script>
 <script src="tutorial.5ff47857.js"></script>
 <script src="missioni.eb521373.js"></script>
 <script src="sociale.08500d43.js"></script>
 <script src="collezione.9edea286.js"></script>
-<script src="app.a5a68c27.js"></script>
+<script src="app.3532b930.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
