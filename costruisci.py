@@ -33,7 +33,7 @@ open(os.path.join(OUT, ".nojekyll"), "w").close()
 
 # Il server deve sapere la rarità di ogni carta (per gli scambi): la copia da carte.js dentro schema.sql
 carte_js = open(os.path.join(SRC, "carte.js"), encoding="utf-8").read()
-coppie = re.findall(r'\{ id: "([a-z0-9_-]+)",[^}]*?rarita: "(comune|rara|epica|leggendaria)"', carte_js)
+coppie = re.findall(r'\{ id: "([a-z0-9_-]+)",[^}]*?rarita: "(comune|rara|epica|leggendaria|ultra)"', carte_js)
 assert len(coppie) >= 60, len(coppie)
 blocco = ("-- INIZIO RARITA (scritto da costruisci.py a partire da sorgente/carte.js: non modificarlo a mano)\n"
   "create or replace function public.rarita_base(carta text) returns text language sql immutable as $$\n  select case carta\n"

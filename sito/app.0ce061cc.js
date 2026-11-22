@@ -26,13 +26,15 @@ const TIPI_BUSTINA = {
     desc: "5 carte tutte diverse: abbastanza per la prima squadra." },
   normale:     { nome: "Bustina",              carte: 4, ultima: "peso4", desc: "4 carte, l'ultima almeno Rara." },
   epica:       { nome: "Bustina Epica",        carte: 4, ultima: { epica: 80, leggendaria: 20 }, desc: "4 carte, l'ultima almeno Epica." },
-  leggendaria: { nome: "Bustina Leggendaria",  carte: 5, ultima: { leggendaria: 100 }, desc: "5 carte, l'ultima è Leggendaria." },
+  leggendaria: { nome: "Bustina Leggendaria",  carte: 5, ultima: { leggendaria: 95, ultra: 5 }, desc: "5 carte, l'ultima è Leggendaria (1 su 20 è Ultra)." },
+  ultra:       { nome: "Bustina Ultra",        carte: 5, ultima: { ultra: 100 }, desc: "5 carte, l'ultima è una carta Ultra: la rarità più alta del gioco." },
 };
 // Bustine del negozio: classiche, mega, una per ogni serie e una per ogni stile (prezzi in monete)
 Object.assign(TIPI_BUSTINA.benvenuto, { colore: "#ff6b7d" });
 Object.assign(TIPI_BUSTINA.normale, { prezzo: PREZZO_BUSTINA, gruppo: "classiche", colore: "#ff2e46" });
 Object.assign(TIPI_BUSTINA.epica, { prezzo: 300, gruppo: "classiche", colore: "#b866ff" });
 Object.assign(TIPI_BUSTINA.leggendaria, { prezzo: 900, gruppo: "classiche", colore: "#f2c14e" });
+Object.assign(TIPI_BUSTINA.ultra, { prezzo: 3000, gruppo: "classiche", colore: "#ffe9a8" });
 TIPI_BUSTINA.mega = { nome: "Mega bustina", carte: 8, ultima: { epica: 85, leggendaria: 15 }, desc: "8 carte, l'ultima almeno Epica.", prezzo: 450, gruppo: "classiche", colore: "#3fd8ff", simbolo: "✚" };
 for (const id of Object.keys(SERIE)) TIPI_BUSTINA[`serie-${id}`] = { serie: id, carte: 4, ultima: "peso4", prezzo: 150, gruppo: "serie",
   get nome() { return `Bustina ${SERIE[id].nome}`; }, get desc() { return `4 carte solo della serie ${SERIE[id].nome}, l'ultima almeno Rara.`; },
@@ -40,13 +42,13 @@ for (const id of Object.keys(SERIE)) TIPI_BUSTINA[`serie-${id}`] = { serie: id, 
 const COLORI_STILE = { FOR: "#ff7a45", VEL: "#3fd8ff", DIF: "#7ddc6a" };
 for (const [id, st] of Object.entries(STILI)) TIPI_BUSTINA[`stile-${id}`] = { stile: id, nome: `Bustina ${st.nome}`, carte: 4, ultima: "peso4", prezzo: 150, gruppo: "stile",
   colore: COLORI_STILE[id], simbolo: id, desc: `4 carte di stile ${st.nome}, l'ultima almeno Rara.` };
-const ORDINE_BUSTINE = ["benvenuto", "leggendaria", "epica", "mega", "normale", ...Object.keys(TIPI_BUSTINA).filter(t => /^(serie|stile)-/.test(t))];
+const ORDINE_BUSTINE = ["benvenuto", "ultra", "leggendaria", "epica", "mega", "normale", ...Object.keys(TIPI_BUSTINA).filter(t => /^(serie|stile)-/.test(t))];
 const SCONTO_OFFERTA = .3;
 
 // Pass battaglia: 100 livelli. Ogni 10 livelli scegli tu tra due premi.
 // Finito il pass, ogni 500 XP in più si apre uno scrigno a sorpresa (all'infinito).
 const PASS = { stagione: 1, nome: "Notte in città", livelli: 100, xpLivello: 200, xpBonus: 500 };
-const NOMI_BUSTINE = { normale: ["Bustina", "Bustine"], epica: ["Bustina Epica", "Bustine Epiche"], leggendaria: ["Bustina Leggendaria", "Bustine Leggendarie"] };
+const NOMI_BUSTINE = { normale: ["Bustina", "Bustine"], epica: ["Bustina Epica", "Bustine Epiche"], leggendaria: ["Bustina Leggendaria", "Bustine Leggendarie"], ultra: ["Bustina Ultra", "Bustine Ultra"] };
 // Premi a scelta: [opzione A, opzione B]. pot = potenziatori da dare a una carta che scegli tu.
 const SCELTE_PASS = {
   10: [{ bustine: { epica: 1 } }, { monete: 400 }],
@@ -1162,7 +1164,7 @@ function iconaPremio(p) {
   if (p.pot) return `<span class="ico-pot"><b>+${p.pot}</b></span>`;
   if (p.monete && !p.bustine) return `<span class="ico-monete"><i></i><i></i><i></i></span>`;
   const tipi = Object.keys(p.bustine || {}), tot = tipi.reduce((a, t) => a + p.bustine[t], 0);
-  const migliore = ["leggendaria", "epica", "normale"].find(t => tipi.includes(t)) || "normale";
+  const migliore = ["ultra", "leggendaria", "epica", "normale"].find(t => tipi.includes(t)) || "normale";
   return `<span class="ico-bustina b-${migliore}">${tot > 1 ? `<em>×${tot}</em>` : ""}</span>`;
 }
 function vistaPass() {
@@ -1905,7 +1907,7 @@ function nuovaBozza() { return Object.fromEntries(CARTE.map(c => [c.id, { serie:
 function regolaBozza() {
   const gruppi = {};
   for (const c of CARTE) { const b = bozza[c.id]; const p = b.persona.trim(); if (p) (gruppi[p] = gruppi[p] || []).push(c); }
-  const problemi = Object.keys(gruppi).filter(p => Object.keys(SERIE).some(se => gruppi[p].filter(c => bozza[c.id].serie === se && bozza[c.id].rarita === "leggendaria").length > 1));
+  const problemi = Object.keys(gruppi).filter(p => Object.keys(SERIE).some(se => gruppi[p].filter(c => bozza[c.id].serie === se && RARE_TOP(bozza[c.id].rarita)).length > 1));
   return { gruppi, problemi, senza: CARTE.filter(c => !bozza[c.id].persona.trim()) };
 }
 function modificheBozza() { return CARTE.filter(c => { const b = bozza[c.id]; return b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || b.persona.trim() !== c.persona; }).length; }
@@ -1940,7 +1942,7 @@ function htmlEditorCarte() {
     </div>
     <datalist id="ed-persone">${persone.map(p => `<option value="${esc(p)}"></option>`).join("")}</datalist>
     <div class="ed-righe">
-      ${elenco.map(c => { const b = bozza[c.id], errata = r.problemi.includes(b.persona.trim()) && b.rarita === "leggendaria";
+      ${elenco.map(c => { const b = bozza[c.id], errata = r.problemi.includes(b.persona.trim()) && RARE_TOP(b.rarita);
         const cambiata = b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || b.persona.trim() !== c.persona;
         return `<div class="ed-riga ${errata ? "errata" : ""} ${cambiata ? "cambiata" : ""}" data-ed-riga="${c.id}">
           <img src="${imgCarta(c.id)}" alt="">
@@ -1960,7 +1962,7 @@ function aggiornaEditor(completo) {
   const r = regolaBozza();
   $$("[data-ed-riga]", box).forEach(el => {
     const c = PER_ID[el.dataset.edRiga], b = bozza[c.id];
-    el.classList.toggle("errata", r.problemi.includes(b.persona.trim()) && b.rarita === "leggendaria");
+    el.classList.toggle("errata", r.problemi.includes(b.persona.trim()) && RARE_TOP(b.rarita));
     el.classList.toggle("cambiata", b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || b.persona.trim() !== c.persona);
     const sr = el.querySelector('[data-campo="rarita"]'); sr.className = "sel-r-" + b.rarita;
   });

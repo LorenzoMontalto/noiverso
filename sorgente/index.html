@@ -33,6 +33,7 @@
   --r-rara: #4c95ff;
   --r-epica: #b866ff;
   --r-leggendaria: var(--oro);
+  --r-ultra: #ffe9a8;
   --s-FOR: #ff7a45;
   --s-VEL: #3fd8ff;
   --s-DIF: #7ddc6a;
@@ -1589,6 +1590,25 @@ body.in-accesso { overflow: hidden; }
 .confronto-tab td.meglio { color: #6fe3a0; } .confronto-tab td.meglio::after { content: " ▲"; font-size: .7rem; }
 .confronto-tab td.peggio { color: var(--spento); }
 .confronto-tab td.piccolo { font-weight: 400; font-size: .76rem; color: var(--spento); text-align: left; }
+
+/* ---------- rarità Ultra: cornice nera e oro con riflesso che gira ---------- */
+.carta.r-ultra { --rc: #c9a13a; border: 3px solid transparent; background: linear-gradient(var(--asfalto), var(--asfalto)) padding-box, conic-gradient(from var(--giro, 0deg), #fff3c4, #c9a13a, #1a1408, #f2c14e, #fff3c4) border-box;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, .6), 0 0 22px rgba(255, 233, 168, .55), 0 0 2px #000 inset; animation: giro-ultra 4s linear infinite; }
+@property --giro { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes giro-ultra { to { --giro: 360deg; } }
+.carta.r-ultra::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 25%, rgba(255, 240, 200, .38) 42%, rgba(0, 0, 0, .1) 50%, rgba(255, 240, 200, .3) 58%, transparent 75%);
+  background-size: 250% 100%; animation: luccica 3s infinite linear; pointer-events: none; mix-blend-mode: screen; z-index: 2; }
+.carta.r-ultra::before { content: "ULTRA"; position: absolute; z-index: 3; left: 50%; top: 0; transform: translateX(-50%); padding: 1px 10px 2px; border-radius: 0 0 8px 8px;
+  background: #0b0a08; color: #ffe9a8; font-family: var(--display); font-size: .62rem; letter-spacing: .12em; border: 1px solid #c9a13a; border-top: 0; }
+.carta.r-ultra.mini::before { font-size: .45rem; padding: 0 5px 1px; }
+.r-testo.r-ultra, .tut-bolla .r-ultra, .r-ultra.r-testo { color: var(--r-ultra); text-shadow: 0 0 8px rgba(255, 233, 168, .6); }
+.pallino.r-ultra { background: conic-gradient(#fff3c4, #c9a13a, #1a1408, #fff3c4); }
+.bonus-rarita.r-ultra { border-color: var(--r-ultra); } .bonus-rarita.r-ultra b { color: var(--r-ultra); }
+.ed-riga select.sel-r-ultra { border-color: var(--r-ultra); color: var(--r-ultra); font-weight: 800; }
+.pill-carta.r-ultra { --rc: var(--r-ultra); background: rgba(255, 233, 168, .18); font-weight: 800; }
+.b-ultra, .ico-bustina.b-ultra { --c: var(--r-ultra); }
+.gira.r-ultra .faccia.retro { box-shadow: 0 0 24px rgba(255, 233, 168, .7); }
+@media (prefers-reduced-motion: reduce) { .carta.r-ultra, .carta.r-ultra::after { animation: none; } }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>

@@ -6,8 +6,8 @@
 
 const Scena3D = (() => {
   const T = window.THREE;
-  const COL_RARITA = { comune: 0x9aa3ad, rara: 0x4c95ff, epica: 0xb866ff, leggendaria: 0xf2c14e };
-  const HEX_RARITA = { comune: "#9aa3ad", rara: "#4c95ff", epica: "#b866ff", leggendaria: "#f2c14e" };
+  const COL_RARITA = { comune: 0x9aa3ad, rara: 0x4c95ff, epica: 0xb866ff, leggendaria: 0xf2c14e, ultra: 0xffe9a8 };
+  const HEX_RARITA = { comune: "#9aa3ad", rara: "#4c95ff", epica: "#b866ff", leggendaria: "#f2c14e", ultra: "#ffe9a8" };
   const COL_STILE = { FOR: 0xff7a45, VEL: 0x3fd8ff, DIF: 0x7ddc6a };
   const ridotto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -77,6 +77,12 @@ const Scena3D = (() => {
     // cornice
     g.lineWidth = 18; g.strokeStyle = col; g.strokeRect(9, 9, W - 18, H - 18);
     if (c.rarita === "leggendaria") { g.lineWidth = 3; g.strokeStyle = "#fff3c4"; g.strokeRect(24, 24, W - 48, H - 48); }
+    if (c.rarita === "ultra") {   // cornice nera e oro con la scritta ULTRA
+      g.lineWidth = 18; g.strokeStyle = "#0b0a08"; g.strokeRect(9, 9, W - 18, H - 18);
+      const go = g.createLinearGradient(0, 0, W, H); go.addColorStop(0, "#fff3c4"); go.addColorStop(.5, "#c9a13a"); go.addColorStop(1, "#fff3c4");
+      g.lineWidth = 6; g.strokeStyle = go; g.strokeRect(20, 20, W - 40, H - 40); g.lineWidth = 2; g.strokeRect(30, 30, W - 60, H - 60);
+      g.fillStyle = "#0b0a08"; g.fillRect(W / 2 - 90, 4, 180, 40); g.fillStyle = go; g.font = '30px "Bungee", Impact, sans-serif'; g.textAlign = "center"; g.fillText("ULTRA", W / 2, 36); g.textAlign = "left";
+    }
     // nome e ruolo
     g.font = '40px "Bungee", Impact, sans-serif';
     let fs = 40; while (g.measureText(c.nome).width > W - 70 && fs > 22) { fs -= 2; g.font = `${fs}px "Bungee", Impact, sans-serif`; }
@@ -150,7 +156,7 @@ const Scena3D = (() => {
     cv.width = W; cv.height = H;
     const g = cv.getContext("2d");
     const T = typeof TIPI_BUSTINA !== "undefined" ? TIPI_BUSTINA[tipo] : null;
-    const colori = { benvenuto: ["#ff2e46", "#3a0a14"], normale: ["#ff2e46", "#2a0c14"], epica: ["#b866ff", "#1e0c2e"], leggendaria: ["#f2c14e", "#2e2208"] }[tipo] || (T && T.colore ? [T.colore, "#1c1018"] : ["#ff2e46", "#2a0c14"]);
+    const colori = { benvenuto: ["#ff2e46", "#3a0a14"], normale: ["#ff2e46", "#2a0c14"], epica: ["#b866ff", "#1e0c2e"], leggendaria: ["#f2c14e", "#2e2208"], ultra: ["#ffe9a8", "#0b0a08"] }[tipo] || (T && T.colore ? [T.colore, "#1c1018"] : ["#ff2e46", "#2a0c14"]);
     const gr = g.createLinearGradient(0, 0, W, H);
     gr.addColorStop(0, colori[1]); gr.addColorStop(.5, "#120c10"); gr.addColorStop(1, colori[1]);
     g.fillStyle = gr; g.fillRect(0, 0, W, H);
@@ -164,7 +170,7 @@ const Scena3D = (() => {
     g.shadowColor = colori[0]; g.shadowBlur = 36; g.fillStyle = colori[0]; g.textAlign = "center";
     g.font = '86px "Bungee", Impact, sans-serif'; g.fillText("NOI", W / 2, H / 2 - 40); g.fillText("VERSO", W / 2, H / 2 + 60);
     g.shadowBlur = 0; g.fillStyle = "#f4ece8"; g.font = '600 34px "Barlow Semi Condensed", sans-serif';
-    const nomi = { benvenuto: "BENVENUTO · 5 CARTE", normale: "4 CARTE", epica: "EPICA · 4 CARTE", leggendaria: "LEGGENDARIA · 5 CARTE" };
+    const nomi = { benvenuto: "BENVENUTO · 5 CARTE", normale: "4 CARTE", epica: "EPICA · 4 CARTE", leggendaria: "LEGGENDARIA · 5 CARTE", ultra: "ULTRA · 5 CARTE" };
     g.fillText(nomi[tipo] || (T ? `${T.nome.replace(/^Bustina\s*/, "").toUpperCase() || "BUSTINA"} · ${T.carte} CARTE` : "4 CARTE"), W / 2, H - 70);
     return nuovaTexture(cv);
   }
@@ -1533,7 +1539,7 @@ const Scena3D = (() => {
       this.bustina.add(corpo, striscia);
       this.striscia = striscia; this.corpo = corpo;
       s.add(this.bustina);
-      this.alone = aloneSprite(tipo === "leggendaria" ? 0xf2c14e : tipo === "epica" ? 0xb866ff : 0xff2e46, 4.5);
+      this.alone = aloneSprite(tipo === "ultra" ? 0xffe9a8 : tipo === "leggendaria" ? 0xf2c14e : tipo === "epica" ? 0xb866ff : 0xff2e46, 4.5);
       this.alone.position.z = -.5; this.alone.material.opacity = .35;
       s.add(this.alone);
       this.carte = [];
@@ -1578,7 +1584,7 @@ const Scena3D = (() => {
         const m = creaCarta(await texFronte(c, e.liv, e.lode, e.olo), texRetro(), c.rarita, 1.1, 1.54);
         m.rotation.y = Math.PI; m.visible = false;
         m.userData = { ...m.userData, i, rarita: c.rarita, girata: false, base: this.posizione(i) };
-        const al = aloneSprite(COL_RARITA[c.rarita], c.rarita === "leggendaria" ? 3.2 : c.rarita === "epica" ? 2.6 : 2.0);
+        const al = aloneSprite(COL_RARITA[c.rarita], c.rarita === "ultra" ? 3.8 : c.rarita === "leggendaria" ? 3.2 : c.rarita === "epica" ? 2.6 : 2.0);
         al.visible = false; m.userData.alone = al;
         this.scena.add(al, m);
         return m;
@@ -1640,23 +1646,34 @@ const Scena3D = (() => {
       c.userData.occupata = true;
       const r = c.userData.rarita, col = COL_RARITA[r];
       const p = c.userData.base.clone();
-      if (r === "leggendaria" || r === "epica") {
+      const top = r === "leggendaria" || r === "ultra";
+      if (r === "ultra") {
+        // Ultra: tutto si spegne, la carta trema a lungo e poi esplode in nero e oro
+        this.luceRara.color.setHex(0x000000);
+        this.schermo && this.fx && this.schermo("buio", 1500);
+        await this.anima(1300, (t, raw) => { c.rotation.z = Math.sin(raw * 70) * .07 * raw; c.position.z = p.z + raw * .6; const k = 1 + raw * .08; c.scale.set(k, k, k); }, easing.lin);
+      } else if (r === "leggendaria" || r === "epica") {
         // suspense: trema prima di girarsi
         await this.anima(r === "leggendaria" ? 700 : 400, (t, raw) => { c.rotation.z = Math.sin(raw * 50) * .05 * raw; c.position.z = p.z + raw * .3; }, easing.lin);
       }
       this.luceRara.color.setHex(col);
       this.luceRara.position.set(p.x, p.y, 2);
-      this.anima(600, t => { this.luceRara.intensity = Math.sin(t * Math.PI) * (r === "leggendaria" ? 6 : 3); });
+      this.anima(r === "ultra" ? 1200 : 600, t => { this.luceRara.intensity = Math.sin(t * Math.PI) * (r === "ultra" ? 10 : r === "leggendaria" ? 6 : 3); });
       await this.anima(560, t => {
         c.rotation.y = Math.PI * (1 - t);
         c.rotation.z = 0;
-        c.position.z = p.z + Math.sin(t * Math.PI) * .9 + (r === "leggendaria" || r === "epica" ? .3 * (1 - t) : 0);
+        c.position.z = p.z + Math.sin(t * Math.PI) * .9 + (top || r === "epica" ? .3 * (1 - t) : 0);
         const k = 1 + Math.sin(t * Math.PI) * .12; c.scale.set(k, k, k);
       }, easing.back);
       c.rotation.y = 0; c.position.z = p.z; c.scale.set(1, 1, 1);
       c.userData.occupata = false;
-      const n = { comune: 20, rara: 40, epica: 70, leggendaria: 120 }[r];
-      this.esplosione(p.clone().add(new T.Vector3(0, 0, .2)), col, n, { velocita: r === "leggendaria" ? 4 : 2.6, su: 1.2 });
+      const n = { comune: 20, rara: 40, epica: 70, leggendaria: 120, ultra: 200 }[r];
+      this.esplosione(p.clone().add(new T.Vector3(0, 0, .2)), col, n, { velocita: top ? 4 : 2.6, su: 1.2 });
+      if (r === "ultra") {
+        this.scossa = .45;
+        for (let k = 1; k < 7; k++) setTimeout(() => this.esplosione(p.clone().add(new T.Vector3(0, .3, .2)), [0xffe9a8, 0x111111, 0xf2c14e, 0xffffff, 0xc9a13a, 0x000000][k - 1], 60, { velocita: 4.2, su: 1.8, durata: 1500 }), k * 170);
+        this.scritta("ULTRA!", "#ffe9a8", p.clone().add(new T.Vector3(0, 1.35, .3)), .5, 2600);
+      }
       if (r === "leggendaria") {
         this.scossa = .25;
         for (let k = 1; k < 4; k++) setTimeout(() => this.esplosione(p.clone().add(new T.Vector3(0, .3, .2)), [0xf2c14e, 0xffffff, 0xff2e46][k - 1], 50, { velocita: 3.5, su: 1.6, durata: 1300 }), k * 200);

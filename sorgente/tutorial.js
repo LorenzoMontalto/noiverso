@@ -25,7 +25,7 @@ const Tutorial = (() => {
       { vista: "bustine", bersaglio: '[data-apri="benvenuto"]', titolo: "Le bustine",
         aspetta: () => !S.inventario.benvenuto && $("#apertura").hidden,
         compito: "Hai una <b>bustina di benvenuto</b>: 5 carte tutte diverse. Tocca <b>Apri</b>!",
-        testo: `Qui apri le bustine che hai. Ne ricevi una gratis ogni giorno; le altre le compri nel negozio o arrivano dal pass. Le carte sono <span class="r-comune">Comuni</span>, <span class="r-rara">Rare</span>, <span class="r-epica">Epiche</span> o <span class="r-leggendaria">Leggendarie</span>.`,
+        testo: `Qui apri le bustine che hai. Ne ricevi una gratis ogni giorno; le altre le compri nel negozio o arrivano dal pass. Le carte sono <span class="r-comune">Comuni</span>, <span class="r-rara">Rare</span>, <span class="r-epica">Epiche</span>, <span class="r-leggendaria">Leggendarie</span> e, rarissime, <span class="r-ultra">Ultra</span>.`,
         bersaglioInfo: ".scaffale" },
       { vista: "negozio", bersaglio: '.nav [data-vista="negozio"]', titolo: "Il negozio", testo: "Qui compri le bustine con le monete: classiche, di una sola serie o di un solo stile, più un'offerta scontata ogni giorno. In fondo c'è il riquadro per i <b>codici promozionali</b>… alcuni nascondono delle sorprese." },
       { vista: "album", bersaglio: ".serie-copertine", titolo: "L'album", testo: "Le carte sono divise in serie. Tocca una serie per vederne le carte: quelle scure non le hai ancora trovate." },
