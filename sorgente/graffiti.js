@@ -229,6 +229,19 @@ const Graffiti = (() => {
     const x = info(g.id);
     return `<span class="graffito-chip ${lato ? "nemico" : ""}" style="--c:${x.colore}" title="${esc(lato ? "Nemico: " + descriviNemico(g.id, g.liv) : descrivi(g.id, g.liv))}">${esc(x.simbolo)} ${esc(x.nome)} <small>Lv ${g.liv}</small></span>`;
   }
+  // in battaglia: chi usa quale graffito e cosa fa, scritto in piccolo (per chi non se lo ricorda)
+  function htmlBattaglia(Bt) {
+    const righe = [];
+    if (Bt.graffitiAnnullati) {
+      const [x, y] = Bt.graffitiAnnullati;
+      righe.push(`<div class="graffito-riga-b annullati">${htmlChip(x, 0)}${htmlChip(y, 1)}<small>Si annullano: nessuno dei due ha effetto.</small></div>`);
+    } else {
+      const [a, b] = [Bt.lati[0].graffito, Bt.lati[1].graffito];
+      if (a) righe.push(`<div class="graffito-riga-b">${htmlChip(a, 0)}<small>${esc(descrivi(a.id, a.liv))}</small></div>`);
+      if (b) righe.push(`<div class="graffito-riga-b">${htmlChip(b, 1)}<small>Nemico: ${esc(descriviNemico(b.id, b.liv))}</small></div>`);
+    }
+    return righe.length ? `<div class="graffiti-riga">${righe.join("")}</div>` : "";
+  }
   function annunciaInBattaglia(Bt) {
     const [a, b] = [Bt.lati[0].graffito, Bt.lati[1].graffito];
     if (Bt.graffitiAnnullati) {
@@ -464,5 +477,5 @@ const Graffiti = (() => {
     anteprimaAdmin(campo);
   }
 
-  return { pesca, info, liv, copie, posseduti, scelto, descrivi, url, tela, mio, nemico, aCaso, htmlChip, annunciaInBattaglia, htmlPannello, apriCollezione, scegli, compra, apriBombolette, forseInBustina, regaloIniziale, htmlNegozio, htmlSquadra, compraUno, carica, htmlAdmin, anteprimaAdmin, pubblica, azioneAdmin, immagineScelta, apriEmoji, dai, ORDINE };
+  return { pesca, info, liv, copie, posseduti, scelto, descrivi, url, tela, mio, nemico, aCaso, htmlChip, htmlBattaglia, annunciaInBattaglia, htmlPannello, apriCollezione, scegli, compra, apriBombolette, forseInBustina, regaloIniziale, htmlNegozio, htmlSquadra, compraUno, carica, htmlAdmin, anteprimaAdmin, pubblica, azioneAdmin, immagineScelta, apriEmoji, dai, ORDINE };
 })();

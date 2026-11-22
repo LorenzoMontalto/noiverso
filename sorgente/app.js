@@ -645,6 +645,7 @@ function vistaNegozio() {
     ${gruppo("serie", "Per serie", "Solo carte di una serie: per completare l'album.")}
     ${gruppo("stile", "Per stile", "Solo carte di uno stile: per costruire la squadra.")}
     ${Graffiti.htmlNegozio()}
+    ${Zaino.htmlNegozio()}
     <div class="codice-box">
       <h3>Codice promozionale</h3>
       <p class="nota">Hai un codice? Scrivilo qui. Alcuni nascondono delle sorprese…</p>
@@ -979,7 +980,7 @@ function vistaSfida() {
     <div class="titolo-riga"><h2>Scegli l'avversario</h2>
       <div class="filtri">${pronte.map(x => `<button class="chip" data-fx="gelatina" data-squadra-sfida="${x.i}" aria-pressed="${x.i === S.attiva}">${esc(x.s.nome)}</button>`).join("")}</div>
     </div>
-    ${Graffiti.htmlPannello()}
+    <div class="prima-partita">${Graffiti.htmlPannello()}${Zaino.htmlPannello()}</div>
     ${socialeAttivo() ? `<div class="sfida-sociale">${Boss.htmlGrande()}<div class="amici-invito"><b>Sfida un amico</b><span class="nota">Combatti contro la squadra vera di un amico, guidata dal computer. Se vinci gli rubi un punto in classifica.</span><button class="btn primario" data-fx="spinta" data-azione="vai-amici">Scegli chi sfidare</button></div></div>
     <div class="titolo-riga piccola"><h3>Contro il computer</h3></div>` : ""}
     <div class="modo-riga">${segmento("modalita", "Modalità", [["classica", "Classica 5 contro 5"], ["rapida", "Rapida 3 contro 3"]])}</div>
@@ -2042,6 +2043,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   B = new Battaglia(mia, nemici, "Tu", L.nome);
   B.impostaGraffiti(Graffiti.mio(), Graffiti.nemico(L));
+  B.zaino = Zaino.perBattaglia();
   if (L.bossGruppo) Boss.prepara(B);
   document.body.classList.add("in-battaglia");
   $("#app").classList.add("in-battaglia");
@@ -2198,8 +2200,7 @@ function htmlAzioni() {
   const L = B.lati[0], a = B.attivo(0);
   const prossimo = 2 + (a.c.ruolo === "stratega" ? 1 : 0);
   const cons = animazione || !imp().consigli ? null : consiglio();
-  const gr = B.lati[0].graffito || B.lati[1].graffito ? `<div class="graffiti-riga">${Graffiti.htmlChip(B.lati[0].graffito, 0)}${Graffiti.htmlChip(B.lati[1].graffito, 1)}</div>` : "";
-  return `${gr}
+  return `${Graffiti.htmlBattaglia(B)}
   <div class="mana-riga">
     <span class="mana-etichetta">Energia</span>
     <div class="cristalli" id="cristalli">${htmlCristalli(L.energia, prossimo)}</div>
@@ -2207,6 +2208,7 @@ function htmlAzioni() {
     <span class="mana-prossimo" title="Energia che arriva a fine turno">+${prossimo}/turno</span>
   </div>
   ${animazione ? `<p class="consiglio"><span class="attendi">Turno in corso…</span></p>` : cons ? `<p class="consiglio"><b class="consiglio-tit">Consiglio</b> ${cons.testo}</p>` : ""}
+  ${Zaino.htmlBattaglia()}
   <div class="mosse">
     ${a.c.mosse.map((mo, i) => {
       const puo = B.puoUsare(0, i), s = stimaMossa(i), manca = mo.costo - L.energia;
@@ -2394,7 +2396,7 @@ document.addEventListener("change", e => { if (e.target.dataset && e.target.data
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-compra-oggetto],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2438,6 +2440,10 @@ document.addEventListener("click", e => {
   if (t.dataset.togli !== undefined) { squadraAttiva().carte.splice(+t.dataset.togli, 1); salva(); setTimeout(disegna, ridotto ? 0 : 200); return; }
   if (t.dataset.apri) { usaBustina(t.dataset.apri, false); return; }
   if (t.dataset.compra) { compraBustina(t.dataset.compra, t); return; }
+  if (t.dataset.compraOggetto) { const [id, n] = t.dataset.compraOggetto.split(":"); Zaino.compra(id, +n || 1, t); return; }
+  if (t.dataset.zainoPosto !== undefined) { Zaino.apriPosto(+t.dataset.zainoPosto); return; }
+  if (t.dataset.zainoMetti !== undefined) { Zaino.metti(t.dataset.zainoMetti); return; }
+  if (t.dataset.usaOggetto !== undefined) { Zaino.usa(+t.dataset.usaOggetto); return; }
   if (t.dataset.compraGraffito) { Graffiti.compraUno(t.dataset.compraGraffito, t); return; }
   if (t.dataset.emojiPer) { Graffiti.apriEmoji(t.dataset.emojiPer); return; }
   if (t.dataset.bomboletta) { Graffiti.compra(+t.dataset.bomboletta, t); return; }

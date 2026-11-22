@@ -1314,6 +1314,60 @@ body.in-accesso { overflow: hidden; }
   .graffiti-vetrina { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* ---------- Zaino ---------- */
+.oggetto-ico { --c: var(--neon); position: relative; display: inline-grid; place-items: center; width: 52px; aspect-ratio: 1; flex: none; border-radius: 16px; background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--c) 28%, #1a1218), #0d090c 75%); border: 2px solid var(--c); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 55%, transparent), inset 0 0 10px color-mix(in srgb, var(--c) 35%, transparent); animation: neon-oggetto 4s ease-in-out infinite; }
+.oggetto-ico i { font-style: normal; font-size: 1.7rem; line-height: 1; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--c) 70%, transparent)); font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+.oggetto-ico::after { content: ""; position: absolute; inset: 4px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); pointer-events: none; }
+.oggetto-ico.grande { width: 84px; border-radius: 22px; }
+.oggetto-ico.grande i { font-size: 2.8rem; }
+.oggetto-ico.piccola { width: 34px; border-radius: 10px; border-width: 1.5px; }
+.oggetto-ico.piccola i { font-size: 1.1rem; }
+.oggetto-ico.piccola::after { inset: 3px; border-radius: 7px; }
+.oggetto-ico.vuoto { --c: var(--linea); border-style: dashed; box-shadow: none; animation: none; background: none; }
+.oggetto-ico.vuoto i { color: var(--spento); font-size: 1.4rem; filter: none; }
+@keyframes neon-oggetto { 0%, 100% { filter: none; } 47% { filter: none; } 48% { filter: brightness(.6); } 49% { filter: none; } 51% { filter: brightness(.75); } 52% { filter: none; } }
+@media (prefers-reduced-motion: reduce) { .oggetto-ico { animation: none; } }
+.prima-partita { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.prima-partita .graffito-pannello { margin-bottom: 0; }
+.zaino-pannello { background: var(--asfalto); border: 1px solid var(--linea); border-radius: 16px; padding: 12px 16px; display: grid; gap: 10px; background-image: radial-gradient(120% 140% at 100% 0%, rgba(63, 216, 255, .1), transparent 60%); }
+.zaino-testa { display: grid; gap: 2px; }
+.zaino-testa .nota { margin: 0; font-size: .8rem; }
+.zaino-posti { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.zaino-posto { display: grid; justify-items: center; gap: 4px; text-align: center; background: var(--notte); border: 1px solid var(--linea); border-radius: 12px; padding: 10px 6px; color: var(--testo); font: inherit; cursor: pointer; transition: border-color .15s, transform .15s; }
+.zaino-posto:hover { border-color: var(--c, var(--oro)); transform: translateY(-2px); }
+.zaino-posto b { font-size: .78rem; line-height: 1.15; }
+.zaino-posto small { font-size: .7rem; color: var(--spento); }
+.zaino-posto.finito { opacity: .5; }
+.zaino-posto.finito small { color: var(--neon); }
+.zaino-modale { display: grid; gap: 12px; }
+.zaino-modale h2 { margin: 0; }
+.zaino-modale .nota { margin: 0; }
+.zaino-scelta { display: grid; gap: 8px; max-height: 55vh; overflow-y: auto; }
+.zaino-opzione { display: flex; gap: 12px; align-items: center; text-align: left; background: var(--asfalto); border: 2px solid var(--linea); border-radius: 14px; padding: 10px 12px; color: var(--testo); font: inherit; cursor: pointer; }
+.zaino-opzione:hover, .zaino-opzione.sel { border-color: var(--c); }
+.zaino-opzione small { color: var(--spento); font-size: .78rem; }
+.zaino-opzione .ne-hai-2 { color: var(--c); font-weight: 800; }
+.zaino-vetrina .prodotto { gap: 8px; }
+.zaino-riga { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 2px 0 8px; }
+.zaino-etichetta { font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--spento); margin-right: 2px; }
+.zaino-usa { display: inline-flex; align-items: center; gap: 7px; background: var(--asfalto); border: 1px solid color-mix(in srgb, var(--c) 55%, var(--linea)); border-radius: 12px; padding: 4px 10px 4px 4px; color: var(--testo); font: inherit; cursor: pointer; text-align: left; transition: transform .12s, box-shadow .12s; }
+.zaino-usa:not(:disabled):hover { transform: translateY(-1px); box-shadow: 0 0 12px color-mix(in srgb, var(--c) 40%, transparent); }
+.zaino-usa b { display: block; font-size: .76rem; line-height: 1.1; }
+.zaino-usa small { display: block; font-size: .68rem; color: var(--spento); }
+.zaino-usa:disabled { opacity: .55; cursor: default; }
+.zaino-usa.usato { opacity: .3; }
+.zaino-nota { font-size: .7rem; color: var(--spento); }
+.graffiti-riga { display: grid; gap: 4px; margin: 0 0 8px; }
+.graffito-riga-b { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.graffito-riga-b .graffito-chip { flex: none; }
+.graffito-riga-b > small { font-size: .72rem; color: var(--spento); line-height: 1.3; flex: 1; min-width: 150px; }
+.graffito-riga-b.annullati > small { color: var(--oro); }
+@media (max-width: 560px) {
+  .prima-partita { grid-template-columns: 1fr; }
+  .zaino-usa { padding-right: 8px; }
+  .zaino-usa b { font-size: .7rem; }
+}
+
 /* ---------- Tutorial ---------- */
 #tutorial { position: fixed; inset: 0; z-index: 29; pointer-events: none; }
 #tutorial .tut-velo { position: absolute; inset: 0; pointer-events: auto; }
@@ -1391,6 +1445,7 @@ body.in-accesso { overflow: hidden; }
 <script src="sociale.js"></script>
 <script src="collezione.js"></script>
 <script src="graffiti.js"></script>
+<script src="zaino.js"></script>
 <script src="app.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria

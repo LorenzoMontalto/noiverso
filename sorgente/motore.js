@@ -45,6 +45,18 @@ function valoreGraffito(id, liv = 1) {
   return { fiamma: 3 + 1.5 * l, muro: 3.5 + 1.25 * l, fulmine: l >= 2 ? 2 : 1, blackout: l >= 2 ? 2 : 1, cuore: 1.5 + .4 * l, spina: 2.5 + 1.25 * l, fortuna: 8 + 3 * l, specchio: l >= 3 ? 2 : 1 }[id] || 0;
 }
 
+// ---------------- Zaino ----------------
+// Oggetti che si usano durante il proprio turno (uno per turno, non consumano la mossa). Nomi e grafiche in zaino.js.
+const OGGETTI_EFFETTI = {
+  kebab:    { tipo: "cura", val: 35 },
+  lattina:  { tipo: "energia", val: 3 },
+  occhiali: { tipo: "forza", val: 30, turni: 2 },
+  casco:    { tipo: "scudo", val: 60 },
+  acqua:    { tipo: "pulisci", val: 10 },
+  fumogeno: { tipo: "nebbia" },
+  taxi:     { tipo: "rianima", val: 30 },
+};
+
 class Battaglia {
   // squadre: array di {id, liv}
   constructor(sqG, sqC, nomeG = "Tu", nomeC = "Avversario", rng = Math.random) {
@@ -69,6 +81,39 @@ class Battaglia {
       if (this.gv(l, "blackout")) this.lati[1 - l].energia = Math.max(0, this.lati[1 - l].energia - this.gv(l, "blackout"));
     }
   }
+  // Usa un oggetto dello zaino: { ok, motivo, ev }. Non fa passare il turno.
+  usaOggetto(l, id, nome) {
+    const e = OGGETTI_EFFETTI[id], L = this.lati[l], a = this.attivo(l);
+    const no = motivo => ({ ok: false, motivo, ev: [] });
+    if (!e || this.vincitore >= 0) return no("La battaglia è finita.");
+    if (a.pv <= 0) return no("Prima manda in campo un'altra carta.");
+    if ((this.oggettiTurno || [])[l] === this.turno) return no("Puoi usare un solo oggetto per turno.");
+    if (e.tipo === "cura" && a.pv >= a.pvMax) return no(`${a.c.nome} ha già tutti i PV.`);
+    if (e.tipo === "energia" && L.energia >= ENERGIA_MAX) return no("L'energia è già al massimo.");
+    if (e.tipo === "pulisci" && !a.stati.brucia && !a.buff.debole && !a.stordito && a.pv >= a.pvMax) return no(`${a.c.nome} sta già benissimo.`);
+    const ko = L.squadra.find(x => x.pv <= 0);
+    if (e.tipo === "rianima" && (!ko || this.rianimato && this.rianimato[l])) return no(!ko ? "Nessuna carta è KO." : "Puoi rimettere in piedi una carta sola a battaglia.");
+    this.ev = [];
+    this.oggettiTurno = this.oggettiTurno || []; this.oggettiTurno[l] = this.turno;
+    this._log(`${L.nome} apre lo zaino: ${nome || id}!`, { lato: l, oggetto: id, avviso: true });
+    if (e.tipo === "cura") this._cura(l, a, Math.round(a.pvMax * e.val / 100));
+    else if (e.tipo === "energia") { L.energia = Math.min(ENERGIA_MAX, L.energia + e.val); this._log(`+${e.val} energia.`, { lato: l, anim: "energia", su: l }); }
+    else if (e.tipo === "forza") { a.buff.att = { val: e.val, turni: e.turni }; this._log(`Attacco di ${a.c.nome} +${e.val}% per ${e.turni} turni.`, { lato: l, anim: "potenzia", su: l }); }
+    else if (e.tipo === "scudo") { a.scudo = Math.max(a.scudo, e.val); this._log(`${a.c.nome} è protetto: il prossimo colpo fa il ${e.val}% di danni in meno.`, { lato: l, anim: "scudo", su: l }); }
+    else if (e.tipo === "pulisci") {
+      delete a.stati.brucia; delete a.buff.debole; a.stordito = false;
+      this._log(`${a.c.nome} si rimette in sesto: niente più bruciature, debolezza o stordimento.`, { lato: l });
+      this._cura(l, a, Math.round(a.pvMax * e.val / 100));
+    }
+    else if (e.tipo === "nebbia") { a.nebbia = true; this._log(`Fumo dappertutto: il prossimo attacco contro ${a.c.nome} andrà a vuoto.`, { lato: l, anim: "nebbia", su: l }); }
+    else if (e.tipo === "rianima") {
+      ko.pv = Math.max(1, Math.round(ko.pvMax * e.val / 100)); ko.koAnnunciato = false; ko.stati = {}; ko.buff = {};
+      this.rianimato = this.rianimato || []; this.rianimato[l] = true;
+      this._log(`${ko.c.nome} torna in piedi con ${ko.pv} PV ed è di nuovo in panchina.`, { lato: l, cura: l, quanto: ko.pv });
+    }
+    return { ok: true, ev: this.ev };
+  }
+
   // valore del graffito "id" se il lato l lo sta usando, altrimenti 0
   gv(l, id) { const x = this.lati[l].graffito; return x && x.id === id ? valoreGraffito(id, x.liv) : 0; }
 
@@ -347,4 +392,4 @@ class Battaglia {
   }
 }
 
-if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE };
+if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE, OGGETTI_EFFETTI };
