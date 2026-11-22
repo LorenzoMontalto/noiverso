@@ -32,11 +32,11 @@ const ORDINE_RARITA = ["comune", "rara", "epica", "leggendaria"];
 // In più, potenziando, la statistica del tipo cresce più delle altre (vedi statistiche()).
 // Numeri scelti con 4000 partite simulate: le carte Difesa sono già robuste per ruolo (tank, difensori),
 // quelle Velocità fragili (schivatori, assassini), così ogni tipo pesa circa uguale in una squadra mista.
-// Con +5 la carta Velocità più lenta arriva a 15, le altre al massimo a 12: una Velocità attacca sempre prima.
+// Con +5 la carta Velocità più lenta arriva a 15, le altre al massimo a 12: a parità di livello una Velocità attacca sempre prima.
 const STILI = {
   FOR: { nome: "Forza",    icona: "⚔️", batte: "DIF", bonus: "+25% attacco, e potenziando l'attacco cresce di più" },
   DIF: { nome: "Difesa",   icona: "🛡️", batte: "VEL", bonus: "+5% difesa, e potenziando la difesa cresce di più" },
-  VEL: { nome: "Velocità", icona: "⚡", batte: "FOR", bonus: "+5 velocità (attacca sempre per prima) e +15% attacco, e potenziando la velocità cresce di più" },
+  VEL: { nome: "Velocità", icona: "⚡", batte: "FOR", bonus: "+5 velocità (a parità di livello attacca sempre per prima) e +15% attacco, e potenziando la velocità cresce di più" },
 };
 const BONUS_TIPO = { FOR: { att: 1.25 }, DIF: { dif: 1.05 }, VEL: { vel: 5, att: 1.15 } };
 
@@ -337,9 +337,9 @@ const potPerLivello = L => 3 + Math.floor(L / 2);
 const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 5);
 
 // Statistiche reali di una carta.
-// Potenziare fa salire TUTTE le statistiche allo stesso modo (+2% a livello: al 30 è +58%),
-// e quella del tipo sale di più (+2,8% a livello: al 30 è +81%). La velocità sale di poco:
-// +1 al livello 30 per tutti, +3 per le carte Velocità (così restano sempre le più veloci).
+// Potenziare fa salire PV, attacco, difesa e velocità di tutte le carte (+2% a livello: al 30 è +58%),
+// e la statistica del tipo sale di più (+2,8% a livello: al 30 è +81%): Forza l'attacco, Difesa la difesa,
+// Velocità la velocità. A parità di livello una carta Velocità è sempre la più veloce.
 // Esempio: El Pelado (Tank, Difesa, comune) Lv1 → 150 PV, attacco 10, difesa 16,8; Lv30 → 237 PV, attacco 15,8, difesa 30,4.
 const CRESCITA_TIPO = 1.4;
 function statistiche(c, liv = 1, lode = false) {
@@ -353,7 +353,7 @@ function statistiche(c, liv = 1, lode = false) {
     att: Math.round(att * 10) / 10,
     attBase: Math.round(att / f * 100) / 100,   // in battaglia l'attacco si moltiplica per f (livello)
     dif: Math.round(dif * 10) / 10,
-    vel: b.vel + (t.vel || 0) + Math.round(g * (c.stile === "VEL" ? 5 : 2)),
+    vel: Math.round((b.vel + (t.vel || 0)) * (c.stile === "VEL" ? fT : f)),
     f,
   };
 }
