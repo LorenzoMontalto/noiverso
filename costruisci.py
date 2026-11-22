@@ -5,7 +5,7 @@ così ogni aggiornamento arriva subito a tutti, senza copie vecchie in memoria."
 import hashlib, os, re, shutil
 QUI = os.path.dirname(os.path.abspath(__file__))
 SRC, OUT = os.path.join(QUI, "sorgente"), os.path.join(QUI, "sito")
-CODICE = ["carte", "motore", "effetti", "scena3d", "mappe", "storia", "tutorial", "missioni", "sociale", "collezione", "graffiti", "zaino", "online", "app", "supabase-ponte", "immagini"]
+CODICE = ["carte", "motore", "effetti", "scena3d", "mappe", "storia", "tutorial", "missioni", "sociale", "collezione", "graffiti", "zaino", "online", "reazioni", "app", "supabase-ponte", "immagini"]
 LIBRERIE = ["three.min", "supabase.min"]
 
 shutil.rmtree(OUT, ignore_errors=True)
@@ -25,7 +25,7 @@ for nome in CODICE + LIBRERIE:
     assert n == 1, nome
     nomi.append(nuovo)
 open(os.path.join(OUT, "index.html"), "w", encoding="utf-8").write(html)
-versione = hashlib.sha256("".join(nomi).encode()).hexdigest()[:8]
+versione = hashlib.sha256(("".join(nomi) + html).encode()).hexdigest()[:8]   # anche index.html (stili), così ogni modifica arriva a tutti
 base = ["./", "installa.html", "manifest.webmanifest", "icone/icona-192.png", "icone/icona-512.png", "icone/apple-touch-icon.png"] + nomi
 sw = open(os.path.join(SRC, "sw.js"), encoding="utf-8").read().replace("__VERSIONE__", versione).replace("__FILE__", ", ".join(f'"{x}"' for x in base))
 open(os.path.join(OUT, "sw.js"), "w", encoding="utf-8").write(sw)

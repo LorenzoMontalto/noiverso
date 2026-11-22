@@ -179,6 +179,7 @@ const Online = (() => {
     const ch = sb().channel(`noiverso-vivo-${P.id}`, { config: { presence: { key: io() }, broadcast: { self: false } } });
     P.ch = ch;
     ch.on("broadcast", { event: "m" }, ({ payload }) => ricevi(payload))
+      .on("broadcast", { event: "r" }, ({ payload }) => { if (P && payload && payload.da === P.avv.id) Reazioni.ricevi(payload.r); })
       .on("presence", { event: "sync" }, () => controllaAvversario())
       .on("presence", { event: "join" }, () => controllaAvversario())
       .on("presence", { event: "leave" }, () => controllaAvversario())
@@ -379,6 +380,8 @@ const Online = (() => {
   const scelta = () => { const m = P && P.mie[turno()]; if (!m) return ""; const a = m.az; return a.tipo === "mossa" ? B.attivo(0).c.mosse[a.i].nome : a.tipo === "carica" ? "Carica" : "Cambio"; };
 
   // ---------------- fine ----------------
+  // reazioni: niente conferma di ricezione, se una si perde pazienza
+  function mandaReazione(i) { if (!P || !P.ch) return; try { P.ch.send({ type: "broadcast", event: "r", payload: { da: io(), r: i } }); } catch (e) {} }
   function resa() {
     if (!P || !B) return;
     manda({ tipo: "resa" });
@@ -446,6 +449,6 @@ const Online = (() => {
     annuncia();
   }
 
-  return { avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
+  return { mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
     get inPartita() { return !!P; } };
 })();

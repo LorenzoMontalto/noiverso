@@ -2189,6 +2189,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
         <div class="pannello" id="azioni"></div>
       </div>
     </section>`;
+  Reazioni.monta();
   // il palco va per primo: sta sotto a tutto il resto
   $("#arena").insertAdjacentHTML("afterbegin", `<div class="palco" id="palco"><div class="scena3d" id="scena3d"></div><div class="fx-livello" id="fx-livello"></div><ol class="registro" id="registro" aria-live="polite"></ol></div>`);
   chiudiArena();
@@ -2542,7 +2543,7 @@ document.addEventListener("change", e => { if (e.target.dataset && e.target.data
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2605,6 +2606,8 @@ document.addEventListener("click", e => {
   if (t.dataset.scambioRifiuta) { Scambi.rispondi(t.dataset.scambioRifiuta, false, t); return; }
   if (t.dataset.scambioAnnulla) { Scambi.annulla(t.dataset.scambioAnnulla); return; }
   if (t.dataset.scambioRitira) { Scambi.ritira(true, t); return; }
+  if (t.dataset.reazione !== undefined) { Reazioni.manda(+t.dataset.reazione); return; }
+  if (t.dataset.reazioni) { Reazioni.clic(t.dataset.reazioni); return; }
   if (t.dataset.sfidaAmico) { if (B) { chiudiArena(); B = null; animazione = false; } Amici.sfida(t.dataset.sfidaAmico); return; }
   if (t.dataset.missione) { Missioni.riscuoti(t.dataset.missione, t); return; }
   if (t.dataset.bossPremio) { t.disabled = true; Boss.riscatta(t.dataset.bossPremio, t); return; }
