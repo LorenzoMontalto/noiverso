@@ -35,6 +35,7 @@
   .icona-ios { display: inline-block; width: 18px; height: 18px; vertical-align: -3px; border: 2px solid var(--azzurro); border-radius: 4px; position: relative; }
   .icona-ios::after { content: "↑"; position: absolute; top: -9px; left: 2px; color: var(--azzurro); font-weight: 700; }
   .altri h2 { font-size: 1.05rem; }
+  .mac-dmg { margin-top: 10px; } .mac-dmg summary { cursor: pointer; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -82,15 +83,23 @@
 
   <section class="riquadro" data-per="mac">
     <h2>Mac</h2>
-    <div class="azioni">
-      <a class="btn" data-scarica="Noiverso-Mac.dmg">Scarica per Mac</a>
-      <button class="btn secondario" data-installa hidden>Installa dal browser</button>
-    </div>
+    <p><b>Consigliato:</b> aggiungi il gioco al Dock con Safari. Non compare nessun avviso e si aggiorna da solo.</p>
     <ol>
-      <li>Apri il file <b>.dmg</b> e trascina Noiverso nella cartella <b>Applicazioni</b>.</li>
-      <li>La prima volta: tasto destro sull'app → <b>Apri</b> → <b>Apri</b>. Se il Mac la blocca, vai in <b>Impostazioni di Sistema → Privacy e sicurezza → Apri comunque</b>.</li>
+      <li>Apri <b>lorenzomontalto.github.io/noiverso</b> con <b>Safari</b>.</li>
+      <li>Nel menu in alto scegli <b>File → Aggiungi al Dock…</b> e poi <b>Aggiungi</b>.</li>
+      <li>Noiverso compare nel Dock e nel Launchpad e si apre nella sua finestra, come un'app vera.</li>
     </ol>
-    <p class="nota">Con Safari puoi anche usare <b>File → Aggiungi al Dock</b>.</p>
+    <p class="nota">Con Chrome: menu ⋮ → <b>Trasmetti, salva e condividi → Installa pagina come app</b>.</p>
+    <details class="mac-dmg">
+      <summary>Preferisci l'app da scaricare (.dmg)?</summary>
+      <div class="azioni"><a class="btn secondario" data-scarica="Noiverso-Mac.dmg">Scarica per Mac</a></div>
+      <ol>
+        <li>Apri il file <b>.dmg</b> e trascina Noiverso nella cartella <b>Applicazioni</b>.</li>
+        <li>Aprila: il Mac dice <b>"lo sviluppatore non può essere verificato"</b>. Premi <b>Annulla</b> (non "Sposta nel Cestino"). Succede perché l'app non è firmata con un account sviluppatore Apple a pagamento, non perché sia pericolosa.</li>
+        <li>Vai in <b>Impostazioni di Sistema → Privacy e sicurezza</b>, scorri in fondo e accanto a "Noiverso è stata bloccata" premi <b>Apri comunque</b>, poi conferma con la password del Mac.</li>
+        <li>Da lì in poi si apre normalmente.</li>
+      </ol>
+    </details>
   </section>
 
   <div class="azioni" style="justify-content:center">
