@@ -420,18 +420,31 @@ const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 5);
 // Velocità la velocità. A parità di livello una carta Velocità è sempre la più veloce.
 // Esempio: El Pelado (Tank, Difesa, comune) Lv1 → 150 PV, attacco 10, difesa 16,8; Lv30 → 237 PV, attacco 15,8, difesa 30,4.
 const CRESCITA_TIPO = 1.4;
+// Impronta di ogni carta: due carte con lo stesso ruolo, tipo e rarità non hanno più statistiche identiche.
+// Da ogni nome esce sempre la stessa variazione (fino a ±8% su PV, attacco e difesa, ±1 di velocità),
+// e le tre percentuali si compensano: se una carta ha più attacco ha un po' meno PV o difesa, così nessuna è più forte in totale.
+const _impronte = {};
+function impronta(id) {
+  if (_impronte[id]) return _impronte[id];
+  let h = 2166136261;
+  for (const ch of String(id)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); }
+  const r = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 2001) / 1000 - 1; };
+  const a = [r(), r(), r()], media = (a[0] + a[1] + a[2]) / 3, v = r();
+  const p = x => Math.max(-.08, Math.min(.08, (x - media) * .09));
+  return (_impronte[id] = { pv: p(a[0]), att: p(a[1]), dif: p(a[2]), vel: v > .5 ? 1 : v < -.5 ? -1 : 0 });
+}
 function statistiche(c, liv = 1, lode = false) {
   const b = RUOLI[c.ruolo], fr = RARITA[c.rarita].forza, f = fattoreLivello(liv, lode), t = BONUS_TIPO[c.stile] || {};
-  const g = f - 1, fT = 1 + g * CRESCITA_TIPO;
-  const pv = b.pv * (t.pv || 1) * fr * f;
-  const att = b.att * (t.att || 1) * fr * (c.stile === "FOR" ? fT : f);
-  const dif = b.dif * (t.dif || 1) * fr * (c.stile === "DIF" ? fT : f);
+  const g = f - 1, fT = 1 + g * CRESCITA_TIPO, im = impronta(c.id);
+  const pv = b.pv * (t.pv || 1) * fr * f * (1 + im.pv);
+  const att = b.att * (t.att || 1) * fr * (c.stile === "FOR" ? fT : f) * (1 + im.att);
+  const dif = b.dif * (t.dif || 1) * fr * (c.stile === "DIF" ? fT : f) * (1 + im.dif);
   return {
     pv: Math.round(pv),
     att: Math.round(att * 10) / 10,
     attBase: Math.round(att / f * 100) / 100,   // in battaglia l'attacco si moltiplica per f (livello)
     dif: Math.round(dif * 10) / 10,
-    vel: Math.round((b.vel + (t.vel || 0)) * (c.stile === "VEL" ? fT : f)),
+    vel: Math.round((b.vel + (t.vel || 0) + im.vel) * (c.stile === "VEL" ? fT : f)),
     f,
   };
 }

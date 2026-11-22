@@ -35,6 +35,48 @@ function nuovoCombattente(id, liv, lode, olo, ultra) {
     buff: {}, stati: {}, scudo: 0, nebbia: false, stordito: false, carica: false, koAnnunciato: false };
 }
 
+// ---------------- Sinergie ----------------
+// Serie: 3 carte della stessa serie in squadra danno un bonus alle carte di quella serie, 5 carte un bonus più grande.
+// Multiverso: 2 o più versioni della stessa persona (es. Lollifer + Lollinista) danno +5% / +10% a tutte le statistiche di quelle carte.
+// I valori si possono cambiare dal pannello admin (config "sinergie"): li legge applicaSinergie.
+const _il = v => (v === 1 || v === 11 || String(v)[0] === "8") ? `l'${v}%` : `il ${v}%`;
+const SINERGIE_BASE = {
+  eroi:     { tipo: "dif",      v3: 8,  v5: 15, testo: v => `+${v}% difesa` },
+  db:       { tipo: "att",      v3: 6,  v5: 15, testo: v => `+${v}% attacco` },
+  dei:      { tipo: "rigenera", v3: 2,  v5: 3,  testo: v => `in campo recuperano ${_il(v)} dei PV ogni turno` },
+  nueve:    { tipo: "energia",  v3: 2,  v5: 4,  testo: v => `la squadra parte con +${v} energia` },
+  maghi:    { tipo: "effetti",  v3: 1,  v5: 80, testo: (v, cinque) => cinque ? `i loro effetti durano 1 turno in più e sono più forti del ${v}%` : `i loro effetti (brucia, indebolisci) durano 1 turno in più` },
+  demoni:   { tipo: "vampiro",  v3: 5,  v5: 11, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
+  mestieri: { tipo: "vel",      v3: 8,  v5: 15, testo: (v, cinque) => `+${v}% velocità${cinque ? " e la squadra parte con +1 energia" : ""}` },
+};
+const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
+for (const k in SINERGIE) SINERGIE[k].testo = SINERGIE_BASE[k].testo;
+const MULTIVERSO = { v2: 5, v3: 10 };
+function applicaSinergie(cfg) {
+  const c = cfg && typeof cfg === "object" ? cfg : {};
+  const num = (x, b, max) => Number.isFinite(+x) ? Math.max(0, Math.min(max, Math.round(+x))) : b;
+  for (const k in SINERGIE_BASE) {
+    const b = SINERGIE_BASE[k], m = c[k] || {}, max = b.tipo === "energia" ? 5 : b.tipo === "effetti" ? 150 : 50;
+    SINERGIE[k].v3 = b.tipo === "effetti" ? 1 : num(m.v3, b.v3, max);
+    SINERGIE[k].v5 = num(m.v5, b.v5, max);
+  }
+  MULTIVERSO.v2 = num((c.multiverso || {}).v2, 5, 30);
+  MULTIVERSO.v3 = num((c.multiverso || {}).v3, 10, 40);
+}
+// Quali sinergie ha una squadra (array di id carte). Usata dal motore e dalla schermata Squadre.
+function sinergieDi(ids) {
+  const carte = ids.map(id => _PER_ID[id]).filter(Boolean);
+  const perSerie = {}, perPersona = {};
+  for (const c of carte) { (perSerie[c.serie] = perSerie[c.serie] || []).push(c.id); if (c.persona) (perPersona[c.persona] = perPersona[c.persona] || []).push(c.id); }
+  const serie = Object.entries(perSerie).filter(([k]) => SINERGIE[k]).map(([k, lista]) => {
+    const n = lista.length, liv = n >= 5 ? 2 : n >= 3 ? 1 : 0, s = SINERGIE[k];
+    return { serie: k, n, liv, ids: lista, tipo: s.tipo, val: liv === 2 ? s.v5 : liv === 1 ? s.v3 : 0 };
+  }).sort((a, b) => b.n - a.n);
+  const multiverso = Object.entries(perPersona).filter(([, l]) => l.length >= 2)
+    .map(([persona, lista]) => ({ persona, ids: lista, n: lista.length, val: lista.length >= 3 ? MULTIVERSO.v3 : MULTIVERSO.v2 }));
+  return { serie, multiverso };
+}
+
 // ---------------- Graffiti ----------------
 // Ogni lato può spruzzare un graffito sul campo: vale per tutta la battaglia (nomi e disegni in graffiti.js).
 // Sono a coppie opposte: se i due lati usano i due graffiti della stessa coppia, si annullano.
@@ -73,6 +115,31 @@ class Battaglia {
     this.vincitore = -1;
     this.ev = [];
     this.graffitiAnnullati = null;
+    this.lati.forEach(L => this._sinergie(L));
+  }
+  // applica le sinergie di una squadra ai suoi combattenti
+  _sinergie(L) {
+    const sin = sinergieDi(L.squadra.map(x => x.id));
+    L.sinergie = sin;
+    for (const s of sin.serie) {
+      if (!s.liv) continue;
+      for (const x of L.squadra) {
+        if (x.c.serie !== s.serie) continue;
+        x.sin = x.sin || {};
+        if (s.tipo === "att") x.att *= 1 + s.val / 100;
+        else if (s.tipo === "dif") x.dif *= 1 + s.val / 100;
+        else if (s.tipo === "vel") x.vel = Math.round(x.vel * (1 + s.val / 100));
+        else if (s.tipo === "rigenera") x.sin.rigenera = s.val;
+        else if (s.tipo === "vampiro") x.sin.vampiro = s.val;
+        else if (s.tipo === "effetti") { x.sin.effetti = 1; if (s.liv === 2) x.sin.forzaEff = s.val; }
+      }
+      if (s.tipo === "energia") L.energia = Math.min(ENERGIA_MAX, L.energia + s.val);
+      if (s.tipo === "vel" && s.liv === 2) L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
+    }
+    for (const m of sin.multiverso) {
+      const k = 1 + m.val / 100;
+      for (const x of L.squadra) if (m.ids.includes(x.id)) { x.att *= k; x.dif *= k; x.pv = Math.round(x.pv * k); x.pvMax = x.pv; x.vel = Math.round(x.vel * k); }
+    }
   }
 
   // g0, g1: { id, liv } oppure null
@@ -256,6 +323,7 @@ class Battaglia {
         if (spina && a.pv > 0) { const rif = Math.max(1, Math.round(dmg * spina / 100)); a.pv = Math.max(0, a.pv - rif); this._log(`Graffito Spina: ${a.c.nome} si punge e perde ${rif} PV.`, { lato: 1 - l, colpo: l, danno: rif, graffito: "spina" }); }
       }
       if (m.drena && totale > 0) this._cura(l, a, Math.round(totale * m.drena / 100));
+      if (a.sin && a.sin.vampiro && totale > 0 && a.pv > 0) this._cura(l, a, Math.max(1, Math.round(totale * a.sin.vampiro / 100)));
       if (a.c.ruolo === "ladro" && O.energia > 0 && this.rng() < 0.2) {
         O.energia--; L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
         this._log(`${a.c.nome} ruba 1 energia.`, { lato: l });
@@ -270,15 +338,15 @@ class Battaglia {
     const L = this.lati[l], O = this.lati[1 - l];
     if (e.tipo === "brucia") {
       if (d.c.ruolo === "incendiario") { this._log(`${d.c.nome} non brucia.`, { lato: 1 - l }); return; }
-      const turni = e.turni + (a.c.ruolo === "incendiario" ? 1 : 0);
-      d.stati.brucia = { val: e.val, turni };
+      const turni = e.turni + (a.c.ruolo === "incendiario" ? 1 : 0) + (a.sin && a.sin.effetti ? 1 : 0);
+      d.stati.brucia = { val: Math.round(e.val * (1 + ((a.sin && a.sin.forzaEff) || 0) / 100)), turni };
       this._log(`${d.c.nome} brucia per ${turni} turni.`, { lato: l, anim: "brucia", su: 1 - l });
     } else if (e.tipo === "stordisci") {
-      if (this.rng() < e.val / 100) { d.stordito = true; this._log(`${d.c.nome} è stordito!`, { lato: l, anim: "stordito", su: 1 - l }); }
+      if (this.rng() < e.val * (1 + ((a.sin && a.sin.forzaEff) || 0) / 100) / 100) { d.stordito = true; this._log(`${d.c.nome} è stordito!`, { lato: l, anim: "stordito", su: 1 - l }); }
       else this._log(`${d.c.nome} resiste allo stordimento.`, { lato: 1 - l });
     } else if (e.tipo === "indebolisci") {
-      const turni = e.turni + (a.c.ruolo === "stregone" ? 1 : 0);
-      d.buff.debole = { val: e.val, turni };
+      const turni = e.turni + (a.c.ruolo === "stregone" ? 1 : 0) + (a.sin && a.sin.effetti ? 1 : 0);
+      d.buff.debole = { val: Math.min(80, Math.round(e.val * (1 + ((a.sin && a.sin.forzaEff) || 0) / 100))), turni };
       this._log(`Attacco di ${d.c.nome} −${e.val}% per ${turni} turni.`, { lato: l, anim: "debole", su: 1 - l });
     } else if (e.tipo === "ruba") {
       const n = Math.min(e.val, O.energia);
@@ -334,6 +402,7 @@ class Battaglia {
           this._log(`${a.c.nome} brucia: −${dmg} PV.`, { lato: l, colpo: l, danno: dmg, stile: "FOR", brucia: true });
           if (--b.turni <= 0) delete a.stati.brucia;
         }
+        if (a.sin && a.sin.rigenera && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * a.sin.rigenera / 100)));
         const cuore = this.gv(l, "cuore");
         if (cuore && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * cuore / 100)));
         if (a.pv > 0 && a.c.ruolo === "guaritore") {
@@ -422,4 +491,4 @@ class Battaglia {
   }
 }
 
-if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE, OGGETTI_EFFETTI };
+if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE, OGGETTI_EFFETTI, sinergieDi, SINERGIE, applicaSinergie, MULTIVERSO };

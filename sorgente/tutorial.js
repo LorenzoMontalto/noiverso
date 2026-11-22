@@ -8,7 +8,7 @@
 // ============================================================
 const Tutorial = (() => {
   const PREMIO = 150;
-  const VERSIONE = 2;   // quando il tutorial cambia molto, chi l'aveva già fatto riceve un avviso (una volta)
+  const VERSIONE = 3;   // quando il tutorial cambia molto, chi l'aveva già fatto riceve un avviso (una volta)
   let passi = [], i = 0, attivo = false, timer = null, radice = null, entrato = 0;
 
   const vis = el => { if (!el) return null; const r = el.getBoundingClientRect(); return r.width > 2 && r.height > 2 ? r : null; };
@@ -39,6 +39,7 @@ const Tutorial = (() => {
         testo: `La squadra è di ${CARTE_SQUADRA} carte: la prima entra in campo per prima e con le frecce cambi l'ordine. Tocca una carta per i suoi pulsanti: <b>Aggiungi in squadra</b>, <b>Scambia</b> (per mettere un'altra carta al suo posto) e <b>Confronta</b> (per vedere due carte una accanto all'altra). Puoi preparare fino a ${NUM_SQUADRE} squadre diverse.`,
         bersaglioInfo: ".slot5", bollaInfo: null },
       { vista: "squadra", bersaglio: ".riepilogo", titolo: "I tipi", testo: `Ogni carta ha un tipo che potenzia una sua statistica: <span class="s-FOR stile">FOR</span> Forza (+25% attacco), <span class="s-DIF stile">DIF</span> Difesa (+5% difesa), <span class="s-VEL stile">VEL</span> Velocità (+5 velocità: a parità di livello attacca sempre per prima, e +15% attacco). Potenziando salgono tutte le statistiche, quella del tipo di più. Forza batte Difesa, Difesa batte Velocità, Velocità batte Forza: chi è in vantaggio fa il 30% di danni in più, chi è in svantaggio il 20% in meno. Meglio una squadra con tipi misti.` },
+      { vista: "squadra", bersaglio: ".sinergie-box", titolo: "Le sinergie", testo: "Con <b>3 carte della stessa serie</b> in squadra quelle carte prendono un bonus, con <b>5</b> un bonus più grande, e ogni serie ha il suo: i Supereroi difendono di più, i Demoni si curano colpendo, i Mafiosi partono con più energia… Se metti <b>due o più versioni dello stesso amico</b> (per esempio Lollifer e Lollinista) scatta il <b>Multiverso</b>: +5% a tutte le loro statistiche. Qui vedi le sinergie attive e quelle a cui manca una carta." },
       { vista: "sfida", bersaglio: ".prima-partita", titolo: "Zaino e graffito", saltaSe: () => !!B,
         testo: `Prima di combattere puoi riempire lo <b>zaino</b> con ${Zaino.POSTI} oggetti (cure, energia e altro): in battaglia ne usi uno per turno, e ognuno vale una volta sola. Il <b>graffito</b> della squadra è un piccolo bonus che sblocchi con le bombolette trovate nelle bustine.` },
       { vista: "sfida", bersaglio: ".livelli .livello", titolo: "Le sfide", saltaSe: () => !squadraPiena() || !!B,
@@ -199,7 +200,7 @@ const Tutorial = (() => {
       setTimeout(() => mostraAvviso("Novità: c'è un tutorial! Lo trovi nel tuo profilo, in alto a destra."), 1600);
     } else if ((S.tutorial.versione || 1) < VERSIONE) {
       S.tutorial = Object.assign({}, S.tutorial, { versione: VERSIONE }); salva();
-      setTimeout(() => mostraAvviso("Il tutorial è aggiornato con tutte le novità (sfide dal vivo, zaino, reazioni, scambi, Ultra…). Lo rifai dal tuo profilo, in alto a destra."), 1600);
+      setTimeout(() => mostraAvviso("Il tutorial è aggiornato con le novità (sinergie, sfide dal vivo, zaino, reazioni, scambi, Ultra…). Lo rifai dal tuo profilo, in alto a destra."), 1600);
     }
   }
 

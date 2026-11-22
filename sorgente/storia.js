@@ -240,6 +240,11 @@ STORIA.forEach((cap, k) => cap.tappe.forEach((t, i) => {
   t.indice = g;
   const ultima = STORIA.reduce((n, c) => n + c.tappe.length, 0) - 1;
   const b = Math.round(g < 30 ? g * .62 : 18 + (g - 30) * 12 / Math.max(1, ultima - 30));
-  t.liv = t.boss ? [Math.min(30, b + 1), Math.min(30, b + 2)] : [Math.max(1, b), Math.min(30, b + 2)];
+  // i nemici con una sinergia di serie sono più forti: per compensare hanno qualche livello in meno
+  // (5 della stessa serie: −3 livelli, 3 o 4: −1)
+  const perSerie = {}; for (const id of t.nemici) { const c = (typeof PER_ID !== "undefined" ? PER_ID : require("./carte.js").PER_ID)[id]; if (c) perSerie[c.serie] = (perSerie[c.serie] || 0) + 1; }
+  const max = Math.max(0, ...Object.values(perSerie)), meno = max >= 5 ? 3 : max >= 3 ? 1 : 0;
+  const bb = Math.max(1, b - meno);
+  t.liv = t.boss ? [Math.min(30, bb + 1), Math.min(30, bb + 2)] : [Math.max(1, bb), Math.min(30, bb + 2)];
 }));
 if (typeof module !== "undefined") module.exports = { STORIA, scrigniCapitolo };

@@ -1640,6 +1640,20 @@ body.in-accesso { overflow: hidden; }
 .filtri-riga { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .filtri-etichetta { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--spento); margin-right: 2px; min-width: 40px; }
 .vuoto-filtri { margin: 10px 0; }
+
+/* sinergie */
+.sinergie-box { margin: 12px 0; padding: 12px 14px; border-radius: 16px; background: var(--muro); border: 1px solid var(--linea); }
+.sin-testa { display: grid; gap: 2px; margin-bottom: 8px; } .sin-testa span { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--spento); font-weight: 800; } .sin-testa small { color: var(--spento); font-size: .78rem; }
+.sin-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sin-lista li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 12px; font-size: .86rem; line-height: 1.35; border-left: 3px solid var(--c, #b866ff); background: rgba(255, 255, 255, .03); }
+.sin-lista li b { color: var(--c, #b866ff); } .sin-lista li small { display: block; color: var(--spento); }
+.sin-lista li.sin-quasi { opacity: .65; border-left-style: dashed; }
+.sin-lista li.multiverso { --c: #c38bff; }
+.sin-ico { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--c, #b866ff); color: #0b0a10; font-weight: 900; }
+.sin-icone { display: inline-flex; gap: 3px; margin-left: 4px; }
+.sin-mini { display: inline-grid; place-items: center; min-width: 24px; height: 18px; padding: 0 4px; border-radius: 9px; font-size: .62rem; font-weight: 900; background: var(--c, #c38bff); color: #0b0a10; }
+.sin-mini.multiverso { --c: #c38bff; }
+.sin-admin fieldset { border: 1px solid var(--linea); border-left: 3px solid var(--c, #c38bff); border-radius: 12px; margin: 0 0 8px; padding: 8px 10px; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>

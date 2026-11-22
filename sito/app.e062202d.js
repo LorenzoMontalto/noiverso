@@ -1108,6 +1108,7 @@ function vistaSquadra() {
     </div>
     <div class="slot5">${slot.join("")}</div>
     ${Graffiti.htmlSquadra()}
+    ${Sinergie.htmlSquadra(sq.carte)}
     <div class="riepilogo">
       <div><span>Stili</span>${Object.entries(stili).map(([k, n]) => `<b class="stile s-${k}">${k} ${n}</b>`).join(" ")}</div>
       <div><span>Ruoli</span>${ruoli.length ? ruoli.map(r => `<b class="ruolo-pill">${esc(r)}</b>`).join(" ") : "—"}</div>
@@ -1125,6 +1126,65 @@ function vistaSquadra() {
   </section>
   ${htmlAzioniCarta()}`;
 }
+
+
+// ---------------- Sinergie: riquadro in Squadre, icone in battaglia, valori dall'admin ----------------
+const Sinergie = (() => {
+  let caricato = false;
+  async function carica() {
+    if (Archivio.modo !== "cloud" || !Archivio.db) { caricato = true; return; }
+    try { const snap = await Archivio.db.doc("config/sinergie").get(); applicaSinergie(snap && snap.exists ? snap.data() : {}); caricato = true; } catch (e) { return; }
+    if (!B && ["admin", "squadra"].includes(vista) && $("#modale").hidden) disegnaQuieto();
+  }
+  const testoSerie = (k, liv) => { const s = SINERGIE[k]; return s.testo(liv === 2 ? s.v5 : s.v3, liv === 2); };
+  // riquadro nella pagina Squadre: sinergie attive e quelle a cui manca poco
+  function htmlSquadra(ids) {
+    const sin = sinergieDi(ids);
+    const righe = [];
+    for (const s of sin.serie) {
+      const se = SERIE[s.serie];
+      if (s.liv) righe.push(`<li class="sin-attiva" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} ${s.n}/${s.liv === 2 ? 5 : 3}</b> · carte ${esc(se.nome)}: ${testoSerie(s.serie, s.liv)}.${s.liv === 1 ? ` <small>Con 5 carte: ${testoSerie(s.serie, 2)}.</small>` : ""}</span></li>`);
+      else if (s.n === 2) righe.push(`<li class="sin-quasi" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} 2/3</b> · ne manca una: carte ${esc(se.nome)}, ${testoSerie(s.serie, 1)}.</span></li>`);
+    }
+    for (const m of sin.multiverso) righe.push(`<li class="sin-attiva multiverso"><span class="sin-ico">∞</span><span><b>Multiverso: ${esc(m.persona)} ×${m.n}</b> +${m.val}% a tutte le statistiche di ${m.ids.map(id => esc(PER_ID[id].nome)).join(", ")}.${m.n === 2 ? ` <small>Con 3 versioni: +${MULTIVERSO.v3}%.</small>` : ""}</span></li>`);
+    return `<div class="sinergie-box"><div class="sin-testa"><span>Sinergie</span><small>3 carte della stessa serie danno un bonus a quelle carte, 5 un bonus più grande. 2 o più versioni della stessa persona: Multiverso.</small></div>
+      ${righe.length ? `<ul class="sin-lista">${righe.join("")}</ul>` : `<p class="nota">Nessuna sinergia: prova a mettere 3 carte della stessa serie, o due versioni dello stesso amico.</p>`}</div>`;
+  }
+  // icone piccole accanto al nome in battaglia
+  function htmlBattaglia(L) {
+    const sin = L && L.sinergie; if (!sin) return "";
+    const ico = [...sin.serie.filter(s => s.liv).map(s => `<span class="sin-mini" style="--c:${SERIE[s.serie].colore}" title="Sinergia ${esc(SERIE[s.serie].nome)} ${s.n}: ${esc(testoSerie(s.serie, s.liv))}">${SERIE[s.serie].simbolo}${s.liv === 2 ? "5" : "3"}</span>`),
+      ...sin.multiverso.map(m => `<span class="sin-mini multiverso" title="Multiverso ${esc(m.persona)} ×${m.n}: +${m.val}% a quelle carte">∞${m.n}</span>`)];
+    return ico.length ? `<span class="sin-icone">${ico.join("")}</span>` : "";
+  }
+  function htmlAdmin() {
+    if (!caricato) { setTimeout(carica, 0); return `<h3>Sinergie</h3><p class="nota">Carico i valori…</p>`; }
+    return `<h3>Sinergie</h3>
+      <p class="nota">Quanto valgono le sinergie con 3 e con 5 carte della stessa serie, e il Multiverso (stessa persona in più versioni). Valgono per tutti, anche dal vivo e contro il computer.</p>
+      <form id="form-sinergie" class="sin-admin" autocomplete="off">
+        ${ORDINE_SERIE.filter(k => SINERGIE[k]).map(k => { const s = SINERGIE[k], se = SERIE[k]; return `<fieldset style="--c:${se.colore}"><legend>${se.simbolo} ${esc(se.nome)}</legend>
+          <div class="campi-3">${s.tipo === "effetti" ? `<label>Con 3 <input value="effetti +1 turno" disabled></label>` : `<label>Con 3 (${s.tipo === "energia" ? "energia" : "%"}) <input name="${k}.v3" type="number" min="0" max="50" value="${s.v3}"></label>`}
+          <label>Con 5 (${s.tipo === "energia" ? "energia" : "%"}) <input name="${k}.v5" type="number" min="0" max="150" value="${s.v5}"></label>
+          <label>Cosa fa <input value="${esc(testoSerie(k, 2))}" disabled></label></div></fieldset>`; }).join("")}
+        <fieldset><legend>∞ Multiverso</legend><div class="campi-3">
+          <label>2 versioni (%) <input name="multiverso.v2" type="number" min="0" max="30" value="${MULTIVERSO.v2}"></label>
+          <label>3 o più (%) <input name="multiverso.v3" type="number" min="0" max="40" value="${MULTIVERSO.v3}"></label></div></fieldset>
+        <div class="azioni"><button class="btn primario" type="submit">Salva per tutti</button><button type="button" class="btn" data-admin="sinergie-base">Valori di partenza</button></div>
+      </form>`;
+  }
+  async function salvaAdmin(form, base) {
+    const nuovi = {};
+    if (!base) {
+      const f = new FormData(form);
+      for (const k of Object.keys(SINERGIE)) { const d = {}; for (const v of ["v3", "v5"]) { const x = f.get(`${k}.${v}`); if (x !== null && x !== "") d[v] = +x; } if (Object.keys(d).length) nuovi[k] = d; }
+      nuovi.multiverso = { v2: +f.get("multiverso.v2"), v3: +f.get("multiverso.v3") };
+    }
+    try { await Archivio.db.doc("config/sinergie").set(nuovi); applicaSinergie(nuovi); mostraAvviso(base ? "Sinergie tornate ai valori di partenza." : "Sinergie salvate: ora valgono per tutti."); }
+    catch (e) { mostraAvviso("Non sono riuscito a salvare. Serve la pagina online con il tuo account admin."); }
+    const box = $("#admin-sinergie"); if (box) box.innerHTML = htmlAdmin();
+  }
+  return { carica, htmlSquadra, htmlBattaglia, htmlAdmin, salvaAdmin };
+})();
 
 // ---------- Squadre: tocchi una carta e scegli cosa farne ----------
 // selSq = { id, modo }   modo: null | "slot" (scambia: tocca la carta della squadra da sostituire)
@@ -1664,7 +1724,7 @@ async function entra(slot, profiloLocale) {
   if (slot === "admin") setTimeout(() => mostraAvviso("Modalità admin: monete infinite e tutte le carte. Questi progressi non vanno in classifica."), 400);
   Tutorial.allIngresso();
   if (slot !== "admin") Missioni.finestraAccesso();
-  Zaino.carica(); Reazioni.carica();
+  Zaino.carica(); Reazioni.carica(); Sinergie.carica();
   Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); });
   if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); ritiraPremiClassifica(); }
   Boss.carica();
@@ -1781,6 +1841,7 @@ function vistaAdmin() {
       <div class="admin-box largo" id="admin-immagini">${htmlAdminImmagini()}</div>
       <div class="admin-box largo" id="admin-graffiti">${Graffiti.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-zaino">${Zaino.htmlAdmin()}</div>
+      <div class="admin-box largo" id="admin-sinergie">${Sinergie.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-reazioni">${Reazioni.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-codici">${htmlAdminCodici()}</div>
       <div class="admin-box largo" id="admin-controlli">${htmlAdminControlli()}</div>
@@ -2121,6 +2182,10 @@ async function azioneAdmin(cosa, el) {
   if (cosa.startsWith("cod-")) { azioneCodici(cosa, el); return; }
   if (cosa.startsWith("ctl-")) { azioneControlli(cosa, el); return; }
   if (cosa.startsWith("reaz-")) { Reazioni.azioneAdmin(cosa, el); return; }
+  if (cosa === "sinergie-base") {
+    if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
+    Sinergie.salvaAdmin(null, true); return;
+  }
   if (cosa === "zaino-base") {
     if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
     Zaino.salvaAdmin(null, true); return;
@@ -2531,7 +2596,7 @@ function htmlHud(l) {
     <div class="hud-info">
       <div class="lato-nome"><span class="hud-chi">${livelloAttuale && livelloAttuale.spettatore ? esc(String(L.nome).slice(0, 14)) : l ? "Nemico" : "Tu"}</span><b>${esc(a.c.nome)}</b><span class="stile s-${a.c.stile}">${a.c.stile}</span><small>${a.lode ? "30 e lode" : `Lv ${a.liv}`} · ${esc(RUOLI[a.c.ruolo].nome)}</small>
         <span class="hud-squadra" title="Personaggi ancora in piedi">${L.squadra.map((x, i) => `<i class="${x.pv <= 0 ? "ko" : ""} ${i === L.attivo ? "attiva" : ""}"></i>`).join("")}<small>${vivi}/${L.squadra.length}</small></span>
-        ${l ? `<span class="hud-energia" title="Energia del nemico">◆ ${L.energia}</span>` : ""}</div>
+        ${l ? `<span class="hud-energia" title="Energia del nemico">◆ ${L.energia}</span>` : ""}${Sinergie.htmlBattaglia(L)}</div>
       <div class="pv"><div class="pv-barra ${pct < 25 ? "basso" : pct < 55 ? "medio" : ""}"><i style="width:${pct}%"></i></div><span class="pv-num">${a.pv}/${a.pvMax}</span></div>
       ${htmlStatBattaglia(a)}
       ${stato.length ? `<div class="hud-riga">${stato.join("")}</div>` : ""}
@@ -2969,6 +3034,7 @@ document.addEventListener("submit", e => {
   if (e.target.id === "form-codice") salvaCodiceAdmin(e.target);
   if (e.target.id === "form-titolo-classifica") salvaTitoloClassifica(e.target);
   if (e.target.id === "form-zaino") Zaino.salvaAdmin(e.target);
+  if (e.target.id === "form-sinergie") Sinergie.salvaAdmin(e.target);
   if (e.target.id === "form-graffiti") Graffiti.pubblica();
   if (e.target.id === "form-modifica") {
     const nome = $("#nome-modifica").value.trim().slice(0, 20);
