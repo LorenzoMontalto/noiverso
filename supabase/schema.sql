@@ -126,6 +126,167 @@ drop policy if exists "carte: solo l'admin le cancella" on storage.objects;
 create policy "carte: solo l'admin le cancella" on storage.objects
   for delete to authenticated using (bucket_id = 'carte' and public.sono_admin());
 
+-- ---------------- Sfide tra amici ----------------
+-- Combatti contro la squadra vera di un amico (presa dal suo salvataggio, non da quello che manda il telefono).
+-- Chi sfida e vince: +2 punti classifica; l'amico battuto: -1. Se chi sfida perde, l'amico che si è difeso: +1.
+create table if not exists public.sfide_amici (
+  id        bigint generated always as identity primary key,
+  sfidante  uuid not null references auth.users (id) on delete cascade,
+  sfidato   uuid not null references auth.users (id) on delete cascade,
+  vinto     boolean not null,          -- ha vinto chi ha sfidato
+  punti_sfidante integer not null,
+  punti_sfidato  integer not null,
+  visto     boolean not null default false,
+  quando    timestamptz not null default now()
+);
+create index if not exists sfide_amici_sfidato on public.sfide_amici (sfidato, visto);
+create index if not exists sfide_amici_sfidante on public.sfide_amici (sfidante, quando);
+alter table public.sfide_amici enable row level security;
+drop policy if exists "sfide: le mie" on public.sfide_amici;
+create policy "sfide: le mie" on public.sfide_amici for select to authenticated
+  using (sfidante = auth.uid() or sfidato = auth.uid());
+grant select on public.sfide_amici to authenticated;
+revoke all on public.sfide_amici from anon;
+
+create or replace function public.punti_amici(u uuid) returns integer
+language sql stable security definer set search_path = public as $$
+  select coalesce((select sum(punti_sfidante) from public.sfide_amici where sfidante = u), 0)
+       + coalesce((select sum(punti_sfidato) from public.sfide_amici where sfidato = u), 0);
+$$;
+
+-- La squadra con cui l'amico si difende: quella attiva nel suo salvataggio, con i livelli veri
+create or replace function public.squadra_amico(amico uuid) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare d jsonb; att int;
+begin
+  if auth.uid() is null then raise exception 'Devi fare l''accesso'; end if;
+  select dati into d from public.salvataggi where user_id = amico and slot = 'partita';
+  if d is null then raise exception 'Questo giocatore non ha ancora un salvataggio'; end if;
+  att := coalesce((d->>'attiva')::int, 0);
+  return jsonb_build_object(
+    'nome', coalesce(nullif(d->'profilo'->>'nome', ''), 'Giocatore'),
+    'avatar', coalesce(d->'profilo'->>'avatar', ''),
+    'squadra', coalesce((select jsonb_agg(jsonb_build_object(
+        'id', x,
+        'liv', least(30, greatest(1, coalesce((d->'liv'->>x)::int, 1))),
+        'lode', coalesce((d->'liv'->>x)::int, 1) >= 30 and coalesce((d->'lodeXp'->>x)::int, 0) >= 2000) order by n)
+      from jsonb_array_elements_text(coalesce(d->'squadre'->att->'carte', '[]'::jsonb)) with ordinality as t(x, n)), '[]'::jsonb));
+end $$;
+
+create or replace function public.registra_sfida(amico uuid, vinto boolean) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); inizio timestamptz := date_trunc('day', now() at time zone 'Europe/Rome') at time zone 'Europe/Rome';
+  coppia int; totale int;
+begin
+  if me is null then raise exception 'Devi fare l''accesso'; end if;
+  if amico = me then raise exception 'Non puoi sfidare te stesso'; end if;
+  if not exists (select 1 from public.salvataggi where user_id = amico and slot = 'partita') then raise exception 'Giocatore non trovato'; end if;
+  select count(*) into coppia from public.sfide_amici where sfidante = me and sfidato = amico and quando >= inizio;
+  select count(*) into totale from public.sfide_amici where sfidante = me and quando >= inizio;
+  if coppia >= 3 then raise exception 'Oggi hai già sfidato questo amico 3 volte: riprova domani'; end if;
+  if totale >= 12 then raise exception 'Per oggi hai fatto tutte le sfide tra amici (12): riprova domani'; end if;
+  insert into public.sfide_amici (sfidante, sfidato, vinto, punti_sfidante, punti_sfidato)
+    values (me, amico, vinto, case when vinto then 2 else 0 end, case when vinto then -1 else 1 end);
+  -- ricalcola subito la classifica di tutti e due
+  update public.classifica set aggiornato = now() where user_id in (me, amico);
+  return jsonb_build_object('oggi_coppia', coppia + 1, 'oggi_totale', totale + 1);
+end $$;
+
+-- Le sfide che hai ricevuto e non hai ancora visto (per l'avviso "Marco ti ha battuto")
+create or replace function public.segna_sfide_viste() returns void
+language sql security definer set search_path = public as $$
+  update public.sfide_amici set visto = true where sfidato = auth.uid() and not visto;
+$$;
+revoke all on function public.punti_amici(uuid), public.squadra_amico(uuid), public.registra_sfida(uuid, boolean), public.segna_sfide_viste() from public, anon;
+grant execute on function public.punti_amici(uuid), public.squadra_amico(uuid), public.registra_sfida(uuid, boolean), public.segna_sfide_viste() to authenticated;
+
+-- ---------------- Boss del gruppo ----------------
+-- Ogni settimana (da lunedì a domenica) un boss con tanti PV che tutti colpiscono insieme.
+-- 3 attacchi al giorno a testa, al massimo 6000 danni per attacco. Se cade, premio per chi ha partecipato.
+create table if not exists public.boss_settimana (
+  settimana text primary key,
+  pv_max    integer not null,
+  creato    timestamptz not null default now()
+);
+create table if not exists public.boss_danni (
+  settimana  text not null references public.boss_settimana (settimana) on delete cascade,
+  user_id    uuid not null references auth.users (id) on delete cascade,
+  danni      integer not null default 0,
+  colpi      integer not null default 0,
+  giorno     date,
+  colpi_oggi integer not null default 0,
+  riscosso   boolean not null default false,
+  primary key (settimana, user_id)
+);
+alter table public.boss_settimana enable row level security;
+alter table public.boss_danni enable row level security;
+drop policy if exists "boss: tutti lo vedono" on public.boss_settimana;
+create policy "boss: tutti lo vedono" on public.boss_settimana for select to authenticated using (true);
+drop policy if exists "danni boss: tutti li vedono" on public.boss_danni;
+create policy "danni boss: tutti li vedono" on public.boss_danni for select to authenticated using (true);
+grant select on public.boss_settimana, public.boss_danni to authenticated;
+revoke all on public.boss_settimana, public.boss_danni from anon;
+
+create or replace function public.settimana_attuale() returns text
+language sql stable as $$ select to_char(now() at time zone 'Europe/Rome', 'IYYY-"W"IW') $$;
+
+create or replace function public.boss_attuale() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare s text := public.settimana_attuale(); oggi date := (now() at time zone 'Europe/Rome')::date; b public.boss_settimana; tot int;
+begin
+  if auth.uid() is null then raise exception 'Devi fare l''accesso'; end if;
+  -- i PV crescono con quanti giocano: 10.000 per ogni giocatore attivo nelle ultime 2 settimane (almeno 30.000)
+  insert into public.boss_settimana (settimana, pv_max)
+    values (s, greatest(30000, 10000 * (select count(*) from public.salvataggi where slot = 'partita' and aggiornato > now() - interval '14 days')))
+    on conflict (settimana) do nothing;
+  select * into b from public.boss_settimana where settimana = s;
+  select coalesce(sum(danni), 0) into tot from public.boss_danni where settimana = s;
+  return jsonb_build_object(
+    'settimana', s, 'pv_max', b.pv_max, 'danni', tot,
+    'fine', ((date_trunc('week', now() at time zone 'Europe/Rome') + interval '7 days') at time zone 'Europe/Rome'),
+    'colpi_oggi', coalesce((select case when giorno = oggi then colpi_oggi else 0 end from public.boss_danni where settimana = s and user_id = auth.uid()), 0),
+    'classifica', coalesce((select jsonb_agg(jsonb_build_object('id', d.user_id, 'danni', d.danni, 'nome', coalesce(c.dati->>'nome', 'Giocatore'), 'avatar', coalesce(c.dati->>'avatar', '')) order by d.danni desc)
+       from public.boss_danni d left join public.classifica c on c.user_id = d.user_id where d.settimana = s and d.danni > 0), '[]'::jsonb),
+    -- premi da riscuotere: boss sconfitti (anche delle settimane passate) a cui hai partecipato
+    'da_riscuotere', coalesce((select jsonb_agg(x.settimana) from public.boss_danni x join public.boss_settimana y using (settimana)
+       where x.user_id = auth.uid() and x.danni > 0 and not x.riscosso
+         and (select sum(z.danni) from public.boss_danni z where z.settimana = x.settimana) >= y.pv_max), '[]'::jsonb));
+end $$;
+
+create or replace function public.colpisci_boss(danni integer) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare s text := public.settimana_attuale(); oggi date := (now() at time zone 'Europe/Rome')::date; r public.boss_danni; pv int; tot int; d int := least(greatest(coalesce(danni, 0), 0), 6000);
+begin
+  if auth.uid() is null then raise exception 'Devi fare l''accesso'; end if;
+  perform public.boss_attuale();
+  select pv_max into pv from public.boss_settimana where settimana = s;
+  select coalesce(sum(x.danni), 0) into tot from public.boss_danni x where x.settimana = s;
+  if tot >= pv then raise exception 'Il boss di questa settimana è già stato sconfitto'; end if;
+  insert into public.boss_danni (settimana, user_id) values (s, auth.uid()) on conflict do nothing;
+  select * into r from public.boss_danni where settimana = s and user_id = auth.uid() for update;
+  if r.giorno = oggi and r.colpi_oggi >= 3 then raise exception 'Oggi hai già attaccato il boss 3 volte: torna domani'; end if;
+  update public.boss_danni set danni = r.danni + d, colpi = r.colpi + 1,
+    colpi_oggi = case when r.giorno = oggi then r.colpi_oggi + 1 else 1 end, giorno = oggi
+    where settimana = s and user_id = auth.uid();
+  return public.boss_attuale() || jsonb_build_object('registrati', d, 'sconfitto_ora', tot < pv and tot + d >= pv);
+end $$;
+
+create or replace function public.riscatta_boss(sett text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare r public.boss_danni; pv int; tot int; pos int; n int;
+begin
+  select * into r from public.boss_danni where settimana = sett and user_id = auth.uid() for update;
+  select pv_max into pv from public.boss_settimana where settimana = sett;
+  select coalesce(sum(danni), 0), count(*) filter (where danni > 0) into tot, n from public.boss_danni where settimana = sett;
+  if r is null or r.danni <= 0 or tot < pv then raise exception 'Non c''è nessun premio da riscuotere'; end if;
+  if r.riscosso then raise exception 'Premio già riscosso'; end if;
+  update public.boss_danni set riscosso = true where settimana = sett and user_id = auth.uid();
+  select count(*) + 1 into pos from public.boss_danni where settimana = sett and danni > r.danni;
+  return jsonb_build_object('settimana', sett, 'posizione', pos, 'partecipanti', n, 'danni', r.danni);
+end $$;
+revoke all on function public.boss_attuale(), public.colpisci_boss(integer), public.riscatta_boss(text) from public, anon;
+grant execute on function public.boss_attuale(), public.colpisci_boss(integer), public.riscatta_boss(text) to authenticated;
+
 -- ---------------- Controlli contro i trucchi ----------------
 -- Il gioco gira sul dispositivo di ognuno, quindi il server controlla i salvataggi:
 -- rifiuta valori impossibili da ottenere giocando e tiene la classifica allineata al salvataggio vero.
@@ -172,12 +333,13 @@ declare s jsonb;
 begin
   -- i numeri in classifica arrivano dal salvataggio, non da quello che manda il dispositivo
   select dati into s from public.salvataggi where user_id = new.user_id and slot = 'partita';
-  new.punti := coalesce((s->'stats'->>'punti')::int, 0);
+  new.punti := greatest(0, coalesce((s->'stats'->>'punti')::int, 0) + public.punti_amici(new.user_id));
   new.dati := coalesce(new.dati, '{}'::jsonb) || jsonb_build_object(
     'punti', new.punti,
     'vittorie', coalesce((s->'stats'->>'vittorie')::int, 0),
     'sconfitte', coalesce((s->'stats'->>'sconfitte')::int, 0),
-    'carte', (select count(*) from jsonb_object_keys(coalesce(s->'carte', '{}'::jsonb))));
+    'carte', (select count(*) from jsonb_object_keys(coalesce(s->'carte', '{}'::jsonb))),
+    'vinte_amici', (select count(*) from public.sfide_amici where (sfidante = new.user_id and vinto) or (sfidato = new.user_id and not vinto)));
   new.aggiornato := now();
   return new;
 end $$;

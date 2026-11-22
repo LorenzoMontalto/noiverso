@@ -21,6 +21,7 @@ const Tutorial = (() => {
       { titolo: `Ciao ${nome}!`, testo: `Benvenuto in <b>Noiverso</b>, il gioco di carte del gruppo. In un paio di minuti ti faccio vedere tutto: bustine, album, squadra e la tua prima battaglia.<br><span class="tut-nota">Puoi saltare quando vuoi e rifarlo dal tuo profilo.</span>` },
       { vista: "strada", bersaglio: ".testa .monete", titolo: "Le monete", testo: `Servono per comprare bustine nel negozio e per potenziare le carte. Le guadagni vincendo battaglie, con la storia e con il pass.` },
       { vista: "strada", bersaglio: ".nav", titolo: "Le sezioni", testo: "Da questa barra ti sposti tra le parti del gioco. Il numerino su una sezione vuol dire che lì c'è qualcosa da fare." },
+      { vista: "strada", bersaglio: ".oggi", titolo: "Ogni giorno", testo: "Qui trovi il <b>premio di accesso</b> (7 giorni di fila danno premi sempre più grossi), le <b>missioni del giorno</b> e della settimana, il <b>boss del gruppo</b> da battere tutti insieme e le <b>sfide contro gli amici</b>." },
       { vista: "bustine", bersaglio: '[data-apri="benvenuto"]', titolo: "Le bustine",
         aspetta: () => !S.inventario.benvenuto && $("#apertura").hidden,
         compito: "Hai una <b>bustina di benvenuto</b>: 5 carte tutte diverse. Tocca <b>Apri</b>!",

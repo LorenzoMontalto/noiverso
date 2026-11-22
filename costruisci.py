@@ -5,7 +5,7 @@ così ogni aggiornamento arriva subito a tutti, senza copie vecchie in memoria."
 import hashlib, os, re, shutil
 QUI = os.path.dirname(os.path.abspath(__file__))
 SRC, OUT = os.path.join(QUI, "sorgente"), os.path.join(QUI, "sito")
-CODICE = ["carte", "motore", "effetti", "scena3d", "mappe", "storia", "tutorial", "app", "supabase-ponte", "immagini"]
+CODICE = ["carte", "motore", "effetti", "scena3d", "mappe", "storia", "tutorial", "missioni", "sociale", "app", "supabase-ponte", "immagini"]
 LIBRERIE = ["three.min", "supabase.min"]
 
 shutil.rmtree(OUT, ignore_errors=True)

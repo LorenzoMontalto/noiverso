@@ -658,6 +658,12 @@ body.in-battaglia { overflow: hidden; }
 .classifica tbody tr { animation: riga-entra .4s ease-out both; animation-delay: calc(var(--i) * 50ms); }
 .classifica tr.io td { background: #2a1219; }
 .classifica td:first-child { font-family: var(--display); color: var(--spento); width: 40px; }
+.classifica td:last-child .btn { white-space: nowrap; }
+@media (max-width: 560px) {
+  .classifica th, .classifica td { padding: 8px 6px; }
+  .classifica th:nth-child(5), .classifica td:nth-child(5), .classifica th:nth-child(6), .classifica td:nth-child(6) { display: none; }
+  .classifica td:first-child { width: 24px; }
+}
 .classifica tbody tr:first-child td:first-child { color: var(--oro); }
 
 
@@ -813,7 +819,10 @@ body.in-accesso { overflow: hidden; }
 .avatar { width: 40px; aspect-ratio: 5 / 7; object-fit: cover; border-radius: 7px; border: 2px solid var(--neon); flex: 0 0 auto; display: inline-grid; place-items: center; background: var(--muro); color: var(--spento); font-weight: 700; }
 .avatar.grande { width: 64px; border-radius: 10px; box-shadow: 0 0 16px var(--neon-alone); }
 .avatar.mini { width: 24px; border-width: 1px; border-radius: 4px; vertical-align: middle; margin-right: 8px; }
-.avatar.vuoto { border-style: dashed; border-color: var(--linea); font-size: 1.2rem; }
+.avatar.mini { flex: none; aspect-ratio: 5 / 7; height: auto; align-self: center; }
+.avatar.vuoto.mini { display: inline-grid; place-items: center; height: 34px; font-size: .7rem; }
+.boss-classifica .avatar.mini, .amici-lista .avatar.mini { margin-right: 0; }
+.avatar.vuoto { border-style: dashed; border-color: var(--linea); font-size: 1.2rem; padding: 0; gap: 0; text-align: center; }
 .scelta-avatar { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); grid-auto-rows: max-content; align-content: start; gap: 6px; max-height: 220px; overflow-y: auto; padding: 4px; border-radius: 12px; background: var(--notte); border: 1px solid var(--linea); }
 .av-btn { display: block; padding: 0; border: 2px solid transparent; border-radius: 8px; background: none; cursor: pointer; overflow: hidden; transition: border-color .15s; }
 .av-btn img { display: block; width: 100%; aspect-ratio: 5 / 7; object-fit: cover; }
@@ -1050,6 +1059,80 @@ body.in-accesso { overflow: hidden; }
   .campi-2 { grid-template-columns: 1fr; }
 }
 
+/* ---------- Oggi: accessi, missioni, boss, amici ---------- */
+.oggi { margin: 8px 0 28px; display: grid; gap: 16px; }
+.oggi .titolo-riga { margin-bottom: 0; }
+.accessi { background: var(--asfalto); border: 1px solid var(--linea); border-radius: 16px; padding: 14px 16px; display: grid; gap: 10px; }
+.accessi.pronto { border-color: color-mix(in srgb, var(--oro) 60%, var(--linea)); box-shadow: 0 0 22px rgba(242, 193, 78, .14); }
+.accessi-testa { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; align-items: baseline; }
+.accessi-testa .nota { margin: 0; }
+.accessi-giorni { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.accessi-giorni li { background: var(--notte); border: 1px solid var(--linea); border-radius: 10px; padding: 6px 4px; display: grid; gap: 2px; text-align: center; min-height: 62px; align-content: start; position: relative; }
+.accessi-giorni small { color: var(--spento); font-weight: 700; font-size: .7rem; }
+.accessi-giorni span { font-size: .68rem; line-height: 1.2; }
+.accessi-giorni li.preso { opacity: .5; }
+.accessi-giorni li.preso::after { content: "✓"; position: absolute; top: 4px; right: 6px; color: #4be38a; font-weight: 800; font-size: .8rem; }
+.accessi-giorni li.oggi-qui { border-color: var(--oro); box-shadow: 0 0 14px rgba(242, 193, 78, .35); animation: pulsa-oro 1.8s ease-in-out infinite; }
+.accessi-giorni li.settimo { background: linear-gradient(160deg, rgba(184, 102, 255, .22), var(--notte)); }
+.accessi .btn { justify-self: start; }
+@keyframes pulsa-oro { 50% { box-shadow: 0 0 22px rgba(242, 193, 78, .6); } }
+.missioni-griglia { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.missioni-box { background: var(--asfalto); border: 1px solid var(--linea); border-radius: 16px; padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.missioni-box h3 { margin: 0; font-size: 1rem; }
+.missioni { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.missione { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
+.missione-testo { display: grid; gap: 1px; }
+.missione-testo b { font-size: .92rem; font-weight: 600; }
+.missione-testo small { color: var(--spento); font-size: .76rem; }
+.missione-barra { grid-column: 1; position: relative; height: 16px; border-radius: 999px; background: var(--notte); border: 1px solid var(--linea); overflow: hidden; }
+.missione-barra i { position: absolute; inset: 0 auto 0 0; width: var(--p); background: linear-gradient(90deg, var(--neon), #ff6b7d); border-radius: 999px; transition: width .5s; }
+.missione.finita .missione-barra i { background: linear-gradient(90deg, #2fbf71, #6fe3a0); }
+.missione-barra span { position: relative; display: block; text-align: center; font-size: .68rem; font-weight: 700; line-height: 14px; }
+.missione > .btn, .missione-fatta, .missione-vuota { grid-column: 2; grid-row: 1 / span 2; }
+.missione-fatta { color: #4be38a; font-weight: 800; font-size: 1.2rem; width: 30px; text-align: center; }
+.missione.riscossa { opacity: .55; }
+.missione-bonus { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: .85rem; padding-top: 8px; border-top: 1px dashed var(--linea); color: var(--spento); }
+.missione-bonus b { color: var(--testo); }
+.oggi-sociale, .sfida-sociale { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.sfida-sociale { margin-bottom: 22px; }
+.amici-invito { background: var(--asfalto); border: 1px solid var(--linea); border-radius: 16px; padding: 16px; display: grid; gap: 8px; align-content: center; justify-items: start; background-image: radial-gradient(120% 120% at 100% 0%, rgba(63, 216, 255, .12), transparent 60%); }
+.amici-invito .nota { margin: 0; }
+.boss-box { background: var(--asfalto); border: 1px solid color-mix(in srgb, var(--neon) 50%, var(--linea)); border-radius: 16px; padding: 14px 16px; display: grid; gap: 10px; background-image: radial-gradient(120% 120% at 0% 0%, rgba(255, 46, 70, .16), transparent 60%); }
+.boss-box.caduto { border-color: color-mix(in srgb, var(--oro) 60%, var(--linea)); background-image: radial-gradient(120% 120% at 0% 0%, rgba(242, 193, 78, .16), transparent 60%); }
+.boss-testa { display: flex; gap: 12px; align-items: center; }
+.boss-testa img { width: 62px; aspect-ratio: 5 / 7; object-fit: cover; border-radius: 8px; border: 2px solid var(--neon); box-shadow: 0 0 16px var(--neon-alone); flex: none; }
+.boss-box.caduto .boss-testa img { filter: grayscale(.8); border-color: var(--oro); }
+.boss-testa > div { display: grid; gap: 4px; flex: 1; min-width: 0; }
+.boss-etichetta { color: var(--neon); font-weight: 700; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+.boss-testa b { font-family: var(--display); font-weight: 400; font-size: 1.15rem; }
+.boss-pv { position: relative; height: 18px; border-radius: 999px; background: var(--notte); border: 1px solid var(--linea); overflow: hidden; }
+.boss-pv i { position: absolute; inset: 0 auto 0 0; width: var(--p); background: linear-gradient(90deg, #b3122a, var(--neon)); }
+.boss-pv span { position: relative; display: block; text-align: center; font-size: .72rem; font-weight: 700; line-height: 16px; }
+.boss-azioni { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.boss-azioni .nota, .boss-box > .nota { margin: 0; }
+.boss-classifica { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: .85rem; }
+.boss-classifica li { display: flex; align-items: center; gap: 8px; }
+.boss-classifica li span { width: 18px; color: var(--spento); font-weight: 700; text-align: right; }
+.boss-classifica li b { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boss-classifica li em { font-style: normal; font-variant-numeric: tabular-nums; color: var(--oro); }
+.boss-classifica li.io b { color: var(--neon); }
+.amici-modale { display: grid; gap: 12px; }
+.amici-modale h2 { margin: 0; }
+.amici-modale .nota { margin: 0; }
+.amici-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 55vh; overflow-y: auto; }
+.amici-lista li { display: flex; align-items: center; gap: 10px; background: var(--asfalto); border: 1px solid var(--linea); border-radius: 12px; padding: 8px 10px; }
+.amico-info { flex: 1; display: grid; min-width: 0; }
+.amico-info small { color: var(--spento); }
+.vinto-tag { color: #4be38a; font-weight: 800; font-size: .8rem; }
+.punti-amico { color: #4be38a; font-weight: 700; }
+.punti-amico.perso { color: var(--spento); }
+.fine.boss-fine b { color: var(--neon); }
+@media (max-width: 560px) {
+  .accessi-giorni { gap: 4px; }
+  .accessi-giorni li { padding: 5px 2px; min-height: 58px; }
+  .accessi-giorni span { font-size: .6rem; }
+}
+
 /* ---------- Tutorial ---------- */
 #tutorial { position: fixed; inset: 0; z-index: 29; pointer-events: none; }
 #tutorial .tut-velo { position: absolute; inset: 0; pointer-events: auto; }
@@ -1090,7 +1173,7 @@ body.in-accesso { overflow: hidden; }
     <button id="profilo-btn" class="profilo-testa-btn" data-fx="salto" aria-label="Profilo e impostazioni" hidden></button>
   </header>
   <nav class="nav" aria-label="Sezioni">
-    <button data-vista="strada" data-fx="salto">Strada</button>
+    <button data-vista="strada" data-fx="salto">Strada<span class="badge" hidden></span></button>
     <button data-vista="storia" data-fx="salto">Storia<span class="badge" hidden></span></button>
     <button data-vista="bustine" data-fx="salto">Bustine<span class="badge" hidden></span></button>
     <button data-vista="negozio" data-fx="salto">Negozio</button>
@@ -1123,6 +1206,8 @@ body.in-accesso { overflow: hidden; }
 <script src="mappe.js"></script>
 <script src="storia.js"></script>
 <script src="tutorial.js"></script>
+<script src="missioni.js"></script>
+<script src="sociale.js"></script>
 <script src="app.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria

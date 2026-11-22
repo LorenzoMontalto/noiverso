@@ -63,7 +63,7 @@ const SCELTE_PASS = {
 function testoPremio(p) {
   const parti = [];
   if (p.monete) parti.push(`${p.monete} monete`);
-  for (const t of ["leggendaria", "epica", "normale"]) { const n = p.bustine && p.bustine[t]; if (n) parti.push(`${n > 1 ? n + " " : ""}${NOMI_BUSTINE[t][n > 1 ? 1 : 0]}`); }
+  for (const [t, n] of Object.entries(p.bustine || {})) if (n) parti.push(NOMI_BUSTINE[t] ? `${n > 1 ? n + " " : ""}${NOMI_BUSTINE[t][n > 1 ? 1 : 0]}` : `${n > 1 ? n + " × " : ""}${TIPI_BUSTINA[t] ? TIPI_BUSTINA[t].nome : t}`);
   if (p.pot) parti.push(p.casuale ? `+${p.pot} potenziatori${p.carta ? " a " + PER_ID[p.carta].nome : ""}` : `+${p.pot} potenziatori a una carta a scelta`);
   return parti.join(" + ");
 }
@@ -179,7 +179,8 @@ const Archivio = {
     } catch (e) { this.modo = "locale"; }
   },
   get admin() { return this.slot === "admin"; },
-  _chiave() { return this.modo === "cloud" ? `losnueve-cloud-${this.slot}` : `losnueve-${this.profiloLocale}-${this.slot}`; },
+  // online la copia locale è per account: su un dispositivo condiviso nessuno vede (o si porta via) i progressi di un altro
+  _chiave() { return this.modo === "cloud" ? `noiverso-cloud-${this.uid}-${this.slot}` : `losnueve-${this.profiloLocale}-${this.slot}`; },
   _leggiLocale(k = this._chiave()) { try { const t = localStorage.getItem(k); return t ? JSON.parse(t) : null; } catch (e) { return null; } },
   _scriviLocale(s) { try { localStorage.setItem(this._chiave(), JSON.stringify(s)); } catch (e) { /* niente */ } },
   _ref() { return this.db.doc(`data/users/${this.uid}/${this.slot}`); },
@@ -216,6 +217,8 @@ const Archivio = {
     });
   },
   async carica() {
+    // la vecchia copia locale non diceva di quale account fosse: la tolgo, il salvataggio vero è sul server
+    try { localStorage.removeItem(`losnueve-cloud-${this.slot}`); } catch (e) {}
     const locale = this._leggiLocale();
     this._localePiuNuovo = false;
     if (this.modo === "cloud") {
@@ -225,8 +228,8 @@ const Archivio = {
         // la copia su questo dispositivo è più recente (salvataggio non ancora arrivato al server): vince lei
         if (server && locale && (locale.rev || 0) > (server.rev || 0)) { this._localePiuNuovo = true; return locale; }
         if (server) return server;
-        // prima volta online: si porta dietro i progressi della versione precedente, se ci sono
-        return locale || (this.slot === "partita" ? this._leggiLocale("losnueve-partita-v1") : null);
+        // prima volta online: si porta dietro i progressi della versione precedente (solo nella versione su Claude)
+        return locale || (this.slot === "partita" && !window.NOIVERSO_SUPABASE ? this._leggiLocale("losnueve-partita-v1") : null);
       } catch (e) { this.modo = "locale"; this.profiloLocale = this.profiloLocale || "ospite"; mostraAvviso("Non riesco a leggere i salvataggi online: per ora gioco su questo dispositivo."); }
     }
     return locale;
@@ -350,6 +353,7 @@ function aggiornaTesta() {
   const pb = $("#profilo-btn");
   if (pb) { pb.hidden = !S.profilo.nome; pb.innerHTML = `${htmlAvatar(S.profilo.avatar)}<span>${esc(S.profilo.nome || "")}</span>${S.admin ? `<em>Admin</em>` : ""}`; }
   const na = $('[data-vista="admin"]'); if (na) na.hidden = !S.admin;
+  const nst = $('[data-vista="strada"] .badge'); if (nst) { const q = Missioni.pronte(); nst.textContent = q; nst.hidden = !q; }
   const ns = $('[data-vista="storia"] .badge'); if (ns) { const q = scrigniPronti(); ns.textContent = q; ns.hidden = !q; }
   const nal = $('[data-vista="album"] .badge'); if (nal) { const q = potenziabili(); nal.textContent = q; nal.hidden = !q; }
   const b = bustineTotali(), r = daRiscuotere();
@@ -453,6 +457,7 @@ function potenziaCarta(id, el) {
   S.pot[id] = inf.pot - inf.servePot;
   if (!S.admin) S.monete -= inf.serveMon;
   S.liv[id] = inf.liv + 1;
+  Missioni.evento("potenzia");
   salva();
   if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 40, forma: "stella", colori: ["#6fe3a0", "#3fd8ff", "#ffffff"], velocita: 7, dimensione: 5, durata: 1100 }); }
   disegna();
@@ -509,6 +514,7 @@ function spostaIndicatore() {
 
 function disegna() {
   aggiornaTesta();
+  if (B && $("#azioni")) return;   // durante una battaglia la pagina sotto non si ridisegna (la classifica può aggiornarsi in qualsiasi momento)
   const main = $("#vista");
   main.innerHTML = ({ strada: vistaStrada, bustine: vistaBustine, negozio: vistaNegozio, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria })[vista]();
   if (vista === "classifica") avviaClassifica();
@@ -535,6 +541,7 @@ function vistaStrada() {
     </div>
     <div class="ventaglio" aria-hidden="true">${anteprima.map(c => htmlCarta(c, { liv: 0, piccola: true })).join("")}</div>
   </section>
+  ${Missioni.htmlStrada()}
   ${(() => { const p = prossimaTappa(); const c = p ? STORIA[p.k] : STORIA[STORIA.length - 1];
     return `<section class="storia-banner" style="--c:${c.colore}">
       <img src="${imgCarta(p ? c.tappe[p.i].parla : "aresorenzo")}" alt="">
@@ -547,7 +554,7 @@ function vistaStrada() {
     <div class="riquadro"><span>Album</span><b>${mie}<small>/${tot}</small></b><div class="barra"><i style="--p:${Math.round(mie / tot * 100)}%"></i></div></div>
     <div class="riquadro"><span>Vittorie</span><b>${S.stats.vittorie}<small> su ${giocate}</small></b></div>
     <div class="riquadro"><span>Pass</span><b>Lv ${livelloPass()}<small>/${PASS.livelli}</small></b><div class="barra oro"><i style="--p:${(S.pass.xp % PASS.xpLivello) / PASS.xpLivello * 100}%"></i></div></div>
-    <div class="riquadro"><span>Punti classifica</span><b>${S.stats.punti}</b></div>
+    <div class="riquadro"><span>Punti classifica</span><b>${(() => { const io = classificaDati && classificaDati.find(r => r.id === Archivio.uid); return io ? Number(io.punti) || 0 : S.stats.punti; })()}</b></div>
   </section>
   <section class="regole">
     <div class="titolo-riga"><h2>Come si gioca</h2><button class="btn piccolo" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button></div>
@@ -776,6 +783,7 @@ function usaBustina(tipo, pagando) {
   }
   const esiti = apriBustina(tipo);
   const su = aggiungiXP(XP_BUSTINA);
+  Missioni.evento("bustina");
   salva();
   Archivio.pubblicaClassifica();
   aggiornaTesta();
@@ -951,6 +959,8 @@ function vistaSfida() {
     <div class="titolo-riga"><h2>Scegli l'avversario</h2>
       <div class="filtri">${pronte.map(x => `<button class="chip" data-fx="gelatina" data-squadra-sfida="${x.i}" aria-pressed="${x.i === S.attiva}">${esc(x.s.nome)}</button>`).join("")}</div>
     </div>
+    ${socialeAttivo() ? `<div class="sfida-sociale">${Boss.htmlGrande()}<div class="amici-invito"><b>Sfida un amico</b><span class="nota">Combatti contro la squadra vera di un amico, guidata dal computer. Se vinci gli rubi un punto in classifica.</span><button class="btn primario" data-fx="spinta" data-azione="vai-amici">Scegli chi sfidare</button></div></div>
+    <div class="titolo-riga piccola"><h3>Contro il computer</h3></div>` : ""}
     <div class="modo-riga">${segmento("modalita", "Modalità", [["classica", "Classica 5 contro 5"], ["rapida", "Rapida 3 contro 3"]])}</div>
     <div class="slot5 piccola">${sq.carte.map((id, i) => `<div class="${i >= carteBattaglia() ? "fuori-gioco" : ""}">${htmlCarta(PER_ID[id], { piccola: true })}</div>`).join("")}</div>
     <div class="livelli">
@@ -1070,7 +1080,7 @@ function dopoPass() {
 function daiPremio(p) {
   const r = { monete: 0, bustine: 0 };
   if (p.monete) { S.monete += p.monete; r.monete += p.monete; }
-  for (const [t, n] of Object.entries(p.bustine || {})) { S.inventario[t] += n; r.bustine += n; }
+  for (const [t, n] of Object.entries(p.bustine || {})) { S.inventario[t] = (S.inventario[t] || 0) + n; r.bustine += n; }
   if (p.pot && p.casuale) {
     const ok = possedute().filter(c => infoCarta(c.id).liv < LIVELLO_MAX);
     if (ok.length) { const c = ok[Math.floor(Math.random() * ok.length)]; S.pot[c.id] = (S.pot[c.id] || 0) + p.pot; p.carta = c.id; }
@@ -1177,10 +1187,10 @@ function vistaClassifica() {
   <section>
     <div class="titolo-riga"><h2>Classifica del gruppo</h2></div>
     <table class="classifica">
-      <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vittorie</th><th>Carte</th><th>Pass</th></tr></thead>
+      <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vittorie</th><th>Carte</th><th>Pass</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
       <tbody>${classificaDati.map((r, i) => `
         <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}</td>
-        <td>${Number(r.punti) || 0}</td><td>${Number(r.vittorie) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>Lv ${Number(r.pass) || 0}</td></tr>`).join("")}</tbody>
+        <td>${Number(r.punti) || 0}</td><td>${Number(r.vittorie) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>Lv ${Number(r.pass) || 0}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
     </table>
   </section>`;
 }
@@ -1200,6 +1210,7 @@ function avviaClassifica() {
       }
     } catch (e) { /* senza nomi si vede "Giocatore" */ }
     if (vista === "classifica") disegna();
+    Amici.aggiornaElenco();
   }, () => { clearTimeout(classificaTimer); classificaErrore = true; if (vista === "classifica") disegna(); });
 }
 
@@ -1294,6 +1305,8 @@ async function entra(slot, profiloLocale) {
   if (nuova && S.stats.bustine > 0 && !S.admin) setTimeout(() => mostraAvviso("È arrivata la bustina del giorno!"), 500);
   if (slot === "admin") setTimeout(() => mostraAvviso("Modalità admin: monete infinite e tutte le carte. Questi progressi non vanno in classifica."), 400);
   Tutorial.allIngresso();
+  if (slot !== "admin") { Amici.controllaRicevute(); }
+  Boss.carica();
 }
 
 async function inviaProfilo(form) {
@@ -1870,8 +1883,11 @@ function chiudiStoria() {
       if (t.bustina) { S.inventario[t.bustina] += t.bustine || 1; esito.bustina = `${t.bustine > 1 ? t.bustine + " × " : ""}${TIPI_BUSTINA[t.bustina].nome}`; }
       S.stats.punti += t.boss ? 3 : 1;
     } else { esito.monete = Math.round(t.monete * .25); esito.xp = 20; }
+    const nuove = Math.max(0, esito.stelle - (S.storia.stelle[key] || 0));
     S.storia.stelle[key] = Math.max(S.storia.stelle[key] || 0, esito.stelle);
     S.stats.vittorie++;
+    Missioni.evento("vittoria", { squadra: B.lati[0].squadra.map(x => x.id) });
+    Missioni.evento("storia", { tre: esito.stelle === 3, nuove });
     if (arena) arena.vittoria(0);
     setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 70, forma: "stella", colori: ["#f2c14e", "#fff3c4", STORIA[k].colore], velocita: 8, dimensione: 7, durata: 1600 }); } }, 50);
   } else { esito.xp = 10; S.stats.sconfitte++; }
@@ -1937,8 +1953,9 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
   const n = carteForzate ? CARTE_SQUADRA : carteBattaglia();
   const mia = (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id) }));
   const L = livelloAttuale;
-  const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
+  const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   B = new Battaglia(mia, nemici, "Tu", L.nome);
+  if (L.bossGruppo) Boss.prepara(B);
   document.body.classList.add("in-battaglia");
   $("#app").classList.add("in-battaglia");
   const main = $("#vista");
@@ -2075,6 +2092,8 @@ function htmlPanchina(perSostituire) {
 function htmlAzioni() {
   const finita = B.vincitore >= 0 && !animazione;   // il risultato si vede solo dopo l'ultima animazione
   if (finita && livelloAttuale.storia) return htmlFineStoria();
+  if (finita && livelloAttuale.amico) return Amici.htmlFine();
+  if (finita && livelloAttuale.bossGruppo) return Boss.htmlFine();
   if (finita) {
     const vinto = B.vincitore === 0;
     return `<div class="fine ${vinto ? "vinto" : "perso"}">
@@ -2246,12 +2265,15 @@ function htmlEspCarte() {
 
 function chiudiSfida() {
   if (livelloAttuale && livelloAttuale.storia) return chiudiStoria();
+  if (livelloAttuale && livelloAttuale.amico) return Amici.chiudi();
+  if (livelloAttuale && livelloAttuale.bossGruppo) return Boss.chiudi();
   livelloAttuale.espCarte = premiaCarte(livelloAttuale.xpCarte || 1, B.vincitore === 0);
   let su = 0;
   const pr = premiSfida(livelloAttuale);
   if (B.vincitore === 0) {
     S.monete += pr.monete; S.stats.vittorie++; S.stats.punti += pr.punti;
     su = aggiungiXP(pr.xp);
+    Missioni.evento("vittoria", { squadra: B.lati[0].squadra.map(x => x.id) });
     if (arena) arena.vittoria(0);
     setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 60, forma: "coriandolo", colori: ["#f2c14e", "#ff2e46", "#3fd8ff", "#ffffff"], velocita: 8, dimensione: 5, durata: 1500 }); } }, 50);
   } else { S.monete += 10; S.stats.sconfitte++; su = aggiungiXP(XP_SCONFITTA); }
@@ -2281,7 +2303,7 @@ function esciBattaglia() {
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2325,6 +2347,9 @@ document.addEventListener("click", e => {
   if (t.dataset.togli !== undefined) { squadraAttiva().carte.splice(+t.dataset.togli, 1); salva(); setTimeout(disegna, ridotto ? 0 : 200); return; }
   if (t.dataset.apri) { usaBustina(t.dataset.apri, false); return; }
   if (t.dataset.compra) { compraBustina(t.dataset.compra, t); return; }
+  if (t.dataset.sfidaAmico) { if (B) { chiudiArena(); B = null; animazione = false; } Amici.sfida(t.dataset.sfidaAmico); return; }
+  if (t.dataset.missione) { Missioni.riscuoti(t.dataset.missione, t); return; }
+  if (t.dataset.bossPremio) { t.disabled = true; Boss.riscatta(t.dataset.bossPremio, t); return; }
   if (t.dataset.riapriCodice) { riapriCodice(t.dataset.riapriCodice); return; }
   if (t.dataset.riscuoti) { riscuoti([+t.dataset.riscuoti], t); return; }
   if (t.dataset.passScelta) { const [l, j] = t.dataset.passScelta.split(":").map(Number); scegliPremioPass(l, j, t); return; }
@@ -2350,6 +2375,11 @@ document.addEventListener("click", e => {
     case "vai-squadra": vai("squadra"); break;
     case "vai-pass": vai("pass"); break;
     case "vai-negozio": vai("negozio"); break;
+    case "vai-amici": Amici.apriElenco(); break;
+    case "attacca-boss": Boss.attacca(); break;
+    case "esci-amici": esciBattaglia(); setTimeout(() => Amici.apriElenco(), 300); break;
+    case "esci-boss": esciBattaglia(); break;
+    case "riscuoti-accesso": Missioni.riscuotiAccesso(t); break;
     case "gira-tutte": if (apertura) apertura.giraTutte(); break;
     case "gira-tutte-2d": $$(".gira").forEach((g, i) => setTimeout(() => g.classList.add("girata"), ridotto ? 0 : i * 180)); break;
     case "chiudi-apertura": chiudiApertura(); break;
