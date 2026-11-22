@@ -128,7 +128,8 @@ function migra(s) {
 // dentro/serve: sotto il 30 è il riempimento dei potenziatori, al 30 l'esperienza verso la lode.
 function infoCarta(id) {
   if (!S.carte[id]) return { liv: 0, dentro: 0, serve: 0, lode: false, pot: 0, servePot: 0, serveMon: 0, pronta: false, puoi: false };
-  const liv = Math.min(LIVELLO_MAX, (S.liv || {})[id] || 1), pot = (S.pot || {})[id] || 0, lx = (S.lodeXp || {})[id] || 0;
+  // i potenziatori promessi in uno scambio aperto non si possono usare per potenziare
+  const liv = Math.min(LIVELLO_MAX, (S.liv || {})[id] || 1), pot = Math.max(0, ((S.pot || {})[id] || 0) - (typeof Scambi !== "undefined" ? Scambi.riservati(id) : 0)), lx = (S.lodeXp || {})[id] || 0;
   if (liv >= LIVELLO_MAX) return { liv, lode: lx >= XP_LODE, pot, dentro: Math.min(lx, XP_LODE), serve: XP_LODE, servePot: 0, serveMon: 0, pronta: false, puoi: false };
   const servePot = potPerLivello(liv), serveMon = monetePerLivello(liv), pronta = pot >= servePot;
   return { liv, lode: false, pot, dentro: Math.min(pot, servePot), serve: servePot, servePot, serveMon, pronta, puoi: pronta && (S.admin || S.monete >= serveMon) };
@@ -460,7 +461,7 @@ function apriDettaglio(id) {
 function potenziaCarta(id, el) {
   const inf = infoCarta(id);
   if (!inf.puoi) return;
-  S.pot[id] = inf.pot - inf.servePot;
+  S.pot[id] = ((S.pot || {})[id] || 0) - inf.servePot;
   if (!S.admin) S.monete -= inf.serveMon;
   S.liv[id] = inf.liv + 1;
   Missioni.evento("potenzia");
@@ -1248,6 +1249,24 @@ async function apriScrignoBonus(origine) {
 
 // ---------- CLASSIFICA ----------
 let classificaDati = null, classificaErrore = false, nomiCache = {};
+// albo d'oro: da quando conta la classifica e i podi delle classifiche azzerate
+let albo = null;
+async function caricaAlbo() {
+  if (albo || !socialeAttivo()) return;
+  albo = { dal: null, storico: [] };
+  try { const { data } = await sbSociale().from("config").select("dati").eq("id", "classifica"); const d = (data && data[0] && data[0].dati) || {}; albo = { dal: d.dal || null, storico: Array.isArray(d.storico) ? d.storico : [] }; }
+  catch (e) { albo = null; return; }
+  if (vista === "classifica" && !B) disegna();
+}
+function htmlAlbo() {
+  if (!albo) { setTimeout(caricaAlbo, 0); return ""; }
+  const data = x => new Date(x).toLocaleDateString("it-IT", { day: "numeric", month: "long" });
+  const medaglie = ["🥇", "🥈", "🥉"];
+  const passate = albo.storico.filter(x => x && Array.isArray(x.podio) && x.podio.length).slice(0, 6);
+  return `${albo.dal ? `<p class="nota">Punti contati dal ${esc(data(albo.dal))}.</p>` : ""}
+    ${passate.length ? `<details class="albo"><summary>Albo d'oro (${passate.length})</summary><ul>${passate.map(x => `<li><small>${x.dal ? `${esc(data(x.dal))} – ` : "fino al "}${esc(data(x.al))}</small>
+      <span>${x.podio.map((p, i) => `${medaglie[i] || ""} <b>${esc(String(p.nome || "Giocatore"))}</b> ${Number(p.punti) || 0}`).join(" · ")}</span></li>`).join("")}</ul></details>` : ""}`;
+}
 function vistaClassifica() {
   if (Archivio.modo !== "cloud") return `
     <section class="vuoto"><h2>Classifica del gruppo</h2>
@@ -1260,6 +1279,7 @@ function vistaClassifica() {
   <section>
     <div class="titolo-riga"><h2>Classifica del gruppo</h2></div>
     <p class="nota">Contano solo le sfide dal vivo: +3 punti per ogni vittoria, 0 per le sconfitte.</p>
+    ${htmlAlbo()}
     <table class="classifica">
       <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vinte dal vivo</th><th>Carte</th><th>Pass</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
       <tbody>${classificaDati.map((r, i) => `
@@ -1499,6 +1519,9 @@ function vistaAdmin() {
       <div class="admin-box largo" id="admin-graffiti">${Graffiti.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-codici">${htmlAdminCodici()}</div>
       <div class="admin-box largo" id="admin-controlli">${htmlAdminControlli()}</div>
+      <div class="admin-box"><h3>Classifica</h3>
+        <p class="nota">Azzera i punti di tutti, per esempio all'inizio di ogni mese. Il podio di adesso finisce nell'albo d'oro, visibile in classifica. Le vittorie restano valide per i trofei.</p>
+        <div class="azioni"><button class="btn" data-admin="azzera-classifica">Azzera la classifica</button></div></div>
       <div class="admin-box"><h3>Il tuo profilo normale</h3>
         <p class="nota">Riparte da zero il tuo profilo da giocatore (non quello admin).</p>
         <button class="btn" data-fx="scuoti" data-admin="reset-normale">Azzera profilo normale</button></div>
@@ -1819,6 +1842,17 @@ async function azioneAdmin(cosa, el) {
   if (cosa === "img-trasferisci") { trasferisciImmagini(); return; }
   if (cosa.startsWith("cod-")) { azioneCodici(cosa, el); return; }
   if (cosa.startsWith("ctl-")) { azioneControlli(cosa, el); return; }
+  if (cosa === "azzera-classifica") {
+    apriModale(`<div class="conferma"><h2>Azzerare la classifica?</h2><p>Tutti ripartono da 0 punti. Il podio di adesso viene salvato nell'albo d'oro. Non si può tornare indietro.</p>
+      <div class="azioni centro"><button class="btn" data-azione="chiudi">No</button><button class="btn primario" data-admin="azzera-classifica-si">Sì, azzera</button></div></div>`);
+    return;
+  }
+  if (cosa === "azzera-classifica-si") {
+    el.disabled = true;
+    try { await rpcSociale("azzera_classifica"); chiudiModale(); albo = null; mostraAvviso("Classifica azzerata: si riparte da 0."); }
+    catch (e) { mostraAvviso(e.message); el.disabled = false; }
+    return;
+  }
   if (cosa.startsWith("graffit")) { Graffiti.azioneAdmin(cosa, el); return; }
   if (cosa === "ed-annulla") { bozza = nuovaBozza(); aggiornaEditor(true); return; }
   if (cosa === "ed-originali") { bozza = Object.fromEntries(CARTE.map(c => [c.id, { ...CARTE_ORIGINALI[c.id] }])); aggiornaEditor(true); mostraAvviso("Valori di partenza caricati: premi Salva per applicarli a tutti."); return; }

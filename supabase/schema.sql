@@ -303,33 +303,144 @@ create policy "scambi: i miei" on public.scambi for select to authenticated usin
 grant select on public.scambi to authenticated;
 revoke all on public.scambi from anon;
 
--- copie che un giocatore può ancora dare: quelle nel salvataggio, meno quelle già promesse o già date ma non ancora ritirate
-create or replace function public.copie_libere(u uuid, carta text, tranne bigint default null) returns integer
+alter table public.scambi add column if not exists ritirato_il timestamptz;
+
+-- ---------------- Scambi con i potenziatori ----------------
+-- Un doppione, quando lo trovi, diventa potenziatori di quella carta (10 comune, 12 rara, 30 epica, 100 leggendaria).
+-- Per scambiare una carta paghi proprio quei potenziatori: è come dare via un doppione. La carta resta nel tuo album.
+-- Si scambia solo tra carte della stessa rarità, e si riceve solo una carta che non si ha.
+-- INIZIO RARITA (scritto da costruisci.py a partire da sorgente/carte.js: non modificarlo a mano)
+create or replace function public.rarita_base(carta text) returns text language sql immutable as $$
+  select case carta
+    when 'loca' then 'leggendaria'
+    when 'fuego' then 'rara'
+    when 'reina' then 'leggendaria'
+    when 'chapo' then 'rara'
+    when 'rojo' then 'comune'
+    when 'ombra' then 'leggendaria'
+    when 'pelado' then 'comune'
+    when 'fiesta' then 'comune'
+    when 'diablo' then 'epica'
+    when 'bandita' then 'epica'
+    when 'gossip' then 'epica'
+    when 'comora' then 'rara'
+    when 'vedovagreca' then 'comune'
+    when 'spidertoto' then 'epica'
+    when 'wonderrita' then 'rara'
+    when 'stellascura' then 'comune'
+    when 'mieloki' then 'epica'
+    when 'ironlus' then 'leggendaria'
+    when 'cypips' then 'comune'
+    when 'mauthor' then 'leggendaria'
+    when 'undercut' then 'rara'
+    when 'ligulk' then 'leggendaria'
+    when 'wandessia' then 'epica'
+    when 'waspy' then 'rara'
+    when 'diegkeye' then 'comune'
+    when 'gokiele' then 'leggendaria'
+    when 'vegerizio' then 'leggendaria'
+    when 'brolymone' then 'leggendaria'
+    when 'freezovico' then 'epica'
+    when 'gohanlollo' then 'epica'
+    when 'pipsccolo' then 'epica'
+    when 'caulifrita' then 'epica'
+    when 'criliziano' then 'rara'
+    when 'bulsene' then 'rara'
+    when 'c18ora' then 'rara'
+    when 'diego17' then 'rara'
+    when 'chichice' then 'comune'
+    when 'vidalessia' then 'comune'
+    when 'panky' then 'comune'
+    when 'giulmai' then 'comune'
+    when 'zeutiz' then 'leggendaria'
+    when 'poseludovico' then 'leggendaria'
+    when 'adelrizio' then 'epica'
+    when 'aresorenzo' then 'leggendaria'
+    when 'atharita' then 'epica'
+    when 'artalice' then 'epica'
+    when 'aurera' then 'epica'
+    when 'herdiego' then 'rara'
+    when 'efesamuele' then 'rara'
+    when 'dionpips' then 'rara'
+    when 'nikulia' then 'rara'
+    when 'solmone' then 'comune'
+    when 'aphroalessia' then 'comune'
+    when 'demviky' then 'comune'
+    when 'persene' then 'comune'
+    when 'ellobo' then 'epica'
+    when 'eltigre' then 'epica'
+    when 'elcuervo' then 'rara'
+    when 'labruja' then 'rara'
+    when 'lasombra' then 'comune'
+    when 'samulett' then 'leggendaria'
+    when 'mauriziente' then 'leggendaria'
+    when 'simoldemort' then 'leggendaria'
+    when 'pipverus' then 'epica'
+    when 'vikatrix' then 'epica'
+    when 'alessmione' then 'leggendaria'
+    when 'seneverr' then 'epica'
+    when 'diegirius' then 'epica'
+    when 'ludraco' then 'rara'
+    when 'ritadora' then 'rara'
+    when 'lollon' then 'rara'
+    when 'ginice' then 'comune'
+    when 'tizievil' then 'comune'
+    when 'auroruna' then 'rara'
+    when 'giulifleur' then 'comune'
+  end;
+$$;
+-- FINE RARITA
+create or replace function public.rarita_carta(carta text) returns text
 language sql stable security definer set search_path = public as $$
-  select coalesce((select (dati->'carte'->>carta)::int from public.salvataggi where user_id = u and slot = 'partita'), 0)
-       - (select count(*) from public.scambi where da = u and offro = carta and (id <> coalesce(tranne, -1))
-            and (stato = 'aperto' or (stato = 'accettato' and not ritirato)))::int;
+  select coalesce((select case when dati->'carte'->carta->>'rarita' in ('comune', 'rara', 'epica', 'leggendaria') then dati->'carte'->carta->>'rarita' end
+                   from public.config where id = 'carte'), public.rarita_base(carta));
+$$;
+create or replace function public.costo_scambio(carta text) returns integer
+language sql stable security definer set search_path = public as $$
+  select case public.rarita_carta(carta) when 'comune' then 10 when 'rara' then 12 when 'epica' then 30 when 'leggendaria' then 100 end;
+$$;
+create or replace function public.possiede(u uuid, carta text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select coalesce((select case when dati->'carte'->>carta ~ '^[0-9]+$' then (dati->'carte'->>carta)::int end from public.salvataggi where user_id = u and slot = 'partita'), 0) > 0;
+$$;
+-- potenziatori di una carta che un giocatore può ancora dare: quelli nel salvataggio, meno quelli promessi in scambi aperti
+-- e quelli di scambi già fatti ma non ancora arrivati nel suo salvataggio
+create or replace function public.pot_liberi(u uuid, carta text, tranne bigint default null) returns integer
+language sql stable security definer set search_path = public as $$
+  with s as (select dati, aggiornato from public.salvataggi where user_id = u and slot = 'partita')
+  select coalesce((select case when dati->'pot'->>carta ~ '^[0-9]+(\.[0-9]+)?$' then floor((dati->'pot'->>carta)::numeric)::int end from s), 0)
+       - coalesce(public.costo_scambio(carta), 0) * (
+           (select count(*) from public.scambi x where x.id <> coalesce(tranne, -1) and x.da = u and x.offro = carta
+              and (x.stato = 'aperto' or (x.stato = 'accettato' and (not x.ritirato or x.ritirato_il > coalesce((select aggiornato from s), now())))))
+         + (select count(*) from public.scambi x where x.id <> coalesce(tranne, -1) and x.a = u and x.chiedo = carta
+              and x.stato = 'accettato' and x.chiuso > coalesce((select aggiornato from s), now())))::int;
 $$;
 
 create or replace function public.proponi_scambio(amico uuid, offro text, chiedo text) returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare me uuid := auth.uid(); nuovo bigint;
+declare me uuid := auth.uid(); nuovo bigint; costo int; liberi int;
 begin
   if me is null then raise exception 'Devi fare l''accesso'; end if;
   if amico = me then raise exception 'Non puoi scambiare con te stesso'; end if;
   if offro = chiedo then raise exception 'Scegli due carte diverse'; end if;
-  if public.copie_libere(me, offro) < 2 then raise exception 'Puoi offrire solo carte di cui hai almeno 2 copie (non già promesse in altri scambi)'; end if;
-  if coalesce((select (dati->'carte'->>chiedo)::int from public.salvataggi where user_id = me and slot = 'partita'), 0) > 0 then raise exception 'Questa carta ce l''hai già'; end if;
-  if public.copie_libere(amico, chiedo) < 2 then raise exception 'Il tuo amico non ha un doppione di questa carta'; end if;
+  if public.rarita_carta(offro) is null or public.rarita_carta(chiedo) is null then raise exception 'Carta sconosciuta'; end if;
+  if public.rarita_carta(offro) <> public.rarita_carta(chiedo) then raise exception 'Si scambia solo tra carte della stessa rarità'; end if;
+  costo := public.costo_scambio(offro);
+  if not public.possiede(me, offro) then raise exception 'Non hai questa carta'; end if;
+  liberi := public.pot_liberi(me, offro);
+  if liberi < costo then raise exception 'Per offrire questa carta servono % potenziatori suoi: ne hai % liberi', costo, greatest(liberi, 0); end if;
+  if public.possiede(me, chiedo) then raise exception 'Questa carta ce l''hai già'; end if;
+  if not public.possiede(amico, chiedo) or public.pot_liberi(amico, chiedo) < costo then raise exception 'Il tuo amico non ha abbastanza potenziatori di questa carta per scambiarla'; end if;
+  if public.possiede(amico, offro) then raise exception 'Il tuo amico ha già la carta che offri'; end if;
   if (select count(*) from public.scambi where da = me and stato = 'aperto') >= 5 then raise exception 'Hai già 5 proposte aperte: aspetta che ti rispondano o annullane una'; end if;
   if exists (select 1 from public.scambi s where s.da = me and s.a = amico and s.chiedo = proponi_scambio.chiedo and s.stato = 'aperto') then raise exception 'Hai già chiesto questa carta a questo amico'; end if;
   insert into public.scambi (da, a, offro, chiedo) values (me, amico, offro, chiedo) returning id into nuovo;
-  return jsonb_build_object('id', nuovo);
+  return jsonb_build_object('id', nuovo, 'costo', costo);
 end $$;
 
 create or replace function public.rispondi_scambio(scambio bigint, accetto boolean) returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare x public.scambi;
+declare x public.scambi; costo int;
 begin
   select * into x from public.scambi where id = scambio for update;
   if x is null or x.a <> auth.uid() then raise exception 'Scambio non trovato'; end if;
@@ -342,14 +453,16 @@ begin
     update public.scambi set stato = 'rifiutato', chiuso = now() where id = scambio;
     return jsonb_build_object('stato', 'rifiutato');
   end if;
-  if public.copie_libere(x.a, x.chiedo) < 2 then raise exception 'Non hai più un doppione di questa carta'; end if;
-  if public.copie_libere(x.da, x.offro, x.id) < 2 then
+  costo := public.costo_scambio(x.chiedo);
+  if public.possiede(x.a, x.offro) then raise exception 'La carta che ti offre ce l''hai già: puoi solo rifiutare'; end if;
+  if public.pot_liberi(x.a, x.chiedo, x.id) < costo then raise exception 'Per dare questa carta servono % potenziatori suoi e non li hai più', costo; end if;
+  if public.pot_liberi(x.da, x.offro, x.id) < public.costo_scambio(x.offro) then
     update public.scambi set stato = 'annullato', chiuso = now() where id = scambio;
-    raise exception 'Il tuo amico non ha più il doppione che offriva: proposta annullata';
+    raise exception 'Il tuo amico non ha più i potenziatori per la carta che offriva: proposta annullata';
   end if;
   update public.scambi set stato = 'accettato', chiuso = now() where id = scambio;
-  -- chi accetta riceve subito: il gioco toglie una copia di "chiedo" e aggiunge "offro"
-  return jsonb_build_object('stato', 'accettato', 'dai', x.chiedo, 'ricevi', x.offro);
+  -- chi accetta riceve subito: il gioco toglie i potenziatori di "chiedo" e aggiunge la carta "offro"
+  return jsonb_build_object('stato', 'accettato', 'dai', x.chiedo, 'ricevi', x.offro, 'costo', costo);
 end $$;
 
 create or replace function public.annulla_scambio(scambio bigint) returns void
@@ -363,23 +476,34 @@ language plpgsql security definer set search_path = public as $$
 declare r jsonb;
 begin
   with presi as (
-    update public.scambi set ritirato = true
+    update public.scambi set ritirato = true, ritirato_il = now()
     where da = auth.uid() and stato = 'accettato' and not ritirato
     returning id, offro, chiedo
-  ) select coalesce(jsonb_agg(jsonb_build_object('id', id, 'dai', offro, 'ricevi', chiedo)), '[]'::jsonb) into r from presi;
+  ) select coalesce(jsonb_agg(jsonb_build_object('id', id, 'dai', offro, 'ricevi', chiedo, 'costo', public.costo_scambio(offro))), '[]'::jsonb) into r from presi;
   return r;
 end $$;
 
--- I doppioni di un amico che si possono chiedere (solo gli id delle carte, niente altro del suo salvataggio)
+-- Le carte di un amico che si possono chiedere: quelle per cui ha abbastanza potenziatori liberi (solo gli id)
 create or replace function public.doppioni_amico(amico uuid) returns jsonb
 language sql stable security definer set search_path = public as $$
   select coalesce(jsonb_agg(k), '[]'::jsonb) from (
     select k from public.salvataggi s, jsonb_each_text(coalesce(s.dati->'carte', '{}'::jsonb)) as e(k, v)
-    where s.user_id = amico and s.slot = 'partita' and auth.uid() is not null and v ~ '^[0-9]+$' and public.copie_libere(amico, k) >= 2
+    where s.user_id = amico and s.slot = 'partita' and auth.uid() is not null and v ~ '^[0-9]+$' and v::int > 0
+      and public.costo_scambio(k) is not null and public.pot_liberi(amico, k) >= public.costo_scambio(k)
   ) t;
 $$;
-revoke all on function public.copie_libere(uuid, text, bigint), public.proponi_scambio(uuid, text, text), public.rispondi_scambio(bigint, boolean), public.annulla_scambio(bigint), public.ritira_scambi(), public.doppioni_amico(uuid) from public, anon;
+drop function if exists public.copie_libere(uuid, text, bigint);
+revoke all on function public.rarita_carta(text), public.costo_scambio(text), public.possiede(uuid, text), public.pot_liberi(uuid, text, bigint),
+  public.proponi_scambio(uuid, text, text), public.rispondi_scambio(bigint, boolean), public.annulla_scambio(bigint), public.ritira_scambi(), public.doppioni_amico(uuid) from public, anon;
 grant execute on function public.proponi_scambio(uuid, text, text), public.rispondi_scambio(bigint, boolean), public.annulla_scambio(bigint), public.ritira_scambi(), public.doppioni_amico(uuid) to authenticated;
+
+-- le proposte aperte fatte con le vecchie regole (doppioni) che con le nuove non stanno in piedi vengono annullate
+update public.scambi x set stato = 'annullato', chiuso = now()
+where x.stato = 'aperto' and (
+  public.rarita_carta(x.offro) is distinct from public.rarita_carta(x.chiedo)
+  or public.pot_liberi(x.da, x.offro, x.id) < coalesce(public.costo_scambio(x.offro), 0)
+  or public.pot_liberi(x.a, x.chiedo, x.id) < coalesce(public.costo_scambio(x.chiedo), 0)
+  or public.possiede(x.a, x.offro));
 
 -- ---------------- Boss del gruppo ----------------
 -- Ogni settimana (da lunedì a domenica) un boss con tanti PV che tutti colpiscono insieme.
@@ -578,6 +702,31 @@ drop trigger if exists controlla_salvataggio on public.salvataggi;
 create trigger controlla_salvataggio before insert or update on public.salvataggi
   for each row execute function public.controlla_salvataggio();
 
+-- ---------------- Azzerare la classifica (es. ogni mese) ----------------
+-- La classifica conta le partite dal vivo giocate da "dal" in poi (config 'classifica').
+-- Azzerarla vuol dire spostare "dal" ad adesso: le partite restano (servono ai trofei), contano solo da qui in avanti.
+-- Prima di azzerare, il podio finisce nello storico.
+create or replace function public.inizio_classifica() returns timestamptz
+language sql stable security definer set search_path = public as $$
+  select coalesce((select (dati->>'dal')::timestamptz from public.config where id = 'classifica'), '-infinity'::timestamptz);
+$$;
+create or replace function public.azzera_classifica() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare podio jsonb; vecchio jsonb;
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin può azzerare la classifica'; end if;
+  select coalesce(jsonb_agg(jsonb_build_object('nome', coalesce(dati->>'nome', 'Giocatore'), 'avatar', dati->>'avatar', 'punti', punti) order by punti desc), '[]'::jsonb) into podio
+    from (select dati, punti from public.classifica where punti > 0 order by punti desc limit 3) t;
+  select dati into vecchio from public.config where id = 'classifica';
+  insert into public.config (id, dati) values ('classifica', jsonb_build_object('dal', now(),
+      'storico', (jsonb_build_array(jsonb_build_object('dal', vecchio->>'dal', 'al', now(), 'podio', podio)) || coalesce(vecchio->'storico', '[]'::jsonb)) - 12))
+    on conflict (id) do update set dati = excluded.dati, aggiornato = now();
+  update public.classifica set aggiornato = now();   -- ricalcola i punti di tutti
+  return jsonb_build_object('podio', podio);
+end $$;
+revoke all on function public.azzera_classifica() from public, anon;
+grant execute on function public.azzera_classifica() to authenticated;
+
 create or replace function public.classifica_vera() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare s jsonb;
@@ -585,7 +734,7 @@ begin
   -- i numeri in classifica arrivano dal salvataggio, non da quello che manda il dispositivo
   select dati into s from public.salvataggi where user_id = new.user_id and slot = 'partita';
   -- i punti in classifica vengono solo dalle sfide dal vivo: +3 per ogni vittoria, 0 per le sconfitte
-  new.punti := coalesce((select sum(punti) from public.partite_vivo where vincitore = new.user_id and stato in ('ok', 'abbandono')), 0);
+  new.punti := coalesce((select sum(punti) from public.partite_vivo where vincitore = new.user_id and stato in ('ok', 'abbandono') and creata >= public.inizio_classifica()), 0);
   -- il titolo si vede solo se il trofeo risulta davvero conquistato (altrimenti finisce nel registro)
   if new.dati ? 'titolo_id' and coalesce(new.dati->>'titolo_id', '') <> '' and not public.titolo_valido(new.user_id, new.dati->>'titolo_id', s)
      and coalesce((select dati->>'titolo_id' from public.classifica where user_id = new.user_id), '') <> new.dati->>'titolo_id' then
@@ -599,7 +748,7 @@ begin
     'sconfitte', coalesce((s->'stats'->>'sconfitte')::int, 0),
     'carte', (select count(*) from jsonb_object_keys(coalesce(s->'carte', '{}'::jsonb))),
     'vinte_amici', (select count(*) from public.sfide_amici where (sfidante = new.user_id and vinto) or (sfidato = new.user_id and not vinto)),
-    'vinte_vivo', (select count(*) from public.partite_vivo where vincitore = new.user_id and stato = 'ok'));
+    'vinte_vivo', (select count(*) from public.partite_vivo where vincitore = new.user_id and stato in ('ok', 'abbandono') and punti > 0 and creata >= public.inizio_classifica()));
   new.aggiornato := now();
   return new;
 end $$;

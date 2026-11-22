@@ -1450,6 +1450,12 @@ body.in-accesso { overflow: hidden; }
 
 .ordine-turno { margin: 0 0 8px; font-size: .82rem; color: var(--spento); text-align: center; }
 .ordine-turno.mio b { color: #6fe3a0; } .ordine-turno.suo b { color: #ff7a8a; }
+
+.albo { margin: 4px 0 12px; background: var(--asfalto); border: 1px solid var(--linea); border-radius: 12px; padding: 8px 12px; }
+.albo summary { cursor: pointer; font-weight: 700; }
+.albo ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.albo li { display: grid; gap: 2px; font-size: .88rem; }
+.albo li small { color: var(--spento); }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>
