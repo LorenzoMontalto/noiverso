@@ -1368,6 +1368,16 @@ body.in-accesso { overflow: hidden; }
   .zaino-usa b { font-size: .7rem; }
 }
 
+/* ---------- Finestra del premio di accesso ---------- */
+.accesso-pop { display: grid; gap: 12px; text-align: center; }
+.accesso-pop h2 { margin: 0; font-family: var(--display); font-weight: 400; font-size: 1.6rem; text-shadow: 0 0 14px rgba(242, 193, 78, .5); }
+.accesso-pop .codice-tag { justify-self: center; }
+.accesso-pop .nota { margin: 0; }
+.accesso-pop .accessi-giorni li { min-height: 70px; }
+.accesso-pop .accessi-giorni li.oggi-qui { transform: scale(1.06); }
+.accesso-pop .btn.grande { font-size: 1.05rem; padding: 12px 22px; }
+.accesso-dopo { justify-self: center; background: none; border-color: transparent; color: var(--spento); }
+
 /* ---------- Tutorial ---------- */
 #tutorial { position: fixed; inset: 0; z-index: 29; pointer-events: none; }
 #tutorial .tut-velo { position: absolute; inset: 0; pointer-events: auto; }

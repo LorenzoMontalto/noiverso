@@ -118,13 +118,38 @@ const Missioni = (() => {
   }
   function riscuotiAccesso(el) {
     const a = accesso(); if (!a.pronto || S.admin) return;
+    const daFinestra = !!(el && el.closest && el.closest("#modale"));
     S.accessi = { ultimo: giorno(), riscosso: giorno(), serie: a.giorno };
     S.stats.serieMax = Math.max(S.stats.serieMax || 0, a.giorno);
     const dato = dai(ACCESSI[a.giorno - 1]);
     salva(); aggiornaTesta();
     if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 50, forma: "stella", colori: ["#f2c14e", "#fff3c4", "#ff2e46"], velocita: 7, dimensione: 6 }); }
     mostraAvviso(`Premio di accesso, giorno ${a.giorno}: ${testoPremio(dato)}${a.giorno === 7 ? ". Settimana completa!" : ""}`);
+    if (daFinestra) setTimeout(chiudiModale, ridotto ? 0 : 650);
     disegna();
+  }
+  // Appena apri il gioco: la finestra del premio di accesso (aspetta tutorial, battaglie e altre finestre)
+  function finestraAccesso() {
+    if (S.admin || !accesso().pronto) return;
+    let tentativi = 0;
+    const prova = () => {
+      if (S.admin || !accesso().pronto || ++tentativi > 60) return;
+      if (B || Tutorial.attivo || !$("#accesso").hidden || !$("#modale").hidden || !$("#apertura").hidden) { setTimeout(prova, 1500); return; }
+      const a = accesso();
+      apriModale(`<div class="accesso-pop">
+        <span class="codice-tag">Premio di accesso</span>
+        <h2>${a.persa ? "Si riparte!" : a.giorno === 7 ? "Settimo giorno!" : `Giorno ${a.giorno} di 7`}</h2>
+        <p class="nota">${a.persa ? "Hai saltato un giorno, quindi si ricomincia dal primo. Torna ogni giorno per arrivare al premio più grosso." : a.giorno === 7 ? "Hai giocato una settimana intera di fila: oggi c'è il premio più grosso." : "Torna ogni giorno: più giorni di fila, più grossi i premi."}</p>
+        ${htmlCalendario(a)}
+        <div class="azioni centro"><button class="btn oro grande" data-fx="coriandoli" data-azione="riscuoti-accesso">Riscuoti: ${esc(nomeAccesso(ACCESSI[a.giorno - 1]))}</button></div>
+        <button class="btn piccolo accesso-dopo" data-azione="chiudi">Più tardi (lo trovi nella Strada)</button>
+      </div>`);
+    };
+    setTimeout(prova, 1800);
+  }
+  function htmlCalendario(a) {
+    return `<ol class="accessi-giorni">${ACCESSI.map((p, k) => { const n = k + 1, preso = a.pronto ? n < a.giorno : n <= a.giorno, oggiQui = a.pronto && n === a.giorno;
+      return `<li class="${preso ? "preso" : ""} ${oggiQui ? "oggi-qui" : ""} ${n === 7 ? "settimo" : ""}"><small>G${n}</small><span>${esc(nomeAccesso(p))}</span></li>`; }).join("")}</ol>`;
   }
   const nomeAccesso = p => p.serieCaso ? "Bustina di una serie" : testoPremio(p);
 
@@ -146,8 +171,7 @@ const Missioni = (() => {
       <div class="titolo-riga"><h2>Oggi</h2><p class="nota">Le missioni cambiano tra ${fineGiorno}.</p></div>
       <div class="accessi ${a.pronto ? "pronto" : ""}">
         <div class="accessi-testa"><b>Premio di accesso</b><span class="nota">${a.pronto ? (a.persa ? "Hai saltato un giorno: si riparte dal primo." : `Giorno ${a.giorno} di 7`) : "Torna domani per il prossimo."}</span></div>
-        <ol class="accessi-giorni">${ACCESSI.map((p, k) => { const n = k + 1, preso = a.pronto ? n < a.giorno : n <= a.giorno, oggiQui = a.pronto && n === a.giorno;
-          return `<li class="${preso ? "preso" : ""} ${oggiQui ? "oggi-qui" : ""} ${n === 7 ? "settimo" : ""}"><small>G${n}</small><span>${esc(nomeAccesso(p))}</span></li>`; }).join("")}</ol>
+        ${htmlCalendario(a)}
         ${a.pronto ? `<button class="btn oro" data-fx="coriandoli" data-azione="riscuoti-accesso">Riscuoti il giorno ${a.giorno}</button>` : ""}
       </div>
       <div class="missioni-griglia">
@@ -165,5 +189,5 @@ const Missioni = (() => {
     </section>`;
   }
 
-  return { evento, riscuoti, riscuotiAccesso, htmlStrada, pronte, aggiorna, accesso };
+  return { evento, riscuoti, riscuotiAccesso, finestraAccesso, htmlStrada, pronte, aggiorna, accesso };
 })();

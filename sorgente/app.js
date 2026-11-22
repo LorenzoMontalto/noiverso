@@ -1328,6 +1328,7 @@ async function entra(slot, profiloLocale) {
   if (nuova && S.stats.bustine > 0 && !S.admin) setTimeout(() => mostraAvviso("È arrivata la bustina del giorno!"), 500);
   if (slot === "admin") setTimeout(() => mostraAvviso("Modalità admin: monete infinite e tutte le carte. Questi progressi non vanno in classifica."), 400);
   Tutorial.allIngresso();
+  if (slot !== "admin") Missioni.finestraAccesso();
   Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); });
   if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); }
   Boss.carica();
