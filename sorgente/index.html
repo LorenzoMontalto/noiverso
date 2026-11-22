@@ -141,8 +141,22 @@ h2 { font-size: 1.35rem; }
 .potenzia-riga .btn[disabled] { opacity: .45; cursor: not-allowed; }
 .prossimo { font-size: .82rem; color: var(--spento); margin: 0; font-variant-numeric: tabular-nums; }
 .prossimo b { color: #6fe3a0; }
-.potenziabile { position: absolute; top: 34px; right: 8px; z-index: 3; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: .75rem; font-weight: 800; color: #08130d; background: #6fe3a0; box-shadow: 0 0 12px rgba(111, 227, 160, .8); animation: pot-pulsa 1.4s ease-in-out infinite; }
-.carta.piccola .potenziabile { top: 28px; right: 6px; width: 20px; height: 20px; font-size: .65rem; }
+.potenziabile { position: absolute; top: 34px; right: 6px; z-index: 3; display: inline-flex; align-items: center; gap: 3px; height: 22px; padding: 0 8px 0 6px; border-radius: 11px; font-size: .72rem; font-weight: 800; line-height: 1; color: #08130d; background: #6fe3a0; box-shadow: 0 0 0 2px rgba(8, 19, 13, .55), 0 0 14px rgba(111, 227, 160, .85); animation: pot-pulsa 1.4s ease-in-out infinite; white-space: nowrap; }
+.potenziabile b { font-size: .8rem; } .potenziabile em { font-style: normal; text-transform: uppercase; letter-spacing: .02em; }
+.potenziabile.manca { background: #ffb347; box-shadow: 0 0 0 2px rgba(20, 10, 0, .55); animation: none; color: #2a1400; }
+.potenziabile.manca em { text-transform: none; }
+.carta.piccola .potenziabile, .slot .potenziabile { top: 26px; right: 4px; height: 18px; padding: 0 6px; font-size: .62rem; }
+.carta.mini .potenziabile { display: none; }
+.potenziabile.finto { position: static; animation: none; vertical-align: middle; margin: 0 4px 0 10px; }
+.potenziabile.finto:first-child { margin-left: 0; }
+.legenda-pot { margin: 4px 0 8px; font-size: .8rem; color: var(--spento); line-height: 1.9; }
+.chip.chip-pot { border-color: #6fe3a0; color: #6fe3a0; font-weight: 800; }
+.chip.chip-pot[aria-pressed="true"] { background: #6fe3a0; color: #08130d; }
+.btn.btn-pot { background: #6fe3a0; color: #08130d; border-color: #6fe3a0; font-weight: 800; }
+.pot-mancano { align-self: center; }
+.copertina.copertina-pot { --c: #6fe3a0; border-color: #6fe3a0; }
+.copertina-pot .pot-grande { display: block; font-size: 1.8rem; color: #6fe3a0; text-shadow: 0 0 14px rgba(111, 227, 160, .8); }
+.sezione-pot { --c: #6fe3a0; }
 @keyframes pot-pulsa { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 .esp-barra.pot i { background: linear-gradient(90deg, #6fe3a0, #3fd8ff); }
 .esp-carte { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
@@ -994,7 +1008,8 @@ body.in-accesso { overflow: hidden; }
   .cap-btn small { white-space: nowrap; } .cap-btn b { font-size: .8rem; }
   /* carte piccole: nomi che non escono, niente segno ▲ sopra i nomi */
   .carta.piccola .carta-nome, .slot .carta-nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .slot .potenziabile, .carta.piccola .potenziabile { display: none; }
+  .slot .potenziabile em, .carta.piccola .potenziabile em { display: none; }
+  .slot .potenziabile, .carta.piccola .potenziabile { padding: 0 5px; }
   .pass-info .serie-nome { font-size: .7rem; }
   .nav { -webkit-mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent); mask-image: linear-gradient(90deg, transparent, #000 14px, #000 calc(100% - 14px), transparent); }
 }

@@ -148,6 +148,14 @@ function htmlBadgeSquadra(id) {
   return `<span class="badge-squadra ${attiva ? "attiva" : ""}" title="${attiva ? "Nella squadra che usi adesso" : "In una delle tue squadre"}">⚑ ${testo}</span>`;
 }
 const potenziabili = () => possedute().filter(c => infoCarta(c.id).puoi).length;
+// Etichetta sulle carte: verde "▲ Potenzia" se puoi farla salire adesso,
+// arancione con le monete che mancano se hai già i potenziatori ma non abbastanza monete.
+function htmlEtichettaPot(info) {
+  if (!info || !info.pronta) return "";
+  if (info.puoi) return `<span class="potenziabile" title="Puoi potenziarla adesso" aria-label="Puoi potenziarla adesso"><b>▲</b><em>Potenzia</em></span>`;
+  const manca = info.serveMon - S.monete;
+  return `<span class="potenziabile manca" title="Hai i potenziatori: mancano ${manca} monete" aria-label="Mancano ${manca} monete per potenziarla"><b>▲</b><em>-${manca} 🪙</em></span>`;
+}
 const squadraAttiva = () => S.squadre[S.attiva] || S.squadre[0];
 const livelloPass = () => Math.min(PASS.livelli, Math.floor(S.pass.xp / PASS.xpLivello));
 const bonusDisponibili = () => Math.max(0, Math.floor((S.pass.xp - PASS.livelli * PASS.xpLivello) / PASS.xpBonus) - (S.pass.bonus || 0));
@@ -406,7 +414,7 @@ function htmlCarta(c, opz = {}) {
     <img src="${imgCarta(c.id)}" alt="${coperta ? "Carta da scoprire" : esc(c.nome)}" loading="lazy" draggable="false">
     ${coperta ? `<div class="punto-domanda">?</div>` : opz.mini ? "" : `
     <div class="carta-testa"><span class="stile s-${c.stile}" title="${STILI[c.stile].nome}">${c.stile}</span><span class="serie-ico" style="--c:${SERIE[c.serie].colore}" title="${esc(SERIE[c.serie].nome)}">${SERIE[c.serie].simbolo}</span>${liv ? `<span class="liv ${lode ? "lode" : ""}">${lode ? "30 e lode" : `Lv ${liv}`}</span>` : ""}</div>
-    ${info && info.puoi ? `<span class="potenziabile" title="Puoi potenziarla" aria-label="Puoi potenziarla">▲</span>` : ""}
+    ${htmlEtichettaPot(info)}
     ${info && !opz.piccola && !opz.mini ? `<div class="carta-xp ${info.liv >= LIVELLO_MAX ? "verso-lode" : ""} ${info.lode ? "piena" : ""}"><i style="width:${info.lode ? 100 : Math.round(info.dentro / info.serve * 100)}%"></i></div>` : ""}
     <div class="carta-piede">
       ${!coperta && !opz.mini && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? `<div class="olo-scritta">✦ Olografica</div>` : ""}
@@ -479,7 +487,7 @@ function apriDettaglio(id) {
 }
 
 // Potenzia a mano una carta di un livello
-function potenziaCarta(id, el) {
+function potenziaCarta(id, el, restaQui) {
   const inf = infoCarta(id);
   if (!inf.puoi) return;
   S.pot[id] = ((S.pot || {})[id] || 0) - inf.servePot;
@@ -488,8 +496,8 @@ function potenziaCarta(id, el) {
   Missioni.evento("potenzia");
   salva();
   if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 40, forma: "stella", colori: ["#6fe3a0", "#3fd8ff", "#ffffff"], velocita: 7, dimensione: 5, durata: 1100 }); }
-  disegna();
-  apriDettaglio(id);
+  if (restaQui) { ridisegnaSquadra(); mostraAvviso(`${PER_ID[id].nome} sale al livello ${S.liv[id]}!`); }
+  else { disegna(); apriDettaglio(id); }
   const lb = $("#livello-box"); if (lb) FX.riavvia(lb, "sale");
   if (S.liv[id] === LIVELLO_MAX) mostraAvviso(`${PER_ID[id].nome} è al livello 30! Ora giocaci in battaglia per prendere la lode.`);
 }
@@ -969,6 +977,35 @@ function htmlSezioneSerie(id, conTitolo) {
     </div>
   </section>`;
 }
+// ---------- carte da potenziare ----------
+const cartePronte = () => possedute().filter(c => infoCarta(c.id).pronta);
+function htmlLegendaPot() {
+  return `<p class="legenda-pot"><span class="potenziabile finto"><b>▲</b><em>Potenzia</em></span> puoi farla salire di livello adesso
+    <span class="potenziabile manca finto"><b>▲</b><em>-50 🪙</em></span> hai i potenziatori, ti mancano solo le monete</p>`;
+}
+function htmlBottonePot(id) {
+  const inf = infoCarta(id);
+  if (!inf.liv || inf.liv >= LIVELLO_MAX) return "";
+  if (inf.puoi) return `<button type="button" class="btn btn-pot" data-fx="stelle" data-sq-az="potenzia">▲ Potenzia a Lv ${inf.liv + 1} · ${S.admin ? "gratis" : inf.serveMon + " 🪙"}</button>`;
+  if (inf.pronta) return `<button type="button" class="btn" disabled>▲ Potenzia: mancano ${inf.serveMon - S.monete} monete</button>`;
+  return `<span class="nota pot-mancano">Per il Lv ${inf.liv + 1}: ${inf.pot}/${inf.servePot} potenziatori</span>`;
+}
+function htmlCopertinaPot() {
+  const pr = cartePronte(); if (!pr.length && filtroAlbum !== "pot") return "";
+  const ora = pr.filter(c => infoCarta(c.id).puoi).length;
+  return `<button class="copertina copertina-pot ${filtroAlbum === "pot" ? "scelta" : ""}" data-fx="gelatina" data-filtro="pot" aria-pressed="${filtroAlbum === "pot"}">
+    <span class="copertina-testo"><span class="pot-grande">▲</span><b>Da potenziare</b><small>${ora ? `${ora} adesso` : ""}${ora && pr.length > ora ? " · " : ""}${pr.length > ora ? `${pr.length - ora} senza monete` : ""}</small></span></button>`;
+}
+function htmlSezionePot() {
+  const sq = new Set(squadraAttiva().carte);
+  const pr = cartePronte().sort((a, b) => (sq.has(b.id) ? 1 : 0) - (sq.has(a.id) ? 1 : 0) || (infoCarta(b.id).puoi ? 1 : 0) - (infoCarta(a.id).puoi ? 1 : 0) || ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita));
+  if (!pr.length) return `<section class="serie-sezione"><p class="nota">Nessuna carta da potenziare per ora: i potenziatori arrivano dai doppioni che trovi nelle bustine.</p></section>`;
+  return `<section class="serie-sezione sezione-pot">
+    <div class="serie-testa"><span class="serie-stemma" aria-hidden="true">▲</span><div class="serie-info"><h2>Da potenziare</h2>
+      <p class="nota">Queste carte hanno abbastanza potenziatori per salire di livello. Prima quelle della tua squadra attiva. Tocca una carta e premi <b>Potenzia</b>.</p>${htmlLegendaPot()}</div></div>
+    <div class="griglia">${pr.map((c, i) => `<div class="cella" style="--i:${i}">${htmlCarta(c, { click: true }) + htmlBadgeSquadra(c.id)}</div>`).join("")}</div>
+  </section>`;
+}
 function htmlSchedeAlbum() {
   const n = { trofei: Trofei.pronti(), scambi: Scambi.inArrivo };
   return `<div class="schede-album" role="tablist">${[["carte", "Carte"], ["trofei", "Trofei"], ["scambi", "Scambi"]].map(([k, t]) =>
@@ -983,6 +1020,7 @@ function vistaAlbum() {
     ${htmlSchedeAlbum()}
     <div class="titolo-riga"><h2>Album</h2><p class="nota">${tot}/${CARTE.length} carte trovate in ${ORDINE_SERIE.length} serie${olo ? ` · <span class="olo-testo">✦ ${olo} olografiche</span>` : ""}.</p></div>
     <div class="serie-copertine">
+      ${htmlCopertinaPot()}
       ${ORDINE_SERIE.map((id, k) => {
         const se = SERIE[id], st = statSerie(id);
         const anteprima = [...st.carte].sort((a, b) => (S.carte[b.id] ? 1 : 0) - (S.carte[a.id] ? 1 : 0) || ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita)).slice(0, 3);
@@ -994,7 +1032,7 @@ function vistaAlbum() {
       }).join("")}
       <button class="copertina tutte ${filtroAlbum === "tutte" ? "scelta" : ""}" data-fx="gelatina" data-filtro="tutte" aria-pressed="${filtroAlbum === "tutte"}"><span class="copertina-testo"><b>Tutte le serie</b><small>${tot}/${CARTE.length}</small></span></button>
     </div>
-    ${filtroAlbum === "tutte" ? ORDINE_SERIE.map(id => htmlSezioneSerie(id, true)).join("") : htmlSezioneSerie(filtroAlbum, false)}
+    ${filtroAlbum === "pot" ? htmlSezionePot() : filtroAlbum === "tutte" ? ORDINE_SERIE.map(id => htmlSezioneSerie(id, true)).join("") : htmlSezioneSerie(filtroAlbum, false)}
   </section>`;
 }
 
@@ -1021,7 +1059,9 @@ function vistaSquadra() {
   let pv = 0;
   sq.carte.forEach(id => { stili[PER_ID[id].stile]++; pv += statistiche(PER_ID[id], livello(id), haLode(id)).pv; });
   const ruoli = sq.carte.map(id => RUOLI[PER_ID[id].ruolo].nome);
-  const elenco = mie.filter(c => filtroSquadra === "tutte" || c.stile === filtroSquadra || c.serie === filtroSquadra)
+  const nPot = mie.filter(c => infoCarta(c.id).pronta).length;
+  if (filtroSquadra === "pot" && !nPot) filtroSquadra = "tutte";
+  const elenco = mie.filter(c => filtroSquadra === "tutte" || c.stile === filtroSquadra || c.serie === filtroSquadra || (filtroSquadra === "pot" && infoCarta(c.id).pronta))
     .sort((a, b) => ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita) || a.nome.localeCompare(b.nome));
   return `
   <section>
@@ -1042,8 +1082,9 @@ function vistaSquadra() {
       <div><span>PV totali</span><b>${pv}</b></div>
     </div>
     <div class="titolo-riga piccola">
-      <p class="nota">Tocca una carta per vedere cosa puoi fare: aggiungerla, scambiarla con una della squadra o confrontarla con un'altra. Le frecce cambiano l'ordine.</p>
-      <div class="filtri">${["tutte", "FOR", "DIF", "VEL", ...Object.keys(SERIE)].map(f => `<button class="chip" data-fx="gelatina" data-filtro-sq="${f}" aria-pressed="${filtroSquadra === f}">${f === "tutte" ? "Tutte" : STILI[f] ? STILI[f].nome : SERIE[f].simbolo + " " + esc(SERIE[f].nome)}</button>`).join("")}</div>
+      <p class="nota">Tocca una carta per vedere cosa puoi fare: aggiungerla, scambiarla con una della squadra, confrontarla o <b>potenziarla</b>. Le frecce cambiano l'ordine.</p>
+      ${htmlLegendaPot()}
+      <div class="filtri">${nPot ? `<button class="chip chip-pot" data-fx="gelatina" data-filtro-sq="pot" aria-pressed="${filtroSquadra === "pot"}">▲ Da potenziare · ${nPot}</button>` : ""}${["tutte", "FOR", "DIF", "VEL", ...Object.keys(SERIE)].map(f => `<button class="chip" data-fx="gelatina" data-filtro-sq="${f}" aria-pressed="${filtroSquadra === f}">${f === "tutte" ? "Tutte" : STILI[f] ? STILI[f].nome : SERIE[f].simbolo + " " + esc(SERIE[f].nome)}</button>`).join("")}</div>
     </div>
     <div class="griglia">
       ${elenco.map((c, i) => `<div class="scegli cella ${sq.carte.includes(c.id) ? "scelta" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" role="button" tabindex="0" aria-pressed="${sq.carte.includes(c.id)}">${htmlCarta(c)}</div>`).join("")}
@@ -1074,6 +1115,7 @@ function htmlAzioniCarta() {
         : sq.carte.length < CARTE_SQUADRA ? `<button type="button" class="btn primario" data-fx="stelle" data-sq-az="aggiungi">Aggiungi in squadra</button>` : ""}
       ${sq.carte.length ? `<button type="button" class="btn ${!dentro && sq.carte.length >= CARTE_SQUADRA ? "primario" : ""}" data-sq-az="scambia">⇄ Scambia</button>` : ""}
       <button type="button" class="btn" data-sq-az="confronta">⚖ Confronta</button>
+      ${htmlBottonePot(c.id)}
       <button type="button" class="btn" data-sq-az="dettagli">Dettagli</button>
     </div>`}
   </div>`;
@@ -1110,6 +1152,7 @@ function azioneCartaSquadra(az) {
   else if (az === "scambia") selSq = { id, modo: sq.carte.includes(id) ? "carta" : "slot" };
   else if (az === "confronta") selSq = { id, modo: "confronta" };
   else if (az === "dettagli") { apriDettaglio(id); return; }
+  else if (az === "potenzia") { potenziaCarta(id, $("#azioni-carta [data-sq-az=potenzia]"), true); return; }
   ridisegnaSquadra();
 }
 // Confronto di due carte, fianco a fianco: la statistica migliore è evidenziata
