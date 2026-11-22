@@ -59,8 +59,8 @@ const Scena3D = (() => {
 
   // Faccia della carta disegnata su canvas: foto, cornice, nome, ruolo
   const cacheFronte = {};
-  async function texFronte(c, liv, lode, olo) {
-    const k = c.id + ":" + liv + (lode ? "L" : "") + (olo ? "O" : "");
+  async function texFronte(c, liv, lode, olo, ultra) {
+    const k = c.id + ":" + liv + (lode ? "L" : "") + (olo ? "O" : "") + (ultra ? "U" : "");
     if (cacheFronte[k]) return cacheFronte[k];
     await font();
     const W = 512, H = 716, cv = document.createElement("canvas");
@@ -77,7 +77,7 @@ const Scena3D = (() => {
     // cornice
     g.lineWidth = 18; g.strokeStyle = col; g.strokeRect(9, 9, W - 18, H - 18);
     if (c.rarita === "leggendaria") { g.lineWidth = 3; g.strokeStyle = "#fff3c4"; g.strokeRect(24, 24, W - 48, H - 48); }
-    if (c.rarita === "ultra") {   // cornice nera e oro con la scritta ULTRA
+    if (ultra) {   // versione Ultra: cornice nera e oro con la scritta ULTRA
       g.lineWidth = 18; g.strokeStyle = "#0b0a08"; g.strokeRect(9, 9, W - 18, H - 18);
       const go = g.createLinearGradient(0, 0, W, H); go.addColorStop(0, "#fff3c4"); go.addColorStop(.5, "#c9a13a"); go.addColorStop(1, "#fff3c4");
       g.lineWidth = 6; g.strokeStyle = go; g.strokeRect(20, 20, W - 40, H - 40); g.lineWidth = 2; g.strokeRect(30, 30, W - 60, H - 60);
@@ -571,7 +571,7 @@ const Scena3D = (() => {
     }
 
     async _creaUnita(l, i, x) {
-      const carta = creaCarta(await texFronte(x.c, x.liv, x.lode, x.olo), texRetro(), x.c.rarita);
+      const carta = creaCarta(await texFronte(x.c, x.liv, x.lode, x.olo, x.ultra), texRetro(), x.c.rarita);
       carta.userData.i = i;
       const gruppo = new T.Group();
       gruppo.add(carta);
@@ -1581,10 +1581,10 @@ const Scena3D = (() => {
     async prepara() {
       this.carte = await Promise.all(this.esiti.map(async (e, i) => {
         const c = PER_ID[e.id];
-        const m = creaCarta(await texFronte(c, e.liv, e.lode, e.olo), texRetro(), c.rarita, 1.1, 1.54);
+        const m = creaCarta(await texFronte(c, e.liv, e.lode, e.olo, e.ultra), texRetro(), c.rarita, 1.1, 1.54);
         m.rotation.y = Math.PI; m.visible = false;
         m.userData = { ...m.userData, i, rarita: c.rarita, girata: false, base: this.posizione(i) };
-        const al = aloneSprite(COL_RARITA[c.rarita], c.rarita === "ultra" ? 3.8 : c.rarita === "leggendaria" ? 3.2 : c.rarita === "epica" ? 2.6 : 2.0);
+        const al = aloneSprite(e.ultra ? 0xffe9a8 : COL_RARITA[c.rarita], e.ultra ? 3.8 : c.rarita === "leggendaria" ? 3.2 : c.rarita === "epica" ? 2.6 : 2.0);
         al.visible = false; m.userData.alone = al;
         this.scena.add(al, m);
         return m;
@@ -1646,8 +1646,8 @@ const Scena3D = (() => {
       c.userData.occupata = true;
       const r = c.userData.rarita, col = COL_RARITA[r];
       const p = c.userData.base.clone();
-      const top = r === "leggendaria" || r === "ultra";
-      if (r === "ultra") {
+      const ultraV = !!(this.esiti[i] && this.esiti[i].ultra), top = r === "leggendaria" || ultraV;
+      if (ultraV) {
         // Ultra: tutto si spegne, la carta trema a lungo e poi esplode in nero e oro
         this.luceRara.color.setHex(0x000000);
         this.schermo && this.fx && this.schermo("buio", 1500);
@@ -1658,7 +1658,7 @@ const Scena3D = (() => {
       }
       this.luceRara.color.setHex(col);
       this.luceRara.position.set(p.x, p.y, 2);
-      this.anima(r === "ultra" ? 1200 : 600, t => { this.luceRara.intensity = Math.sin(t * Math.PI) * (r === "ultra" ? 10 : r === "leggendaria" ? 6 : 3); });
+      this.anima(ultraV ? 1200 : 600, t => { this.luceRara.intensity = Math.sin(t * Math.PI) * (ultraV ? 10 : r === "leggendaria" ? 6 : 3); });
       await this.anima(560, t => {
         c.rotation.y = Math.PI * (1 - t);
         c.rotation.z = 0;
@@ -1667,19 +1667,19 @@ const Scena3D = (() => {
       }, easing.back);
       c.rotation.y = 0; c.position.z = p.z; c.scale.set(1, 1, 1);
       c.userData.occupata = false;
-      const n = { comune: 20, rara: 40, epica: 70, leggendaria: 120, ultra: 200 }[r];
+      const n = ultraV ? 200 : { comune: 20, rara: 40, epica: 70, leggendaria: 120 }[r];
       this.esplosione(p.clone().add(new T.Vector3(0, 0, .2)), col, n, { velocita: top ? 4 : 2.6, su: 1.2 });
-      if (r === "ultra") {
+      if (ultraV) {
         this.scossa = .45;
         for (let k = 1; k < 7; k++) setTimeout(() => this.esplosione(p.clone().add(new T.Vector3(0, .3, .2)), [0xffe9a8, 0x111111, 0xf2c14e, 0xffffff, 0xc9a13a, 0x000000][k - 1], 60, { velocita: 4.2, su: 1.8, durata: 1500 }), k * 170);
         this.scritta("ULTRA!", "#ffe9a8", p.clone().add(new T.Vector3(0, 1.35, .3)), .5, 2600);
       }
-      if (r === "leggendaria") {
+      if (r === "leggendaria" && !ultraV) {
         this.scossa = .25;
         for (let k = 1; k < 4; k++) setTimeout(() => this.esplosione(p.clone().add(new T.Vector3(0, .3, .2)), [0xf2c14e, 0xffffff, 0xff2e46][k - 1], 50, { velocita: 3.5, su: 1.6, durata: 1300 }), k * 200);
       }
       const e = this.esiti[i];
-      const etichetta = e.olo ? "Olografica!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : "";
+      const etichetta = e.ultra ? "" : e.olo ? "Olografica!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : "";
       if (etichetta) this.scritta(etichetta, e.olo ? "#c86eff" : e.nuova ? "#ff2e46" : "#f2c14e", p.clone().add(new T.Vector3(0, .95, .3)), .3, e.olo ? 2600 : 1800);
       if (e.olo) { this.scossa = Math.max(this.scossa || 0, .2); [0xff5078, 0xffd25a, 0x5affaa, 0x50beff, 0xc86eff].forEach((col, k) => setTimeout(() => this.esplosione(p.clone().add(new T.Vector3(0, .2, .2)), col, 40, { velocita: 3.2, su: 1.4, durata: 1400 }), k * 140)); }
       this.cb.onGira && this.cb.onGira(i, this.carte.every(x => x.userData.girata));

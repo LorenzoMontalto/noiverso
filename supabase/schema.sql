@@ -249,7 +249,8 @@ begin
         'id', x,
         'liv', least(30, greatest(1, coalesce((d->'liv'->>x)::int, 1))),
         'lode', coalesce((d->'liv'->>x)::int, 1) >= 30 and coalesce((d->'lodeXp'->>x)::int, 0) >= 2000,
-        'olo', coalesce((d->'olo'->>x)::boolean, false)) order by n)
+        'olo', coalesce((d->'olo'->>x)::boolean, false),
+        'ultra', coalesce((d->'ultra'->>x)::boolean, false)) order by n)
       from jsonb_array_elements_text(coalesce(d->'squadre'->att->'carte', '[]'::jsonb)) with ordinality as t(x, n)), '[]'::jsonb));
 end $$;
 
@@ -314,7 +315,7 @@ create or replace function public.rarita_base(carta text) returns text language 
   select case carta
     when 'loca' then 'leggendaria'
     when 'fuego' then 'rara'
-    when 'reina' then 'ultra'
+    when 'reina' then 'leggendaria'
     when 'chapo' then 'rara'
     when 'rojo' then 'comune'
     when 'ombra' then 'leggendaria'
@@ -329,7 +330,7 @@ create or replace function public.rarita_base(carta text) returns text language 
     when 'wonderrita' then 'rara'
     when 'stellascura' then 'comune'
     when 'mieloki' then 'epica'
-    when 'ironlus' then 'ultra'
+    when 'ironlus' then 'leggendaria'
     when 'cypips' then 'comune'
     when 'mauthor' then 'leggendaria'
     when 'undercut' then 'rara'
@@ -337,7 +338,7 @@ create or replace function public.rarita_base(carta text) returns text language 
     when 'wandessia' then 'epica'
     when 'waspy' then 'rara'
     when 'diegkeye' then 'comune'
-    when 'gokiele' then 'ultra'
+    when 'gokiele' then 'leggendaria'
     when 'vegerizio' then 'leggendaria'
     when 'brolymone' then 'leggendaria'
     when 'freezovico' then 'epica'
@@ -352,7 +353,7 @@ create or replace function public.rarita_base(carta text) returns text language 
     when 'vidalessia' then 'comune'
     when 'panky' then 'comune'
     when 'giulmai' then 'comune'
-    when 'zeutiz' then 'ultra'
+    when 'zeutiz' then 'leggendaria'
     when 'poseludovico' then 'leggendaria'
     when 'adelrizio' then 'epica'
     when 'aresorenzo' then 'leggendaria'
@@ -374,7 +375,7 @@ create or replace function public.rarita_base(carta text) returns text language 
     when 'lasombra' then 'comune'
     when 'samulett' then 'leggendaria'
     when 'mauriziente' then 'leggendaria'
-    when 'simoldemort' then 'ultra'
+    when 'simoldemort' then 'leggendaria'
     when 'pipverus' then 'epica'
     when 'vikatrix' then 'epica'
     when 'alessmione' then 'leggendaria'
@@ -653,7 +654,7 @@ begin
     when t = 'lode-1' then exists (select 1 from jsonb_each_text(coalesce(d->'lodeXp', '{}'::jsonb)) where value ~ '^[0-9]+$' and value::int >= 2000)
     when t = 'bustine-50' then coalesce((st->>'bustine')::int, 0) >= 50
     when t = 'stelle-30' then coalesce((select sum(value::int) from jsonb_each_text(coalesce(d->'storia'->'stelle', '{}'::jsonb)) where value ~ '^[0-9]+$'), 0) >= 30
-    when t = 'ultra-1' then exists (select 1 from jsonb_each_text(coalesce(d->'carte', '{}'::jsonb)) e(k, v) where v ~ '^[0-9]+$' and v::int > 0 and public.rarita_carta(k) = 'ultra')
+    when t = 'ultra-1' then exists (select 1 from jsonb_each_text(coalesce(d->'ultra', '{}'::jsonb)) e(k, v) where v = 'true')
     when t = 'stelle-120' then coalesce((select sum(value::int) from jsonb_each_text(coalesce(d->'storia'->'stelle', '{}'::jsonb)) where value ~ '^[0-9]+$'), 0) >= 120
     when t = 'pass-50' then coalesce((d->'pass'->>'xp')::int, 0) >= 50 * 200
     when t = 'accessi-7' then coalesce((st->>'serieMax')::int, 0) >= 7

@@ -26,8 +26,8 @@ const TIPI_BUSTINA = {
     desc: "5 carte tutte diverse: abbastanza per la prima squadra." },
   normale:     { nome: "Bustina",              carte: 4, ultima: "peso4", desc: "4 carte, l'ultima almeno Rara." },
   epica:       { nome: "Bustina Epica",        carte: 4, ultima: { epica: 80, leggendaria: 20 }, desc: "4 carte, l'ultima almeno Epica." },
-  leggendaria: { nome: "Bustina Leggendaria",  carte: 5, ultima: { leggendaria: 95, ultra: 5 }, desc: "5 carte, l'ultima è Leggendaria (1 su 20 è Ultra)." },
-  ultra:       { nome: "Bustina Ultra",        carte: 5, ultima: { ultra: 100 }, desc: "5 carte, l'ultima è una carta Ultra: la rarità più alta del gioco." },
+  leggendaria: { nome: "Bustina Leggendaria",  carte: 5, ultima: { leggendaria: 100 }, desc: "5 carte, l'ultima è Leggendaria (e può uscire in versione Ultra)." },
+  ultra:       { nome: "Bustina Ultra",        carte: 5, ultima: { leggendaria: 100 }, versioneUltra: true, desc: "5 carte, l'ultima è la versione Ultra di una carta: cornice nera e oro e +10% in battaglia." },
 };
 // Bustine del negozio: classiche, mega, una per ogni serie e una per ogni stile (prezzi in monete)
 Object.assign(TIPI_BUSTINA.benvenuto, { colore: "#ff6b7d" });
@@ -394,13 +394,15 @@ function aggiungiXP(n) {
 // ============================================================
 const PROB_OLO = 1 / 50;
 const haOlo = id => !!(S.olo && S.olo[id]);
+const haUltra = id => !!(S.ultra && S.ultra[id] && PER_ID[id] && PER_ID[id].ultra);
+const PROB_ULTRA = .15;   // quando trovi una carta che ha la versione Ultra, 15 volte su 100 è Ultra (circa 1 bustina su 180, 1 Leggendaria su 18)
 function htmlCarta(c, opz = {}) {
   const liv = opz.liv ?? livello(c.id);
   const lode = opz.lode ?? (opz.liv === undefined && haLode(c.id));
   const info = opz.liv === undefined && S.carte[c.id] ? infoCarta(c.id) : null;
   const coperta = opz.coperta;
   return `
-  <div class="carta r-${c.rarita}${coperta ? " sconosciuta" : ""}${opz.piccola ? " piccola" : ""}${opz.mini ? " mini" : ""}${!coperta && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? " olo" : ""}" data-id="${c.id}" ${opz.click ? 'role="button" tabindex="0"' : ""}>
+  <div class="carta r-${c.rarita}${coperta ? " sconosciuta" : ""}${opz.piccola ? " piccola" : ""}${opz.mini ? " mini" : ""}${!coperta && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? " olo" : ""}${!coperta && c.ultra && (opz.ultra ?? (opz.liv === undefined && haUltra(c.id))) ? " ultra" : ""}" data-id="${c.id}" ${opz.click ? 'role="button" tabindex="0"' : ""}>
     <img src="${imgCarta(c.id)}" alt="${coperta ? "Carta da scoprire" : esc(c.nome)}" loading="lazy" draggable="false">
     ${coperta ? `<div class="punto-domanda">?</div>` : opz.mini ? "" : `
     <div class="carta-testa"><span class="stile s-${c.stile}" title="${STILI[c.stile].nome}">${c.stile}</span><span class="serie-ico" style="--c:${SERIE[c.serie].colore}" title="${esc(SERIE[c.serie].nome)}">${SERIE[c.serie].simbolo}</span>${liv ? `<span class="liv ${lode ? "lode" : ""}">${lode ? "30 e lode" : `Lv ${liv}`}</span>` : ""}</div>
@@ -446,7 +448,7 @@ function apriDettaglio(id) {
   const copie = S.carte[id] || 0;
   apriModale(`
     <div class="dettaglio">
-      <div class="dettaglio-carta" data-inclina>${htmlCarta(c, { liv })}</div>
+      <div class="dettaglio-carta" data-inclina>${htmlCarta(c, { liv, olo: haOlo(id), ultra: haUltra(id) })}</div>
       <div class="dettaglio-testo">
         <p class="serie-nome">${esc(SERIE[c.serie].nome)}</p>
         <h2>${esc(c.nome)}</h2>
@@ -469,6 +471,7 @@ function apriDettaglio(id) {
             <button class="btn primario" data-fx="stelle" data-azione="potenzia" data-id="${id}" ${inf.puoi ? "" : "disabled"}>Potenzia</button>
           </div>`; })() : ""}
           ${haOlo(c.id) ? `<p class="olo-nota">✦ <b>Olografica</b>: +5% di PV e di danni in battaglia. Ne esce una ogni 50 carte circa.</p>` : ""}
+          ${c.ultra ? (haUltra(c.id) ? `<p class="ultra-nota">◆ <b>Versione Ultra</b>: cornice nera e oro e +10% di PV e di danni in battaglia.</p>` : `<p class="nota">Questa carta ha anche una <b>versione Ultra</b> da trovare (+10% in battaglia): esce raramente quando la trovi in una bustina, sempre nella Bustina Ultra.</p>`) : ""}
           <p class="nota piccola">${lode ? "Ha la lode: è al massimo. I suoi doppioni ora danno monete." : liv < LIVELLO_MAX ? `Ogni doppione di questa carta dà ${POT_DOPPIONE[c.rarita]} potenziatori.${!inf.pronta ? ` Te ne mancano ${inf.servePot - inf.pot}.` : !inf.puoi ? ` Ti mancano ${inf.serveMon - S.monete} monete.` : ""}` : "È al 30: continua a giocarci in battaglia per prendere la lode. I suoi doppioni ora danno monete."} · ${copie} ${copie === 1 ? "copia" : "copie"}</p>
         </div>
       </div>
@@ -776,6 +779,8 @@ function apriBustina(tipo) {
     const r = pescaDa(i < T.carte - 1 ? "peso" : T.ultima);
     const vale = c => (!T.serie || c.serie === T.serie) && (!T.stile || c.stile === T.stile);
     let pool = CARTE.filter(c => c.rarita === r && vale(c));
+    // Bustina Ultra: l'ultima è una delle carte con la versione Ultra (prima quelle che non hai ancora Ultra)
+    if (T.versioneUltra && i === T.carte - 1) { const tutte = CARTE.filter(c => c.ultra), nuove = tutte.filter(c => !haUltra(c.id)); pool = (nuove.length ? nuove : tutte).length ? (nuove.length ? nuove : tutte) : pool; }
     // se la serie (o lo stile) non ha carte di quella rarità, prende la rarità più vicina
     const k = ORDINE_RARITA.indexOf(r);
     for (let d = 1; !pool.length && d < ORDINE_RARITA.length; d++)
@@ -787,7 +792,7 @@ function apriBustina(tipo) {
   const ultima = uscite.pop();
   uscite.sort((a, b) => ORDINE_RARITA.indexOf(PER_ID[a].rarita) - ORDINE_RARITA.indexOf(PER_ID[b].rarita));
   uscite.push(ultima);
-  const esiti = uscite.map(id => {
+  const esiti = uscite.map((id, n) => {
     const prima = S.carte[id] || 0, infoPrima = infoCarta(id), r = PER_ID[id].rarita;
     let extra = 0, pot = 0;
     S.carte[id] = prima + 1;
@@ -798,7 +803,12 @@ function apriBustina(tipo) {
     // 1 carta su 50 esce olografica (se non ce l'hai già così)
     const olo = !haOlo(id) && Math.random() < PROB_OLO;
     if (olo) { S.olo = Object.assign({}, S.olo, { [id]: true }); S.stats.olo = (S.stats.olo || 0) + 1; }
-    return { id, nuova: prima === 0, pot, pronta: !infoPrima.pronta && dopo.pronta, extra, liv: dopo.liv, lode: dopo.lode, olo };
+    // versione Ultra: solo per le carte che ce l'hanno; sicura nell'ultima carta della Bustina Ultra
+    const garantita = T.versioneUltra && n === uscite.length - 1;
+    const ultra = PER_ID[id].ultra && !haUltra(id) && (garantita || Math.random() < PROB_ULTRA);
+    if (ultra) { S.ultra = Object.assign({}, S.ultra, { [id]: true }); S.stats.ultra = (S.stats.ultra || 0) + 1; }
+    if (garantita && !ultra && PER_ID[id].ultra) { S.monete += 500; extra += 500; }   // le avevi già tutte Ultra: 500 monete
+    return { id, nuova: prima === 0, pot, pronta: !infoPrima.pronta && dopo.pronta, extra, liv: dopo.liv, lode: dopo.lode, olo, ultra };
   });
   S.stats.bustine++;
   // riempie da sola la prima squadra finché non è completa
@@ -874,19 +884,20 @@ function htmlBonusRarita(c) {
 function apriSchedaCarta(e) {
   const c = PER_ID[e.id]; if (!c) return;
   chiudiSchedaCarta();
-  const inf = infoCarta(c.id), liv = inf.liv || e.liv || 1, lode = inf.lode || e.lode, olo = haOlo(c.id) || e.olo;
+  const inf = infoCarta(c.id), liv = inf.liv || e.liv || 1, lode = inf.lode || e.lode, olo = haOlo(c.id) || e.olo, ultra = haUltra(c.id) || e.ultra;
   const s = statistiche(c, liv, lode), r = RUOLI[c.ruolo], st = STILI[c.stile];
   const el = document.createElement("div");
   el.className = "scheda-veloce"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", `Statistiche di ${c.nome}`);
   el.innerHTML = `<div class="scheda-box">
     <button class="scheda-x" aria-label="Chiudi">✕</button>
     <div class="scheda-testa">
-      <div class="scheda-carta">${htmlCarta(c, { liv, lode, olo })}</div>
+      <div class="scheda-carta">${htmlCarta(c, { liv, lode, olo, ultra })}</div>
       <div>
         <p class="serie-nome">${esc(SERIE[c.serie].nome)} · <span class="r-testo r-${c.rarita}">${esc(RARITA[c.rarita].nome)}</span></p>
         <h2>${esc(c.nome)}</h2>
         <p class="nota">${lode ? "Livello 30 e lode" : `Livello ${liv}`} · ${esc(r.nome)} · ${st.icona} ${esc(st.nome)}</p>
         ${e.olo ? `<p class="olo-nota">✦ <b>Olografica</b>: +5% di PV e di danni in battaglia</p>` : ""}
+        ${(e.ultra || haUltra(c.id)) && c.ultra ? `<p class="ultra-nota">◆ <b>Versione Ultra</b>: +10% di PV e di danni in battaglia</p>` : ""}
       </div>
     </div>
     ${htmlStatGriglia(c, s)}
@@ -919,8 +930,8 @@ function mostraApertura2D(esiti, graffito) {
           <button class="gira r-${PER_ID[e.id].rarita}" data-i="${i}" aria-label="Gira la carta ${i + 1}">
             <div class="faccia retro"><span class="neon">NV</span></div>
             <div class="faccia fronte">
-              ${htmlCarta(PER_ID[e.id], { liv: e.liv, lode: e.lode })}
-              <span class="etichetta ${e.olo ? "olo-tag" : ""}">${e.olo ? "Olografica!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : ""}</span>
+              ${htmlCarta(PER_ID[e.id], { liv: e.liv, lode: e.lode, olo: e.olo, ultra: e.ultra })}
+              <span class="etichetta ${e.ultra ? "ultra-tag" : e.olo ? "olo-tag" : ""}">${e.ultra ? "ULTRA!" : e.olo ? "Olografica!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : ""}</span>
             </div>
           </button>`).join("")}
       </div>
@@ -1635,7 +1646,7 @@ function vistaAdmin() {
     <div class="titolo-riga"><h2>Pannello admin</h2><p class="nota">Solo tu vedi questa pagina. Qui le monete sono infinite e niente finisce in classifica.</p></div>
     <div class="admin-griglia">
       <div class="admin-box"><h3>Carte · ${possedute().length}/${CARTE.length}</h3>
-        <div class="azioni"><button class="btn oro" data-fx="coriandoli" data-admin="carte-lode">Tutte al 30 e lode</button><button class="btn" data-fx="stelle" data-admin="carte-max">Tutte al livello 30</button><button class="btn" data-fx="salto" data-admin="carte-15">Tutte al livello 15</button><button class="btn" data-fx="salto" data-admin="carte-1">Tutte al livello 1</button><button class="btn" data-fx="monete" data-admin="pot-100">+100 potenziatori a tutte</button><button class="btn" data-fx="stelle" data-admin="olo-5">5 olografiche a caso</button><button class="btn" data-fx="scuoti" data-admin="carte-zero">Svuota collezione</button></div></div>
+        <div class="azioni"><button class="btn oro" data-fx="coriandoli" data-admin="carte-lode">Tutte al 30 e lode</button><button class="btn" data-fx="stelle" data-admin="carte-max">Tutte al livello 30</button><button class="btn" data-fx="salto" data-admin="carte-15">Tutte al livello 15</button><button class="btn" data-fx="salto" data-admin="carte-1">Tutte al livello 1</button><button class="btn" data-fx="monete" data-admin="pot-100">+100 potenziatori a tutte</button><button class="btn" data-fx="stelle" data-admin="olo-5">5 olografiche a caso</button><button class="btn oro" data-fx="stelle" data-admin="tutte-speciali">Tutte Ultra e olografiche</button><button class="btn" data-fx="scuoti" data-admin="togli-speciali">Togli Ultra e olografiche</button><button class="btn" data-fx="scuoti" data-admin="carte-zero">Svuota collezione</button></div></div>
       <div class="admin-box"><h3>Bustine</h3>
         <div class="azioni"><button class="btn" data-fx="onda" data-admin="bustine">+10 di ogni tipo</button><button class="btn oro" data-fx="coriandoli" data-apri="leggendaria">Apri una leggendaria</button></div>
         <p class="nota">Ne hai: ${ORDINE_BUSTINE.filter(t => S.inventario[t]).map(t => `${TIPI_BUSTINA[t].nome.replace("Bustina ", "").replace("Bustina", "Normali")} ${S.inventario[t]}`).join(" · ") || "nessuna"}</p></div>
@@ -1903,14 +1914,14 @@ document.addEventListener("change", async e => {
 
 // ---------- Editor carte: persona, serie e rarità (solo admin) ----------
 let bozza = null, edFiltro = "tutte", edCerca = "";
-function nuovaBozza() { return Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona }])); }
+function nuovaBozza() { return Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: !!c.ultra }])); }
 function regolaBozza() {
   const gruppi = {};
   for (const c of CARTE) { const b = bozza[c.id]; const p = b.persona.trim(); if (p) (gruppi[p] = gruppi[p] || []).push(c); }
-  const problemi = Object.keys(gruppi).filter(p => Object.keys(SERIE).some(se => gruppi[p].filter(c => bozza[c.id].serie === se && RARE_TOP(bozza[c.id].rarita)).length > 1));
+  const problemi = Object.keys(gruppi).filter(p => Object.keys(SERIE).some(se => gruppi[p].filter(c => bozza[c.id].serie === se && bozza[c.id].rarita === "leggendaria").length > 1));
   return { gruppi, problemi, senza: CARTE.filter(c => !bozza[c.id].persona.trim()) };
 }
-function modificheBozza() { return CARTE.filter(c => { const b = bozza[c.id]; return b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || b.persona.trim() !== c.persona; }).length; }
+function modificheBozza() { return CARTE.filter(c => { const b = bozza[c.id]; return b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || !!b.ultra !== !!c.ultra || b.persona.trim() !== c.persona; }).length; }
 function htmlRegola() {
   const r = regolaBozza(), n = modificheBozza();
   const contaSerie = Object.keys(SERIE).map(id => `${SERIE[id].simbolo} ${esc(SERIE[id].nome)} ${CARTE.filter(c => bozza[c.id].serie === id).length} (${CARTE.filter(c => bozza[c.id].serie === id && bozza[c.id].rarita === "leggendaria").length} L)`).join(" · ");
@@ -1932,7 +1943,7 @@ function htmlEditorCarte() {
   const q = edCerca.trim().toLowerCase();
   const elenco = CARTE.filter(c => (edFiltro === "tutte" || (edFiltro === "senza" ? !bozza[c.id].persona.trim() : bozza[c.id].serie === edFiltro)) && (!q || c.nome.toLowerCase().includes(q) || bozza[c.id].persona.toLowerCase().includes(q)));
   return `
-    <h3>Persone, serie, rarità e tipo</h3>
+    <h3>Persone, serie, rarità, tipo e versione Ultra</h3>
     <p class="nota">Scegli per ogni carta chi è la persona, in che serie va e la rarità. Quando salvi, vale per tutti i giocatori. Regola: al massimo una leggendaria a persona in ogni serie (una persona può averne in più serie).</p>
     ${Archivio.modo !== "cloud" ? `<p class="nota"><b class="errore">Serve la pagina online: senza account le modifiche non si possono salvare per tutti.</b></p>` : ""}
     <div id="ed-regola">${htmlRegola()}</div>
@@ -1942,8 +1953,8 @@ function htmlEditorCarte() {
     </div>
     <datalist id="ed-persone">${persone.map(p => `<option value="${esc(p)}"></option>`).join("")}</datalist>
     <div class="ed-righe">
-      ${elenco.map(c => { const b = bozza[c.id], errata = r.problemi.includes(b.persona.trim()) && RARE_TOP(b.rarita);
-        const cambiata = b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || b.persona.trim() !== c.persona;
+      ${elenco.map(c => { const b = bozza[c.id], errata = r.problemi.includes(b.persona.trim()) && b.rarita === "leggendaria";
+        const cambiata = b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || !!b.ultra !== !!c.ultra || b.persona.trim() !== c.persona;
         return `<div class="ed-riga ${errata ? "errata" : ""} ${cambiata ? "cambiata" : ""}" data-ed-riga="${c.id}">
           <img src="${imgCarta(c.id)}" alt="">
           <b>${esc(c.nome)}</b>
@@ -1951,6 +1962,7 @@ function htmlEditorCarte() {
           <label><span>Serie</span><select data-ed="${c.id}" data-campo="serie">${Object.keys(SERIE).map(id => `<option value="${id}" ${b.serie === id ? "selected" : ""}>${esc(SERIE[id].nome)}</option>`).join("")}</select></label>
           <label><span>Rarità</span><select data-ed="${c.id}" data-campo="rarita" class="sel-r-${b.rarita}">${ORDINE_RARITA.map(id => `<option value="${id}" ${b.rarita === id ? "selected" : ""}>${RARITA[id].nome}</option>`).join("")}</select></label>
           <label><span>Tipo</span><select data-ed="${c.id}" data-campo="stile">${Object.keys(STILI).map(id => `<option value="${id}" ${b.stile === id ? "selected" : ""}>${STILI[id].icona} ${esc(STILI[id].nome)}</option>`).join("")}</select></label>
+          <label class="ed-ultra" title="Ha anche una versione Ultra da trovare"><input type="checkbox" data-ed="${c.id}" data-campo="ultra" ${b.ultra ? "checked" : ""}><span>Ultra</span></label>
         </div>`; }).join("") || `<p class="nota">Nessuna carta corrisponde.</p>`}
     </div>`;
 }
@@ -1962,8 +1974,8 @@ function aggiornaEditor(completo) {
   const r = regolaBozza();
   $$("[data-ed-riga]", box).forEach(el => {
     const c = PER_ID[el.dataset.edRiga], b = bozza[c.id];
-    el.classList.toggle("errata", r.problemi.includes(b.persona.trim()) && RARE_TOP(b.rarita));
-    el.classList.toggle("cambiata", b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || b.persona.trim() !== c.persona);
+    el.classList.toggle("errata", r.problemi.includes(b.persona.trim()) && b.rarita === "leggendaria");
+    el.classList.toggle("cambiata", b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || !!b.ultra !== !!c.ultra || b.persona.trim() !== c.persona);
     const sr = el.querySelector('[data-campo="rarita"]'); sr.className = "sel-r-" + b.rarita;
   });
 }
@@ -1976,6 +1988,7 @@ async function salvaEditor(el) {
     if (b.serie !== o.serie) d.serie = b.serie;
     if (b.rarita !== o.rarita) d.rarita = b.rarita;
     if (b.stile !== o.stile) d.stile = b.stile;
+    if (!!b.ultra !== !!o.ultra) d.ultra = !!b.ultra;
     if (b.persona.trim() !== o.persona) d.persona = b.persona.trim();
     if (Object.keys(d).length) cfg.carte[c.id] = d;
   }
@@ -2020,8 +2033,10 @@ async function azioneAdmin(cosa, el) {
   if (cosa === "carte-1") { metti(1); CARTE.forEach(c => { S.carte[c.id] = 1; S.pot[c.id] = 0; }); }
   if (cosa === "pot-100") CARTE.forEach(c => { if (S.carte[c.id]) S.pot[c.id] = (S.pot[c.id] || 0) + 100; });
   if (cosa === "olo-5") { const ok = possedute().filter(c => !haOlo(c.id)).sort(() => Math.random() - .5).slice(0, 5); S.olo = Object.assign({}, S.olo); ok.forEach(c => { S.olo[c.id] = true; }); }
+  if (cosa === "tutte-speciali") { CARTE.forEach(c => { if (!S.carte[c.id]) { S.carte[c.id] = 1; S.liv[c.id] = S.liv[c.id] || 1; } }); S.olo = Object.fromEntries(CARTE.map(c => [c.id, true])); S.ultra = Object.fromEntries(CARTE.filter(c => c.ultra).map(c => [c.id, true])); }
+  if (cosa === "togli-speciali") { S.olo = {}; S.ultra = {}; }
   if (cosa === "carte-zero") { S.carte = {}; S.liv = {}; S.pot = {}; S.lodeXp = {}; S.squadre.forEach(s => { s.carte = []; }); }
-  if (cosa === "bustine") { for (const t of ["normale", "epica", "leggendaria"]) S.inventario[t] += 10; FX.volaIcona(el, $('[data-vista="bustine"]'), "b-normale"); }
+  if (cosa === "bustine") { for (const t of ["normale", "epica", "leggendaria", "ultra"]) S.inventario[t] = (S.inventario[t] || 0) + 10; FX.volaIcona(el, $('[data-vista="bustine"]'), "b-normale"); }
   if (cosa === "pass") { S.pass.xp = +$("#admin-pass").value * PASS.xpLivello; }
   if (cosa === "pass-reset") { S.pass.riscossi = []; S.pass.scelte = {}; S.pass.bonus = 0; S.pass.potInSospeso = 0; }
   if (cosa === "pass-bonus") S.pass.xp = Math.max(S.pass.xp, PASS.livelli * PASS.xpLivello) + PASS.xpBonus * 3;
@@ -2292,7 +2307,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
   const n = carteForzate ? CARTE_SQUADRA : carteBattaglia();
   const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
-    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id) }));
+    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id) }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   // contro il computer: battaglia con un seme, così gli amici possono guardarla in diretta (le scelte del computer restano a caso)
@@ -2840,11 +2855,11 @@ document.addEventListener("submit", e => {
 document.addEventListener("input", e => {
   if (e.target.id === "admin-pass") $("#admin-pass-val").textContent = e.target.value;
   if (e.target.dataset && e.target.dataset.reazTesto !== undefined) Reazioni.testo(+e.target.dataset.reazTesto, e.target.value);
-  if (e.target.dataset && e.target.dataset.ed && bozza) { bozza[e.target.dataset.ed][e.target.dataset.campo] = e.target.value; aggiornaEditor(false); }
+  if (e.target.dataset && e.target.dataset.ed && bozza) { bozza[e.target.dataset.ed][e.target.dataset.campo] = e.target.type === "checkbox" ? e.target.checked : e.target.value; aggiornaEditor(false); }
   if (e.target.id === "ed-cerca") { edCerca = e.target.value; const pos = e.target.selectionStart; aggiornaEditor(true); const c = $("#ed-cerca"); if (c) { c.focus(); try { c.setSelectionRange(pos, pos); } catch (err) { /* niente */ } } }
 });
 document.addEventListener("change", e => {
-  if (e.target.dataset && e.target.dataset.ed && bozza) { bozza[e.target.dataset.ed][e.target.dataset.campo] = e.target.value; aggiornaEditor(false); return; }
+  if (e.target.dataset && e.target.dataset.ed && bozza) { bozza[e.target.dataset.ed][e.target.dataset.campo] = e.target.type === "checkbox" ? e.target.checked : e.target.value; aggiornaEditor(false); return; }
   if (e.target.dataset && e.target.dataset.reazTesto !== undefined) { Reazioni.testo(+e.target.dataset.reazTesto, e.target.value); return; }
   if (e.target.id === "prova-carta") { const c = PER_ID[e.target.value]; $("#prova-mossa").innerHTML = c.mosse.map((m, i) => `<option value="${i}">${esc(m.nome)} (${m.costo}◆)</option>`).join(""); }
   if (e.target.id === "nome-squadra") {

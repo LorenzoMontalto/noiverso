@@ -32,7 +32,7 @@ const Trofei = (() => {
       { id: "lode-1", nome: "Trenta e lode", desc: "Porta una carta al 30 e lode", titolo: "Lodato", premio: 400, prog: lodi, max: 1 },
       { id: "bustine-50", nome: "Strappabustine", desc: "Apri 50 bustine", titolo: "Strappabustine", premio: 200, prog: () => st("bustine"), max: 50 },
       { id: "stelle-30", nome: "Narratore", desc: "Prendi 30 stelle nella storia", titolo: "Narratore", premio: 250, prog: stelleTot, max: 30 },
-      { id: "ultra-1", nome: "Ultra!", desc: "Trova una carta Ultra", titolo: "Ultra", premio: 500, prog: () => possedute().filter(c => c.rarita === "ultra").length, max: 1 },
+      { id: "ultra-1", nome: "Ultra!", desc: "Trova la versione Ultra di una carta", titolo: "Ultra", premio: 500, prog: () => CARTE.filter(c => haUltra(c.id)).length, max: 1 },
       { id: "stelle-120", nome: "Giramondo", desc: "Prendi 120 stelle nella storia", titolo: "Giramondo", premio: 600, prog: stelleTot, max: 120 },
       { id: "pass-50", nome: "Fedelissimo", desc: "Arriva al livello 50 del pass", titolo: "Fedelissimo", premio: 300, prog: livelloPass, max: 50 },
       { id: "accessi-7", nome: "Sempre presente", desc: "Riscuoti il premio di accesso 7 giorni di fila", titolo: "Sempre presente", premio: 200, prog: () => st("serieMax"), max: 7 },
@@ -99,7 +99,7 @@ const Scambi = (() => {
   let lista = null, inArrivo = 0, errore = null, nuovo = null;   // nuovo = scambio in preparazione: { amico, nome, chiedo, offro, doppioni }
   const attivo = () => socialeAttivo();
   const nome = id => { const r = (classificaDati || []).find(x => x.id === id); return r ? String(r.nome || "Giocatore") : "un amico"; };
-  // Scambiare una carta costa i potenziatori che ti dà un suo doppione (10 comune, 12 rara, 30 epica, 100 leggendaria, 200 ultra):
+  // Scambiare una carta costa i potenziatori che ti dà un suo doppione (10 comune, 12 rara, 30 epica, 100 leggendaria):
   // è come dare via un doppione. La carta resta nel tuo album.
   const costo = id => POT_DOPPIONE[PER_ID[id].rarita];
   const mieOfferte = id => (lista || []).filter(x => x.da === Archivio.uid && x.offro === id && (x.stato === "aperto" || (x.stato === "accettato" && !x.ritirato))).length;
@@ -241,7 +241,7 @@ const Scambi = (() => {
     const pronte = (lista || []).filter(daRitirare);
     const vecchie = (lista || []).filter(x => x.stato !== "aperto" && !daRitirare(x)).slice(0, 8);
     return `
-    <div class="titolo-riga"><h2>Scambi</h2><p class="nota">Scambia con gli amici le carte che ti mancano. Dare una copia costa i potenziatori di un doppione di quella carta (10 comune, 12 rara, 30 epica, 100 leggendaria, 200 ultra): la carta resta nel tuo album. Solo carte della stessa rarità.</p>
+    <div class="titolo-riga"><h2>Scambi</h2><p class="nota">Scambia con gli amici le carte che ti mancano. Dare una copia costa i potenziatori di un doppione di quella carta (10 comune, 12 rara, 30 epica, 100 leggendaria): la carta resta nel tuo album. Solo carte della stessa rarità.</p>
       <button class="btn primario" data-fx="onda" data-azione="nuovo-scambio" ${S.admin ? "disabled" : ""}>Nuovo scambio</button></div>
     ${errore ? `<p class="errore">${esc(errore)}</p>` : !lista ? `<p class="nota">Carico gli scambi…</p>` : `
     ${pronte.length ? `<h3 class="scambi-titolo">Accettati: ritira la carta <span class="badge-in">${pronte.length}</span></h3><ul class="scambi">${pronte.map(htmlRiga).join("")}</ul>` : ""}

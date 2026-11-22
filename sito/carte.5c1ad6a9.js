@@ -16,17 +16,14 @@ const SERIE = {
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
 // peso4 = probabilità relativa nella 4ª carta (garantita almeno Rara)
 // forza = moltiplicatore su PV, attacco e difesa: ogni gradino di rarità vale il 10% in più
-// (es. stesso ruolo, Lv1: comune 100 PV → rara 110 → epica 120 → leggendaria 130 → ultra 140)
-// Ultra: poche carte, una per serie. Esce solo come ultima carta: 1 su 100 nelle bustine normali,
-// 1 su 20 nella Leggendaria, sempre nella Bustina Ultra del negozio.
+// (es. stesso ruolo, Lv1: comune 100 PV → rara 110 → epica 120 → leggendaria 130)
 const RARITA = {
   comune:      { nome: "Comune",      peso: 62,  peso4: 0,  forza: 1.00 },
   rara:        { nome: "Rara",        peso: 28,  peso4: 70, forza: 1.10 },
   epica:       { nome: "Epica",       peso: 8.5, peso4: 24, forza: 1.20 },
   leggendaria: { nome: "Leggendaria", peso: 1.5, peso4: 6,  forza: 1.30 },
-  ultra:       { nome: "Ultra",       peso: 0,   peso4: 1,  forza: 1.40 },
 };
-const ORDINE_RARITA = ["comune", "rara", "epica", "leggendaria", "ultra"];
+const ORDINE_RARITA = ["comune", "rara", "epica", "leggendaria"];
 const RARE_TOP = r => r === "leggendaria" || r === "ultra";   // per la regola "una a persona per serie"
 
 // Tre tipi, e ognuno potenzia la sua statistica:
@@ -79,7 +76,7 @@ const CARTE = [
   { id: "fuego", nome: "La Fuego", serie: "nueve", rarita: "rara", stile: "FOR", ruolo: "incendiario",
     frase: "Dove passa lei resta solo cenere.",
     mosse: [m("Schiaffo Rovente", 0, 26, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Benzina", 2, 38, { eff: { tipo: "brucia", val: 6, turni: 3 } }), m("Inferno", 5, 80, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
-  { id: "reina", nome: "La Reina", serie: "nueve", rarita: "ultra", stile: "DIF", ruolo: "capo",
+  { id: "reina", nome: "La Reina", serie: "nueve", rarita: "leggendaria", stile: "DIF", ruolo: "capo",
     frase: "Non alza mai la voce. Non ne ha bisogno.",
     mosse: [m("Sguardo Gelido", 0, 30), m("Ordine Reale", 2, 0, { eff: { tipo: "potenzia", val: 35, turni: 3 } }), m("Corte Marziale", 5, 82, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
   { id: "chapo", nome: "El Chapo", serie: "nueve", rarita: "rara", stile: "DIF", ruolo: "stratega",
@@ -126,7 +123,7 @@ const CARTE = [
   { id: "mieloki", nome: "Mie Loki", serie: "eroi", rarita: "epica", stile: "DIF", ruolo: "stregone",
     frase: "Quello che vedi non è mai quello che c'è.",
     mosse: [m("Pugnale", 0, 30), m("Illusione", 2, 0, { eff: { tipo: "nebbia" } }), m("Inganno Supremo", 5, 80, { eff: { tipo: "indebolisci", val: 35, turni: 2 } })] },
-  { id: "ironlus", nome: "Iron Lus", serie: "eroi", rarita: "ultra", stile: "FOR", ruolo: "tiratore",
+  { id: "ironlus", nome: "Iron Lus", serie: "eroi", rarita: "leggendaria", stile: "FOR", ruolo: "tiratore",
     frase: "Genio, armatura e nessuna modestia.",
     mosse: [m("Repulsore", 0, 32), m("Missili", 2, 20, { colpi: 3 }), m("Raggio Centrale", 5, 100)] },
   { id: "cypips", nome: "CyPips", serie: "eroi", rarita: "comune", stile: "DIF", ruolo: "difensore",
@@ -150,7 +147,7 @@ const CARTE = [
     mosse: [m("Freccia", 0, 30), m("Freccia Esplosiva", 2, 44), m("Pioggia di Frecce", 5, 22, { colpi: 4 })] },
 
   // ---------------- DRAGON BALL ----------------
-  { id: "gokiele", nome: "Gokiele", serie: "db", rarita: "ultra", stile: "FOR", ruolo: "capo", frase: "Più è forte l'avversario, più si diverte.",
+  { id: "gokiele", nome: "Gokiele", serie: "db", rarita: "leggendaria", stile: "FOR", ruolo: "capo", frase: "Più è forte l'avversario, più si diverte.",
     mosse: [m("Pugno Saiyan", 0, 34), m("Teletrasporto", 2, 44, { penetra: 30 }), m("Onda Energetica Suprema", 5, 100)] },
   { id: "vegerizio", nome: "Vegerizio", serie: "db", rarita: "leggendaria", stile: "VEL", ruolo: "tiratore", frase: "Il principe non chiede scusa. Mai.",
     mosse: [m("Raffica d'Orgoglio", 0, 32), m("Lampo del Principe", 2, 48), m("Esplosione Finale", 5, 100)] },
@@ -182,7 +179,7 @@ const CARTE = [
     mosse: [m("Sfera di Ki", 0, 30), m("Doppia Sfera", 2, 24, { colpi: 2 }), m("Bomba Viola", 5, 86)] },
 
   // ---------------- DEI ----------------
-  { id: "zeutiz", nome: "Zeu Tiz", serie: "dei", rarita: "ultra", stile: "DIF", ruolo: "capo", frase: "Sovrano degli dei. Fulmini compresi.",
+  { id: "zeutiz", nome: "Zeu Tiz", serie: "dei", rarita: "leggendaria", stile: "DIF", ruolo: "capo", frase: "Sovrano degli dei. Fulmini compresi.",
     mosse: [m("Saetta", 0, 32), m("Tuono dell'Olimpo", 2, 42, { eff: { tipo: "stordisci", val: 40 } }), m("Ira di Zeus", 5, 104)] },
   { id: "poseludovico", nome: "Pose Ludovico", serie: "dei", rarita: "leggendaria", stile: "DIF", ruolo: "tank", frase: "Signore dei mari e delle tempeste.",
     mosse: [m("Colpo di Tridente", 0, 32), m("Muro d'Acqua", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Maremoto", 5, 96)] },
@@ -230,7 +227,7 @@ const CARTE = [
     mosse: [m("Raggio Disarmante", 0, 32), m("Volo sulla Scopa", 2, 44, { penetra: 20 }), m("Duello Finale", 5, 98)] },
   { id: "mauriziente", nome: "Mauriziente", serie: "maghi", rarita: "leggendaria", stile: "DIF", ruolo: "stratega", frase: "Il preside più saggio della scuola. E il più eccentrico.",
     mosse: [m("Lampo di Bacchetta", 0, 30), m("Saggezza Antica", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Fenice di Fuoco", 5, 88, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
-  { id: "simoldemort", nome: "Simoldemort", serie: "maghi", rarita: "ultra", stile: "DIF", ruolo: "stregone", frase: "Colui-che-non-si-deve-nominare. E infatti nessuno lo nomina.",
+  { id: "simoldemort", nome: "Simoldemort", serie: "maghi", rarita: "leggendaria", stile: "DIF", ruolo: "stregone", frase: "Colui-che-non-si-deve-nominare. E infatti nessuno lo nomina.",
     mosse: [m("Fiamma Verde", 0, 32, { drena: 20 }), m("Marchio Oscuro", 2, 28, { eff: { tipo: "indebolisci", val: 35, turni: 2 } }), m("Maledizione Suprema", 5, 100)] },
   { id: "pipverus", nome: "Pipverus Piton", serie: "maghi", rarita: "epica", stile: "FOR", ruolo: "incendiario", frase: "Pozioni, sarcasmo e un segreto lungo una vita.",
     mosse: [m("Fendente Oscuro", 0, 32), m("Pozione Velenosa", 2, 30, { eff: { tipo: "brucia", val: 7, turni: 3 } }), m("Principe Mezzosangue", 5, 92, { penetra: 25 })] },
@@ -287,7 +284,11 @@ CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
 // Valori di partenza scritti qui nel codice. L'admin può cambiarli dal gioco:
 // le sue scelte (persona, serie, rarità) stanno nel database e vengono applicate all'avvio.
-const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona }]));
+// Versione Ultra: alcune carte (scelte dall'admin) hanno anche una versione Ultra da trovare, come l'olografica:
+// la carta base resta quella, la versione Ultra le dà la cornice nera e oro e +10% di PV e danni.
+const ULTRA_DI_PARTENZA = ["reina", "gokiele", "zeutiz", "ironlus", "simoldemort"];
+CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
+const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {
   const mappa = (cfg && cfg.carte) || {};
   CARTE.forEach(c => {
@@ -295,6 +296,7 @@ function applicaConfigCarte(cfg) {
     c.serie = SERIE[m.serie] ? m.serie : o.serie;
     c.rarita = RARITA[m.rarita] ? m.rarita : o.rarita;
     c.stile = STILI[m.stile] ? m.stile : o.stile;
+    c.ultra = typeof m.ultra === "boolean" ? m.ultra : o.ultra;
     c.persona = typeof m.persona === "string" ? m.persona.trim().slice(0, 30) : o.persona;
   });
 }
@@ -335,8 +337,8 @@ const fattoreLivello = (liv = 1, lode = false) => (1 + 0.02 * (liv - 1)) * (lode
 // (di più se è rara, perché i suoi doppioni escono meno). Per ogni livello servono potenziatori + monete.
 // Esempio: Lv1→2 costa 3 potenziatori e 10 monete; Lv10→11: 8 e 35; Lv29→30: 17 e 220.
 // In tutto, dal 1 al 30: 297 potenziatori e 2410 monete (circa 30 doppioni di una comune).
-const POT_DOPPIONE = { comune: 10, rara: 12, epica: 30, leggendaria: 100, ultra: 200 };
-const MONETE_DOPPIONE_30 = { comune: 15, rara: 20, epica: 40, leggendaria: 100, ultra: 200 };   // doppione di una carta già al 30
+const POT_DOPPIONE = { comune: 10, rara: 12, epica: 30, leggendaria: 100 };
+const MONETE_DOPPIONE_30 = { comune: 15, rara: 20, epica: 40, leggendaria: 100 };   // doppione di una carta già al 30
 const potPerLivello = L => 3 + Math.floor(L / 2);
 const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 5);
 
