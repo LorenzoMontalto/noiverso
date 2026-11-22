@@ -75,11 +75,12 @@ const Online = (() => {
   }
   function annuncia() {
     if (!canale) return;
-    try { canale.track({ nome: mioNome(), avatar: S.profilo.avatar || "", stato: P ? "in-battaglia" : "libero", t: Date.now() }); } catch (e) {}
+    try { canale.track({ nome: mioNome(), avatar: S.profilo.avatar || "", stato: P ? "in-battaglia" : G ? "spettatore" : "libero",
+      partita: P && P.iniziata && !P.finita ? P.id : null, contro: P ? P.avv.nome : null, t: Date.now() }); } catch (e) {}
   }
   function leggiPresenti() {
     const st = canale ? canale.presenceState() : {}, nuovi = {};
-    for (const [k, lista] of Object.entries(st || {})) { const x = (lista || [])[lista.length - 1]; if (x && k !== io()) nuovi[k] = { nome: x.nome, avatar: x.avatar, stato: x.stato }; }
+    for (const [k, lista] of Object.entries(st || {})) { const x = (lista || [])[lista.length - 1]; if (x && k !== io()) nuovi[k] = { nome: x.nome, avatar: x.avatar, stato: x.stato, partita: x.partita, contro: x.contro }; }
     presenti = nuovi;
     if (!B) {
       if (vista === "classifica") disegna();
@@ -96,8 +97,9 @@ const Online = (() => {
       <div class="online-testa"><b><span class="pallino-online"></span> Amici online</b><span class="nota">${lista.length ? `${lista.length} ${lista.length === 1 ? "connesso" : "connessi"} adesso` : "Nessuno connesso in questo momento"}</span></div>
       ${lista.length ? `<ul class="amici-lista">${lista.map(([id, x]) => `<li>
         ${htmlAvatar(String(x.avatar || ""), "mini")}
-        <div class="amico-info"><b>${esc(String(x.nome || "Giocatore"))}</b><small>${x.stato === "libero" ? "Online" : "Sta giocando una sfida dal vivo"}</small></div>
-        <button class="btn primario piccolo" data-fx="spinta" data-sfida-vivo="${esc(id)}" ${x.stato === "libero" ? "" : "disabled"}>Sfida dal vivo</button></li>`).join("")}</ul>`
+        <div class="amico-info"><b>${esc(String(x.nome || "Giocatore"))}</b><small>${x.stato === "libero" ? "Online" : x.stato === "spettatore" ? "Sta guardando una sfida" : `Sta giocando contro ${esc(String(x.contro || "un amico"))}`}</small></div>
+        ${x.stato === "in-battaglia" && x.partita ? `<button class="btn piccolo" data-fx="spinta" data-guarda="${esc(String(x.partita))}">👀 Guarda</button>`
+          : `<button class="btn primario piccolo" data-fx="spinta" data-sfida-vivo="${esc(id)}" ${x.stato === "libero" ? "" : "disabled"}>Sfida dal vivo</button>`}</li>`).join("")}</ul>`
         : `<p class="nota">Quando un amico apre il gioco compare qui: potrete sfidarvi dal vivo, mossa contro mossa.</p>`}
     </div>`;
   }
@@ -179,7 +181,12 @@ const Online = (() => {
     const ch = sb().channel(`noiverso-vivo-${P.id}`, { config: { presence: { key: io() }, broadcast: { self: false } } });
     P.ch = ch;
     ch.on("broadcast", { event: "m" }, ({ payload }) => ricevi(payload))
-      .on("broadcast", { event: "r" }, ({ payload }) => { if (P && payload && payload.da === P.avv.id) Reazioni.ricevi(payload.r); })
+      .on("broadcast", { event: "r" }, ({ payload }) => { if (!P || !payload) return; if (payload.spett) Reazioni.riceviSpettatore(payload.r, payload.nome, payload.da); else if (payload.da === P.avv.id) Reazioni.ricevi(payload.r); })
+      .on("broadcast", { event: "spett" }, ({ payload }) => {
+        // chi ha sfidato racconta la partita agli spettatori: dati di partenza + tutte le mosse fatte finora
+        if (!P || !P.host || !P.spett || !payload || payload.tipo !== "ciao") return;
+        try { ch.send({ type: "broadcast", event: "spett", payload: { tipo: "stato", per: payload.da, dati: P.spett, log: P.log } }); } catch (e) {}
+      })
       .on("presence", { event: "sync" }, () => controllaAvversario())
       .on("presence", { event: "join" }, () => controllaAvversario())
       .on("presence", { event: "leave" }, () => controllaAvversario())
@@ -225,7 +232,8 @@ const Online = (() => {
   }
   function controllaAvversario() {
     if (!P || !P.ch) return;
-    const c = !!(P.ch.presenceState() || {})[P.avv.id];
+    const st = P.ch.presenceState() || {}, c = !!st[P.avv.id];
+    P.spettatori = Object.keys(st).filter(k => k.startsWith("spett:")).length;
     if (c && !P.avvPresente && P.rientro) aggiungiRegistro({ testo: `${P.avv.nome} è di nuovo connesso.`, avviso: true });
     P.avvPresente = c;
     P.rientro = c ? 0 : (P.rientro || (P.iniziata && !P.finita ? Date.now() + TEMPO_RIENTRO * 1000 : 0));
@@ -252,6 +260,11 @@ const Online = (() => {
     if (sqMia.length < CARTE_SQUADRA || sqSua.length < CARTE_SQUADRA) { mostraAvviso("Una delle due squadre non è completa: la sfida non può partire."); esci(); chiudiModale(); return; }
     const g = x => x && x.graffito && GRAFFITI_COPPIE[x.graffito.id] ? x.graffito : null;
     P.iniziata = true;
+    P.log = [];
+    // per gli spettatori (orientamento "vero": chi ha sfidato è il lato 0)
+    const [sqA, sqB, gA, gB] = P.host ? [sqMia, sqSua, g(mia), g(sua)] : [sqSua, sqMia, g(sua), g(mia)];
+    if (P.host) P.spett = { seme: P.seme, sqA, sqB, gA, gB, nomeA: mioNome(), nomeB: P.avv.nome, idA: io(), idB: P.avv.id };
+    annuncia();
     chiudiModale();
     schermoIntero(true);
     setTimeout(() => avviaSfida({ id: "vivo", nome: P.avv.nome, abilita: 0, liv: [1, 30], premio: 0, punti: 0, xp: 0,
@@ -283,7 +296,12 @@ const Online = (() => {
     provaRisolvi();
   }
   // oggetto dello zaino usato in questo turno: va con la mia mossa (l'altro lo applica prima di risolvere)
-  function oggettoUsato(id) { if (!P) return; const t = turno(); (P.mieOgg[t] = P.mieOgg[t] || []).push(id); }
+  function oggettoUsato(id) { if (!P) return; const t = turno(); (P.mieOgg[t] = P.mieOgg[t] || []).push(id); logga({ o: "ogg", l: 0, id }); }
+  function logga(e) {
+    if (!P || !P.host || !P.spett) return;
+    P.log.push(e);
+    try { P.ch.send({ type: "broadcast", event: "spett", payload: { tipo: "passo", n: P.log.length - 1, e } }); } catch (x) {}
+  }
   async function provaRisolvi() {
     if (!P || !B || animazione || B.vincitore >= 0) return;
     const t = turno();
@@ -294,9 +312,10 @@ const Online = (() => {
     let ev = [];
     for (const id of (P.loro[t].ogg || []).slice(0, 1)) {   // al massimo uno per turno e tre a partita, come per tutti
       if ((P.oggLoro = P.oggLoro || 0) >= Zaino.POSTI || !Zaino.info(id).nome) continue;
-      const r = B.usaOggetto(1, id, Zaino.info(id).nome); if (r.ok) { P.oggLoro++; ev = ev.concat(r.ev); }
+      const r = B.usaOggetto(1, id, Zaino.info(id).nome); if (r.ok) { P.oggLoro++; ev = ev.concat(r.ev); logga({ o: "ogg", l: 1, id }); }
     }
     ev = ev.concat(B.risolviTurno(P.mie[t].az, P.loro[t].az));
+    logga({ o: "turno", a: P.mie[t].az, b: P.loro[t].az });
     P.firmeMie[t] = firma();
     manda({ tipo: "firma", t, h: P.firmeMie[t] });
     await riproduci(ev);
@@ -310,14 +329,16 @@ const Online = (() => {
   async function sostituisci(i) {
     if (!P || !B || animazione || !B.serveSostituzione(0)) return;
     manda({ tipo: "sost", t: turno(), i });
-    await riproduci(B.sostituisci(0, i));
+    const evS = B.sostituisci(0, i); logga({ o: "sost", l: 0, i });
+    await riproduci(evS);
     provaRisolvi(); nuovoTurno();
   }
   async function provaSost() {
     if (!P || !B || animazione) return;
     while (P.sostLoro.length && B.serveSostituzione(1)) {
       const m = P.sostLoro.shift();
-      await riproduci(B.sostituisci(1, m.i));
+      const evS = B.sostituisci(1, m.i); logga({ o: "sost", l: 1, i: m.i });
+      await riproduci(evS);
     }
     provaRisolvi();
     aggiornaBattaglia();
@@ -375,13 +396,126 @@ const Online = (() => {
     P.attesaDa = aspetto ? (P.attesaDa || Date.now()) : 0;
   }
   function aggiornaBanner() { const el = $("#vivo-banner"); if (el) el.innerHTML = testoBanner(); }
-  function htmlBanner() { return P ? `<p class="vivo-banner" id="vivo-banner">${testoBanner()}</p>` : ""; }
+  function htmlBanner() { return P ? `<p class="vivo-banner" id="vivo-banner">${testoBanner()}</p>${P.spettatori ? `<p class="vivo-spett">👀 ${P.spettatori} ${P.spettatori === 1 ? "amico sta guardando" : "amici stanno guardando"}</p>` : ""}` : ""; }
   const inAttesa = () => !!(P && B && P.mie[turno()] && B.vincitore < 0);
   const scelta = () => { const m = P && P.mie[turno()]; if (!m) return ""; const a = m.az; return a.tipo === "mossa" ? B.attivo(0).c.mosse[a.i].nome : a.tipo === "carica" ? "Carica" : "Cambio"; };
 
   // ---------------- fine ----------------
   // reazioni: niente conferma di ricezione, se una si perde pazienza
-  function mandaReazione(i) { if (!P || !P.ch) return; try { P.ch.send({ type: "broadcast", event: "r", payload: { da: io(), r: i } }); } catch (e) {} }
+  function mandaReazione(i) {
+    const ch = P ? P.ch : G ? G.ch : null; if (!ch) return;
+    try { ch.send({ type: "broadcast", event: "r", payload: G && !P ? { da: io(), r: i, spett: true, nome: mioNome() } : { da: io(), r: i } }); } catch (e) {}
+  }
+
+  // ---------------- guardare la sfida di due amici ----------------
+  // Lo spettatore entra nel canale della partita, chiede a chi ha sfidato i dati di partenza e le mosse fatte finora,
+  // rigioca tutto in silenzio (stesso seme: viene uguale) e poi segue le mosse nuove con le animazioni.
+  let G = null;
+  function guarda(partita) {
+    if (!attivo || B || P || G || !partita) return;
+    G = { id: partita, pronto: false, prossimo: 0, attesa: {}, coda: [], lavora: false, fine: null, ultimoPasso: Date.now() };
+    apriModale(`<div class="invito-vivo"><span class="codice-tag">Spettatore</span><h2>Mi collego alla sfida…</h2><p class="nota">Recupero le mosse fatte finora.</p>
+      <div class="azioni centro"><button class="btn" data-azione="esci-guarda">Annulla</button></div></div>`, { bloccata: true });
+    const ch = sb().channel(`noiverso-vivo-${partita}`, { config: { presence: { key: `spett:${io()}` }, broadcast: { self: false } } });
+    G.ch = ch;
+    ch.on("broadcast", { event: "spett" }, ({ payload }) => riceviSpett(payload))
+      .on("broadcast", { event: "r" }, ({ payload }) => {
+        if (!G || !G.dati || !payload || payload.da === io()) return;
+        if (payload.spett) Reazioni.riceviSpettatore(payload.r, payload.nome, payload.da);
+        else Reazioni.ricevi(payload.r, payload.da === G.dati.idA ? 0 : 1, true);
+      })
+      .on("presence", { event: "sync" }, () => controllaGiocatori())
+      .subscribe(stato => {
+        if (stato !== "SUBSCRIBED" || !G || G.ch !== ch) return;
+        try { ch.track({ nome: mioNome(), t: Date.now() }); } catch (e) {}
+        chiedi();
+      });
+    G.timer = setInterval(() => {
+      if (!G) return;
+      if (!G.pronto) { if (Date.now() - G.ultimoPasso > 12000) { mostraAvviso("Non riesco a collegarmi: forse la sfida è appena finita."); esciGuarda(); chiudiModale(); } else chiedi(); return; }
+      // manca un pezzo da più di 4 secondi: richiedo tutto e riempio il buco
+      if (Object.keys(G.attesa).length && Date.now() - G.ultimoPasso > 4000) { chiedi(); G.ultimoPasso = Date.now(); }
+    }, 2000);
+    annuncia();
+  }
+  function chiedi() { try { G.ch.send({ type: "broadcast", event: "spett", payload: { tipo: "ciao", da: io() } }); } catch (e) {} }
+  function riceviSpett(p) {
+    if (!G || !p) return;
+    if (p.tipo === "stato" && p.per === io()) {
+      if (!G.pronto) { G.pronto = true; G.dati = p.dati; G.logIniziale = p.log || []; G.prossimo = G.logIniziale.length; G.ultimoPasso = Date.now(); inizia(); }
+      else (p.log || []).forEach((e, n) => { if (n >= G.prossimo) G.attesa[n] = e; });
+      avanza();
+    } else if (p.tipo === "passo") {
+      G.ultimoPasso = Date.now();
+      if (!G.pronto) return;
+      if (p.n >= G.prossimo) G.attesa[p.n] = p.e;
+      avanza();
+    } else if (p.tipo === "fine") { G.fine = p; avanza(); }
+  }
+  function inizia() {
+    const d = G.dati;
+    chiudiModale();
+    schermoIntero(true);
+    avviaSfida({ id: "guarda", nome: d.nomeB, abilita: 0, liv: [1, 30], premio: 0, punti: 0, xp: 0, graffitoNemico: d.gB,
+      spettatore: { nomeA: d.nomeA, nomeB: d.nomeB, sqA: d.sqA, gA: d.gA } }, d.sqA.map(x => x.id), d.sqB).then(() => { avanza(); });
+  }
+  // chiamata da avviaSfida: la battaglia vera, già portata al punto in cui è adesso (senza animazioni)
+  function creaGuarda(sqA, sqB) {
+    const d = G.dati, bt = new Battaglia(sqA, sqB, d.nomeA, d.nomeB, mulberry32(d.seme));
+    return bt;
+  }
+  function rigioca(bt) { for (const e of G.logIniziale || []) applica(bt, e); G.logIniziale = null; }
+  function applica(bt, e) {
+    if (e.o === "ogg") { const r = bt.usaOggetto(e.l, e.id, Zaino.info(e.id).nome || e.id); return r.ev || []; }
+    if (e.o === "sost") return bt.sostituisci(e.l, e.i);
+    if (e.o === "turno") return bt.risolviTurno(e.a, e.b);
+    return [];
+  }
+  async function avanza() {
+    if (!G || !G.pronto || !B || G.lavora) return;
+    G.lavora = true;
+    while (G && B && G.attesa[G.prossimo]) {
+      const e = G.attesa[G.prossimo]; delete G.attesa[G.prossimo]; G.prossimo++;
+      while (animazione) await new Promise(r => setTimeout(r, 120));
+      if (!G || !B) break;
+      await riproduci(applica(B, e));
+      aggiornaBattaglia();
+    }
+    if (G) G.lavora = false;
+    if (G && B && B.vincitore < 0 && G.fine && !Object.keys(G.attesa).length) B.vincitore = G.fine.vincitore;   // resa o abbandono
+    if (G && B && B.vincitore >= 0 && !G.chiusa) { G.chiusa = true; chiudiSfida(); }
+  }
+  function controllaGiocatori() {
+    if (!G || !G.ch || !G.dati) return;
+    const st = G.ch.presenceState() || {};
+    G.spettatori = Object.keys(st).filter(k => k.startsWith("spett:")).length;
+    G.giocatori = [G.dati.idA, G.dati.idB].filter(k => st[k]).length;
+    const el = $("#guarda-info"); if (el) el.innerHTML = testoGuarda();
+  }
+  const testoGuarda = () => !G || !G.dati ? "" : `👀 ${G.spettatori || 1} ${G.spettatori === 1 || !G.spettatori ? "spettatore" : "spettatori"}${G.giocatori === 2 || G.giocatori === undefined ? "" : " · <b class=\"vivo-allarme\">un giocatore si è disconnesso</b>"}`;
+  function htmlGuarda() {
+    const d = G && G.dati; if (!d) return "";
+    return `<div class="guarda-pannello">
+      <p class="guarda-titolo"><b>${esc(d.nomeA)}</b> <span>contro</span> <b>${esc(d.nomeB)}</b></p>
+      <p class="nota" id="guarda-info">${testoGuarda()}</p>
+      <p class="nota">Stai guardando la sfida dal vivo: ${esc(d.nomeA)} è in basso, ${esc(d.nomeB)} in alto. Con 😀 mandi reazioni che vedono tutti.</p>
+      <div class="azioni centro"><button class="btn" data-azione="esci-guarda">Esci</button></div></div>`;
+  }
+  function chiudiGuarda() { livelloAttuale.esito = { vincitore: B.vincitore }; aggiornaBattaglia(); }
+  function htmlFineGuarda() {
+    const d = G && G.dati, v = B ? B.vincitore : -1, nome = !d ? "" : v === 0 ? d.nomeA : d.nomeB;
+    const motivo = G && G.fine && G.fine.motivo === "resa" ? " (l'altro si è arreso)" : G && G.fine && G.fine.motivo === "abbandono" ? " (l'altro ha abbandonato)" : "";
+    return `<div class="fine vinto"><b>Ha vinto ${esc(nome)}!</b><span>Sfida finita${motivo}.</span>
+      <div class="azioni centro"><button class="btn primario" data-azione="esci-guarda">Torna alle sfide</button></div></div>`;
+  }
+  function esciGuarda() {
+    if (!G) return;
+    const g = G; G = null;
+    clearInterval(g.timer);
+    try { g.ch.untrack(); } catch (e) {}
+    setTimeout(() => { try { sb().removeChannel(g.ch); } catch (e) {} }, 500);
+    annuncia();
+  }
   function resa() {
     if (!P || !B) return;
     manda({ tipo: "resa" });
@@ -410,6 +544,7 @@ const Online = (() => {
     salva(); aggiornaTesta(); aggiornaBattaglia();
     if (su) setTimeout(() => mostraAvviso(`Pass: livello ${su} raggiunto!`), 900);
     if (P) {
+      if (P.host && P.spett) try { P.ch.send({ type: "broadcast", event: "spett", payload: { tipo: "fine", vincitore: B.vincitore, motivo: P.motivo || "normale" } }); } catch (e) {}
       P.finita = true; P.scadenza = 0; P.rientro = 0;
       registra(vinto ? io() : P.avv.id, P.motivo || "normale");
       if (vinto) setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 80, forma: "coriandolo", colori: ["#f2c14e", "#ff2e46", "#3fd8ff", "#ffffff"], velocita: 8, dimensione: 5 }); } }, 250);
@@ -449,6 +584,6 @@ const Online = (() => {
     annuncia();
   }
 
-  return { mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
+  return { guarda, creaGuarda, rigioca, htmlGuarda, chiudiGuarda, htmlFineGuarda, esciGuarda, get inGuarda() { return !!G; }, mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
     get inPartita() { return !!P; } };
 })();

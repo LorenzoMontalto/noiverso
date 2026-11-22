@@ -556,6 +556,13 @@ const Scena3D = (() => {
     }
     attiva(l) { return this.lati[l][this.attivoIdx[l]]; }
     pos(l) { const u = this.attiva(l); return u ? u.gruppo.position.clone() : this.posAttiva(l); }
+    // punto sullo schermo (in pixel della pagina) sopra la carta in campo di un lato: serve alle reazioni
+    puntoSchermo(l, su = .35) {
+      const k = (this.L && this.L.scalaAtt && this.L.scalaAtt[l]) || 1;
+      const p = this.pos(l).add(V(0, su * k, 0)).project(this.cam), r = this.r.domElement.getBoundingClientRect();
+      if (p.z > 1) return null;
+      return { x: r.left + (p.x + 1) / 2 * r.width, y: r.top + (1 - p.y) / 2 * r.height };
+    }
 
     async _creaUnita(l, i, x) {
       const carta = creaCarta(await texFronte(x.c, x.liv, x.lode, x.olo), texRetro(), x.c.rarita);

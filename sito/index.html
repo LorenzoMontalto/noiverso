@@ -1481,28 +1481,49 @@ body.in-accesso { overflow: hidden; }
 
 /* ---------- reazioni in battaglia ---------- */
 .reazioni { position: absolute; z-index: 6; right: 10px; top: calc(max(8px, env(safe-area-inset-top)) + 46px); display: grid; justify-items: end; gap: 8px; }
-.reazioni-apri { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--linea); background: rgba(22, 17, 21, .92); font-size: 1.35rem; cursor: pointer; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(0, 0, 0, .45); }
+.reazioni-apri { position: relative; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--linea); background: rgba(22, 17, 21, .92); font-size: 1.45rem; cursor: pointer; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(0, 0, 0, .45); }
 .reazioni-apri.in-attesa span { opacity: .45; }
-.reazioni-giro { position: absolute; inset: -3px; border-radius: 50%; background: conic-gradient(#3fd8ff var(--p, 0%), transparent 0); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); pointer-events: none; }
-.reazioni-vassoio { background: rgba(22, 17, 21, .96); border: 1px solid var(--linea); border-radius: 14px; padding: 8px; box-shadow: 0 10px 28px rgba(0, 0, 0, .55); width: min(250px, 70vw); display: grid; gap: 8px; animation: sale-su .18s ease-out; }
 .reazioni-vassoio[hidden], .reazioni-giro[hidden] { display: none; }
+.reazioni-giro { position: absolute; inset: -3px; border-radius: 50%; background: conic-gradient(#3fd8ff var(--p, 0%), transparent 0); -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px)); pointer-events: none; }
+.reazioni-vassoio { background: rgba(22, 17, 21, .96); border: 1px solid var(--linea); border-radius: 14px; padding: 8px; box-shadow: 0 10px 28px rgba(0, 0, 0, .55); width: min(270px, 74vw); max-height: 60vh; overflow-y: auto; display: grid; gap: 8px; animation: sale-su .18s ease-out; }
 .reazioni-griglia { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.reazione { border: 1px solid transparent; background: rgba(255, 255, 255, .05); border-radius: 10px; font-size: 1.45rem; padding: 6px 0; cursor: pointer; color: var(--testo); }
+.reazione { border: 1px solid transparent; background: rgba(255, 255, 255, .05); border-radius: 10px; font-size: 1.6rem; padding: 6px 0; cursor: pointer; color: var(--testo); display: grid; place-items: center; min-height: 48px; }
 .reazione.frase { grid-column: span 2; font-size: .82rem; font-weight: 700; font-style: normal; padding: 9px 4px; }
+.reazione img { width: 40px; height: 40px; object-fit: contain; }
 .reazione:hover:not(:disabled) { border-color: var(--linea); background: rgba(255, 255, 255, .1); }
 .reazione:disabled { opacity: .4; cursor: default; }
 .reazioni-muto { border: 0; background: none; color: var(--spento); font-size: .78rem; cursor: pointer; padding: 2px; }
-.fumetto-reazione { position: absolute; z-index: 7; pointer-events: none; font-size: 2.6rem; line-height: 1; padding: 10px 14px; border-radius: 18px; background: rgba(255, 255, 255, .95); color: #160f14; box-shadow: 0 8px 22px rgba(0, 0, 0, .45);
-  animation: fumetto-pop .35s cubic-bezier(.3, 1.6, .5, 1) both; }
-.fumetto-reazione.frase { font-size: 1rem; font-weight: 800; padding: 10px 16px; }
-.fumetto-reazione::after { content: ""; position: absolute; width: 14px; height: 14px; background: inherit; transform: rotate(45deg); }
-.fumetto-reazione.lato-1 { left: min(330px, 60vw); top: calc(max(8px, env(safe-area-inset-top)) + 54px); }
-.fumetto-reazione.lato-1::after { left: -6px; top: 18px; }
-.fumetto-reazione.lato-0 { left: 18px; bottom: calc(var(--basso, 0px) + 20px); }
-.fumetto-reazione.lato-0::after { left: 22px; bottom: -6px; }
-.fumetto-reazione.via { transition: opacity .45s, transform .45s; opacity: 0; transform: translateY(-14px) scale(.9); }
-@keyframes fumetto-pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .fumetto-reazione { animation: none; } }
+/* il fumetto: grande, sopra la carta di chi lo manda */
+.fumetto-reazione { position: fixed; z-index: 30; pointer-events: none; font-size: 3.6rem; line-height: 1; padding: 12px 16px; border-radius: 22px; background: rgba(255, 255, 255, .96); color: #160f14; box-shadow: 0 10px 26px rgba(0, 0, 0, .5);
+  animation: fumetto-pop .4s cubic-bezier(.3, 1.6, .5, 1) both; }
+.fumetto-reazione.frase { font-size: 1.35rem; font-weight: 800; padding: 12px 18px; white-space: nowrap; }
+.fumetto-reazione.immagine { padding: 8px; }
+.fumetto-reazione img { width: 96px; height: 96px; object-fit: contain; display: block; }
+.fumetto-reazione::after { content: ""; position: absolute; width: 16px; height: 16px; background: inherit; transform: rotate(45deg); left: calc(50% - 8px); bottom: -7px; }
+.fumetto-reazione.sulla-carta { transform-origin: 50% 100%; translate: -50% -85%; }
+.fumetto-reazione:not(.sulla-carta).lato-1 { left: min(330px, 60vw); top: calc(max(8px, env(safe-area-inset-top)) + 54px); }
+.fumetto-reazione:not(.sulla-carta).lato-0 { left: 18px; bottom: calc(var(--basso, 0px) + 20px); }
+.fumetto-reazione.via { transition: opacity .45s, scale .45s; opacity: 0; scale: .85; }
+@keyframes fumetto-pop { from { scale: .2; opacity: 0; } to { scale: 1; opacity: 1; } }
+/* tribuna: le reazioni degli spettatori */
+.tribuna { position: absolute; z-index: 6; left: 50%; transform: translateX(-50%); top: calc(max(8px, env(safe-area-inset-top)) + 52px); display: grid; gap: 4px; justify-items: center; pointer-events: none; }
+.tribuna-voce { display: flex; align-items: center; gap: 6px; background: rgba(22, 17, 21, .9); border: 1px solid var(--linea); border-radius: 999px; padding: 3px 10px 3px 8px; animation: sale-su .25s ease-out; transition: opacity .45s; }
+.tribuna-voce small { color: var(--spento); font-size: .72rem; }
+.tribuna-voce span { font-size: 1.25rem; line-height: 1; }
+.tribuna-voce img { width: 26px; height: 26px; object-fit: contain; vertical-align: middle; }
+.tribuna-voce.via { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .fumetto-reazione, .tribuna-voce { animation: none; } }
+/* spettatore */
+.guarda-pannello { display: grid; gap: 6px; text-align: center; padding: 6px 4px; }
+.guarda-titolo { margin: 0; font-size: 1.05rem; } .guarda-titolo span { color: var(--spento); font-size: .85rem; margin: 0 6px; }
+.vivo-spett { margin: -4px 0 8px; text-align: center; font-size: .8rem; color: var(--spento); }
+/* admin: reazioni */
+.reaz-admin { display: grid; gap: 8px; }
+.reaz-admin-riga { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 8px; border: 1px solid var(--linea); border-radius: 10px; }
+.reaz-admin-riga input:not([type=file]) { flex: 1 1 140px; min-width: 0; }
+.reaz-anteprima { width: 46px; height: 46px; display: grid; place-items: center; font-size: 1.7rem; background: rgba(255, 255, 255, .06); border-radius: 10px; flex: none; overflow: hidden; }
+.reaz-anteprima img { width: 40px; height: 40px; object-fit: contain; }
+.reaz-frecce { display: inline-flex; gap: 4px; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.8816af04.js"></script>
@@ -1548,7 +1569,7 @@ body.in-accesso { overflow: hidden; }
 <script src="carte.48ac65ce.js"></script>
 <script src="motore.56d03b70.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
-<script src="scena3d.a3166451.js"></script>
+<script src="scena3d.c693551b.js"></script>
 <script src="mappe.44fde78a.js"></script>
 <script src="storia.495ac110.js"></script>
 <script src="tutorial.e7b94569.js"></script>
@@ -1557,9 +1578,9 @@ body.in-accesso { overflow: hidden; }
 <script src="collezione.eecd2a2b.js"></script>
 <script src="graffiti.99c0b499.js"></script>
 <script src="zaino.9d5ca11e.js"></script>
-<script src="online.accaeeb3.js"></script>
-<script src="reazioni.1df14518.js"></script>
-<script src="app.e15ed72c.js"></script>
+<script src="online.19aaf824.js"></script>
+<script src="reazioni.4a0e6db8.js"></script>
+<script src="app.1fe44287.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

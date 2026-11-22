@@ -1416,7 +1416,7 @@ async function entra(slot, profiloLocale) {
   if (slot === "admin") setTimeout(() => mostraAvviso("Modalità admin: monete infinite e tutte le carte. Questi progressi non vanno in classifica."), 400);
   Tutorial.allIngresso();
   if (slot !== "admin") Missioni.finestraAccesso();
-  Zaino.carica();
+  Zaino.carica(); Reazioni.carica();
   Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); });
   if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); }
   Boss.carica();
@@ -1534,6 +1534,7 @@ function vistaAdmin() {
       <div class="admin-box largo" id="admin-immagini">${htmlAdminImmagini()}</div>
       <div class="admin-box largo" id="admin-graffiti">${Graffiti.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-zaino">${Zaino.htmlAdmin()}</div>
+      <div class="admin-box largo" id="admin-reazioni">${Reazioni.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-codici">${htmlAdminCodici()}</div>
       <div class="admin-box largo" id="admin-controlli">${htmlAdminControlli()}</div>
       <div class="admin-box"><h3>Classifica</h3>
@@ -1870,6 +1871,7 @@ async function azioneAdmin(cosa, el) {
   if (cosa === "img-trasferisci") { trasferisciImmagini(); return; }
   if (cosa.startsWith("cod-")) { azioneCodici(cosa, el); return; }
   if (cosa.startsWith("ctl-")) { azioneControlli(cosa, el); return; }
+  if (cosa.startsWith("reaz-")) { Reazioni.azioneAdmin(cosa, el); return; }
   if (cosa === "zaino-base") {
     if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
     Zaino.salvaAdmin(null, true); return;
@@ -2165,13 +2167,15 @@ function schermoIntero(entra) {
 async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
   livelloAttuale = typeof idLivello === "object" ? idLivello : LIVELLI_SFIDA.find(l => l.id === idLivello);
   const n = carteForzate ? CARTE_SQUADRA : carteBattaglia();
-  const mia = livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
+  const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
+    : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
     : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id) }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
-  B = L.vivo ? Online.creaBattaglia(mia, nemici) : new Battaglia(mia, nemici, "Tu", L.nome);
-  B.impostaGraffiti(L.vivo ? L.vivo.graffitoMio : Graffiti.mio(), Graffiti.nemico(L));
-  B.zaino = Zaino.perBattaglia();
+  B = L.spettatore ? Online.creaGuarda(mia, nemici) : L.vivo ? Online.creaBattaglia(mia, nemici) : new Battaglia(mia, nemici, "Tu", L.nome);
+  B.impostaGraffiti(L.spettatore ? L.spettatore.gA : L.vivo ? L.vivo.graffitoMio : Graffiti.mio(), Graffiti.nemico(L));
+  B.zaino = L.spettatore ? null : Zaino.perBattaglia();
+  if (L.spettatore) Online.rigioca(B);   // porta la battaglia al punto in cui è adesso, prima di disegnare l'arena
   if (L.bossGruppo) Boss.prepara(B);
   document.body.classList.add("in-battaglia");
   $("#app").classList.add("in-battaglia");
@@ -2179,7 +2183,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
   main.innerHTML = `
     <section class="arena" id="arena">
       <div class="arena-testa">
-        <button class="btn piccolo" data-fx="scuoti" data-azione="abbandona">Abbandona</button>
+        <button class="btn piccolo" data-fx="scuoti" data-azione="abbandona">${L.spettatore ? "Esci" : "Abbandona"}</button>
         <div class="neon-turno" id="neon-turno" aria-live="polite"><b id="neon-chi">Tocca a te</b><small id="turno"></small></div>
         ${S.admin ? `<span class="admin-barra"><button class="btn piccolo oro" data-fx="carica" data-azione="admin-energia">◆ Piena</button><button class="btn piccolo oro" data-fx="coriandoli" data-azione="admin-vinci">Vinci</button></span>` : `<span class="arena-vs">contro <b>${esc(livelloAttuale.nome)}</b></span>`}
       </div>
@@ -2211,7 +2215,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
 }
 
 function toccoPanchina(i) {
-  if (!B || animazione || B.vincitore >= 0) return;
+  if (!B || animazione || B.vincitore >= 0 || livelloAttuale.spettatore) return;
   const x = B.lati[0].squadra[i];
   if (!x || x.pv <= 0 || i === B.lati[0].attivo) return;
   if (B.serveSostituzione(0)) sostituisciGiocatore(i);
@@ -2267,7 +2271,7 @@ function htmlHud(l) {
   return `
     ${arena ? "" : `<div class="hud-carta">${htmlCarta(a.c, { liv: a.liv, lode: a.lode, mini: true })}</div>`}
     <div class="hud-info">
-      <div class="lato-nome"><span class="hud-chi">${l ? "Nemico" : "Tu"}</span><b>${esc(a.c.nome)}</b><span class="stile s-${a.c.stile}">${a.c.stile}</span><small>${a.lode ? "30 e lode" : `Lv ${a.liv}`} · ${esc(RUOLI[a.c.ruolo].nome)}</small>
+      <div class="lato-nome"><span class="hud-chi">${livelloAttuale && livelloAttuale.spettatore ? esc(String(L.nome).slice(0, 14)) : l ? "Nemico" : "Tu"}</span><b>${esc(a.c.nome)}</b><span class="stile s-${a.c.stile}">${a.c.stile}</span><small>${a.lode ? "30 e lode" : `Lv ${a.liv}`} · ${esc(RUOLI[a.c.ruolo].nome)}</small>
         <span class="hud-squadra" title="Personaggi ancora in piedi">${L.squadra.map((x, i) => `<i class="${x.pv <= 0 ? "ko" : ""} ${i === L.attivo ? "attiva" : ""}"></i>`).join("")}<small>${vivi}/${L.squadra.length}</small></span>
         ${l ? `<span class="hud-energia" title="Energia del nemico">◆ ${L.energia}</span>` : ""}</div>
       <div class="pv"><div class="pv-barra ${pct < 25 ? "basso" : pct < 55 ? "medio" : ""}"><i style="width:${pct}%"></i></div><span class="pv-num">${a.pv}/${a.pvMax}</span></div>
@@ -2314,6 +2318,7 @@ function htmlAzioni() {
   if (finita && livelloAttuale.amico) return Amici.htmlFine();
   if (finita && livelloAttuale.bossGruppo) return Boss.htmlFine();
   if (finita && livelloAttuale.vivo) return Online.htmlFine();
+  if (livelloAttuale.spettatore) return finita ? Online.htmlFineGuarda() : Online.htmlGuarda();
   const vivo = livelloAttuale.vivo ? Online.htmlBanner() : "";
   if (vivo && !animazione && B.vincitore < 0 && (Online.inAttesa() || (B.serveSostituzione(1) && !B.serveSostituzione(0)))) {
     return `${vivo}${Graffiti.htmlBattaglia(B)}<div class="vivo-attesa"><span class="vivo-puntini"><i></i><i></i><i></i></span>
@@ -2382,6 +2387,7 @@ function segnaTurno(lato, testo, sotto) {
 }
 function segnaTurnoAttesa() {
   if (!B) return;
+  if (livelloAttuale && livelloAttuale.spettatore) return segnaTurno(null, B.vincitore >= 0 ? `Vince ${B.lati[B.vincitore].nome}` : "👀 Dal vivo", `Turno ${B.turno}`);
   if (B.vincitore >= 0) return segnaTurno(null, B.vincitore === 0 ? "Vittoria!" : "Sconfitta", `Turno ${B.turno}`);
   if (livelloAttuale && livelloAttuale.vivo && (Online.inAttesa() || (B.serveSostituzione(1) && !B.serveSostituzione(0))))
     return segnaTurno(1, `Tocca a ${livelloAttuale.nome}`, `Turno ${B.turno} · sta scegliendo`);
@@ -2461,7 +2467,7 @@ async function riproduci(eventi) {
 }
 
 async function turnoGiocatore(az) {
-  if (animazione || !B || B.vincitore >= 0) return;
+  if (animazione || !B || B.vincitore >= 0 || livelloAttuale.spettatore) return;
   if (livelloAttuale.vivo) return Online.scegli(az);
   const azC = B.scegliAzione(1, livelloAttuale.abilita);
   let ev = B.risolviTurno(az, azC);
@@ -2470,7 +2476,7 @@ async function turnoGiocatore(az) {
   if (B.vincitore >= 0) chiudiSfida();
 }
 async function sostituisciGiocatore(i) {
-  if (animazione) return;
+  if (animazione || (livelloAttuale && livelloAttuale.spettatore)) return;
   if (livelloAttuale && livelloAttuale.vivo) return Online.sostituisci(i);
   await riproduci(B.sostituisci(0, i));
 }
@@ -2504,6 +2510,7 @@ function chiudiSfida() {
   if (livelloAttuale && livelloAttuale.amico) return Amici.chiudi();
   if (livelloAttuale && livelloAttuale.bossGruppo) return Boss.chiudi();
   if (livelloAttuale && livelloAttuale.vivo) return Online.chiudi();
+  if (livelloAttuale && livelloAttuale.spettatore) return Online.chiudiGuarda();
   livelloAttuale.espCarte = premiaCarte(livelloAttuale.xpCarte || 1, B.vincitore === 0);
   let su = 0;
   const pr = premiSfida(livelloAttuale);
@@ -2524,6 +2531,7 @@ function chiudiSfida() {
 function chiudiArena() { if (arena) { if (arena._roCopertura) arena._roCopertura.disconnect(); arena.distruggi(); arena = null; } }
 function esciBattaglia() {
   if (livelloAttuale && livelloAttuale.vivo && Online.inPartita) Online.esci();
+  if (livelloAttuale && livelloAttuale.spettatore && Online.inGuarda) Online.esciGuarda();
   chiudiArena();
   B = null; animazione = false;
   document.body.classList.remove("in-battaglia");
@@ -2541,9 +2549,10 @@ function esciBattaglia() {
 document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#form-graffiti")) Graffiti.anteprimaAdmin(e.target); });
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.immaginePer) Graffiti.immagineScelta(e.target); });
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
+document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2606,7 +2615,8 @@ document.addEventListener("click", e => {
   if (t.dataset.scambioRifiuta) { Scambi.rispondi(t.dataset.scambioRifiuta, false, t); return; }
   if (t.dataset.scambioAnnulla) { Scambi.annulla(t.dataset.scambioAnnulla); return; }
   if (t.dataset.scambioRitira) { Scambi.ritira(true, t); return; }
-  if (t.dataset.reazione !== undefined) { Reazioni.manda(+t.dataset.reazione); return; }
+  if (t.dataset.reazione !== undefined) { Reazioni.manda(t.dataset.reazione); return; }
+  if (t.dataset.guarda) { Online.guarda(t.dataset.guarda); return; }
   if (t.dataset.reazioni) { Reazioni.clic(t.dataset.reazioni); return; }
   if (t.dataset.sfidaAmico) { if (B) { chiudiArena(); B = null; animazione = false; } Amici.sfida(t.dataset.sfidaAmico); return; }
   if (t.dataset.missione) { Missioni.riscuoti(t.dataset.missione, t); return; }
@@ -2652,12 +2662,14 @@ document.addEventListener("click", e => {
     case "riscuoti-tutto": riscuoti(Array.from({ length: livelloPass() }, (_, i) => i + 1), t); break;
     case "carica": turnoGiocatore({ tipo: "carica" }); break;
     case "abbandona":
+      if (livelloAttuale && livelloAttuale.spettatore) { Online.esciGuarda(); esciBattaglia(); break; }
       if (animazione) break;
       apriModale(`<div class="conferma"><h2>Abbandonare la sfida?</h2><p>${livelloAttuale.vivo ? `Conta come una sconfitta e ${esc(livelloAttuale.nome)} vince.` : "Conta come una sconfitta."}</p>
         <div class="azioni centro"><button class="btn primario" data-fx="scuoti" data-azione="conferma-abbandono">Abbandona</button><button class="btn" data-fx="onda" data-azione="chiudi">Continua a giocare</button></div></div>`);
       break;
     case "conferma-abbandono": chiudiModale(); if (livelloAttuale.vivo) Online.resa(); B.vincitore = 1; chiudiSfida(); if (livelloAttuale.vivo) Online.esci(); esciBattaglia(); break;
     case "esci-vivo": chiudiModale(); Online.esci(); if (B) esciBattaglia(); break;
+    case "esci-guarda": chiudiModale(); Online.esciGuarda(); if (B) esciBattaglia(); break;
     case "annulla-invito": Online.annullaInvito(); break;
     case "accetta-invito": Online.rispondi(true); break;
     case "rifiuta-invito": Online.rispondi(false); break;
@@ -2695,11 +2707,13 @@ document.addEventListener("submit", e => {
 });
 document.addEventListener("input", e => {
   if (e.target.id === "admin-pass") $("#admin-pass-val").textContent = e.target.value;
+  if (e.target.dataset && e.target.dataset.reazTesto !== undefined) Reazioni.testo(+e.target.dataset.reazTesto, e.target.value);
   if (e.target.dataset && e.target.dataset.ed && bozza) { bozza[e.target.dataset.ed][e.target.dataset.campo] = e.target.value; aggiornaEditor(false); }
   if (e.target.id === "ed-cerca") { edCerca = e.target.value; const pos = e.target.selectionStart; aggiornaEditor(true); const c = $("#ed-cerca"); if (c) { c.focus(); try { c.setSelectionRange(pos, pos); } catch (err) { /* niente */ } } }
 });
 document.addEventListener("change", e => {
   if (e.target.dataset && e.target.dataset.ed && bozza) { bozza[e.target.dataset.ed][e.target.dataset.campo] = e.target.value; aggiornaEditor(false); return; }
+  if (e.target.dataset && e.target.dataset.reazTesto !== undefined) { Reazioni.testo(+e.target.dataset.reazTesto, e.target.value); return; }
   if (e.target.id === "prova-carta") { const c = PER_ID[e.target.value]; $("#prova-mossa").innerHTML = c.mosse.map((m, i) => `<option value="${i}">${esc(m.nome)} (${m.costo}◆)</option>`).join(""); }
   if (e.target.id === "nome-squadra") {
     const v = e.target.value.trim().slice(0, 22);
