@@ -161,6 +161,13 @@ class Battaglia {
     return { danno: Math.max(1, Math.round(dmg)), crit, stile, parato };
   }
 
+  // Chi andrebbe per primo se questo turno attaccano tutti e due (-1 = a sorte, solo al primo turno a pari velocità)
+  chiPrimo() {
+    const v0 = this.attivo(0).vel, v1 = this.attivo(1).vel;
+    if (v0 !== v1) return v0 > v1 ? 0 : 1;
+    return this.ultimoAttacco === 0 || this.ultimoAttacco === 1 ? 1 - this.ultimoAttacco : -1;
+  }
+
   risolviTurno(azG, azC) {
     this.ev = [];
     const az = [azG, azC];
@@ -171,8 +178,17 @@ class Battaglia {
       a.carica = true;
       this._log(`${a.c.nome} si concentra: +${BONUS_CARICA} energia e si protegge.`, { lato: l, anim: "energia", su: l });
     }
+    // Ognuno fa UNA mossa per turno: la velocità decide solo chi va per primo.
+    // A pari velocità va prima chi non ha attaccato per ultimo: così nessuno attacca due volte di fila
+    // (prima a pari velocità si tirava a sorte ogni turno, e capitava A-B | B-A).
     const chiMuove = [0, 1].filter(l => az[l].tipo === "mossa");
-    chiMuove.sort((x, y) => (this.attivo(y).vel - this.attivo(x).vel) || (this.rng() - 0.5));
+    if (chiMuove.length === 2) {
+      const v0 = this.attivo(0).vel, v1 = this.attivo(1).vel;
+      const primo = v0 !== v1 ? (v0 > v1 ? 0 : 1)
+        : this.ultimoAttacco === 0 || this.ultimoAttacco === 1 ? 1 - this.ultimoAttacco
+        : (this.rng() < 0.5 ? 0 : 1);
+      chiMuove.splice(0, 2, primo, 1 - primo);
+    }
     for (const l of chiMuove) {
       if (this.vincitore >= 0) break;
       const a = this.attivo(l);
@@ -202,6 +218,7 @@ class Battaglia {
 
   _usaMossa(l, m) {
     const L = this.lati[l], O = this.lati[1 - l], a = this.attivo(l), d = this.attivo(1 - l);
+    this.ultimoAttacco = l;
     L.energia -= m.costo;
     this._log(`${a.c.nome} usa ${m.nome}!`, { lato: l, anim: "attacco", id: a.id, mossa: a.c.mosse.indexOf(m), nome: m.nome, costo: m.costo, stile: a.c.stile, pot: m.pot, colpi: m.colpi || 1, eff: (m.eff || {}).tipo || "" });
     const e = m.eff || {};

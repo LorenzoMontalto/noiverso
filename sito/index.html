@@ -1447,6 +1447,9 @@ body.in-accesso { overflow: hidden; }
 .bonus-rarita { margin: 0; padding: 7px 10px; border-radius: 10px; font-size: .85rem; background: rgba(255, 255, 255, .05); border-left: 3px solid var(--r-comune); }
 .bonus-rarita.r-rara { border-color: var(--r-rara); } .bonus-rarita.r-epica { border-color: var(--r-epica); } .bonus-rarita.r-leggendaria { border-color: var(--oro); }
 .bonus-rarita.r-rara b { color: var(--r-rara); } .bonus-rarita.r-epica b { color: var(--r-epica); } .bonus-rarita.r-leggendaria b { color: var(--oro); }
+
+.ordine-turno { margin: 0 0 8px; font-size: .82rem; color: var(--spento); text-align: center; }
+.ordine-turno.mio b { color: #6fe3a0; } .ordine-turno.suo b { color: #ff7a8a; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.8816af04.js"></script>
@@ -1490,7 +1493,7 @@ body.in-accesso { overflow: hidden; }
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
 <script src="carte.d50128ee.js"></script>
-<script src="motore.0aafd792.js"></script>
+<script src="motore.56d03b70.js"></script>
 <script src="effetti.a35ec068.js"></script>
 <script src="scena3d.e1d54194.js"></script>
 <script src="mappe.44fde78a.js"></script>
@@ -1501,8 +1504,8 @@ body.in-accesso { overflow: hidden; }
 <script src="collezione.8991854e.js"></script>
 <script src="graffiti.99c0b499.js"></script>
 <script src="zaino.5f11272f.js"></script>
-<script src="online.a3f3c05e.js"></script>
-<script src="app.ca778439.js"></script>
+<script src="online.4657f6ec.js"></script>
+<script src="app.c9cdb0f2.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

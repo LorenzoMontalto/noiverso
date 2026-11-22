@@ -569,7 +569,7 @@ function vistaStrada() {
       <li><b>Potenziare.</b> Le carte salgono di livello solo se le potenzi tu, dal dettaglio della carta (il segno ▲ verde dice quando puoi). Ogni doppione dà potenziatori per quella carta: ${POT_DOPPIONE.comune} se è Comune, ${POT_DOPPIONE.rara} Rara, ${POT_DOPPIONE.epica} Epica, ${POT_DOPPIONE.leggendaria} Leggendaria. Ogni livello costa potenziatori e monete, sempre di più: da ${potPerLivello(1)} potenziatori e ${monetePerLivello(1)} monete per il livello 2 fino a ${potPerLivello(29)} e ${monetePerLivello(29)} per il 30. Ogni livello dà +2% a PV e danni.</li>
       <li><b>30 e lode.</b> Una carta al 30 fa esperienza in battaglia: dopo ${XP_LODE} XP prende la lode, che la potenzia di un altro 5%. I doppioni di una carta al 30 danno monete.</li>
       <li><b>Squadre.</b> Prepari fino a ${NUM_SQUADRE} squadre da ${CARTE_SQUADRA}, nell'ordine che vuoi: la prima entra in campo per prima.</li>
-      <li><b>Battaglia.</b> Cinque contro cinque. Ogni turno scegli una mossa, <i>Carica</i> (+2 energia e ti proteggi) o un cambio. L'energia è della squadra: si parte da 3 e si guadagnano 2 punti a turno.</li>
+      <li><b>Battaglia.</b> Cinque contro cinque. Ogni turno scegli una mossa, <i>Carica</i> (+2 energia e ti proteggi) o un cambio. Ogni carta fa una sola mossa per turno: la più veloce attacca per prima (a pari velocità si alterna). L'energia è della squadra: si parte da 3 e si guadagnano 2 punti a turno.</li>
       <li><b>Stili.</b> <span class="s-FOR stile">FOR</span> batte <span class="s-VEL stile">VEL</span>, che batte <span class="s-MEN stile">MEN</span>, che batte <span class="s-FOR stile">FOR</span>. Il vantaggio vale ×1,3, lo svantaggio ×0,8.</li>
       <li><b>Pass.</b> Ogni sfida e ogni bustina danno punti esperienza. Ogni livello del pass sblocca un premio.</li>
     </ol>
@@ -2266,7 +2266,13 @@ function htmlAzioni() {
   const L = B.lati[0], a = B.attivo(0);
   const prossimo = 2 + (a.c.ruolo === "stratega" ? 1 : 0);
   const cons = animazione || !imp().consigli ? null : consiglio();
+  const primo = B.chiPrimo(), d = B.attivo(1);
+  const perche = a.vel === d.vel ? `velocità pari, ${a.vel}: si tiene l'ordine così nessuno attacca due volte di fila` : `velocità ${Math.max(a.vel, d.vel)} contro ${Math.min(a.vel, d.vel)}`;
+  const ordine = primo === 0 ? `<b>Attacchi per primo</b> (${perche})`
+    : primo === 1 ? `<b>${esc(d.c.nome)} attacca per primo</b> (${perche})`
+    : `Velocità pari (${a.vel}): il primo attacco si decide a sorte, poi si va a turno`;
   return `${vivo}${Graffiti.htmlBattaglia(B)}
+  <p class="ordine-turno ${primo === 0 ? "mio" : primo === 1 ? "suo" : ""}">⚡ ${ordine}</p>
   <div class="mana-riga">
     <span class="mana-etichetta">Energia</span>
     <div class="cristalli" id="cristalli">${htmlCristalli(L.energia, prossimo)}</div>

@@ -34,6 +34,7 @@ class BattagliaSpecchio {
   get oggettiTurno() { const o = this.c.oggettiTurno || []; return [o[1], o[0]]; }
   get ev() { return specchiaEventi(this.c.ev); }
   attivo(l) { return this.c.attivo(1 - l); }
+  chiPrimo() { const p = this.c.chiPrimo(); return p < 0 ? p : 1 - p; }
   vivi(l) { return this.c.vivi(1 - l); }
   serveSostituzione(l) { return this.c.serveSostituzione(1 - l); }
   puoUsare(l, i) { return this.c.puoUsare(1 - l, i); }
