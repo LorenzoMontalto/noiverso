@@ -282,7 +282,9 @@ const Archivio = {
     const voce = { punti: S.stats.punti, vittorie: S.stats.vittorie, sconfitte: S.stats.sconfitte,
       carte: possedute().length, pass: livelloPass(), nome: (S.profilo.nome || "").slice(0, 22), avatar: S.profilo.avatar || "", titolo_id: Trofei.titoloId(),
       aggiornato: new Date().toISOString() };
-    try { await this.db.doc(`classifica/${this.uid}`).set(voce); } catch (e) { /* la classifica è un extra */ }
+    const firma = JSON.stringify(Object.assign({}, voce, { aggiornato: 0 }));
+    if (firma === this._ultimaVoce) return;
+    try { await this.db.doc(`classifica/${this.uid}`).set(voce); this._ultimaVoce = firma; } catch (e) { /* la classifica è un extra */ }
   },
 
   // Impostazioni delle carte decise dall'admin (persona, serie, rarità): uguali per tutti
@@ -528,6 +530,28 @@ function mostraAvviso(testo) {
 const VISTE = ["strada", "storia", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin"];
 let vista = "strada";
 let filtroAlbum = "tutte", filtroSquadra = "tutte", albumScheda = "carte";
+// Ricerca per tipo, serie e nome (album e squadre)
+const filtri = { album: { tipo: "", cerca: "" }, squadra: { tipo: "", serie: "", cerca: "", pot: false } };
+const normCerca = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+function passaFiltri(c, f) {
+  if (f.tipo && c.stile !== f.tipo) return false;
+  if (f.serie && c.serie !== f.serie) return false;
+  if (f.pot && !infoCarta(c.id).pronta) return false;
+  const q = normCerca(f.cerca);
+  return !q || normCerca(c.nome).includes(q) || normCerca(c.persona).includes(q);
+}
+function htmlBarraFiltri(dove, extra = "") {
+  const f = filtri[dove];
+  const chipTipo = ["", "FOR", "DIF", "VEL"].map(t => `<button class="chip ${t ? "s-" + t : ""}" data-fx="gelatina" data-filtra="${dove}:tipo:${t}" aria-pressed="${f.tipo === t}">${t ? `${STILI[t].icona} ${STILI[t].nome}` : "Tutti i tipi"}</button>`).join("");
+  const chipSerie = "serie" in f ? `<div class="filtri filtri-riga"><span class="filtri-etichetta">Serie</span>${["", ...ORDINE_SERIE].map(s => `<button class="chip" data-fx="gelatina" data-filtra="${dove}:serie:${s}" aria-pressed="${f.serie === s}">${s ? SERIE[s].simbolo + " " + esc(SERIE[s].nome) : "Tutte"}</button>`).join("")}</div>` : "";
+  const attivi = f.tipo || f.cerca || f.serie || f.pot;
+  return `<div class="barra-filtri">
+    <div class="cerca-riga"><input type="search" class="cerca" data-cerca="${dove}" value="${esc(f.cerca)}" placeholder="Cerca per nome o persona…" autocomplete="off" aria-label="Cerca una carta">
+      ${attivi ? `<button class="btn piccolo" data-filtra="${dove}:azzera:">Togli filtri</button>` : ""}</div>
+    <div class="filtri filtri-riga"><span class="filtri-etichetta">Tipo</span>${extra}${chipTipo}</div>
+    ${chipSerie}
+  </div>`;
+}
 
 function vai(v) {
   if (!VISTE.includes(v)) v = "strada";
@@ -549,11 +573,15 @@ function spostaIndicatore() {
   if (b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
+const FUNZIONI_VISTE = () => ({ strada: vistaStrada, bustine: vistaBustine, negozio: vistaNegozio, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria });
+let ultimaVistaDisegnata = "";
 function disegna() {
   aggiornaTesta();
   if (B && $("#azioni")) return;   // durante una battaglia la pagina sotto non si ridisegna (la classifica può aggiornarsi in qualsiasi momento)
   const main = $("#vista");
-  main.innerHTML = ({ strada: vistaStrada, bustine: vistaBustine, negozio: vistaNegozio, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria })[vista]();
+  main.classList.remove("quieta");
+  main.innerHTML = FUNZIONI_VISTE()[vista]();
+  ultimaVistaDisegnata = vista;
   if (vista === "classifica") avviaClassifica();
   if (vista === "pass") dopoPass();
   if (vista === "storia") dopoStoria();
@@ -959,7 +987,10 @@ function statSerie(id) {
 }
 function htmlSezioneSerie(id, conTitolo) {
   const se = SERIE[id], st = statSerie(id);
-  const elenco = [...st.carte].sort((a, b) => ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita) || a.nome.localeCompare(b.nome));
+  const fa = filtri.album, filtrando = !!(fa.tipo || fa.cerca);
+  // con un filtro attivo si vedono solo le carte già trovate (le altre restano una sorpresa)
+  const elenco = [...st.carte].filter(c => !filtrando || (S.carte[c.id] && passaFiltri(c, fa))).sort((a, b) => ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita) || a.nome.localeCompare(b.nome));
+  if (filtrando && !elenco.length) return conTitolo ? "" : `<section class="serie-sezione" style="--c:${se.colore}"><p class="nota">Nessuna carta trovata di questa serie con questi filtri.</p></section>`;
   const perRarita = ORDINE_RARITA.slice().reverse().filter(r => st.carte.some(c => c.rarita === r)).map(r => { const cs = st.carte.filter(c => c.rarita === r); return `<span class="rar-conta"><span class="pallino r-${r}"></span>${RARITA[r].nome} ${cs.filter(c => S.carte[c.id]).length}/${cs.length}</span>`; }).join("");
   return `
   <section class="serie-sezione" style="--c:${se.colore}">
@@ -998,7 +1029,7 @@ function htmlCopertinaPot() {
 }
 function htmlSezionePot() {
   const sq = new Set(squadraAttiva().carte);
-  const pr = cartePronte().sort((a, b) => (sq.has(b.id) ? 1 : 0) - (sq.has(a.id) ? 1 : 0) || (infoCarta(b.id).puoi ? 1 : 0) - (infoCarta(a.id).puoi ? 1 : 0) || ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita));
+  const pr = cartePronte().filter(c => passaFiltri(c, filtri.album)).sort((a, b) => (sq.has(b.id) ? 1 : 0) - (sq.has(a.id) ? 1 : 0) || (infoCarta(b.id).puoi ? 1 : 0) - (infoCarta(a.id).puoi ? 1 : 0) || ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita));
   if (!pr.length) return `<section class="serie-sezione"><p class="nota">Nessuna carta da potenziare per ora: i potenziatori arrivano dai doppioni che trovi nelle bustine.</p></section>`;
   return `<section class="serie-sezione sezione-pot">
     <div class="serie-testa"><span class="serie-stemma" aria-hidden="true">▲</span><div class="serie-info"><h2>Da potenziare</h2>
@@ -1019,6 +1050,7 @@ function vistaAlbum() {
   <section>
     ${htmlSchedeAlbum()}
     <div class="titolo-riga"><h2>Album</h2><p class="nota">${tot}/${CARTE.length} carte trovate in ${ORDINE_SERIE.length} serie${olo ? ` · <span class="olo-testo">✦ ${olo} olografiche</span>` : ""}.</p></div>
+    ${htmlBarraFiltri("album")}${filtri.album.tipo || filtri.album.cerca ? `<p class="nota">Con un filtro attivo vedi solo le carte che hai già trovato.${filtroAlbum === "pot" ? "" : " Tocca una serie qui sotto per cercare solo lì."}</p>` : ""}
     <div class="serie-copertine">
       ${htmlCopertinaPot()}
       ${ORDINE_SERIE.map((id, k) => {
@@ -1060,8 +1092,8 @@ function vistaSquadra() {
   sq.carte.forEach(id => { stili[PER_ID[id].stile]++; pv += statistiche(PER_ID[id], livello(id), haLode(id)).pv; });
   const ruoli = sq.carte.map(id => RUOLI[PER_ID[id].ruolo].nome);
   const nPot = mie.filter(c => infoCarta(c.id).pronta).length;
-  if (filtroSquadra === "pot" && !nPot) filtroSquadra = "tutte";
-  const elenco = mie.filter(c => filtroSquadra === "tutte" || c.stile === filtroSquadra || c.serie === filtroSquadra || (filtroSquadra === "pot" && infoCarta(c.id).pronta))
+  if (!nPot) filtri.squadra.pot = false;
+  const elenco = mie.filter(c => passaFiltri(c, filtri.squadra))
     .sort((a, b) => ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita) || a.nome.localeCompare(b.nome));
   return `
   <section>
@@ -1084,8 +1116,9 @@ function vistaSquadra() {
     <div class="titolo-riga piccola">
       <p class="nota">Tocca una carta per vedere cosa puoi fare: aggiungerla, scambiarla con una della squadra, confrontarla o <b>potenziarla</b>. Le frecce cambiano l'ordine.</p>
       ${htmlLegendaPot()}
-      <div class="filtri">${nPot ? `<button class="chip chip-pot" data-fx="gelatina" data-filtro-sq="pot" aria-pressed="${filtroSquadra === "pot"}">▲ Da potenziare · ${nPot}</button>` : ""}${["tutte", "FOR", "DIF", "VEL", ...Object.keys(SERIE)].map(f => `<button class="chip" data-fx="gelatina" data-filtro-sq="${f}" aria-pressed="${filtroSquadra === f}">${f === "tutte" ? "Tutte" : STILI[f] ? STILI[f].nome : SERIE[f].simbolo + " " + esc(SERIE[f].nome)}</button>`).join("")}</div>
+      ${htmlBarraFiltri("squadra", nPot ? `<button class="chip chip-pot" data-fx="gelatina" data-filtra="squadra:pot:" aria-pressed="${filtri.squadra.pot}">▲ Da potenziare · ${nPot}</button>` : "")}
     </div>
+    ${elenco.length ? "" : `<p class="nota vuoto-filtri">Nessuna carta con questi filtri.</p>`}
     <div class="griglia">
       ${elenco.map((c, i) => `<div class="scegli cella ${sq.carte.includes(c.id) ? "scelta" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" role="button" tabindex="0" aria-pressed="${sq.carte.includes(c.id)}">${htmlCarta(c)}</div>`).join("")}
     </div>
@@ -1120,7 +1153,37 @@ function htmlAzioniCarta() {
     </div>`}
   </div>`;
 }
-function ridisegnaSquadra() { const y = scrollY; disegna(); scrollTo(0, y); }
+function ridisegnaSquadra() { disegnaQuieto(); }
+
+// Aggiornamento "morbido": invece di ricreare tutta la pagina (e ricaricare decine di immagini, con le carte
+// che rientrano una dopo l'altra) cambia solo i pezzi diversi. Serve dove la pagina si aggiorna spesso:
+// squadre, album e classifica.
+function morfa(vecchio, nuovo) {
+  if (vecchio.nodeType !== nuovo.nodeType || vecchio.nodeName !== nuovo.nodeName ||
+      (vecchio.nodeName === "IMG" && vecchio.getAttribute("src") !== nuovo.getAttribute("src"))) { vecchio.replaceWith(nuovo); return; }
+  if (vecchio.nodeType === 3 || vecchio.nodeType === 8) { if (vecchio.nodeValue !== nuovo.nodeValue) vecchio.nodeValue = nuovo.nodeValue; return; }
+  if (vecchio.nodeType !== 1) return;
+  const attivo = vecchio === document.activeElement, dett = vecchio.nodeName === "DETAILS";
+  for (const a of [...vecchio.attributes]) if (!nuovo.hasAttribute(a.name) && !(dett && a.name === "open")) vecchio.removeAttribute(a.name);
+  for (const a of [...nuovo.attributes]) if (vecchio.getAttribute(a.name) !== a.value && !(attivo && a.name === "value") && !(dett && a.name === "open")) vecchio.setAttribute(a.name, a.value);
+  if (vecchio.nodeName === "INPUT" && !attivo) { if (vecchio.type === "checkbox" || vecchio.type === "radio") vecchio.checked = nuovo.checked; else if (vecchio.value !== nuovo.value) vecchio.value = nuovo.value; }
+  morfaFigli(vecchio, nuovo);
+}
+function morfaFigli(vecchio, nuovo) {
+  const vc = [...vecchio.childNodes], nc = [...nuovo.childNodes];
+  for (let i = 0; i < nc.length; i++) { if (i < vc.length) morfa(vc[i], nc[i]); else vecchio.appendChild(nc[i]); }
+  for (let i = nc.length; i < vc.length; i++) vc[i].remove();
+}
+function disegnaQuieto() {
+  const main = $("#vista");
+  if (!main || ultimaVistaDisegnata !== vista || !["squadra", "album", "classifica"].includes(vista) || !main.firstElementChild) return disegna();
+  aggiornaTesta();
+  if (B && $("#azioni")) return;
+  const t = document.createElement("div");
+  t.innerHTML = FUNZIONI_VISTE()[vista]();
+  main.classList.add("quieta");
+  morfaFigli(main, t);
+}
 // tocco su una carta (della collezione o della squadra) mentre sta scegliendo
 function toccoCartaSquadra(id) {
   const sq = squadraAttiva();
@@ -1487,7 +1550,12 @@ function avviaClassifica() {
   classificaTimer = setTimeout(() => { if (!classificaDati) { classificaErrore = true; if (vista === "classifica") disegna(); } }, 10000);
   Archivio.ascoltaClassifica(async righe => {
     clearTimeout(classificaTimer); classificaErrore = false;
+    // ogni salvataggio di un amico tocca la sua riga (anche solo l'ora): ridisegno solo se cambia qualcosa che si vede
+    const firma = JSON.stringify(righe.map(r => [r.id, r.punti, r.vinte_vivo, r.giocate_vivo, r.carte, r.pass, r.nome, r.avatar, r.titolo_id]));
+    const uguale = classificaDati && firma === avviaClassifica._firma;
+    avviaClassifica._firma = firma;
     classificaDati = righe;
+    if (uguale) { Amici.aggiornaElenco(); return; }
     try {
       const ids = righe.map(r => r.id).filter(id => !(id in nomiCache));
       if (ids.length && Archivio.user && Archivio.user.profiles) {
@@ -1495,8 +1563,8 @@ function avviaClassifica() {
         for (const id of ids) nomiCache[id] = (ps && ps[id] && ps[id].name) || "";
       }
     } catch (e) { /* senza nomi si vede "Giocatore" */ }
-    if (vista === "classifica") disegna();
-    if (vista === "album" && albumScheda === "scambi" && !B && $("#modale").hidden) disegna();
+    if (vista === "classifica") disegnaQuieto();
+    if (vista === "album" && albumScheda === "scambi" && !B && $("#modale").hidden) disegnaQuieto();
     Amici.aggiornaElenco();
   }, () => { clearTimeout(classificaTimer); classificaErrore = true; if (vista === "classifica") disegna(); });
 }
@@ -2742,12 +2810,18 @@ function esciBattaglia() {
 //  EVENTI
 // ============================================================
 document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#form-graffiti")) Graffiti.anteprimaAdmin(e.target); });
+document.addEventListener("input", e => {
+  const d = e.target.dataset && e.target.dataset.cerca;
+  if (!d || !filtri[d]) return;
+  filtri[d].cerca = e.target.value.slice(0, 40);
+  clearTimeout(filtri._t); filtri._t = setTimeout(disegnaQuieto, 120);
+});
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.immaginePer) Graffiti.immagineScelta(e.target); });
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2771,8 +2845,15 @@ document.addEventListener("click", e => {
   if (t.dataset.scrigno) { const [k, id] = t.dataset.scrigno.split(":"); riscuotiScrigno(+k, id, t); return; }
   if (t.dataset.edFiltro) { edFiltro = t.dataset.edFiltro; aggiornaEditor(true); return; }
   if (t.dataset.vista) { if (B) return; vai(t.dataset.vista); return; }
-  if (t.dataset.filtro) { filtroAlbum = t.dataset.filtro; disegna(); return; }
+  if (t.dataset.filtro) { filtroAlbum = t.dataset.filtro; disegnaQuieto(); return; }
   if (t.dataset.filtroSq) { filtroSquadra = t.dataset.filtroSq; disegna(); return; }
+  if (t.dataset.filtra) {
+    const [dove, campo, val] = t.dataset.filtra.split(":"), f = filtri[dove];
+    if (campo === "azzera") Object.assign(f, { tipo: "", cerca: "" }, "serie" in f ? { serie: "", pot: false } : {});
+    else if (campo === "pot") f.pot = !f.pot;
+    else f[campo] = f[campo] === val ? "" : val;
+    disegnaQuieto(); return;
+  }
   if (t.dataset.squadra !== undefined) { S.attiva = +t.dataset.squadra; salva(); disegna(); return; }
   if (t.dataset.squadraSfida !== undefined) { S.attiva = +t.dataset.squadraSfida; salva(); disegna(); return; }
   if (t.dataset.scegli) { toccoCartaSquadra(t.dataset.scegli); return; }
@@ -2782,9 +2863,9 @@ document.addEventListener("click", e => {
     const [i, d] = t.dataset.sposta.split(":").map(Number), c = squadraAttiva().carte, j = i + d;
     if (j < 0 || j >= c.length) return;
     [c[i], c[j]] = [c[j], c[i]];
-    salva(); disegna(); return;
+    salva(); disegnaQuieto(); return;
   }
-  if (t.dataset.togli !== undefined) { squadraAttiva().carte.splice(+t.dataset.togli, 1); salva(); setTimeout(disegna, ridotto ? 0 : 200); return; }
+  if (t.dataset.togli !== undefined) { squadraAttiva().carte.splice(+t.dataset.togli, 1); salva(); setTimeout(disegnaQuieto, ridotto ? 0 : 150); return; }
   if (t.dataset.apri) { usaBustina(t.dataset.apri, false); return; }
   if (t.dataset.compra) { compraBustina(t.dataset.compra, t); return; }
   if (t.dataset.compraOggetto) { const [id, n] = t.dataset.compraOggetto.split(":"); Zaino.compra(id, +n || 1, t); return; }

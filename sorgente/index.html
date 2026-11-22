@@ -180,7 +180,7 @@ h2 { font-size: 1.35rem; }
 .punto-domanda { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--display); font-size: 2.6rem; color: var(--linea); }
 .stile { display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border-radius: 5px; background: rgba(13, 10, 12, .8); border: 1px solid currentColor; }
 .s-FOR { color: var(--s-FOR); } .s-VEL { color: var(--s-VEL); } .s-DIF { color: var(--s-DIF); }
-.cella { animation: cella-entra .5s var(--molla) both; animation-delay: calc(var(--i, 0) * 35ms); }
+.cella { animation: cella-entra .5s var(--molla) both; animation-delay: calc(min(var(--i, 0), 14) * 35ms); }
 
 /* ---------- Home ---------- */
 .eroe { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: center; margin-bottom: 28px; }
@@ -670,7 +670,7 @@ body.in-battaglia { overflow: hidden; }
 .classifica { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .classifica th, .classifica td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--linea); }
 .classifica th { color: var(--spento); font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; }
-.classifica tbody tr { animation: riga-entra .4s ease-out both; animation-delay: calc(var(--i) * 50ms); }
+.classifica tbody tr { animation: riga-entra .4s ease-out both; animation-delay: calc(min(var(--i), 12) * 50ms); }
 .classifica tr.io td { background: #2a1219; }
 .classifica td:first-child { font-family: var(--display); color: var(--spento); width: 40px; }
 .classifica td:last-child .btn { white-space: nowrap; }
@@ -1629,6 +1629,17 @@ body.in-accesso { overflow: hidden; }
 .ultra-nota b { color: var(--r-ultra); }
 .etichetta.ultra-tag { background: #0b0a08; color: var(--r-ultra); border: 1px solid #c9a13a; }
 .ed-ultra { display: flex !important; flex-direction: row !important; align-items: center; gap: 6px; }
+
+/* aggiornamenti morbidi: niente animazioni d'entrata sui pezzi che cambiano */
+#vista.quieta .cella, #vista.quieta .slot.pieno, #vista.quieta .classifica tbody tr, #vista.quieta .copertina, #vista.quieta .azioni-carta { animation: none; }
+/* ricerca per tipo, serie e nome */
+.barra-filtri { display: grid; gap: 8px; margin: 10px 0 12px; }
+.cerca-riga { display: flex; gap: 8px; align-items: center; }
+.cerca { flex: 1; min-width: 0; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--linea); background: var(--muro); color: var(--testo, #fff); font: inherit; }
+.cerca:focus { outline: 2px solid var(--neon, #ff2e46); outline-offset: 1px; }
+.filtri-riga { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.filtri-etichetta { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--spento); margin-right: 2px; min-width: 40px; }
+.vuoto-filtri { margin: 10px 0; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>
