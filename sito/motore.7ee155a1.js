@@ -77,6 +77,19 @@ function sinergieDi(ids) {
   return { serie, multiverso };
 }
 
+// ---------------- Campi di battaglia ----------------
+// Ogni battaglia si gioca su un campo che cambia una regola per tutti e due. Contro il computer e dal vivo
+// è pescato a caso (con il seme della battaglia, così i due giocatori e chi guarda vedono lo stesso);
+// nella storia dipende dalla mappa. L'oggetto "Radio pirata" dello zaino lo cambia a scelta.
+const CAMPI = {
+  pioggia: { nome: "Pioggia",      icona: "🌧️", colore: "#5aa9ff", desc: "Le bruciature durano 1 turno in meno e le carte Velocità hanno +10% velocità." },
+  notte:   { nome: "Notte",        icona: "🌙", colore: "#9b7bff", desc: "Colpi critici più frequenti: +6% di probabilità per tutti." },
+  stadio:  { nome: "Stadio pieno", icona: "🏟️", colore: "#f2c14e", desc: "Il pubblico carica tutti: +1 energia a entrambe le squadre quando si entra nello stadio." },
+  lava:    { nome: "Lava",         icona: "🌋", colore: "#ff6a2a", desc: "A fine turno chi è in campo perde il 2% dei PV: conviene chiudere in fretta." },
+  tempio:  { nome: "Tempio",       icona: "🏛️", colore: "#7dffb0", desc: "Tutte le cure valgono il doppio." },
+};
+const ORDINE_CAMPI = Object.keys(CAMPI);
+
 // ---------------- Graffiti ----------------
 // Ogni lato può spruzzare un graffito sul campo: vale per tutta la battaglia (nomi e disegni in graffiti.js).
 // Sono a coppie opposte: se i due lati usano i due graffiti della stessa coppia, si annullano.
@@ -97,6 +110,7 @@ const OGGETTI_EFFETTI = {
   acqua:    { tipo: "pulisci", val: 10 },
   fumogeno: { tipo: "nebbia" },
   taxi:     { tipo: "rianima", val: 30 },
+  radio:    { tipo: "campo" },
 };
 
 // Cure, bruciature e sirene (tutto quello che è "una percentuale dei PV") si calcolano sui PV "normali" della carta:
@@ -116,6 +130,8 @@ class Battaglia {
     this.ev = [];
     this.graffitiAnnullati = null;
     this.lati.forEach(L => { this._sinergie(L); if (L.squadra[0]) L.squadra[0].usata = true; });   // "usata": è scesa in campo (per i premi)
+    this.campo = null;
+    this.impostaCampo(ORDINE_CAMPI[Math.floor(this.rng() * ORDINE_CAMPI.length)]);
   }
   // applica le sinergie di una squadra ai suoi combattenti
   _sinergie(L) {
@@ -142,6 +158,15 @@ class Battaglia {
     }
   }
 
+  // cambia il campo: toglie gli effetti del vecchio e mette quelli del nuovo
+  impostaCampo(id) {
+    if (!CAMPI[id] || id === this.campo) return false;
+    if (this.campo === "pioggia") for (const L of this.lati) for (const x of L.squadra) if (x.velPioggia) { x.vel = x.velPioggia; delete x.velPioggia; }
+    this.campo = id;
+    if (id === "pioggia") for (const L of this.lati) for (const x of L.squadra) if (x.c.stile === "VEL") { x.velPioggia = x.vel; x.vel = Math.round(x.vel * 1.1); }
+    if (id === "stadio") for (const L of this.lati) L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
+    return true;
+  }
   // g0, g1: { id, liv } oppure null
   impostaGraffiti(g0, g1) {
     const g = [g0, g1].map(x => x && GRAFFITI_COPPIE[x.id] ? { id: x.id, liv: Math.max(1, Math.min(5, x.liv || 1)) } : null);
@@ -153,7 +178,8 @@ class Battaglia {
     }
   }
   // Usa un oggetto dello zaino: { ok, motivo, ev }. Non fa passare il turno.
-  usaOggetto(l, id, nome) {
+  usaOggetto(l, idPieno, nome) {
+    const [id, scelta] = String(idPieno).split(":");   // la Radio pirata porta il campo scelto: "radio:lava"
     const e = OGGETTI_EFFETTI[id], L = this.lati[l], a = this.attivo(l);
     const no = motivo => ({ ok: false, motivo, ev: [] });
     if (!e || this.vincitore >= 0) return no("La battaglia è finita.");
@@ -164,6 +190,7 @@ class Battaglia {
     if (e.tipo === "pulisci" && !a.stati.brucia && !a.buff.debole && !a.stordito && a.pv >= a.pvMax) return no(`${a.c.nome} sta già benissimo.`);
     const ko = L.squadra.find(x => x.pv <= 0);
     if (e.tipo === "rianima" && (!ko || this.rianimato && this.rianimato[l])) return no(!ko ? "Nessuna carta è KO." : "Puoi rimettere in piedi una carta sola a battaglia.");
+    if (e.tipo === "campo" && (!CAMPI[scelta] || scelta === this.campo)) return no(!CAMPI[scelta] ? "Scegli un campo." : "Siete già su questo campo.");
     this.ev = [];
     this.oggettiTurno = this.oggettiTurno || []; this.oggettiTurno[l] = this.turno;
     this._log(`${L.nome} apre lo zaino: ${nome || id}!`, { lato: l, oggetto: id, avviso: true });
@@ -181,6 +208,10 @@ class Battaglia {
       ko.pv = Math.max(1, Math.round(ko.pvMax * e.val / 100)); ko.koAnnunciato = false; ko.stati = {}; ko.buff = {};
       this.rianimato = this.rianimato || []; this.rianimato[l] = true;
       this._log(`${ko.c.nome} torna in piedi con ${ko.pv} PV ed è di nuovo in panchina.`, { lato: l, cura: l, quanto: ko.pv });
+    }
+    else if (e.tipo === "campo") {
+      this.impostaCampo(scelta);
+      this._log(`Il campo cambia: ${CAMPI[scelta].icona} ${CAMPI[scelta].nome}! ${CAMPI[scelta].desc}`, { lato: l, campo: scelta, avviso: true });
     }
     return { ok: true, ev: this.ev };
   }
@@ -220,7 +251,7 @@ class Battaglia {
     let varia = 1, crit = false;
     if (casuale) {
       varia = a.c.ruolo === "imprevedibile" ? 0.6 + this.rng() * 0.9 : 0.9 + this.rng() * 0.2;
-      crit = this.rng() < Math.min(0.35, (a.c.ruolo === "assassino" ? 0.2 : PROB_CRITICO) + this.gv(l, "fortuna") / 100);
+      crit = this.rng() < Math.min(0.35, (a.c.ruolo === "assassino" ? 0.2 : PROB_CRITICO) + this.gv(l, "fortuna") / 100 + (this.campo === "notte" ? 0.06 : 0));
     }
     // chi è in svantaggio di tipo non fa colpi critici: il tipo deve contare davvero
     if (stile < 1) crit = false;
@@ -229,6 +260,9 @@ class Battaglia {
     let dmg = m.pot * rapporto * stile * varia * (crit ? 1.5 : 1) * K_DANNO * (a.f || 1);
     dmg *= (1 + this.gv(l, "fiamma") / 100) * (1 - this.gv(1 - l, "muro") / 100);
     if (a.c.ruolo === "tiratore" && m.costo >= 2) dmg *= 1.1;
+    // boss del giorno: corazze e punti deboli (funzioni messe da BossGiorno.prepara)
+    if (d.dannoDa) dmg *= d.dannoDa(a);
+    if (a.furia && a.pv < a.pvMax * .5) dmg *= 1 + a.furia / 100;
     if (d.c.ruolo === "tank") dmg *= 0.9;
     if (d.carica) dmg *= 0.7;
     return { danno: Math.max(1, Math.round(dmg)), crit, stile, parato };
@@ -339,9 +373,11 @@ class Battaglia {
     const L = this.lati[l], O = this.lati[1 - l];
     if (e.tipo === "brucia") {
       if (d.c.ruolo === "incendiario") { this._log(`${d.c.nome} non brucia.`, { lato: 1 - l }); return; }
-      const turni = e.turni + (a.c.ruolo === "incendiario" ? 1 : 0) + (a.sin && a.sin.effetti ? 1 : 0);
+      const turni = Math.max(1, e.turni + (a.c.ruolo === "incendiario" ? 1 : 0) + (a.sin && a.sin.effetti ? 1 : 0) - (this.campo === "pioggia" ? 1 : 0));
       d.stati.brucia = { val: Math.round(e.val * (1 + ((a.sin && a.sin.forzaEff) || 0) / 100)), turni };
       this._log(`${d.c.nome} brucia per ${turni} turni.`, { lato: l, anim: "brucia", su: 1 - l });
+    } else if (d.immuneEffetti && (e.tipo === "stordisci" || e.tipo === "indebolisci")) {
+      this._log(`${d.c.nome} è protetto da uno scudo magico: l'effetto non lo tocca.`, { lato: 1 - l });
     } else if (e.tipo === "stordisci") {
       if (this.rng() < e.val * (1 + ((a.sin && a.sin.forzaEff) || 0) / 100) / 100) { d.stordito = true; this._log(`${d.c.nome} è stordito!`, { lato: l, anim: "stordito", su: 1 - l }); }
       else this._log(`${d.c.nome} resiste allo stordimento.`, { lato: 1 - l });
@@ -370,6 +406,7 @@ class Battaglia {
   }
 
   _cura(l, x, n) {
+    if (this.campo === "tempio") n *= 2;
     if (this.turno >= TURNO_SIRENE) n = Math.round(n / 2);
     const prima = x.pv;
     x.pv = Math.min(x.pvMax, x.pv + n);
@@ -398,17 +435,23 @@ class Battaglia {
       if (a.pv > 0) {
         const b = a.stati.brucia;
         if (b) {
-          const dmg = Math.max(1, Math.round(pvCura(a) * b.val / 100));
+          const dmg = Math.max(1, Math.round(pvCura(a) * b.val / 100 * (a.bruciaX || 1)));
           a.pv = Math.max(0, a.pv - dmg);
           this._log(`${a.c.nome} brucia: −${dmg} PV.`, { lato: l, colpo: l, danno: dmg, stile: "FOR", brucia: true });
           if (--b.turni <= 0) delete a.stati.brucia;
         }
+        if (a.rigenera && a.pv > 0 && a.pv < a.pvMax && !a.stati.brucia) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * a.rigenera / 100)));
         if (a.sin && a.sin.rigenera && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * a.sin.rigenera / 100)));
         const cuore = this.gv(l, "cuore");
         if (cuore && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * cuore / 100)));
         if (a.pv > 0 && a.c.ruolo === "guaritore") {
           this._cura(l, a, Math.round(pvCura(a) * 0.05));
           for (const x of L.squadra) if (x !== a && x.pv > 0 && x.pv < x.pvMax) x.pv = Math.min(x.pvMax, x.pv + Math.round(x.pvMax * (this.turno >= TURNO_SIRENE ? 0.01 : 0.02)));
+        }
+        if (a.pv > 0 && this.campo === "lava") {
+          const dmg = Math.max(1, Math.round(pvCura(a) * 0.02));
+          a.pv = Math.max(0, a.pv - dmg);
+          this._log(`La lava scotta: ${a.c.nome} perde ${dmg} PV.`, { lato: l, colpo: l, danno: dmg, brucia: true });
         }
         if (a.pv > 0 && this.turno >= TURNO_SIRENE) {
           const pct = 4 + 2 * (this.turno - TURNO_SIRENE);
@@ -492,4 +535,4 @@ class Battaglia {
   }
 }
 
-if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE, OGGETTI_EFFETTI, sinergieDi, SINERGIE, applicaSinergie, MULTIVERSO };
+if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE, OGGETTI_EFFETTI, sinergieDi, SINERGIE, applicaSinergie, MULTIVERSO, CAMPI, ORDINE_CAMPI };

@@ -6,7 +6,7 @@
 
 const STORIA = [
   {
-    id: "c1", titolo: "Notte in città", serie: "nueve", colore: "#ff2e46", simbolo: "♠",
+    id: "c1", campo: "notte", titolo: "Notte in città", serie: "nueve", colore: "#ff2e46", simbolo: "♠",
     intro: "Le luci al neon si accendono e i vicoli si riempiono. Per farti un nome in città devi passare da tutte le bande, una alla volta.",
     tappe: [
       { titolo: "Il primo giro", nemici: ["pelado", "fiesta", "rojo", "lasombra", "chapo"], liv: [1, 1], abilita: 0.35, monete: 50,
@@ -24,7 +24,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c2", titolo: "Il Grande Torneo", serie: "db", colore: "#ff9a1f", simbolo: "✪",
+    id: "c2", campo: "stadio", titolo: "Il Grande Torneo", serie: "db", colore: "#ff9a1f", simbolo: "✪",
     intro: "Sul ring del torneo si sfidano i guerrieri più forti. Ogni incontro è più duro del precedente, e qualcuno nasconde un potere leggendario.",
     tappe: [
       { titolo: "Iscrizioni aperte", nemici: ["chichice", "vidalessia", "panky", "bulsene", "giulmai"], liv: [1, 2], abilita: 0.45, monete: 70,
@@ -42,7 +42,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c3", titolo: "La città in pericolo", serie: "eroi", colore: "#4c95ff", simbolo: "★",
+    id: "c3", campo: "pioggia", titolo: "La città in pericolo", serie: "eroi", colore: "#4c95ff", simbolo: "★",
     intro: "Qualcuno ha messo gli eroi gli uni contro gli altri. Per scoprire chi c'è dietro devi affrontarli tutti, dal primo all'ultimo.",
     tappe: [
       { titolo: "Allarme in centro", nemici: ["waspy", "diegkeye", "vedovagreca", "stellascura", "cypips"], liv: [2, 3], abilita: 0.55, monete: 90,
@@ -60,7 +60,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c4", titolo: "La scalata all'Olimpo", serie: "dei", colore: "#f2c14e", simbolo: "♛",
+    id: "c4", campo: "tempio", titolo: "La scalata all'Olimpo", serie: "dei", colore: "#f2c14e", simbolo: "♛",
     intro: "In cima al monte gli dei guardano dall'alto i mortali. Salire fino al trono di Zeus vuol dire sfidarli tutti.",
     tappe: [
       { titolo: "I campi fioriti", nemici: ["demviky", "persene", "aphroalessia", "solmone", "aurera"], liv: [3, 3], abilita: 0.62, monete: 110,
@@ -78,7 +78,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c6", titolo: "La Scuola di Magia", serie: "maghi", colore: "#43d39e", simbolo: "☾",
+    id: "c6", campo: "notte", titolo: "La Scuola di Magia", serie: "maghi", colore: "#43d39e", simbolo: "☾",
     intro: "Un castello pieno di torri, scale che cambiano posto e studenti con la bacchetta facile. Per uscirne devi battere ogni casa, ogni professore e il mago più oscuro di tutti.",
     tappe: [
       { titolo: "Il binario nascosto", nemici: ["lollon", "ginice", "tizievil", "auroruna", "giulifleur"], liv: [1, 1], abilita: 0.66, monete: 120,
@@ -96,7 +96,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c7", titolo: "Il porto dei contrabbandieri", serie: null, sottotitolo: "Mafiosi contro Supereroi", colore: "#3fd8ff", simbolo: "⚓",
+    id: "c7", campo: "pioggia", titolo: "Il porto dei contrabbandieri", serie: null, sottotitolo: "Mafiosi contro Supereroi", colore: "#3fd8ff", simbolo: "⚓",
     intro: "Di notte al porto arrivano navi senza nome. Le bande della città e gli eroi si contendono il molo, e tu ci finisci in mezzo.",
     tappe: [
       { titolo: "I container rossi", nemici: ["rojo", "fuego", "diegkeye", "stellascura", "lasombra"], liv: [1, 1], abilita: 0.78, monete: 160,
@@ -114,7 +114,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c8", titolo: "Il deserto delle sfere", serie: null, sottotitolo: "Dragon Ball contro Dei", colore: "#e0a34a", simbolo: "☀",
+    id: "c8", campo: "lava", titolo: "Il deserto delle sfere", serie: null, sottotitolo: "Dragon Ball contro Dei", colore: "#e0a34a", simbolo: "☀",
     intro: "Sotto la sabbia sono nascoste le sette sfere. I guerrieri del torneo le cercano da anni, ma gli dei non hanno nessuna voglia di lasciarle a qualcuno.",
     tappe: [
       { titolo: "La carovana", nemici: ["panky", "vidalessia", "demviky", "persene", "giulmai"], liv: [1, 1], abilita: 0.8, monete: 180,
@@ -132,7 +132,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c9", titolo: "Il luna park maledetto", serie: null, sottotitolo: "Maghi contro Mafiosi", colore: "#ff4fd8", simbolo: "☠",
+    id: "c9", campo: "stadio", titolo: "Il luna park maledetto", serie: null, sottotitolo: "Maghi contro Mafiosi", colore: "#ff4fd8", simbolo: "☠",
     intro: "Le giostre girano da sole, la musica non si ferma mai e chi entra non trova più l'uscita. Qualcuno ha stregato il luna park.",
     tappe: [
       { titolo: "La biglietteria", nemici: ["lollon", "ginice", "tizievil", "lasombra", "fiesta"], liv: [1, 1], abilita: 0.82, monete: 200,
@@ -150,7 +150,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c10", titolo: "Il cuore del vulcano", serie: null, sottotitolo: "Tutti contro tutti", colore: "#ff5a1f", simbolo: "▲",
+    id: "c10", campo: "lava", titolo: "Il cuore del vulcano", serie: null, sottotitolo: "Tutti contro tutti", colore: "#ff5a1f", simbolo: "▲",
     intro: "La montagna si è svegliata. Fiumi di lava, grotte di cristallo e un cratere dove si sono radunati i più forti di ogni mondo, per vedere chi resta in piedi.",
     tappe: [
       { titolo: "Le pendici", nemici: ["rojo", "efesamuele", "fuego", "giulmai", "chichice"], liv: [1, 1], abilita: 0.84, monete: 220,
@@ -168,7 +168,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c11", titolo: "Discesa agli Inferi", serie: "demoni", colore: "#d4145a", simbolo: "♆",
+    id: "c11", campo: "lava", titolo: "Discesa agli Inferi", serie: "demoni", colore: "#d4145a", simbolo: "♆",
     intro: "Dal cratere del vulcano si è aperta una crepa che scende sempre più giù. Fiumi neri, patti col diavolo e un trono di fuoco: i Demoni ti stavano aspettando.",
     tappe: [
       { titolo: "La porta degli Inferi", nemici: ["vikamashtu", "senecate", "giulimaah", "ritacubus", "pipmon"], liv: [1, 1], abilita: 0.86, monete: 240,
@@ -186,7 +186,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c12", titolo: "La città dei mestieri", serie: "mestieri", colore: "#a6e22e", simbolo: "⚒",
+    id: "c12", campo: "stadio", titolo: "La città dei mestieri", serie: "mestieri", colore: "#a6e22e", simbolo: "⚒",
     intro: "Di giorno la città lavora: c'è chi insegna, chi segna gol, chi gira film e chi entra nei computer degli altri. Ma oggi ogni mestiere ha una sfida per te.",
     tappe: [
       { titolo: "Il villaggio vacanze", nemici: ["ritanimatrice", "giudella", "auroressa", "diegarman", "samutografo"], liv: [1, 1], abilita: 0.88, monete: 250,
@@ -204,7 +204,7 @@ const STORIA = [
     ],
   },
   {
-    id: "c5", titolo: "Los Nueve", serie: null, colore: "#b866ff", simbolo: "✦",
+    id: "c5", campo: "notte", titolo: "Los Nueve", serie: null, colore: "#b866ff", simbolo: "✦",
     intro: "Tutte le storie portano qui. I più forti di ogni serie si sono uniti in un'unica squadra. È la sfida finale.",
     tappe: [
       { titolo: "Ombre dal passato", nemici: ["ombra", "eltigre", "labruja", "comora", "criliziano"], liv: [4, 4], abilita: 0.86, monete: 260,

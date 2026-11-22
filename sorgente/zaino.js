@@ -19,6 +19,8 @@ const Zaino = (() => {
                 desc: "Toglie bruciature, debolezza e stordimento e cura il 10% dei PV. Il rimedio del giorno dopo." },
     fumogeno: { nome: "Fumogeno da stadio", icona: "💨", colore: "#b866ff", prezzo: 150, corto: "Schiva 1 attacco",
                 desc: "Il prossimo attacco nemico contro la tua carta va a vuoto. In mezzo al fumo non ti vede nessuno." },
+    radio:    { nome: "Radio pirata", icona: "📻", colore: "#ff7eb3", prezzo: 250, corto: "Cambia il campo",
+                desc: "Cambi il campo di battaglia con quello che vuoi tu (Pioggia, Notte, Stadio, Lava o Tempio). Una frequenza segreta e il meteo obbedisce." },
     taxi:     { nome: "Taxi di ritorno", icona: "🚕", colore: "#ffe14a", prezzo: 400, corto: "Rialza una carta KO",
                 desc: "Una tua carta KO torna in panchina con il 30% dei PV. Una volta sola per battaglia: a quell'ora i taxi sono pochi." },
   };
@@ -28,7 +30,7 @@ const Zaino = (() => {
   // limiti dell'effetto per tipo: [minimo, massimo, unità]
   const LIMITI = { cura: [5, 100, "% PV"], energia: [1, 8, "energia"], forza: [5, 100, "% attacco"], scudo: [5, 90, "% di danni in meno"], pulisci: [0, 50, "% PV di cura"], rianima: [5, 100, "% PV"] };
   const cortoDi = id => { const e = OGGETTI_EFFETTI[id] || {}; return { cura: `Cura il ${e.val}%`, energia: `+${e.val} energia`, forza: `+${e.val}% attacco`, scudo: `Scudo ${e.val}%`,
-    pulisci: "Toglie i malus", nebbia: "Schiva 1 attacco", rianima: "Rialza una carta KO" }[e.tipo] || ""; };
+    pulisci: "Toglie i malus", nebbia: "Schiva 1 attacco", rianima: "Rialza una carta KO", campo: "Cambia il campo" }[e.tipo] || ""; };
   let personali = {}, caricato = false;
   function applica(cfg) {
     personali = cfg && typeof cfg === "object" ? cfg : {};
@@ -90,7 +92,7 @@ const Zaino = (() => {
     catch (e) { mostraAvviso("Non sono riuscito a salvare. Serve la pagina online con il tuo account admin."); }
     const box = $("#admin-zaino"); if (box) box.innerHTML = htmlAdmin();
   }
-  const info = id => Object.assign({ id }, OGGETTI[id]);
+  const info = id => { const base = String(id).split(":")[0]; return Object.assign({ id: base }, OGGETTI[base]); };
   const stato = () => { if (!S.zaino) S.zaino = { oggetti: {}, porta: [] }; return S.zaino; };
   const quanti = id => (stato().oggetti || {})[id] || 0;
   const porta = () => Array.from({ length: POSTI }, (_, i) => (stato().porta || [])[i] || null);
@@ -176,15 +178,24 @@ const Zaino = (() => {
       return `<button type="button" class="zaino-usa ${x.usato ? "usato" : ""}" data-usa-oggetto="${i}" style="--c:${o.colore}" ${off ? "disabled" : ""} title="${esc(o.desc)}">${htmlIcona(x.id, "piccola")}<span><b>${esc(o.nome)}</b><small>${x.usato ? "Usato" : esc(o.corto)}</small></span></button>`;
     }).join("")}${giaUsato && B.zaino.some(x => x && !x.usato) ? `<small class="zaino-nota">Un oggetto per turno</small>` : ""}</div>`;
   }
-  async function usa(i) {
+  // Radio pirata: prima scegli il campo
+  function sceltaCampo(i) {
+    apriModale(`<div class="scelta-campo"><h3>📻 Radio pirata</h3><p class="nota">Scegli il nuovo campo di battaglia: vale per tutti e due da subito.</p>
+      <div class="campi-lista">${ORDINE_CAMPI.map(k => { const c = CAMPI[k], ora = B && B.campo === k;
+        return `<button class="campo-opzione ${ora ? "attuale" : ""}" style="--c:${c.colore}" data-campo-scelto="${i}:${k}" ${ora ? "disabled" : ""}><span class="campo-ico">${c.icona}</span><b>${c.nome}${ora ? " (adesso)" : ""}</b><small>${c.desc}</small></button>`; }).join("")}</div></div>`);
+  }
+  async function usa(i, campo) {
     if (!B || animazione || B.vincitore >= 0) return;
     const x = B.zaino && B.zaino[i]; if (!x || x.usato) return;
+    if ((OGGETTI_EFFETTI[x.id] || {}).tipo === "campo" && !campo) { sceltaCampo(i); return; }
+    if (campo) chiudiModale();
+    const idPieno = campo ? `${x.id}:${campo}` : x.id;
     // dal vivo: l'oggetto parte insieme alla mossa, quindi dopo aver scelto non si può più aprire lo zaino
     if (livelloAttuale && livelloAttuale.vivo && (Online.inAttesa() || B.serveSostituzione(1))) { mostraAvviso("Hai già scelto la mossa di questo turno."); return; }
-    const o = info(x.id), r = B.usaOggetto(0, x.id, o.nome);
+    const o = info(x.id), r = B.usaOggetto(0, idPieno, o.nome);
     if (!r.ok) { mostraAvviso(r.motivo); return; }
     x.usato = true;
-    if (livelloAttuale && livelloAttuale.vivo) Online.oggettoUsato(x.id); else Online.loggaDiretta({ o: "ogg", l: 0, id: x.id });
+    if (livelloAttuale && livelloAttuale.vivo) Online.oggettoUsato(idPieno); else Online.loggaDiretta({ o: "ogg", l: 0, id: idPieno });
     if (!livelloAttuale || !livelloAttuale.provaAdmin) {
       const z = stato(); z.oggetti = Object.assign({}, z.oggetti, { [x.id]: Math.max(0, (z.oggetti[x.id] || 0) - 1) }); salva();
     }

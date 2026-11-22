@@ -222,6 +222,8 @@ begin
     pt := case when n < 1 then 3 else 0 end;
   end if;
   update public.partite_vivo set stato = st, vincitore = case when st in ('ok', 'abbandono') then v end, punti = pt where id = partita;
+  -- se i due avevano una partita del torneo da giocare, questa vale per il torneo
+  if st in ('ok', 'abbandono') and v is not null then perform public.torneo_esito(p.a, p.b, v); end if;
   -- la classifica si ricalcola subito per i due giocatori
   update public.classifica set aggiornato = now() where user_id in (p.a, p.b);
   return jsonb_build_object('stato', st, 'punti', pt);
@@ -780,6 +782,7 @@ create table if not exists public.premi_classifica (
   creato    timestamptz not null default now()
 );
 create index if not exists premi_classifica_utente on public.premi_classifica (user_id, riscosso);
+alter table public.premi_classifica add column if not exists tipo text not null default 'classifica';
 alter table public.premi_classifica enable row level security;
 drop policy if exists "premi classifica: i miei" on public.premi_classifica;
 create policy "premi classifica: i miei" on public.premi_classifica for select to authenticated using (user_id = auth.uid());
@@ -797,8 +800,8 @@ language plpgsql security definer set search_path = public as $$
 declare r jsonb;
 begin
   if auth.uid() is null then return '[]'::jsonb; end if;
-  with presi as (update public.premi_classifica set riscosso = true where user_id = auth.uid() and not riscosso returning posizione, titolo, punti, premio)
-  select coalesce(jsonb_agg(jsonb_build_object('posizione', posizione, 'titolo', titolo, 'punti', punti, 'premio', premio) order by posizione), '[]'::jsonb) into r from presi;
+  with presi as (update public.premi_classifica set riscosso = true where user_id = auth.uid() and not riscosso returning posizione, titolo, punti, premio, tipo)
+  select coalesce(jsonb_agg(jsonb_build_object('posizione', posizione, 'titolo', titolo, 'punti', punti, 'premio', premio, 'tipo', tipo) order by posizione), '[]'::jsonb) into r from presi;
   return r;
 end $$;
 revoke all on function public.riscatta_premi_classifica() from public, anon;
@@ -965,3 +968,191 @@ grant execute on function public.segnalazioni(), public.annulla_sfide_di(uuid, i
 
 -- Fine. Dopo esserti registrato nel gioco, esegui supabase/importa-progressi.sql
 -- (porta i tuoi progressi e ti rende admin).
+
+-- ============================================================
+--  TORNEO DEL WEEKEND
+--  L'admin crea il torneo e apre le iscrizioni; quando lo avvia si forma il tabellone (eliminazione diretta,
+--  con i "passaggi del turno" se gli iscritti non sono 4, 8, 16…). Le partite si giocano come sfide dal vivo:
+--  quando due giocatori che devono affrontarsi finiscono una sfida, il risultato vale per il torneo.
+--  Ogni turno ha una scadenza; se una partita non si gioca, l'admin assegna la vittoria.
+--  In finale si gioca anche la finalina per il 3° posto. I primi tre ricevono i premi (premi_classifica, tipo 'torneo').
+-- ============================================================
+create table if not exists public.tornei (
+  id        bigint generated always as identity primary key,
+  nome      text not null,
+  stato     text not null default 'iscrizioni' check (stato in ('iscrizioni', 'in_corso', 'finito', 'annullato')),
+  ore_turno integer not null default 24,
+  premi     jsonb not null default '[]'::jsonb,
+  creato    timestamptz not null default now(),
+  iniziato  timestamptz,
+  finito    timestamptz
+);
+create table if not exists public.tornei_iscritti (
+  torneo  bigint not null references public.tornei (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  nome    text not null default 'Giocatore',
+  avatar  text not null default '',
+  primary key (torneo, user_id)
+);
+create table if not exists public.tornei_partite (
+  id        bigint generated always as identity primary key,
+  torneo    bigint not null references public.tornei (id) on delete cascade,
+  turno     integer not null,
+  n         integer not null,
+  finalina  boolean not null default false,
+  a         uuid,
+  b         uuid,
+  vincitore uuid,
+  scadenza  timestamptz,
+  chiusa    timestamptz,
+  a_tavolino boolean not null default false,
+  unique (torneo, turno, n, finalina)
+);
+alter table public.tornei enable row level security;
+alter table public.tornei_iscritti enable row level security;
+alter table public.tornei_partite enable row level security;
+drop policy if exists "tornei: tutti li leggono" on public.tornei;
+create policy "tornei: tutti li leggono" on public.tornei for select to authenticated using (true);
+drop policy if exists "tornei iscritti: tutti li leggono" on public.tornei_iscritti;
+create policy "tornei iscritti: tutti li leggono" on public.tornei_iscritti for select to authenticated using (true);
+drop policy if exists "tornei partite: tutti le leggono" on public.tornei_partite;
+create policy "tornei partite: tutti le leggono" on public.tornei_partite for select to authenticated using (true);
+
+create or replace function public.crea_torneo(nome text, ore integer, premi jsonb) returns bigint
+language plpgsql security definer set search_path = public as $$
+declare id bigint;
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin può creare un torneo'; end if;
+  if exists (select 1 from public.tornei t where t.stato in ('iscrizioni', 'in_corso')) then raise exception 'C''è già un torneo aperto'; end if;
+  insert into public.tornei (nome, ore_turno, premi) values (left(coalesce(nullif(trim(nome), ''), 'Torneo del weekend'), 40), greatest(1, least(168, coalesce(ore, 24))), coalesce(premi, '[]'::jsonb))
+    returning tornei.id into id;
+  return id;
+end $$;
+
+create or replace function public.iscriviti_torneo(si boolean) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); t public.tornei; d jsonb;
+begin
+  if me is null then raise exception 'Devi fare l''accesso'; end if;
+  select * into t from public.tornei where stato = 'iscrizioni' order by id desc limit 1;
+  if t.id is null then raise exception 'Le iscrizioni sono chiuse'; end if;
+  if si then
+    select dati into d from public.salvataggi where user_id = me and slot = 'partita';
+    if d is null then raise exception 'Prima gioca almeno una partita'; end if;
+    insert into public.tornei_iscritti (torneo, user_id, nome, avatar)
+      values (t.id, me, left(coalesce(nullif(d->'profilo'->>'nome', ''), 'Giocatore'), 22),
+        case when coalesce((d->'carte'->>(d->'profilo'->>'avatar'))::int, 0) > 0 then d->'profilo'->>'avatar' else '' end)
+      on conflict (torneo, user_id) do nothing;
+  else
+    delete from public.tornei_iscritti where torneo = t.id and user_id = me;
+  end if;
+  return jsonb_build_object('iscritti', (select count(*) from public.tornei_iscritti where torneo = t.id));
+end $$;
+
+-- passa al turno dopo quando tutte le partite del turno sono chiuse; alla fine dà i premi
+create or replace function public.torneo_avanza(tid bigint) returns void
+language plpgsql security definer set search_path = public as $$
+declare t public.tornei; r int; aperte int; vinc uuid[]; pers uuid[]; i int; ore int; pos int; u uuid;
+begin
+  select * into t from public.tornei where id = tid for update;
+  if t.stato <> 'in_corso' then return; end if;
+  ore := t.ore_turno;
+  -- i passaggi del turno (avversario mancante) si chiudono da soli
+  update public.tornei_partite set vincitore = coalesce(a, b), chiusa = now()
+    where torneo = tid and vincitore is null and (a is null or b is null) and coalesce(a, b) is not null;
+  select max(turno) into r from public.tornei_partite where torneo = tid;
+  select count(*) into aperte from public.tornei_partite where torneo = tid and turno = r and vincitore is null;
+  if aperte > 0 then return; end if;
+  select array_agg(vincitore order by n) into vinc from public.tornei_partite where torneo = tid and turno = r and not finalina;
+  if coalesce(array_length(vinc, 1), 0) <= 1 then
+    -- finale (e finalina) giocate: premi ai primi tre
+    update public.tornei set stato = 'finito', finito = now() where id = tid;
+    for pos in 1..3 loop
+      u := case pos
+        when 1 then (select vincitore from public.tornei_partite where torneo = tid and turno = r and not finalina)
+        when 2 then (select case when vincitore = a then b else a end from public.tornei_partite where torneo = tid and turno = r and not finalina)
+        else (select vincitore from public.tornei_partite where torneo = tid and turno = r and finalina) end;
+      if u is not null and t.premi -> (pos - 1) is not null then
+        insert into public.premi_classifica (user_id, posizione, titolo, punti, premio, tipo) values (u, pos, t.nome, 0, t.premi -> (pos - 1), 'torneo');
+      end if;
+    end loop;
+    return;
+  end if;
+  -- turno dopo: i vincitori a coppie (1-2, 3-4, …)
+  for i in 1..(array_length(vinc, 1) / 2) loop
+    insert into public.tornei_partite (torneo, turno, n, a, b, scadenza) values (tid, r + 1, i, vinc[2 * i - 1], vinc[2 * i], now() + make_interval(hours => ore));
+  end loop;
+  -- se questo era il turno delle semifinali (2 vincitori), si gioca anche la finalina tra chi ha perso
+  if array_length(vinc, 1) = 2 then
+    select array_agg(case when vincitore = a then b else a end order by n) into pers from public.tornei_partite where torneo = tid and turno = r and not finalina;
+    if pers[1] is not null and pers[2] is not null then
+      insert into public.tornei_partite (torneo, turno, n, finalina, a, b, scadenza) values (tid, r + 1, 1, true, pers[1], pers[2], now() + make_interval(hours => ore));
+    end if;
+  end if;
+  perform public.torneo_avanza(tid);   -- se nel turno nuovo ci sono passaggi automatici
+end $$;
+revoke all on function public.torneo_avanza(bigint) from public, anon, authenticated;
+
+create or replace function public.avvia_torneo() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare t public.tornei; ids uuid[]; n int; dim int := 2; i int;
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin può avviare il torneo'; end if;
+  select * into t from public.tornei where stato = 'iscrizioni' order by id desc limit 1 for update;
+  if t.id is null then raise exception 'Nessun torneo con le iscrizioni aperte'; end if;
+  select array_agg(user_id order by random()) into ids from public.tornei_iscritti where torneo = t.id;
+  n := coalesce(array_length(ids, 1), 0);
+  if n < 3 then raise exception 'Servono almeno 3 iscritti'; end if;
+  while dim < n loop dim := dim * 2; end loop;
+  update public.tornei set stato = 'in_corso', iniziato = now() where id = t.id;
+  -- tabellone: i passaggi del turno vanno ai primi (un giocatore contro "nessuno")
+  for i in 1..(dim / 2) loop
+    insert into public.tornei_partite (torneo, turno, n, a, b, scadenza)
+      values (t.id, 1, i, ids[i], case when i + dim / 2 <= n then ids[i + dim / 2] end, now() + make_interval(hours => t.ore_turno));
+  end loop;
+  perform public.torneo_avanza(t.id);
+  return jsonb_build_object('iscritti', n, 'tabellone', dim);
+end $$;
+
+-- risultato di una sfida dal vivo: se era una partita del torneo ancora da giocare, la chiude
+create or replace function public.torneo_esito(x uuid, y uuid, v uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare m public.tornei_partite;
+begin
+  select pp.* into m from public.tornei_partite pp join public.tornei t on t.id = pp.torneo
+    where t.stato = 'in_corso' and pp.vincitore is null and ((pp.a = x and pp.b = y) or (pp.a = y and pp.b = x))
+    order by pp.id desc limit 1 for update;
+  if m.id is null or (v <> x and v <> y) then return; end if;
+  update public.tornei_partite set vincitore = v, chiusa = now() where id = m.id;
+  perform public.torneo_avanza(m.torneo);
+end $$;
+revoke all on function public.torneo_esito(uuid, uuid, uuid) from public, anon, authenticated;
+
+-- l'admin assegna una partita non giocata (vittoria a tavolino) oppure annulla il torneo
+create or replace function public.assegna_torneo(partita bigint, vincitore uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare m public.tornei_partite;
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin'; end if;
+  select * into m from public.tornei_partite where id = partita for update;
+  if m.id is null or m.vincitore is not null then raise exception 'Partita già chiusa'; end if;
+  if vincitore <> m.a and vincitore <> m.b then raise exception 'Vincitore non valido'; end if;
+  update public.tornei_partite set vincitore = assegna_torneo.vincitore, chiusa = now(), a_tavolino = true where id = partita;
+  perform public.torneo_avanza(m.torneo);
+end $$;
+create or replace function public.annulla_torneo() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin'; end if;
+  update public.tornei set stato = 'annullato', finito = now() where stato in ('iscrizioni', 'in_corso');
+end $$;
+revoke all on function public.crea_torneo(text, integer, jsonb) from public, anon;
+grant execute on function public.crea_torneo(text, integer, jsonb) to authenticated;
+revoke all on function public.iscriviti_torneo(boolean) from public, anon;
+grant execute on function public.iscriviti_torneo(boolean) to authenticated;
+revoke all on function public.avvia_torneo() from public, anon;
+grant execute on function public.avvia_torneo() to authenticated;
+revoke all on function public.assegna_torneo(bigint, uuid) from public, anon;
+grant execute on function public.assegna_torneo(bigint, uuid) to authenticated;
+revoke all on function public.annulla_torneo() from public, anon;
+grant execute on function public.annulla_torneo() to authenticated;

@@ -495,7 +495,7 @@ function potenziaCarta(id, el, restaQui) {
   S.pot[id] = ((S.pot || {})[id] || 0) - inf.servePot;
   if (!S.admin) S.monete -= inf.serveMon;
   S.liv[id] = inf.liv + 1;
-  Missioni.evento("potenzia");
+  Missioni.evento("potenzia", { id });
   salva();
   if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 40, forma: "stella", colori: ["#6fe3a0", "#3fd8ff", "#ffffff"], velocita: 7, dimensione: 5, durata: 1100 }); }
   if (restaQui) { ridisegnaSquadra(); mostraAvviso(`${PER_ID[id].nome} sale al livello ${S.liv[id]}!`); }
@@ -594,6 +594,8 @@ function vistaStrada() {
   const giocate = S.stats.vittorie + S.stats.sconfitte;
   const anteprima = ["reina", "gokiele", "zeutiz", "ironlus", "brolymone"].map(id => PER_ID[id]).filter(Boolean);
   return `${Online.htmlStrada()}
+  ${Torneo.htmlStrada()}
+  ${Settimana.htmlStrada()}
   <section class="eroe">
     <div class="eroe-testo">
       <h1 class="neon">Noiverso</h1>
@@ -672,15 +674,16 @@ function offertaDelGiorno() {
   return { t, prezzo: Math.round(TIPI_BUSTINA[t].prezzo * (1 - SCONTO_OFFERTA) / 10) * 10, presa: S.offerta === oggi() };
 }
 function htmlProdotto(t) {
-  const T = TIPI_BUSTINA[t], n = S.inventario[t] || 0;
-  return `<div class="prodotto" style="--c:${T.colore}">
+  const T = TIPI_BUSTINA[t], n = S.inventario[t] || 0, ev = Settimana.inEvidenza(t), prezzo = Settimana.prezzo(t);
+  return `<div class="prodotto ${ev ? "in-evidenza" : ""}" style="--c:${T.colore}">
+    ${ev ? `<span class="ev-etichetta">Serie della settimana · −${Math.round(Settimana.SCONTO * 100)}%</span>` : ""}
     ${htmlBustina(t)}
     <b>${esc(T.nome)}</b>
     <span class="nota">${esc(T.desc)}</span>
     ${n ? `<span class="ne-hai">Ne hai ${n}</span>` : ""}
     <div class="prodotto-prezzi">
-      <button class="btn primario" data-fx="monete" data-compra="${t}:1" ${S.admin || S.monete >= T.prezzo ? "" : "disabled"}>${T.prezzo} <i class="moneta-ico"></i></button>
-      <button class="btn" data-fx="monete" data-compra="${t}:5" ${S.admin || S.monete >= T.prezzo * 5 ? "" : "disabled"}>×5 · ${T.prezzo * 5}</button>
+      ${ev ? `<s class="nota">${T.prezzo}</s>` : ""}<button class="btn primario" data-fx="monete" data-compra="${t}:1" ${S.admin || S.monete >= prezzo ? "" : "disabled"}>${prezzo} <i class="moneta-ico"></i></button>
+      <button class="btn" data-fx="monete" data-compra="${t}:5" ${S.admin || S.monete >= prezzo * 5 ? "" : "disabled"}>×5 · ${prezzo * 5}</button>
     </div>
   </div>`;
 }
@@ -730,7 +733,7 @@ function compraBustina(arg, el) {
   const off = offertaDelGiorno();
   let n = 1, costo = T.prezzo;
   if (q === "offerta") { if (off.t !== t || off.presa) return; costo = off.prezzo; S.offerta = oggi(); }
-  else { n = +q || 1; costo = T.prezzo * n; }
+  else { n = +q || 1; costo = Settimana.prezzo(t) * n; }
   if (!S.admin && S.monete < costo) { mostraAvviso("Non hai abbastanza monete."); return; }
   if (!S.admin) S.monete -= costo;
   S.inventario[t] = (S.inventario[t] || 0) + n;
@@ -877,7 +880,7 @@ function usaBustina(tipo, pagando) {
   }
   const esiti = apriBustina(tipo);
   const su = aggiungiXP(XP_BUSTINA);
-  Missioni.evento("bustina");
+  Missioni.evento("bustina", { tipo });
   const graffito = Graffiti.forseInBustina(tipo);
   salva();
   Archivio.pubblicaClassifica();
@@ -1360,6 +1363,8 @@ function vistaSfida() {
     </div>
     ${Online.htmlAmici()}
     <div class="prima-partita">${Graffiti.htmlPannello()}${Zaino.htmlPannello()}</div>
+    ${BossGiorno.htmlSfida()}
+    ${Settimana.htmlSfida()}
     ${socialeAttivo() ? `<div class="sfida-sociale">${Boss.htmlGrande()}<div class="amici-invito"><b>Sfida un amico</b><span class="nota">Combatti contro la squadra vera di un amico, guidata dal computer. Se vinci gli rubi un punto in classifica.</span><button class="btn primario" data-fx="spinta" data-azione="vai-amici">Scegli chi sfidare</button></div></div>
     <div class="titolo-riga piccola"><h3>Contro il computer</h3></div>` : ""}
     <div class="modo-riga">${segmento("modalita", "Modalità", [["classica", "Classica 5 contro 5"], ["rapida", "Rapida 3 contro 3"]])}</div>
@@ -1594,10 +1599,10 @@ async function ritiraPremiClassifica() {
   const medaglie = ["🥇", "🥈", "🥉"];
   const mostra = () => {
     if (B || Tutorial.attivo || !$("#accesso").hidden || !$("#modale").hidden || !$("#apertura").hidden) { setTimeout(mostra, 2000); return; }
-    apriModale(`<div class="codice-modale premio-classifica"><span class="codice-tag">Classifica del mese</span>
+    apriModale(`<div class="codice-modale premio-classifica"><span class="codice-tag">${righe.some(x => x.tipo === "torneo") ? "Premi" : "Classifica del mese"}</span>
       ${righe.map(x => `<div class="premio-podio"><span class="medaglia">${medaglie[x.posizione - 1] || "🏅"}</span>
-        <h2>${x.posizione}° posto!</h2><p>${esc(String(x.titolo || "Classifica"))} · ${Number(x.punti) || 0} punti</p>
-        <p class="codice-premio">Hai ricevuto: <b>${esc(PREMI_CLASSIFICA[x.posizione - 1] || "")}</b></p></div>`).join("")}
+        <h2>${x.posizione}° posto!</h2><p>${x.tipo === "torneo" ? `🏆 ${esc(String(x.titolo || "Torneo"))}` : `${esc(String(x.titolo || "Classifica"))} · ${Number(x.punti) || 0} punti`}</p>
+        <p class="codice-premio">Hai ricevuto: <b>${esc(x.tipo === "torneo" ? testoPremio(x.premio || {}) : PREMI_CLASSIFICA[x.posizione - 1] || "")}</b></p></div>`).join("")}
       <div class="azioni centro"><button class="btn oro" data-azione="chiudi">Grande!</button></div></div>`);
     FX.esplosione(innerWidth / 2, innerHeight / 3, { n: 110, forma: "coriandolo", colori: ["#f2c14e", "#fff3c4", "#ff2e46", "#3fd8ff"], velocita: 9, dimensione: 6 });
   };
@@ -1635,6 +1640,7 @@ function vistaClassifica() {
     <div class="titolo-riga"><h2>${esc(titoloClassifica())}</h2></div>
     <p class="nota">Contano solo le sfide dal vivo: +3 punti per ogni vittoria, 0 per le sconfitte. A fine mese premi ai primi tre: 🥇 ${PREMI_CLASSIFICA[0]} · 🥈 ${PREMI_CLASSIFICA[1]} · 🥉 ${PREMI_CLASSIFICA[2]}.</p>
     ${htmlAlbo()}
+    ${Torneo.htmlTabellone()}
     <table class="classifica">
       <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vinte / giocate</th><th>Carte</th><th>Pass</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
       <tbody>${classificaDati.map((r, i) => `
@@ -1763,7 +1769,7 @@ async function entra(slot, profiloLocale) {
   if (slot === "admin") setTimeout(() => mostraAvviso("Modalità admin: monete infinite e tutte le carte. Questi progressi non vanno in classifica."), 400);
   Tutorial.allIngresso();
   if (slot !== "admin") Missioni.finestraAccesso();
-  Zaino.carica(); Reazioni.carica(); Sinergie.carica();
+  Zaino.carica(); Reazioni.carica(); Sinergie.carica(); Settimana.carica(); Torneo.carica(true);
   Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); });
   if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); ritiraPremiClassifica(); }
   Boss.carica();
@@ -1881,6 +1887,8 @@ function vistaAdmin() {
       <div class="admin-box largo" id="admin-graffiti">${Graffiti.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-zaino">${Zaino.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-sinergie">${Sinergie.htmlAdmin()}</div>
+      <div class="admin-box largo" id="admin-evidenza">${Settimana.htmlAdmin()}</div>
+      <div class="admin-box largo" id="admin-torneo">${Torneo.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-reazioni">${Reazioni.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-codici">${htmlAdminCodici()}</div>
       <div class="admin-box largo" id="admin-controlli">${htmlAdminControlli()}</div>
@@ -2221,6 +2229,7 @@ async function azioneAdmin(cosa, el) {
   if (cosa.startsWith("cod-")) { azioneCodici(cosa, el); return; }
   if (cosa.startsWith("ctl-")) { azioneControlli(cosa, el); return; }
   if (cosa.startsWith("reaz-")) { Reazioni.azioneAdmin(cosa, el); return; }
+  if (cosa.startsWith("torneo-")) { Torneo.admin(cosa, el); return; }
   if (cosa === "sinergie-base") {
     if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
     Sinergie.salvaAdmin(null, true); return;
@@ -2437,7 +2446,7 @@ function apriTappa(k, i) {
 function avviaStoria(k, i) {
   const cap = STORIA[k], t = cap.tappe[i];
   chiudiModale();
-  avviaSfida({ id: "storia", nome: t.titolo, abilita: t.abilita, liv: t.liv, premio: 0, punti: 0, xp: 0, storia: { k, i }, graffitoNemico: t.boss ? Graffiti.aCaso(k + 1) : null }, null, t.nemici)
+  avviaSfida({ id: "storia", nome: t.titolo, abilita: t.abilita, liv: t.liv, premio: 0, punti: 0, xp: 0, storia: { k, i }, campo: STORIA[k].campo, graffitoNemico: t.boss ? Graffiti.aCaso(k + 1) : null }, null, t.nemici)
     .then(() => { if (B) aggiungiRegistro({ testo: `${PER_ID[t.parla].nome}: «${t.frase}»`, avviso: true }); });
 }
 
@@ -2534,12 +2543,16 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
   if (!L.spettatore && !L.vivo) B.rngIA = Math.random;
   const gMio = L.spettatore ? L.spettatore.gA : L.vivo ? L.vivo.graffitoMio : Graffiti.mio(), gNem = Graffiti.nemico(L);   // una volta sola: per i bot può essere a caso
   B.impostaGraffiti(gMio, gNem);
+  const campoFisso = L.spettatore ? L.spettatore.campo : L.campo;   // storia: il campo della mappa (e chi guarda lo riceve)
+  if (campoFisso) B.impostaCampo(campoFisso);
+  const bossG = L.spettatore ? L.spettatore.bossGiorno : L.bossGiorno;   // boss del giorno: corazza e punto debole
+  if (bossG) BossGiorno.prepara(B, bossG);
   B.zaino = L.spettatore ? null : Zaino.perBattaglia();
   if (L.spettatore) Online.rigioca(B);   // porta la battaglia al punto in cui è adesso, prima di disegnare l'arena
   if (L.bossGruppo) Boss.prepara(B);
   if (!L.spettatore && !L.vivo && !L.provaAdmin && !S.admin)
     Online.iniziaDiretta({ seme, sqA: mia, sqB: nemici, gA: gMio, gB: gNem, nomeA: (S.profilo.nome || "Giocatore").slice(0, 22), nomeB: `${L.nome} (computer)`,
-      bossPv: L.bossGruppo ? B.lati[1].squadra[0].pvMax : null });
+      bossPv: L.bossGruppo ? B.lati[1].squadra[0].pvMax : null, campo: campoFisso || null, bossGiorno: L.bossGiorno || null });
   document.body.classList.add("in-battaglia");
   $("#app").classList.add("in-battaglia");
   const main = $("#vista");
@@ -2701,7 +2714,7 @@ function htmlAzioni() {
   const vivo = livelloAttuale.vivo ? Online.htmlBanner() : "";
   const diretta = !livelloAttuale.vivo && Online.inDiretta ? Online.htmlDiretta() : "";
   if (vivo && !animazione && B.vincitore < 0 && (Online.inAttesa() || (B.serveSostituzione(1) && !B.serveSostituzione(0)))) {
-    return `${vivo}${Graffiti.htmlBattaglia(B)}<div class="vivo-attesa"><span class="vivo-puntini"><i></i><i></i><i></i></span>
+    return `${vivo}${htmlCampo()}${Graffiti.htmlBattaglia(B)}<div class="vivo-attesa"><span class="vivo-puntini"><i></i><i></i><i></i></span>
       <p>${Online.inAttesa() ? `Hai scelto <b>${esc(Online.scelta())}</b>.` : ""} ${esc(livelloAttuale.nome)} sta scegliendo…</p></div>`;
   }
   if (finita) {
@@ -2709,6 +2722,7 @@ function htmlAzioni() {
     return `<div class="fine ${vinto ? "vinto" : "perso"}">
       <b>${vinto ? "Vittoria!" : "Sconfitta"}</b>
       <span>${(() => { const pr = premiSfida(livelloAttuale); return vinto ? `+${pr.monete} monete · +${pr.xp} XP` : `+10 monete · +${XP_SCONFITTA} XP`; })()}</span>
+      ${vinto && livelloAttuale.extraFine ? `<span class="punti-amico">${livelloAttuale.extraFine}</span>` : ""}
       ${htmlEspCarte()}
       <div class="azioni centro"><button class="btn primario" data-fx="onda" data-azione="rivincita">Rivincita</button><button class="btn" data-fx="salto" data-azione="esci-battaglia">Torna alle sfide</button></div>
     </div>`;
@@ -2726,7 +2740,7 @@ function htmlAzioni() {
   const ordine = primo === 0 ? `<b>Attacchi per primo</b> (${perche})`
     : primo === 1 ? `<b>${esc(d.c.nome)} attacca per primo</b> (${perche})`
     : `Velocità pari (${a.vel}): il primo attacco si decide a sorte, poi si va a turno`;
-  return `${vivo}${diretta}${Graffiti.htmlBattaglia(B)}
+  return `${vivo}${diretta}${htmlCampo()}${Graffiti.htmlBattaglia(B)}
   <p class="ordine-turno ${primo === 0 ? "mio" : primo === 1 ? "suo" : ""}">⚡ ${ordine}</p>
   ${htmlLegendaTipi()}
   <div class="mana-riga">
@@ -2776,8 +2790,14 @@ function segnaTurnoAttesa() {
   segnaTurno(0, "Tocca a te", B.serveSostituzione(0) ? "Scegli chi mandare in campo" : `Turno ${B.turno} · scegli una mossa`);
 }
 
+// Il campo di battaglia: riquadro nel pannello e colore dell'arena
+function htmlCampo() {
+  const c = B && CAMPI[B.campo]; if (!c) return "";
+  return `<p class="campo-banner" style="--c:${c.colore}"><span class="campo-ico">${c.icona}</span><span><b>Campo: ${c.nome}</b><small>${c.desc}</small></span></p>`;
+}
 function aggiornaBattaglia() {
   if (!B || !$("#arena")) return;
+  $("#arena").dataset.campo = B.campo || "";
   if (!animazione) segnaTurnoAttesa();
   $("#hud-1").innerHTML = htmlHud(1);
   $("#hud-0").innerHTML = htmlHud(0);
@@ -2912,6 +2932,7 @@ function chiudiSfida() {
     S.monete += pr.monete; S.stats.vittorie++; S.stats.punti += pr.punti;
     su = aggiungiXP(pr.xp);
     Missioni.evento("vittoria", { squadra: B.lati[0].squadra.map(x => x.id) });
+    livelloAttuale.extraFine = livelloAttuale.dopoVittoria ? livelloAttuale.dopoVittoria() : "";
     if (arena) arena.vittoria(0);
     setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 60, forma: "coriandolo", colori: ["#f2c14e", "#ff2e46", "#3fd8ff", "#ffffff"], velocita: 8, dimensione: 5, durata: 1500 }); } }, 50);
   } else { S.monete += 10; S.stats.sconfitte++; su = aggiungiXP(XP_SCONFITTA); }
@@ -2953,7 +2974,7 @@ document.addEventListener("change", e => { if (e.target.id === "img-file" && e.t
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3004,6 +3025,11 @@ document.addEventListener("click", e => {
   if (t.dataset.zainoPosto !== undefined) { Zaino.apriPosto(+t.dataset.zainoPosto); return; }
   if (t.dataset.zainoMetti !== undefined) { Zaino.metti(t.dataset.zainoMetti); return; }
   if (t.dataset.usaOggetto !== undefined) { Zaino.usa(+t.dataset.usaOggetto); return; }
+  if (t.dataset.torneo) { Torneo.iscriviti(t.dataset.torneo === "iscriviti"); return; }
+  if (t.dataset.sfidaSettimana !== undefined) { Settimana.avvia(+t.dataset.sfidaSettimana); return; }
+  if (t.dataset.riscuotiSettimana) { Settimana.riscuoti(t.dataset.riscuotiSettimana); return; }
+  if (t.dataset.adminEvidenza !== undefined) { Settimana.salvaAdmin(t.dataset.adminEvidenza); return; }
+  if (t.dataset.campoScelto) { const [i, k] = t.dataset.campoScelto.split(":"); Zaino.usa(+i, k); return; }
   if (t.dataset.compraGraffito) { Graffiti.compraUno(t.dataset.compraGraffito, t); return; }
   if (t.dataset.emojiPer) { Graffiti.apriEmoji(t.dataset.emojiPer); return; }
   if (t.dataset.bomboletta) { Graffiti.compra(+t.dataset.bomboletta, t); return; }
@@ -3049,6 +3075,7 @@ document.addEventListener("click", e => {
     case "admin-vinci": if (B && S.admin && !animazione && B.vincitore < 0) { B.lati[1].squadra.forEach(x => { x.pv = 0; }); B.vincitore = 0; if (arena) arena.sincronizza(B); chiudiSfida(); } break;
     case "vai-bustine": vai("bustine"); break;
     case "vai-sfida": vai("sfida"); break;
+    case "vai-classifica": vai("classifica"); break;
     case "vai-squadra": vai("squadra"); break;
     case "vai-pass": vai("pass"); break;
     case "vai-negozio": vai("negozio"); break;
@@ -3079,7 +3106,8 @@ document.addEventListener("click", e => {
     case "annulla-invito": Online.annullaInvito(); break;
     case "accetta-invito": Online.rispondi(true); break;
     case "rifiuta-invito": Online.rispondi(false); break;
-    case "rivincita": chiudiArena(); if (livelloAttuale.storia) avviaStoria(livelloAttuale.storia.k, livelloAttuale.storia.i); else avviaSfida(livelloAttuale.id); break;
+    case "rivincita": chiudiArena(); if (livelloAttuale.storia) avviaStoria(livelloAttuale.storia.k, livelloAttuale.storia.i); else if (livelloAttuale.rifai) livelloAttuale.rifai(); else avviaSfida(livelloAttuale.id); break;
+    case "boss-giorno": BossGiorno.avvia(); break;
     case "storia-avanti": {
       const { k, i } = livelloAttuale.storia, p = i + 1 < STORIA[k].tappe.length ? { k, i: i + 1 } : { k: k + 1, i: 0 };
       esciBattaglia(); capStoria = p.k; disegna(); setTimeout(() => apriTappa(p.k, p.i), 250); break;
@@ -3103,6 +3131,7 @@ document.addEventListener("submit", e => {
   if (e.target.id === "form-titolo-classifica") salvaTitoloClassifica(e.target);
   if (e.target.id === "form-zaino") Zaino.salvaAdmin(e.target);
   if (e.target.id === "form-sinergie") Sinergie.salvaAdmin(e.target);
+  if (e.target.id === "form-torneo") Torneo.crea(e.target);
   if (e.target.id === "form-graffiti") Graffiti.pubblica();
   if (e.target.id === "form-modifica") {
     const nome = $("#nome-modifica").value.trim().slice(0, 20);

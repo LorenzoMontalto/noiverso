@@ -8,7 +8,7 @@
 // ============================================================
 const Tutorial = (() => {
   const PREMIO = 150;
-  const VERSIONE = 3;   // quando il tutorial cambia molto, chi l'aveva già fatto riceve un avviso (una volta)
+  const VERSIONE = 4;   // quando il tutorial cambia molto, chi l'aveva già fatto riceve un avviso (una volta)
   let passi = [], i = 0, attivo = false, timer = null, radice = null, entrato = 0;
 
   const vis = el => { if (!el) return null; const r = el.getBoundingClientRect(); return r.width > 2 && r.height > 2 ? r : null; };
@@ -23,6 +23,7 @@ const Tutorial = (() => {
       { vista: "strada", bersaglio: ".testa .monete", titolo: "Le monete", testo: `Servono per comprare bustine nel negozio e per potenziare le carte. Le guadagni vincendo battaglie, con la storia e con il pass.` },
       { vista: "strada", bersaglio: ".nav", titolo: "Le sezioni", testo: "Da questa barra ti sposti tra le parti del gioco. Il numerino su una sezione vuol dire che lì c'è qualcosa da fare." },
       { vista: "strada", bersaglio: ".oggi", titolo: "Ogni giorno", testo: "Qui trovi il <b>premio di accesso</b> (7 giorni di fila danno premi sempre più grossi), le <b>missioni del giorno</b> e della settimana e il <b>boss del gruppo</b> da battere tutti insieme." },
+      { vista: "strada", bersaglio: ".evidenza-strada", titolo: "Serie della settimana", testo: "Ogni settimana una serie è <b>in evidenza</b>: la sua bustina costa meno e nella pagina Sfide trovi <b>3 sfide speciali</b> e 3 missioni su quella serie. Quando c'è un <b>torneo</b> tra amici lo vedi qui sopra: ti iscrivi e le partite si giocano dal vivo." },
       { vista: "strada", bersaglio: ".amici-strada", titolo: "Amici online", testo: "Qui vedi chi è nel gioco adesso. Tocca <b>Sfida</b> per una battaglia <b>dal vivo</b>: si gioca a turni nello stesso momento e chi vince prende <b>3 punti</b> in classifica. Se un amico sta già combattendo (anche contro il computer) tocca 👀 per <b>guardare</b> la sua battaglia e mandargli reazioni dalla tribuna." },
       { vista: "bustine", bersaglio: '[data-apri="benvenuto"]', titolo: "Le bustine",
         aspetta: () => !S.inventario.benvenuto && $("#apertura").hidden,
@@ -50,6 +51,7 @@ const Tutorial = (() => {
       { battaglia: true, bersaglio: "#neon-turno", titolo: "A chi tocca", testo: "Qui in alto vedi sempre di chi è il turno. La tua squadra è in basso a sinistra, quella avversaria in alto a destra." },
       { battaglia: true, bersaglio: ".mana-riga", bolla: "alto", titolo: "L'energia", testo: `L'energia è di tutta la squadra: si parte da ${ENERGIA_INIZIALE} e ogni turno ne arrivano 2. Le mosse più forti costano di più: i rombi sopra ogni mossa dicono quanto.` },
       { battaglia: true, bersaglio: ".mosse", bolla: "alto", titolo: "Le mosse", testo: "Ogni turno scegli una mossa. <b>Carica</b> ti dà +2 energia e ti fa subire meno danni: utile per preparare la mossa finale. Il riquadro <b>Consiglio</b> ti suggerisce la mossa migliore contro il computer (lo spegni dal profilo; nelle sfide dal vivo non c'è mai). Le scritte su chi batte chi invece restano solo fino alla fine del <b>capitolo 1</b>: poi c'è la legenda dei tipi." },
+      { battaglia: true, bersaglio: ".campo-banner", titolo: "Il campo", testo: "Ogni battaglia si gioca su un <b>campo</b> che cambia una regola per tutti: Pioggia, Notte, Stadio pieno, Lava o Tempio. Leggilo prima di scegliere la mossa! Con la <b>Radio pirata</b> dello zaino puoi cambiarlo." },
       { battaglia: true, bersaglio: ".mosse", bolla: "alto", titolo: "Chi attacca prima", testo: "Ogni turno <b>entrambe le carte fanno una mossa</b>: la velocità decide solo chi colpisce per primo, non dà attacchi in più. Se la tua carta va KO prima di muoversi, quel turno salta la sua mossa." },
       { battaglia: true, bersaglio: ".zaino-riga", bolla: "alto", titolo: "Lo zaino", saltaSe: () => !document.querySelector(".zaino-riga"), testo: "Questi sono gli oggetti che hai portato: toccane uno per usarlo. Puoi usarne uno per turno, e ognuno vale una volta sola per battaglia." },
       { battaglia: true, bersaglio: "#reazioni", titolo: "Le reazioni", testo: "Tocca la faccina per mandare una <b>reazione</b>: compare grande sopra la tua carta. Ne puoi mandare una ogni 3 secondi. Nelle sfide dal vivo la vedono l'avversario e chi sta guardando." },
@@ -200,7 +202,7 @@ const Tutorial = (() => {
       setTimeout(() => mostraAvviso("Novità: c'è un tutorial! Lo trovi nel tuo profilo, in alto a destra."), 1600);
     } else if ((S.tutorial.versione || 1) < VERSIONE) {
       S.tutorial = Object.assign({}, S.tutorial, { versione: VERSIONE }); salva();
-      setTimeout(() => mostraAvviso("Il tutorial è aggiornato con le novità (sinergie, sfide dal vivo, zaino, reazioni, scambi, Ultra…). Lo rifai dal tuo profilo, in alto a destra."), 1600);
+      setTimeout(() => mostraAvviso("Il tutorial è aggiornato con le novità (campi di battaglia, serie della settimana, tornei, sinergie…). Lo rifai dal tuo profilo, in alto a destra."), 1600);
     }
   }
 

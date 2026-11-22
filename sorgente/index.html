@@ -1691,6 +1691,61 @@ body.in-accesso { overflow: hidden; }
 .mv-carta span { font-size: .6rem; line-height: 1.1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
 .mv-carta.buia { cursor: default; opacity: .55; border-style: dashed; }
 .mv-carta.buia i { display: grid; place-items: center; width: 100%; aspect-ratio: 5 / 7; border-radius: 7px; background: #0008; font-style: normal; font-weight: 900; font-size: 1.3rem; color: var(--spento); }
+
+/* campi di battaglia */
+.campo-banner { display: flex; gap: 10px; align-items: center; margin: 0 0 8px; padding: 8px 12px; border-radius: 12px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 22%, transparent), transparent); border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); font-size: .82rem; }
+.campo-banner b { color: var(--c); display: block; } .campo-banner small { color: var(--spento); }
+.campo-ico { font-size: 1.5rem; line-height: 1; }
+#arena[data-campo]::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: .16; transition: background .6s; }
+#arena[data-campo="pioggia"]::after { background: repeating-linear-gradient(105deg, transparent 0 14px, #5aa9ff 14px 15px); opacity: .12; }
+#arena[data-campo="notte"]::after { background: radial-gradient(ellipse at 50% 0%, transparent 30%, #0a0420 90%); opacity: .5; }
+#arena[data-campo="stadio"]::after { background: radial-gradient(circle at 15% 10%, #f2c14e55, transparent 30%), radial-gradient(circle at 85% 10%, #f2c14e55, transparent 30%); opacity: .7; }
+#arena[data-campo="lava"]::after { background: linear-gradient(0deg, #ff4a1a66, transparent 45%); opacity: .55; }
+#arena[data-campo="tempio"]::after { background: radial-gradient(circle at 50% 30%, #7dffb033, transparent 60%); opacity: .7; }
+.scelta-campo h3 { margin-top: 0; }
+.campi-lista { display: grid; gap: 8px; }
+.campo-opzione { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; text-align: left; padding: 10px 12px; border-radius: 14px; border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); color: inherit; font: inherit; cursor: pointer; }
+.campo-opzione .campo-ico { grid-row: span 2; } .campo-opzione b { color: var(--c); } .campo-opzione small { color: var(--spento); }
+.campo-opzione[disabled] { opacity: .45; cursor: default; }
+
+/* serie della settimana */
+.evidenza-strada { display: flex; gap: 12px; align-items: center; margin: 0 0 14px; padding: 12px 14px; border-radius: 16px; background: linear-gradient(90deg, color-mix(in srgb, var(--c) 25%, transparent), var(--muro)); border: 1px solid color-mix(in srgb, var(--c) 60%, transparent); }
+.evidenza-strada > div { flex: 1; display: grid; gap: 1px; } .evidenza-strada small { color: var(--spento); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; } .evidenza-strada b { color: var(--c); font-size: 1.1rem; }
+.ev-stemma { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font-size: 1.3rem; background: var(--c); color: #0b0a10; font-weight: 900; }
+.ev-stemma.piccolo { display: inline-grid; width: 26px; height: 26px; font-size: .85rem; vertical-align: middle; }
+.prodotto.in-evidenza { box-shadow: 0 0 0 2px var(--c), 0 0 22px color-mix(in srgb, var(--c) 45%, transparent); position: relative; }
+.ev-etichetta { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); white-space: nowrap; padding: 2px 10px; border-radius: 999px; background: var(--c); color: #0b0a10; font-size: .68rem; font-weight: 900; }
+.settimana { margin: 14px 0; padding: 12px 14px; border-radius: 18px; background: var(--muro); border: 1px solid color-mix(in srgb, var(--c) 50%, transparent); }
+.sett-sfide { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 8px 0 12px; }
+.sett-sfida { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--c) 55%, transparent); background: color-mix(in srgb, var(--c) 12%, transparent); color: inherit; font: inherit; cursor: pointer; }
+.sett-sfida b { color: var(--c); } .sett-sfida small { color: var(--spento); font-size: .74rem; } .sett-sfida.fatta { opacity: .7; }
+.sett-missioni { display: grid; gap: 8px; }
+.sett-missione { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; font-size: .85rem; }
+.sett-missione .barra { grid-column: 1; } .sett-missione small { color: var(--spento); } .sett-missione .btn, .sett-missione .ok { grid-row: 1 / span 3; grid-column: 2; }
+.sett-missione.fatta { opacity: .6; } .sett-missione .ok { color: #6fe3a0; }
+/* boss del giorno */
+.boss-giorno { margin: 14px 0; padding: 12px 14px; border-radius: 18px; background: radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--c, #ff2e46) 25%, transparent), var(--muro) 60%); border: 1px solid color-mix(in srgb, var(--c, #ff2e46) 60%, transparent); }
+.boss-giorno.chiuso { opacity: .75; --c: #666; }
+.bg-testa { display: flex; gap: 12px; align-items: center; } .bg-testa > div { display: grid; gap: 2px; } .bg-testa small { color: var(--spento); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; } .bg-testa b { font-size: 1.15rem; color: var(--c); }
+.bg-testa .carta { width: 84px; flex: none; }
+.bg-ico { font-size: 2rem; }
+.bg-regole { display: grid; gap: 6px; margin: 10px 0; } .bg-regole p { margin: 0; padding: 8px 10px; border-radius: 12px; font-size: .84rem; background: rgba(255, 255, 255, .04); }
+.bg-cor b { color: #ff8a8a; } .bg-deb b { color: #6fe3a0; }
+
+/* torneo */
+.torneo-strada { display: flex; gap: 12px; align-items: center; margin: 0 0 12px; padding: 12px 14px; border-radius: 16px; background: linear-gradient(90deg, #f2c14e33, var(--muro)); border: 1px solid #f2c14e88; }
+.torneo-strada > div { flex: 1; display: grid; gap: 1px; } .torneo-strada small { color: var(--spento); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; } .torneo-strada b { color: #f2c14e; }
+.tr-coppa { font-size: 2rem; }
+.torneo { margin: 14px 0 18px; padding: 12px 14px; border-radius: 18px; background: var(--muro); border: 1px solid #f2c14e66; }
+.tr-premi { display: flex; flex-wrap: wrap; gap: 6px; } .tr-premi span { padding: 3px 10px; border-radius: 999px; background: #f2c14e1f; font-size: .78rem; }
+.tr-tabellone { display: flex; gap: 12px; overflow-x: auto; padding: 6px 2px 4px; }
+.tr-turno { flex: none; width: 190px; display: flex; flex-direction: column; gap: 8px; justify-content: space-around; }
+.tr-turno > b { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--spento); } .tr-f3 { margin-top: 10px; }
+.tr-partita { border-radius: 12px; border: 1px solid var(--linea); background: rgba(255, 255, 255, .03); padding: 6px 8px; display: grid; gap: 3px; }
+.tr-partita.mia { border-color: #f2c14e; box-shadow: 0 0 12px #f2c14e44; } .tr-partita small { color: var(--spento); font-size: .68rem; }
+.tr-gioc { display: flex; gap: 6px; align-items: center; font-size: .82rem; } .tr-gioc.vince { font-weight: 800; color: #6fe3a0; } .tr-gioc.perde { opacity: .5; text-decoration: line-through; }
+.tr-admin { display: grid; gap: 6px; } .tr-admin > div { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.campi-torneo fieldset { border: 1px solid var(--linea); border-radius: 12px; margin: 6px 0; padding: 6px 10px; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>
@@ -1747,6 +1802,7 @@ body.in-accesso { overflow: hidden; }
 <script src="zaino.js"></script>
 <script src="online.js"></script>
 <script src="reazioni.js"></script>
+<script src="eventi.js"></script>
 <script src="app.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria

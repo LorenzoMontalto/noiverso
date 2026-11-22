@@ -43,6 +43,8 @@ class BattagliaSpecchio {
   attaccoEffettivo(l, x) { return this.c.attaccoEffettivo(1 - l, x); }
   _valuta(l, a, d, m) { return this.c._valuta(1 - l, a, d, m); }
   impostaGraffiti(g0, g1) { this.c.impostaGraffiti(g1, g0); }
+  get campo() { return this.c.campo; }
+  impostaCampo(id) { return this.c.impostaCampo(id); }
   risolviTurno(az0, az1) { return specchiaEventi(this.c.risolviTurno(az1, az0)); }
   sostituisci(l, i) { return specchiaEventi(this.c.sostituisci(1 - l, i)); }
   usaOggetto(l, id, nome) { const r = this.c.usaOggetto(1 - l, id, nome); return Object.assign({}, r, { ev: specchiaEventi(r.ev) }); }
@@ -611,6 +613,7 @@ const Online = (() => {
       const r = await rpcSociale("chiudi_partita_vivo", { partita: P.id, avversario: P.avv.id, sono_a: P.host, chi_vince: vincitore, firma: P.canon ? firma() : "", motivo });
       P.esitoServer = r && r.stato; P.puntiServer = r ? Number(r.punti) || 0 : 0;
     } catch (e) { P.esitoServer = "errore"; P.erroreServer = e.message; }
+    try { Torneo.carica(true); } catch (e) { /* il torneo è un extra */ }
     if (B && B.vincitore >= 0) aggiornaBattaglia();
   }
   function chiudi() {
