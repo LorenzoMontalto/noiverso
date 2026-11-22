@@ -2002,7 +2002,7 @@ function vistaStoria() {
       <span class="cap-sim">${capitoloSbloccato(j) ? c.simbolo : "✕"}</span><span><small>Capitolo ${j + 1}</small><b>${esc(c.titolo)}</b></span><em>${stelleCapitolo(j)}/18 ★</em></button>`).join("")}</div>
     <div class="cap-testa">
       <span class="serie-stemma" aria-hidden="true">${cap.simbolo}</span>
-      <div><p class="serie-nome">Capitolo ${k + 1}${cap.serie ? ` · ${esc(SERIE[cap.serie].nome)}` : " · Finale"}</p><h3>${esc(cap.titolo)}</h3><p class="nota">${esc(cap.intro)}</p></div>
+      <div><p class="serie-nome">Capitolo ${k + 1}${cap.serie ? ` · ${esc(SERIE[cap.serie].nome)}` : cap.sottotitolo ? ` · ${esc(cap.sottotitolo)}` : " · Finale"}</p><h3>${esc(cap.titolo)}</h3><p class="nota">${esc(cap.intro)}</p></div>
     </div>
     ${aperto ? "" : `<p class="consiglio forte"><b>Capitolo bloccato.</b> Batti il boss del capitolo ${k} per aprirlo.</p>`}
     <div class="mondo-cornice">

@@ -32,6 +32,7 @@ const Trofei = (() => {
       { id: "lode-1", nome: "Trenta e lode", desc: "Porta una carta al 30 e lode", titolo: "Lodato", premio: 400, prog: lodi, max: 1 },
       { id: "bustine-50", nome: "Strappabustine", desc: "Apri 50 bustine", titolo: "Strappabustine", premio: 200, prog: () => st("bustine"), max: 50 },
       { id: "stelle-30", nome: "Narratore", desc: "Prendi 30 stelle nella storia", titolo: "Narratore", premio: 250, prog: stelleTot, max: 30 },
+      { id: "stelle-120", nome: "Giramondo", desc: "Prendi 120 stelle nella storia", titolo: "Giramondo", premio: 600, prog: stelleTot, max: 120 },
       { id: "pass-50", nome: "Fedelissimo", desc: "Arriva al livello 50 del pass", titolo: "Fedelissimo", premio: 300, prog: livelloPass, max: 50 },
       { id: "accessi-7", nome: "Sempre presente", desc: "Riscuoti il premio di accesso 7 giorni di fila", titolo: "Sempre presente", premio: 200, prog: () => st("serieMax"), max: 7 },
     );

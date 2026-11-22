@@ -96,21 +96,93 @@ const STORIA = [
     ],
   },
   {
+    id: "c7", titolo: "Il porto dei contrabbandieri", serie: null, sottotitolo: "Mafiosi contro Supereroi", colore: "#3fd8ff", simbolo: "⚓",
+    intro: "Di notte al porto arrivano navi senza nome. Le bande della città e gli eroi si contendono il molo, e tu ci finisci in mezzo.",
+    tappe: [
+      { titolo: "I container rossi", nemici: ["rojo", "fuego", "diegkeye", "stellascura", "lasombra"], liv: [1, 1], abilita: 0.78, monete: 160,
+        parla: "diegkeye", frase: "Ho visto tutto dalla gru: nel container numero nove c'è qualcosa che non dovresti vedere." },
+      { titolo: "La dogana", nemici: ["cypips", "undercut", "chapo", "bandita", "vedovagreca"], liv: [1, 1], abilita: 0.8, monete: 170,
+        parla: "undercut", frase: "Documenti, prego. Ah, non li hai? Allora si passa alle maniere forti." },
+      { titolo: "Il mercato del pesce", nemici: ["fiesta", "eltigre", "comora", "waspy", "pelado"], liv: [1, 1], abilita: 0.82, monete: 180, bustina: "normale",
+        parla: "eltigre", frase: "Qui si vende tutto al chilo. Anche le carte sconfitte." },
+      { titolo: "La nave fantasma", nemici: ["elcuervo", "labruja", "mieloki", "wandessia", "ombra"], liv: [1, 1], abilita: 0.84, monete: 190,
+        parla: "labruja", frase: "Questa nave non tocca terra da cento anni. E stanotte ha fame." },
+      { titolo: "Il faro", nemici: ["spidertoto", "gossip", "ellobo", "diablo", "wonderrita"], liv: [1, 1], abilita: 0.86, monete: 200,
+        parla: "gossip", frase: "Dalla cima del faro si vede tutto. Anche il tuo prossimo errore." },
+      { titolo: "Il patto del molo", boss: true, nemici: ["reina", "ironlus", "mauthor", "loca", "ligulk"], liv: [1, 1], abilita: 0.88, monete: 350, bustina: "leggendaria",
+        parla: "ironlus", frase: "Mafia ed eroi, per una notte dalla stessa parte. Contro di te.", vittoria: "Il porto torna tranquillo e le navi ripartono. In un container però c'è una mappa strappata: porta a un deserto lontano..." },
+    ],
+  },
+  {
+    id: "c8", titolo: "Il deserto delle sfere", serie: null, sottotitolo: "Dragon Ball contro Dei", colore: "#e0a34a", simbolo: "☀",
+    intro: "Sotto la sabbia sono nascoste le sette sfere. I guerrieri del torneo le cercano da anni, ma gli dei non hanno nessuna voglia di lasciarle a qualcuno.",
+    tappe: [
+      { titolo: "La carovana", nemici: ["panky", "vidalessia", "demviky", "persene", "giulmai"], liv: [1, 1], abilita: 0.8, monete: 180,
+        parla: "panky", frase: "Che caldo! Facciamo che chi perde porta l'acqua per tutti?" },
+      { titolo: "L'oasi", nemici: ["aurera", "chichice", "aphroalessia", "solmone", "c18ora"], liv: [1, 1], abilita: 0.82, monete: 190,
+        parla: "aurera", frase: "L'acqua dell'oasi guarisce tutto. Tranne le sconfitte." },
+      { titolo: "Il canyon", nemici: ["criliziano", "nikulia", "herdiego", "diego17", "efesamuele"], liv: [1, 1], abilita: 0.84, monete: 200, bustina: "epica",
+        parla: "nikulia", frase: "Nel canyon l'eco ripete ogni passo. Il tuo lo sento da un'ora." },
+      { titolo: "La piramide", nemici: ["adelrizio", "freezovico", "pipsccolo", "dionpips", "bulsene"], liv: [1, 1], abilita: 0.86, monete: 210,
+        parla: "freezovico", frase: "Dentro la piramide comando io. Anche le mummie si inchinano." },
+      { titolo: "La tempesta di sabbia", nemici: ["artalice", "caulifrita", "gohanlollo", "atharita", "vegerizio"], liv: [1, 1], abilita: 0.88, monete: 220,
+        parla: "vegerizio", frase: "Nella tempesta tu non vedi niente. Io invece vedo benissimo la tua fine." },
+      { titolo: "Il guardiano delle sfere", boss: true, nemici: ["gokiele", "brolymone", "poseludovico", "aresorenzo", "zeutiz"], liv: [1, 1], abilita: 0.9, monete: 380, bustina: "leggendaria",
+        parla: "gokiele", frase: "Le sette sfere sono qui dietro. Per prenderle devi passare sopra di me... e sopra di loro.", vittoria: "Le sfere brillano nelle tue mani ed esprimi un desiderio. Un luna park? Strano desiderio... ma eccolo che si accende all'orizzonte." },
+    ],
+  },
+  {
+    id: "c9", titolo: "Il luna park maledetto", serie: null, sottotitolo: "Maghi contro Mafiosi", colore: "#ff4fd8", simbolo: "☠",
+    intro: "Le giostre girano da sole, la musica non si ferma mai e chi entra non trova più l'uscita. Qualcuno ha stregato il luna park.",
+    tappe: [
+      { titolo: "La biglietteria", nemici: ["lollon", "ginice", "tizievil", "lasombra", "fiesta"], liv: [1, 1], abilita: 0.82, monete: 200,
+        parla: "lollon", frase: "Un biglietto per la ruota panoramica? Fidati, è sicurissima. Quasi." },
+      { titolo: "Gli specchi deformanti", nemici: ["wandessia", "ritadora", "giulifleur", "panky", "dionpips"], liv: [1, 1], abilita: 0.84, monete: 210,
+        parla: "ritadora", frase: "Quale delle mie facce preferisci? Tanto le perdi tutte." },
+      { titolo: "Il tunnel dell'orrore", nemici: ["vikatrix", "labruja", "diablo", "auroruna", "adelrizio"], liv: [1, 1], abilita: 0.86, monete: 220, bustina: "normale",
+        parla: "vikatrix", frase: "Nel tunnel nessuno ti sente urlare. Che bello." },
+      { titolo: "Le montagne russe", nemici: ["samulett", "diegirius", "eltigre", "comora", "ludraco"], liv: [1, 1], abilita: 0.88, monete: 230,
+        parla: "diegirius", frase: "Su e giù, su e giù... e poi solo giù." },
+      { titolo: "La tenda della veggente", nemici: ["seneverr", "pipverus", "mieloki", "loca", "alessmione"], liv: [1, 1], abilita: 0.9, monete: 240,
+        parla: "pipverus", frase: "La sfera di cristallo dice che perderai. La sfera non sbaglia mai." },
+      { titolo: "Il padrone delle giostre", boss: true, nemici: ["simoldemort", "mauriziente", "reina", "ombra", "freezovico"], liv: [1, 1], abilita: 0.92, monete: 420, bustina: "leggendaria",
+        parla: "simoldemort", frase: "Benvenuto nel mio luna park. L'uscita? Non l'ho mai costruita.", vittoria: "Le giostre si fermano e la maledizione si spezza. Dalla cima della ruota panoramica, però, si vede una montagna che fuma..." },
+    ],
+  },
+  {
+    id: "c10", titolo: "Il cuore del vulcano", serie: null, sottotitolo: "Tutti contro tutti", colore: "#ff5a1f", simbolo: "▲",
+    intro: "La montagna si è svegliata. Fiumi di lava, grotte di cristallo e un cratere dove si sono radunati i più forti di ogni mondo, per vedere chi resta in piedi.",
+    tappe: [
+      { titolo: "Le pendici", nemici: ["rojo", "efesamuele", "fuego", "giulmai", "chichice"], liv: [1, 1], abilita: 0.84, monete: 220,
+        parla: "efesamuele", frase: "Qui sotto c'è la mia fucina. Non toccare niente: scotta." },
+      { titolo: "Le grotte di cristallo", nemici: ["c18ora", "diego17", "cypips", "persene", "waspy"], liv: [1, 1], abilita: 0.86, monete: 230,
+        parla: "c18ora", frase: "I cristalli riflettono ogni colpo. Anche quelli che non hai ancora tirato." },
+      { titolo: "Il fiume di lava", nemici: ["pipverus", "caulifrita", "eltigre", "nikulia", "aresorenzo"], liv: [1, 1], abilita: 0.88, monete: 240, bustina: "epica",
+        parla: "caulifrita", frase: "Il ponte regge solo uno di noi due. Indovina chi." },
+      { titolo: "Il campo di cenere", nemici: ["ombra", "vikatrix", "criliziano", "bandita", "herdiego"], liv: [1, 1], abilita: 0.9, monete: 250,
+        parla: "ombra", frase: "Nella cenere non si vedono le impronte. Le mie, di sicuro, no." },
+      { titolo: "Il cratere", nemici: ["ligulk", "brolymone", "seneverr", "pelado", "poseludovico"], liv: [1, 1], abilita: 0.92, monete: 260,
+        parla: "ligulk", frase: "Ligulk spacca. Ligulk spacca anche il vulcano." },
+      { titolo: "Fuoco e tuoni", boss: true, nemici: ["mauthor", "vegerizio", "samulett", "aresorenzo", "alessmione"], liv: [1, 1], abilita: 0.94, monete: 450, bustina: "leggendaria",
+        parla: "mauthor", frase: "Fuoco e tuoni: questa è la mia montagna. Inginocchiati, se le ginocchia non ti si sono sciolte.", vittoria: "Il vulcano si calma sotto i tuoi piedi. Resta un'ultima porta, in cima al cratere: quella che porta da Los Nueve." },
+    ],
+  },
+  {
     id: "c5", titolo: "Los Nueve", serie: null, colore: "#b866ff", simbolo: "✦",
     intro: "Tutte le storie portano qui. I più forti di ogni serie si sono uniti in un'unica squadra. È la sfida finale.",
     tappe: [
-      { titolo: "Ombre dal passato", nemici: ["ombra", "eltigre", "labruja", "comora", "criliziano"], liv: [4, 4], abilita: 0.66, monete: 130,
+      { titolo: "Ombre dal passato", nemici: ["ombra", "eltigre", "labruja", "comora", "criliziano"], liv: [4, 4], abilita: 0.86, monete: 260,
         parla: "ombra", frase: "Ti ho seguito per tutta la strada. Adesso tocca a me." },
-      { titolo: "Fulmini e saette", nemici: ["mauthor", "zeutiz", "vegerizio", "artalice", "ironlus"], liv: [4, 4], abilita: 0.76, monete: 140,
+      { titolo: "Fulmini e saette", nemici: ["mauthor", "zeutiz", "vegerizio", "artalice", "ironlus"], liv: [4, 4], abilita: 0.88, monete: 270,
         parla: "mauthor", frase: "Senti l'aria? Sta arrivando il temporale." },
-      { titolo: "Il caos", nemici: ["loca", "wandessia", "dionpips", "panky", "lasombra"], liv: [4, 4], abilita: 0.8, monete: 150, bustina: "epica",
+      { titolo: "Il caos", nemici: ["loca", "wandessia", "dionpips", "panky", "lasombra"], liv: [4, 4], abilita: 0.9, monete: 280, bustina: "epica",
         parla: "wandessia", frase: "Le regole? Le ho appena cambiate tutte." },
-      { titolo: "I giganti", nemici: ["ligulk", "brolymone", "poseludovico", "pelado", "wonderrita"], liv: [4, 5], abilita: 0.82, monete: 160,
+      { titolo: "I giganti", nemici: ["ligulk", "brolymone", "poseludovico", "pelado", "wonderrita"], liv: [4, 5], abilita: 0.92, monete: 290,
         parla: "brolymone", frase: "Siete piccoli... Tutti così piccoli..." },
-      { titolo: "Gli strateghi", nemici: ["reina", "freezovico", "mieloki", "adelrizio", "atharita"], liv: [4, 5], abilita: 0.86, monete: 170,
+      { titolo: "Gli strateghi", nemici: ["reina", "freezovico", "mieloki", "adelrizio", "atharita"], liv: [4, 5], abilita: 0.94, monete: 300,
         parla: "atharita", frase: "Ogni tua mossa l'ho già prevista. Anche questa." },
-      { titolo: "La squadra finale", boss: true, nemici: ["gokiele", "zeutiz", "reina", "ironlus", "aresorenzo"], liv: [5, 5], abilita: 0.92, monete: 500, bustina: "leggendaria", bustine: 2,
-        parla: "aresorenzo", frase: "Sei arrivato fin qui. Ora dimostra di meritare il posto tra Los Nueve.", vittoria: "Ce l'hai fatta: sei uno di Los Nueve. La città, il torneo, gli eroi, l'Olimpo e la scuola di magia parlano solo di te." },
+      { titolo: "La squadra finale", boss: true, nemici: ["gokiele", "zeutiz", "reina", "ironlus", "aresorenzo"], liv: [5, 5], abilita: 0.97, monete: 700, bustina: "leggendaria", bustine: 2,
+        parla: "aresorenzo", frase: "Sei arrivato fin qui. Ora dimostra di meritare il posto tra Los Nueve.", vittoria: "Ce l'hai fatta: sei uno di Los Nueve. Dalla città al vulcano, in tutti i mondi parlano solo di te." },
     ],
   },
 ];
@@ -126,10 +198,11 @@ function scrigniCapitolo(k) {
 
 
 
-// Livelli dei nemici in base alla posizione nella storia: dalla prima tappa (Lv1–3) al boss finale (Lv23–24).
+// Livelli dei nemici in base alla posizione nella storia: dalla prima tappa (Lv1–3) al boss finale (Lv29–30).
 STORIA.forEach((cap, k) => cap.tappe.forEach((t, i) => {
   const g = k * cap.tappe.length + i;
   t.indice = g;
-  const b = Math.round(g * .62); t.liv = t.boss ? [b + 1, b + 2] : [Math.max(1, b), b + 2];
+  const b = Math.round(g < 30 ? g * .62 : 18 + (g - 30) * .36);
+  t.liv = t.boss ? [Math.min(30, b + 1), Math.min(30, b + 2)] : [Math.max(1, b), Math.min(30, b + 2)];
 }));
 if (typeof module !== "undefined") module.exports = { STORIA, scrigniCapitolo };

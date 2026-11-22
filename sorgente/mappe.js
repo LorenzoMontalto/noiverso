@@ -15,6 +15,10 @@ const MappeStoria = (() => {
     [[200, 640], [480, 910], [800, 700], [1070, 960], [1340, 660], [1600, 300]],    // metropoli
     [[320, 1060], [650, 975], [930, 820], [1230, 900], [1120, 570], [900, 230]],    // Olimpo
     [[250, 1070], [600, 900], [1150, 960], [1060, 640], [700, 440], [1020, 250]],   // castello
+    [[240, 1010], [530, 800], [860, 960], [1160, 700], [1570, 330], [990, 330]],    // porto
+    [[200, 1020], [560, 880], [900, 1010], [1190, 730], [870, 470], [1460, 280]],   // deserto
+    [[220, 1040], [540, 870], [870, 990], [1170, 760], [880, 520], [1460, 330]],    // luna park
+    [[250, 1060], [570, 900], [920, 990], [1230, 790], [1010, 560], [900, 250]],    // vulcano
     [[190, 600], [470, 370], [790, 570], [1070, 340], [1350, 570], [1620, 600]],    // finale
   ];
 
@@ -35,6 +39,14 @@ const MappeStoria = (() => {
     [[120, 1150, "⚑", "Binario Nascosto"], [400, 860, "⛵", "Lago Nero"], [1480, 880, "♣", "Foresta Proibita"], [1280, 1110, "⌂", "Capanna del Guardiacaccia"],
      [1560, 560, "◎", "Campo da Quidditch"], [520, 640, "✿", "Serre"], [1250, 640, "♨", "Sotterranei"], [560, 330, "♛", "Torre del Preside"],
      [1180, 160, "✧", "Torre di Astronomia"], [1660, 1110, "☕", "Villaggio"], [220, 470, "☾", "Ponte di Pietra"]],
+    [[110, 1120, "▤", "Container Rossi"], [430, 680, "⚖", "Dogana"], [700, 1100, "🐟", "Mercato del Pesce"], [1350, 820, "☠", "Nave Fantasma"],
+     [1640, 200, "✺", "Faro"], [880, 220, "⚓", "Molo Nove"], [300, 400, "⚙", "Gru"], [1100, 1080, "⛽", "Deposito"], [600, 300, "☕", "Taverna del Marinaio"]],
+    [[90, 1130, "🐪", "Carovana"], [520, 1110, "♒", "Oasi"], [980, 1120, "⚡", "Canyon"], [1360, 660, "▲", "Piramide"],
+     [620, 380, "🌀", "Tempesta di Sabbia"], [1620, 200, "◉", "Tempio delle Sfere"], [300, 560, "☀", "Dune Dorate"], [1500, 1050, "⛺", "Accampamento"], [1150, 300, "☠", "Ossa di Drago"]],
+    [[100, 1140, "🎟", "Biglietteria"], [380, 760, "◈", "Casa degli Specchi"], [700, 1120, "☠", "Tunnel dell'Orrore"], [1380, 860, "⇅", "Montagne Russe"],
+     [640, 440, "✶", "Tenda della Veggente"], [1600, 220, "♛", "Ruota Panoramica"], [1050, 420, "♪", "Giostra dei Cavalli"], [1640, 1100, "🍭", "Zucchero Filato"], [250, 380, "◎", "Tiro a Segno"]],
+    [[120, 1140, "⛏", "Pendici"], [380, 760, "◆", "Grotte di Cristallo"], [760, 1130, "♨", "Fiume di Lava"], [1420, 900, "☁", "Campo di Cenere"],
+     [1250, 520, "◉", "Bocca del Cratere"], [900, 120, "▲", "Cuore del Vulcano"], [1600, 380, "⚒", "Fucina"], [1650, 1120, "☢", "Sorgenti Bollenti"], [420, 300, "✦", "Ossidiana"]],
     [[100, 760, "✦", "Varco"], [360, 220, "☄", "Cometa"], [760, 760, "◉", "Nucleo"], [1000, 180, "✧", "Costellazione"],
      [1260, 760, "⚛", "Frattura"], [1700, 720, "♾", "Sala dei Nove"], [560, 980, "☾", "Luna Spezzata"], [1450, 250, "✺", "Stella Morente"]],
   ];
@@ -178,7 +190,7 @@ const MappeStoria = (() => {
     let s = `<defs><radialGradient id="vuoto" cx=".5" cy=".5" r=".7"><stop offset="0" stop-color="#2a0f4a"/><stop offset="1" stop-color="#05020c"/></radialGradient></defs><rect width="${W}" height="${H}" fill="url(#vuoto)"/>`;
     for (let k = 0; k < 300; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * H)}" r="${(r() * 1.8 + .3).toFixed(1)}" fill="#fff" opacity="${(.3 + r() * .7).toFixed(2)}"/>`;
     for (let k = 0; k < 7; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * H)}" r="${f(120 + r() * 160)}" fill="${["#b866ff", "#3fd8ff", "#ff4fd8", "#f2c14e"][k % 4]}" opacity=".12" filter="url(#sfoca)"/>`;
-    const n = NODI[5];
+    const n = NODI[NODI.length - 1];
     for (let i = 0; i < n.length - 1; i++) s += `<path d="M${n[i][0]},${n[i][1]} L${n[i + 1][0]},${n[i + 1][1]}" stroke="#b866ff" stroke-width="6" opacity=".35" filter="url(#bagliore)"/>`;
     for (const [x, y] of [...n, [560, 980], [1000, 180], [1450, 250], [360, 220], [1260, 760], [760, 760]]) {
       s += `<path d="${blob(x, y + 40, 150, 50, r)}" fill="#2a1a3a"/><path d="M${x - 130},${y + 40} Q${x},${y + 200} ${x + 130},${y + 40}Z" fill="#1a0e26"/>`;
@@ -186,7 +198,102 @@ const MappeStoria = (() => {
     }
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, dimensione];
+
+  function porto(r) {
+    let s = `<rect width="${W}" height="${H}" fill="#121820"/>`;
+    // mare a destra e in alto a destra, con onde
+    s += `<path d="M1180,${H} C1240,900 1150,700 1300,520 C1420,380 1380,180 1500,0 L${W},0 L${W},${H}Z" fill="#0b2a44"/>`;
+    for (let k = 0; k < 90; k++) { const x = 1250 + r() * 560, y = r() * H; s += `<path d="M${f(x)},${f(y)} q10,-7 20,0 t20,0" stroke="#2a6aa0" stroke-width="2" fill="none" opacity=".45"/>`; }
+    // banchina e pontili
+    s += `<path d="M1180,${H} C1240,900 1150,700 1300,520 C1420,380 1380,180 1500,0" stroke="#6a6a72" stroke-width="22" fill="none"/>`;
+    for (const [x, y, l] of [[1280, 860, 220], [1300, 600, 260], [1420, 360, 200]]) s += `<rect x="${x}" y="${y}" width="${l}" height="34" fill="#5a4636" stroke="#2a2018" stroke-width="3"/>`;
+    // container a file
+    const colori = ["#c0392b", "#2b6fc0", "#2fa36b", "#e0a33a", "#8a3fc0", "#c05a2b"];
+    for (let x = 60; x < 1100; x += 120) for (let y = 820; y < H - 30; y += 70) if (r() < .8) {
+      const c = colori[Math.floor(r() * colori.length)];
+      s += `<rect x="${f(x)}" y="${f(y)}" width="100" height="44" fill="${c}" stroke="#0d0a0c" stroke-width="3"/>`;
+      for (let k = 1; k < 6; k++) s += `<line x1="${f(x + k * 16)}" y1="${f(y + 4)}" x2="${f(x + k * 16)}" y2="${f(y + 40)}" stroke="#0d0a0c" stroke-opacity=".35" stroke-width="2"/>`;
+    }
+    // magazzini e strade
+    for (let x = 40; x < 1150; x += 170) for (let y = 40; y < 760; y += 150) if (r() < .7) s += `<rect x="${f(x)}" y="${f(y)}" width="${f(120 + r() * 30)}" height="${f(90 + r() * 30)}" rx="4" fill="${r() < .5 ? "#232a33" : "#1c222b"}" stroke="#36404c"/>`;
+    // gru
+    for (const [x, y] of [[300, 470], [1180, 450], [1080, 900]]) s += `<path d="M${x},${y + 90} L${x},${y - 90} L${x + 170},${y - 90}" stroke="#f2c14e" stroke-width="10" fill="none"/><line x1="${x + 150}" y1="${y - 90}" x2="${x + 150}" y2="${y}" stroke="#bbb" stroke-width="3"/><rect x="${x + 135}" y="${y}" width="30" height="20" fill="#c0392b"/>`;
+    // nave fantasma (verdastra) e navi cargo
+    s += `<path d="M1200,700 L1500,700 L1460,780 L1240,780Z" fill="#2a3a30" stroke="#6fe3a0" stroke-width="3" opacity=".9"/><rect x="1300" y="610" width="12" height="90" fill="#3a4a40"/><path d="M1312,615 L1400,660 L1312,690Z" fill="#9fe0c0" opacity=".45"/>`;
+    s += `<path d="M1500,980 L1760,980 L1730,1040 L1530,1040Z" fill="#7a2a2a" stroke="#2a0a0a" stroke-width="3"/><rect x="1560" y="940" width="70" height="40" fill="#ddd"/>`;
+    // faro su uno scoglio
+    s += `<path d="${blob(1600, 400, 120, 60, r)}" fill="#3a3a3a"/><path d="M1580,390 L1590,240 L1610,240 L1620,390Z" fill="#f4f4f4" stroke="#c0392b" stroke-width="4"/><circle cx="1600" cy="235" r="18" fill="#ffe14a"/><path d="M1600,235 L1800,170 L1800,300Z" fill="#ffe14a" opacity=".18"/>`;
+    for (let k = 0; k < 30; k++) s += `<circle cx="${f(r() * 1200)}" cy="${f(r() * H)}" r="${f(5 + r() * 7)}" fill="${k % 2 ? "#3fd8ff" : "#ffcf6a"}" opacity=".45" filter="url(#bagliore)"/>`;
+    return s;
+  }
+  function deserto(r) {
+    let s = `<defs><linearGradient id="sabbia" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0c27a"/><stop offset="1" stop-color="#c9893f"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#sabbia)"/>`;
+    // dune
+    for (let k = 0; k < 16; k++) { const y = 80 + k * 72 + r() * 30; s += `<path d="M-50,${f(y)} C300,${f(y - 40 - r() * 30)} 600,${f(y + 30)} 900,${f(y - 20)} S1500,${f(y + 40)} 1850,${f(y - 10)}" stroke="#b97a3a" stroke-opacity=".35" stroke-width="${f(6 + r() * 8)}" fill="none"/>`; }
+    // canyon
+    s += `<path d="M700,${H} C760,1060 980,1060 1060,980 C1140,900 1250,900 1300,${H}Z" fill="#7a3f1e"/><path d="M780,${H} C820,1090 980,1090 1050,1030 C1110,980 1200,990 1230,${H}Z" fill="#4a2410"/>`;
+    // oasi con palme
+    s += `<path d="${blob(560, 960, 170, 90, r)}" fill="#3a9ad0" stroke="#2fa36b" stroke-width="16"/>`;
+    for (const [x, y] of [[420, 900], [700, 920], [480, 1040], [660, 1040], [560, 870]]) s += `<line x1="${x}" y1="${y}" x2="${x + 6}" y2="${y - 50}" stroke="#7a5a2a" stroke-width="6"/>${[0, 72, 144, 216, 288].map(a => `<path d="M${x + 6},${y - 50} q${f(Math.cos(a / 57.3) * 30)},${f(Math.sin(a / 57.3) * 12 - 10)} ${f(Math.cos(a / 57.3) * 50)},${f(Math.sin(a / 57.3) * 22)}" stroke="#2f8a3a" stroke-width="7" fill="none"/>`).join("")}`;
+    // piramidi
+    for (const [x, y, w] of [[1360, 760, 220], [1560, 800, 140], [1180, 820, 110]]) s += `<path d="M${x - w},${y} L${x},${y - w * 1.1} L${x + w},${y}Z" fill="#e0b060"/><path d="M${x},${y - w * 1.1} L${x + w},${y} L${x + w * .25},${y}Z" fill="#b08040"/>`;
+    // tempesta di sabbia
+    for (let k = 0; k < 7; k++) s += `<path d="M${f(620 - 200 + k * 20)},${f(400 + k * 12)} a${f(220 - k * 25)},${f(90 - k * 9)} 0 1 1 ${f(400 - k * 50)},0" stroke="#fff3d0" stroke-opacity="${(.15 + k * .05).toFixed(2)}" stroke-width="10" fill="none"/>`;
+    // tempio delle sfere in cima
+    s += `<rect x="1520" y="210" width="200" height="110" fill="#d8b070" stroke="#8a6030" stroke-width="4"/>${[0, 1, 2, 3, 4].map(i => `<rect x="${1530 + i * 40}" y="230" width="16" height="90" fill="#f0d8a0"/>`).join("")}<path d="M1500,210 L1620,150 L1740,210Z" fill="#c0904a"/>`;
+    for (let i = 0; i < 7; i++) s += `<circle cx="${1560 + i * 20}" cy="${190 - (i % 2) * 8}" r="7" fill="#ff9a1f" stroke="#ffe0a0" stroke-width="2"/>`;
+    // ossa e cactus
+    for (let k = 0; k < 14; k++) { const x = r() * W, y = 150 + r() * 900; s += `<path d="M${f(x)},${f(y)} v-40 m0,14 h-14 v-12 m14,8 h14 v-14" stroke="#4f7d43" stroke-width="7" fill="none" stroke-linecap="round"/>`; }
+    s += `<path d="M1050,300 q60,-40 120,0 q40,30 80,0" stroke="#f4ece0" stroke-width="10" fill="none"/>`;
+    // carovana
+    for (let i = 0; i < 5; i++) s += `<ellipse cx="${120 + i * 50}" cy="${1100 - i * 6}" rx="18" ry="10" fill="#7a5030"/>`;
+    return s;
+  }
+  function lunapark(r) {
+    let s = `<defs><radialGradient id="notteLuna" cx=".7" cy=".2" r=".9"><stop offset="0" stop-color="#3a1450"/><stop offset="1" stop-color="#0c0614"/></radialGradient></defs><rect width="${W}" height="${H}" fill="url(#notteLuna)"/>`;
+    for (let k = 0; k < 100; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * 300)}" r="${(r() * 1.5 + .3).toFixed(1)}" fill="#fff" opacity="${(.3 + r() * .6).toFixed(2)}"/>`;
+    s += `<rect y="560" width="${W}" height="${H - 560}" fill="#1a1020"/>`;
+    // vialetti
+    for (const d of [curva([[0, 1080], [500, 900], [900, 1000], [1300, 800], [1800, 900]]), curva([[200, 600], [700, 520], [1100, 640], [1600, 560]])]) s += `<path d="${d}" stroke="#2c1c34" stroke-width="60" fill="none"/>`;
+    // ruota panoramica
+    const [rx, ry, rr] = [1600, 260, 170];
+    s += `<line x1="${rx - 90}" y1="${ry + 330}" x2="${rx}" y2="${ry}" stroke="#8a7aa0" stroke-width="10"/><line x1="${rx + 90}" y1="${ry + 330}" x2="${rx}" y2="${ry}" stroke="#8a7aa0" stroke-width="10"/>`;
+    s += `<circle cx="${rx}" cy="${ry}" r="${rr}" fill="none" stroke="#ff4fd8" stroke-width="8"/><circle cx="${rx}" cy="${ry}" r="${rr - 30}" fill="none" stroke="#3fd8ff" stroke-width="3"/>`;
+    for (let a = 0; a < 12; a++) { const x = rx + Math.cos(a / 6 * Math.PI) * rr, y = ry + Math.sin(a / 6 * Math.PI) * rr; s += `<line x1="${rx}" y1="${ry}" x2="${f(x)}" y2="${f(y)}" stroke="#c0a0e0" stroke-width="3"/><rect x="${f(x - 14)}" y="${f(y)}" width="28" height="22" rx="5" fill="${["#ff4fd8", "#3fd8ff", "#f2c14e"][a % 3]}"/>`; }
+    // montagne russe
+    const binario = [[1100, 1000], [1200, 760], [1300, 900], [1420, 700], [1520, 960], [1640, 820], [1760, 1000]];
+    for (const [x, y] of binario) s += `<line x1="${x}" y1="${y}" x2="${x}" y2="${H}" stroke="#6a5a80" stroke-width="6"/>`;
+    s += `<path d="${curva(binario)}" stroke="#ff2e46" stroke-width="12" fill="none"/><path d="${curva(binario)}" stroke="#ffd0d8" stroke-width="3" stroke-dasharray="10 10" fill="none"/>`;
+    // tendoni a righe
+    const tenda = (x, y, w, c1, c2) => { let t = ""; for (let i = 0; i < 6; i++) t += `<path d="M${x},${y - w} L${f(x - w + i * w / 3)},${y} L${f(x - w + (i + 1) * w / 3)},${y}Z" fill="${i % 2 ? c1 : c2}"/>`; return t + `<rect x="${x - w}" y="${y}" width="${2 * w}" height="${f(w * .6)}" fill="${c2}"/><circle cx="${x}" cy="${y - w - 8}" r="6" fill="#f2c14e"/>`; };
+    s += tenda(640, 420, 90, "#ff4fd8", "#fff0fa") + tenda(380, 700, 70, "#3fd8ff", "#e8fbff") + tenda(1640, 1060, 60, "#f2c14e", "#fff6dc") + tenda(250, 340, 55, "#ff2e46", "#ffe8ec");
+    // tunnel dell'orrore
+    s += `<path d="M600,1180 L600,1060 Q700,980 800,1060 L800,1180Z" fill="#0a0410" stroke="#6fe3a0" stroke-width="6"/><circle cx="660" cy="1040" r="8" fill="#6fe3a0"/><circle cx="740" cy="1040" r="8" fill="#6fe3a0"/>`;
+    // giostra dei cavalli
+    s += `<ellipse cx="1050" cy="460" rx="110" ry="40" fill="#c08040"/><path d="M940,460 L1050,330 L1160,460Z" fill="#ff4fd8" opacity=".85"/>`;
+    // lampadine
+    for (let k = 0; k < 70; k++) s += `<circle cx="${f(r() * W)}" cy="${f(560 + r() * 600)}" r="${f(3 + r() * 5)}" fill="${["#ff4fd8", "#3fd8ff", "#f2c14e", "#ffffff"][k % 4]}" opacity=".7" filter="url(#bagliore)"/>`;
+    return s;
+  }
+  function vulcano(r) {
+    let s = `<defs><linearGradient id="cieloRosso" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a0e0a"/><stop offset=".5" stop-color="#1e0b08"/><stop offset="1" stop-color="#140806"/></linearGradient></defs><rect width="${W}" height="${H}" fill="url(#cieloRosso)"/>`;
+    // il vulcano
+    s += `<path d="M300,780 L760,180 L1040,180 L1500,780Z" fill="#2a1a16"/><path d="M520,780 L800,260 L1000,260 L1280,780Z" fill="#35221c"/>`;
+    s += `<ellipse cx="900" cy="185" rx="140" ry="30" fill="#ff5a1f"/><ellipse cx="900" cy="185" rx="90" ry="18" fill="#ffd36b"/><circle cx="900" cy="150" r="200" fill="#ff5a1f" opacity=".1" filter="url(#sfoca)"/>`;
+    for (let k = 0; k < 8; k++) s += `<path d="${blob(820 + r() * 160, 60 - r() * 40, 60 + r() * 40, 30 + r() * 20, r, 14, .5)}" fill="#4a3a36" opacity="${(.5 + r() * .3).toFixed(2)}"/>`;
+    // fiumi di lava
+    for (const d of [curva([[880, 200], [820, 420], [700, 700], [760, 1000], [740, 1200]]), curva([[940, 200], [1080, 460], [1240, 700], [1420, 1000]])]) s += `<path d="${d}" stroke="#ff5a1f" stroke-width="40" fill="none" opacity=".9"/><path d="${d}" stroke="#ffd36b" stroke-width="12" fill="none"/><path d="${d}" stroke="#ff5a1f" stroke-width="80" fill="none" opacity=".15" filter="url(#bagliore)"/>`;
+    // grotte di cristallo
+    for (let k = 0; k < 18; k++) { const x = 250 + r() * 300, y = 680 + r() * 180, h = 30 + r() * 50; s += `<path d="M${f(x)},${f(y)} l${f(10 + r() * 8)},${f(-h)} l${f(10 + r() * 8)},${f(h)}Z" fill="${k % 2 ? "#3fd8ff" : "#9fefff"}" opacity=".75"/>`; }
+    // rocce e cenere
+    for (let k = 0; k < 60; k++) s += `<path d="${blob(r() * W, 760 + r() * 440, 20 + r() * 40, 12 + r() * 20, r, 8, .5)}" fill="${["#2a1c18", "#3a2620", "#1c120e"][k % 3]}"/>`;
+    for (let k = 0; k < 120; k++) s += `<circle cx="${f(1250 + r() * 550)}" cy="${f(800 + r() * 380)}" r="${(1 + r() * 3).toFixed(1)}" fill="#8a7a74" opacity=".5"/>`;
+    // fucina
+    s += `<rect x="1560" y="340" width="120" height="80" fill="#3a2a24" stroke="#ff5a1f" stroke-width="4"/><rect x="1600" y="300" width="20" height="40" fill="#3a2a24"/><circle cx="1620" cy="380" r="14" fill="#ffd36b"/>`;
+    for (let k = 0; k < 40; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * H)}" r="${f(3 + r() * 5)}" fill="#ff9a1f" opacity=".55" filter="url(#bagliore)"/>`;
+    return s;
+  }
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -212,7 +319,8 @@ const MappeStoria = (() => {
     g.setTransform(.5, 0, 0, .5, 0, 0);
     const r = rng(500 + k * 31);
     // colore di base e colore delle nuvole per ogni capitolo
-    const [base, nuv] = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"], ["#24123c", "214,170,255"]][k];
+    const [base, nuv] = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
+      ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#24123c", "214,170,255"]][k];
     g.fillStyle = base; g.fillRect(0, 0, W, H);
     for (let i = 0; i < 220; i++) {
       const x = r() * W, y = r() * H, rr = 70 + r() * 170, a = .10 + r() * .16;

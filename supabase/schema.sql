@@ -624,7 +624,7 @@ language sql immutable as $$
     when 'serie-eroi' then 'Supereroe' when 'serie-db' then 'Guerriero leggendario' when 'serie-dei' then 'Divinità'
     when 'serie-nueve' then 'Boss della mala' when 'serie-maghi' then 'Arcimago'
     when 'olo-1' then 'Brillante' when 'olo-5' then 'Arcobaleno' when 'livello-10' then 'Allenatore' when 'livello-30' then 'Maestro'
-    when 'lode-1' then 'Lodato' when 'bustine-50' then 'Strappabustine' when 'stelle-30' then 'Narratore' when 'pass-50' then 'Fedelissimo'
+    when 'lode-1' then 'Lodato' when 'bustine-50' then 'Strappabustine' when 'stelle-30' then 'Narratore' when 'stelle-120' then 'Giramondo' when 'pass-50' then 'Fedelissimo'
     when 'accessi-7' then 'Sempre presente' when 'amici-10' then 'Bullo di quartiere' when 'boss-20000' then 'Ammazzaboss' when 'scambi-3' then 'Mercante'
     when 'vivo-5' then 'Campione dal vivo'
   end
@@ -653,6 +653,7 @@ begin
     when t = 'lode-1' then exists (select 1 from jsonb_each_text(coalesce(d->'lodeXp', '{}'::jsonb)) where value ~ '^[0-9]+$' and value::int >= 2000)
     when t = 'bustine-50' then coalesce((st->>'bustine')::int, 0) >= 50
     when t = 'stelle-30' then coalesce((select sum(value::int) from jsonb_each_text(coalesce(d->'storia'->'stelle', '{}'::jsonb)) where value ~ '^[0-9]+$'), 0) >= 30
+    when t = 'stelle-120' then coalesce((select sum(value::int) from jsonb_each_text(coalesce(d->'storia'->'stelle', '{}'::jsonb)) where value ~ '^[0-9]+$'), 0) >= 120
     when t = 'pass-50' then coalesce((d->'pass'->>'xp')::int, 0) >= 50 * 200
     when t = 'accessi-7' then coalesce((st->>'serieMax')::int, 0) >= 7
     when t = 'amici-10' then (select count(*) from public.sfide_amici where sfidante = u and vinto) >= 10
