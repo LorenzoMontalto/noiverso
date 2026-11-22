@@ -1,0 +1,450 @@
+// ============================================================
+//  ONLINE: chi è connesso adesso e sfide dal vivo tra amici
+//
+//  Presenza: un canale in tempo reale di Supabase dove ognuno dice "ci sono" (pallino verde).
+//  Sfida dal vivo: i due telefoni calcolano LA STESSA battaglia (stesso seme per i numeri casuali,
+//  stesse squadre, stesse mosse). Chi ha sfidato è il lato 0 della battaglia "vera"; chi ha accettato
+//  la vede a specchio (BattagliaSpecchio), così per tutti e due la propria squadra è in basso a sinistra.
+//  Ogni turno ci si scambiano le mosse; dopo ogni turno ci si scambia anche una "firma" dello stato:
+//  se non coincide, qualcuno ha modificato il gioco e la partita viene annullata.
+//  I messaggi hanno una conferma di ricezione: finché non arriva, vengono rimandati.
+// ============================================================
+
+// numeri casuali ripetibili: stesso seme → stessa sequenza su tutti e due i telefoni
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// La battaglia vista dall'altra parte: il lato 0 diventa il lato 1 e viceversa
+const CAMPI_LATO = ["lato", "colpo", "su", "cura", "entra", "ko", "bersaglio"];
+function specchiaEventi(ev) {
+  return (ev || []).map(e => {
+    const x = Object.assign({}, e);
+    for (const k of CAMPI_LATO) if (typeof x[k] === "number") x[k] = 1 - x[k];
+    if (e.foto) x.foto = { pv: [e.foto.pv[1], e.foto.pv[0]], en: [e.foto.en[1], e.foto.en[0]], att: [e.foto.att[1], e.foto.att[0]] };
+    if (e.fine) x.testo = e.testo === "Hai vinto!" ? "Hai perso." : e.testo === "Hai perso." ? "Hai vinto!" : e.testo;
+    return x;
+  });
+}
+class BattagliaSpecchio {
+  constructor(c) { this.c = c; }
+  get lati() { return [this.c.lati[1], this.c.lati[0]]; }
+  get turno() { return this.c.turno; }
+  get vincitore() { const v = this.c.vincitore; return v < 0 ? v : 1 - v; }
+  set vincitore(v) { this.c.vincitore = v < 0 ? v : 1 - v; }
+  get graffitiAnnullati() { const g = this.c.graffitiAnnullati; return g ? [g[1], g[0]] : null; }
+  get oggettiTurno() { const o = this.c.oggettiTurno || []; return [o[1], o[0]]; }
+  get ev() { return specchiaEventi(this.c.ev); }
+  attivo(l) { return this.c.attivo(1 - l); }
+  vivi(l) { return this.c.vivi(1 - l); }
+  serveSostituzione(l) { return this.c.serveSostituzione(1 - l); }
+  puoUsare(l, i) { return this.c.puoUsare(1 - l, i); }
+  gv(l, id) { return this.c.gv(1 - l, id); }
+  calcolaDanno(l, a, d, m, cas) { return this.c.calcolaDanno(1 - l, a, d, m, cas); }
+  attaccoEffettivo(l, x) { return this.c.attaccoEffettivo(1 - l, x); }
+  _valuta(l, a, d, m) { return this.c._valuta(1 - l, a, d, m); }
+  impostaGraffiti(g0, g1) { this.c.impostaGraffiti(g1, g0); }
+  risolviTurno(az0, az1) { return specchiaEventi(this.c.risolviTurno(az1, az0)); }
+  sostituisci(l, i) { return specchiaEventi(this.c.sostituisci(1 - l, i)); }
+  usaOggetto(l, id, nome) { const r = this.c.usaOggetto(1 - l, id, nome); return Object.assign({}, r, { ev: specchiaEventi(r.ev) }); }
+}
+
+const Online = (() => {
+  const TEMPO_TURNO = 30, TEMPO_RIENTRO = 60, TEMPO_INVITO = 30;
+  let canale = null, presenti = {}, attivo = false;
+  let invitoFuori = null, invitoDentro = null;
+  const risposte = {};   // inviti a cui ho già risposto: se l'invito arriva di nuovo, rimando la stessa risposta
+  let P = null;   // la partita in corso
+  const sb = () => window.NoiversoAccesso && window.NoiversoAccesso.sb;
+  const io = () => Archivio.uid;
+  const mioNome = () => (S.profilo.nome || "Giocatore").slice(0, 22);
+
+  // ---------------- presenza ----------------
+  function avvia() {
+    if (attivo || !socialeAttivo() || S.admin || !sb()) return;
+    attivo = true;
+    canale = sb().channel("noiverso-online", { config: { presence: { key: io() }, broadcast: { self: false } } });
+    canale
+      .on("presence", { event: "sync" }, () => { leggiPresenti(); })
+      .on("presence", { event: "join" }, () => { leggiPresenti(); })
+      .on("presence", { event: "leave" }, () => { leggiPresenti(); })
+      .on("broadcast", { event: "invito" }, ({ payload }) => { if (payload && payload.a === io()) riceviInvito(payload); })
+      .on("broadcast", { event: "risposta" }, ({ payload }) => { if (payload && payload.a === io()) rispostaInvito(payload); })
+      .on("broadcast", { event: "annulla" }, ({ payload }) => { if (payload && payload.a === io() && invitoDentro && invitoDentro.id === payload.id) { invitoDentro = null; chiudiModale(); mostraAvviso(`${payload.nome} ha annullato la sfida.`); } })
+      .subscribe(stato => { if (stato === "SUBSCRIBED") annuncia(); });
+    addEventListener("beforeunload", () => { try { canale && canale.untrack(); } catch (e) {} });
+  }
+  function annuncia() {
+    if (!canale) return;
+    try { canale.track({ nome: mioNome(), avatar: S.profilo.avatar || "", stato: P ? "in-battaglia" : "libero", t: Date.now() }); } catch (e) {}
+  }
+  function leggiPresenti() {
+    const st = canale ? canale.presenceState() : {}, nuovi = {};
+    for (const [k, lista] of Object.entries(st || {})) { const x = (lista || [])[lista.length - 1]; if (x && k !== io()) nuovi[k] = { nome: x.nome, avatar: x.avatar, stato: x.stato }; }
+    presenti = nuovi;
+    if (!B) {
+      if (vista === "classifica") disegna();
+      const box = $("#amici-online"); if (box) box.outerHTML = htmlAmici();
+    }
+  }
+  const eOnline = id => !!presenti[id];
+  const quantiOnline = () => Object.keys(presenti).length;
+
+  function htmlAmici() {
+    if (!socialeAttivo() || S.admin) return "";
+    const lista = Object.entries(presenti).sort((a, b) => (a[1].stato === "libero" ? 0 : 1) - (b[1].stato === "libero" ? 0 : 1));
+    return `<div class="amici-online" id="amici-online">
+      <div class="online-testa"><b><span class="pallino-online"></span> Amici online</b><span class="nota">${lista.length ? `${lista.length} ${lista.length === 1 ? "connesso" : "connessi"} adesso` : "Nessuno connesso in questo momento"}</span></div>
+      ${lista.length ? `<ul class="amici-lista">${lista.map(([id, x]) => `<li>
+        ${htmlAvatar(String(x.avatar || ""), "mini")}
+        <div class="amico-info"><b>${esc(String(x.nome || "Giocatore"))}</b><small>${x.stato === "libero" ? "Online" : "Sta giocando una sfida dal vivo"}</small></div>
+        <button class="btn primario piccolo" data-fx="spinta" data-sfida-vivo="${esc(id)}" ${x.stato === "libero" ? "" : "disabled"}>Sfida dal vivo</button></li>`).join("")}</ul>`
+        : `<p class="nota">Quando un amico apre il gioco compare qui: potrete sfidarvi dal vivo, mossa contro mossa.</p>`}
+    </div>`;
+  }
+
+  // ---------------- inviti ----------------
+  function mieCarte() { return squadraAttiva().carte.slice(0, CARTE_SQUADRA); }
+  function sfida(id) {
+    if (!attivo || !presenti[id]) { mostraAvviso("Questo amico non è più online."); return; }
+    if (B || P) return;
+    if (mieCarte().length < CARTE_SQUADRA) { mostraAvviso("Prima prepara una squadra completa."); vai("squadra"); return; }
+    const inv = { id: (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random()), da: io(), a: id, nome: mioNome(), avatar: S.profilo.avatar || "", seme: Math.floor(Math.random() * 2 ** 31), scade: Date.now() + TEMPO_INVITO * 1000 };
+    invitoFuori = { ...inv, nomeAvv: presenti[id].nome };
+    canale.send({ type: "broadcast", event: "invito", payload: inv });
+    let giri = 0;
+    const aggiorna = () => {
+      if (!invitoFuori || invitoFuori.id !== inv.id) return;
+      const s = Math.max(0, Math.ceil((inv.scade - Date.now()) / 1000));
+      if (s <= 0) { annullaInvito(true); return; }
+      if (++giri % 4 === 0) try { canale.send({ type: "broadcast", event: "invito", payload: inv }); } catch (e) {}   // nel caso si sia perso per strada
+      const el = $("#invito-secondi"); if (el) el.textContent = s; else return;
+      setTimeout(aggiorna, 500);
+    };
+    apriModale(`<div class="invito-vivo"><span class="codice-tag">Sfida dal vivo</span><h2>Aspetto ${esc(invitoFuori.nomeAvv)}…</h2>
+      <div class="invito-anello"><b id="invito-secondi">${TEMPO_INVITO}</b><small>secondi</small></div>
+      <p class="nota">Gli è arrivata la tua sfida. Appena accetta, si parte.</p>
+      <div class="azioni centro"><button class="btn" data-azione="annulla-invito">Annulla</button></div></div>`, { bloccata: true });
+    setTimeout(aggiorna, 500);
+  }
+  function annullaInvito(scaduto) {
+    if (!invitoFuori) return;
+    try { canale.send({ type: "broadcast", event: "annulla", payload: { id: invitoFuori.id, a: invitoFuori.a, nome: mioNome() } }); } catch (e) {}
+    const n = invitoFuori.nomeAvv; invitoFuori = null; chiudiModale();
+    if (scaduto) mostraAvviso(`${n} non ha risposto.`);
+  }
+  function riceviInvito(p) {
+    if (risposte[p.id]) { try { canale.send({ type: "broadcast", event: "risposta", payload: risposte[p.id] }); } catch (e) {} return; }
+    if (invitoDentro && invitoDentro.id === p.id) return;
+    if (p.scade < Date.now()) return;
+    const occupato = B || P || Tutorial.attivo || invitoDentro || invitoFuori || (!$("#apertura").hidden);
+    if (occupato) { risposte[p.id] = { id: p.id, a: p.da, ok: false, motivo: "occupato", nome: mioNome() }; canale.send({ type: "broadcast", event: "risposta", payload: risposte[p.id] }); return; }
+    invitoDentro = p;
+    const aggiorna = () => {
+      if (!invitoDentro || invitoDentro.id !== p.id) return;
+      const s = Math.max(0, Math.ceil((p.scade - Date.now()) / 1000));
+      if (s <= 0) { invitoDentro = null; chiudiModale(); return; }
+      const el = $("#invito-secondi"); if (el) el.textContent = s; else return;
+      setTimeout(aggiorna, 500);
+    };
+    apriModale(`<div class="invito-vivo arrivo"><span class="codice-tag">Sfida dal vivo</span>
+      ${htmlAvatar(String(p.avatar || ""), "grande")}
+      <h2>${esc(p.nome)} ti sfida!</h2>
+      <p class="nota">Mossa contro mossa, in tempo reale. Giochi con ${esc(squadraAttiva().nome)}${Graffiti.scelto() ? ` e il graffito «${esc(Graffiti.info(Graffiti.scelto()).nome)}»` : ""}.</p>
+      <div class="invito-anello piccolo"><b id="invito-secondi">${Math.ceil((p.scade - Date.now()) / 1000)}</b><small>secondi</small></div>
+      <div class="azioni centro"><button class="btn primario" data-fx="onda" data-azione="accetta-invito">Accetta</button><button class="btn" data-azione="rifiuta-invito">Rifiuta</button></div></div>`, { bloccata: true });
+    setTimeout(aggiorna, 500);
+    if (navigator.vibrate) try { navigator.vibrate([120, 60, 120]); } catch (e) {}
+  }
+  function rispondi(ok) {
+    const p = invitoDentro; if (!p) return;
+    invitoDentro = null; chiudiModale();
+    if (ok && mieCarte().length < CARTE_SQUADRA) { ok = false; mostraAvviso("Ti serve una squadra completa per accettare."); }
+    risposte[p.id] = { id: p.id, a: p.da, ok, nome: mioNome(), motivo: ok ? "" : "rifiuta" };
+    canale.send({ type: "broadcast", event: "risposta", payload: risposte[p.id] });
+    if (ok) entraPartita({ id: p.id, seme: p.seme, avv: { id: p.da, nome: p.nome, avatar: p.avatar }, host: false });
+  }
+  function rispostaInvito(r) {
+    if (!invitoFuori || invitoFuori.id !== r.id) return;
+    const inv = invitoFuori; invitoFuori = null; chiudiModale();
+    if (!r.ok) { mostraAvviso(r.motivo === "occupato" ? `${r.nome} è occupato in questo momento.` : `${r.nome} ha rifiutato la sfida.`); return; }
+    entraPartita({ id: inv.id, seme: inv.seme, avv: { id: inv.a, nome: inv.nomeAvv, avatar: presenti[inv.a] ? presenti[inv.a].avatar : "" }, host: true });
+  }
+
+  // ---------------- la partita: messaggi con conferma ----------------
+  function entraPartita(dati) {
+    P = Object.assign(dati, { ch: null, mie: {}, loro: {}, mieOgg: {}, risolti: {}, firmeMie: {}, firmeLoro: {}, visti: new Set(), inAttesa: {}, prontoLoro: null, prontoMio: null,
+      sostLoro: [], scadenza: 0, rientro: 0, finita: false, motivo: "", avvPresente: false, iniziata: false, seq: 0 });
+    annuncia();
+    apriModale(`<div class="invito-vivo"><span class="codice-tag">Sfida dal vivo</span><h2>Mi collego con ${esc(P.avv.nome)}…</h2><p class="nota">Un attimo: ci scambiamo le squadre.</p></div>`, { bloccata: true });
+    const ch = sb().channel(`noiverso-vivo-${P.id}`, { config: { presence: { key: io() }, broadcast: { self: false } } });
+    P.ch = ch;
+    ch.on("broadcast", { event: "m" }, ({ payload }) => ricevi(payload))
+      .on("presence", { event: "sync" }, () => controllaAvversario())
+      .on("presence", { event: "join" }, () => controllaAvversario())
+      .on("presence", { event: "leave" }, () => controllaAvversario())
+      .subscribe(async stato => {
+        if (stato !== "SUBSCRIBED" || !P || P.ch !== ch) return;
+        try { ch.track({ t: Date.now() }); } catch (e) {}
+        if (P.prontoMio) return;
+        P.prontoMio = true; P.salvando = true;
+        // le squadre si leggono dal server (così nessuno può presentarsi con carte "ritoccate"):
+        // prima mi assicuro che il mio ultimo salvataggio sia arrivato
+        await salvaEAttendi();
+        if (!P || P.ch !== ch) return;
+        P.salvando = false;
+        manda({ tipo: "pronto", nome: mioNome(), avatar: S.profilo.avatar || "" });
+        provaInizio();
+      });
+    const p = P;
+    P.timerRete = setInterval(() => rimanda(p), 1500);
+    P.timerOrologio = setInterval(orologio, 500);
+    // se entro 20 secondi non riusciamo a parlarci, si lascia perdere
+    setTimeout(() => { if (P && !P.iniziata && !P.finita) { mostraAvviso("Non riesco a collegarmi con il tuo amico. Riprovate tra poco."); esci(); chiudiModale(); } }, 20000);
+  }
+  function manda(msg) {
+    if (!P) return;
+    const k = `${io()}:${++P.seq}`;
+    const m = Object.assign({ k, da: io() }, msg);
+    P.inAttesa[k] = m;
+    try { P.ch.send({ type: "broadcast", event: "m", payload: m }); } catch (e) {}
+  }
+  function rimanda(p) { for (const m of Object.values(p.inAttesa)) try { p.ch.send({ type: "broadcast", event: "m", payload: m }); } catch (e) {} }
+  function ricevi(m) {
+    if (!P || !m || m.da !== P.avv.id) return;
+    if (m.tipo === "ack") { delete P.inAttesa[m.rif]; return; }
+    try { P.ch.send({ type: "broadcast", event: "m", payload: { tipo: "ack", rif: m.k, da: io() } }); } catch (e) {}
+    if (P.visti.has(m.k)) return;
+    P.visti.add(m.k);
+    if (m.tipo === "pronto") { P.prontoLoro = m; provaInizio(); }
+    else if (m.tipo === "azione") { P.loro[m.t] = m; provaRisolvi(); }
+    else if (m.tipo === "sost") { P.sostLoro.push(m); provaSost(); }
+    else if (m.tipo === "firma") { P.firmeLoro[m.t] = m.h; controllaFirme(); }
+    else if (m.tipo === "resa") { if (B && B.vincitore < 0) { B.vincitore = 0; P.motivo = "resa"; aggiungiRegistro({ testo: `${P.avv.nome} si è arreso.`, avviso: true }); chiudiSfida(); } }
+    else if (m.tipo === "esci") { P.avvUscito = true; }
+  }
+  function controllaAvversario() {
+    if (!P || !P.ch) return;
+    const c = !!(P.ch.presenceState() || {})[P.avv.id];
+    if (c && !P.avvPresente && P.rientro) aggiungiRegistro({ testo: `${P.avv.nome} è di nuovo connesso.`, avviso: true });
+    P.avvPresente = c;
+    P.rientro = c ? 0 : (P.rientro || (P.iniziata && !P.finita ? Date.now() + TEMPO_RIENTRO * 1000 : 0));
+    aggiornaBanner();
+  }
+
+  async function salvaEAttendi() {
+    salva();
+    for (let i = 0; i < 40 && (Archivio._inScrittura || Object.keys(Archivio._coda || {}).length); i++) await new Promise(r => setTimeout(r, 200));
+  }
+  // ---------------- inizio, turni, sostituzioni ----------------
+  async function provaInizio() {
+    if (!P || P.iniziata || P.caricando || !P.prontoLoro || P.prontoMio !== true || P.salvando) return;
+    P.caricando = true;
+    const avv = P.prontoLoro;
+    P.avv.nome = avv.nome || P.avv.nome; P.avv.avatar = avv.avatar || P.avv.avatar;
+    // tutti e due leggono dal server le due squadre (quella di chi ha sfidato e quella di chi ha accettato)
+    let mia, sua;
+    try { [mia, sua] = await Promise.all([rpcSociale("squadra_amico", { amico: io() }), rpcSociale("squadra_amico", { amico: P.avv.id })]); }
+    catch (e) { P.caricando = false; mostraAvviso("Non riesco a leggere le squadre: " + e.message); esci(); chiudiModale(); return; }
+    if (!P) return;
+    const pulisci = q => ((q && q.squadra) || []).filter(x => PER_ID[x.id]).slice(0, CARTE_SQUADRA);
+    const sqMia = pulisci(mia), sqSua = pulisci(sua);
+    if (sqMia.length < CARTE_SQUADRA || sqSua.length < CARTE_SQUADRA) { mostraAvviso("Una delle due squadre non è completa: la sfida non può partire."); esci(); chiudiModale(); return; }
+    const g = x => x && x.graffito && GRAFFITI_COPPIE[x.graffito.id] ? x.graffito : null;
+    P.iniziata = true;
+    chiudiModale();
+    schermoIntero(true);
+    setTimeout(() => avviaSfida({ id: "vivo", nome: P.avv.nome, abilita: 0, liv: [1, 30], premio: 0, punti: 0, xp: 0,
+      vivo: { id: P.id, host: P.host, mia: sqMia, sua: sqSua, graffitoMio: g(mia) }, graffitoNemico: g(sua) },
+      sqMia.map(x => x.id), sqSua).then(() => { nuovoTurno(); }), ridotto ? 0 : 200);
+  }
+  // chiamata da avviaSfida: crea la battaglia "vera" (chi ha sfidato = lato 0) e, per chi ha accettato, la vista a specchio
+  function creaBattaglia(mia, nemici) {
+    const rng = mulberry32(P.seme);
+    if (P.host) { P.canon = new Battaglia(mia, nemici, mioNome(), P.avv.nome, rng); return P.canon; }
+    P.canon = new Battaglia(nemici, mia, P.avv.nome, mioNome(), rng);
+    return new BattagliaSpecchio(P.canon);
+  }
+  const firma = () => { const c = P.canon; return JSON.stringify([c.turno, c.vincitore, c.lati.map(L => [L.energia, L.attivo, L.squadra.map(x => x.pv)])]); };
+  function nuovoTurno() {
+    if (!P || !B || B.vincitore >= 0) return;
+    P.scadenza = Date.now() + TEMPO_TURNO * 1000;
+    aggiornaBattaglia();
+  }
+  const turno = () => B ? B.turno : 0;
+  // la mia mossa (dal pannello): la mando e aspetto la sua
+  function scegli(az) {
+    if (!P || !B || animazione || B.vincitore >= 0) return;
+    const t = turno();
+    if (P.mie[t] || B.serveSostituzione(0) || B.serveSostituzione(1)) return;
+    P.mie[t] = { az, ogg: P.mieOgg[t] || [] };
+    manda({ tipo: "azione", t, az, ogg: P.mie[t].ogg });
+    aggiornaBattaglia();
+    provaRisolvi();
+  }
+  // oggetto dello zaino usato in questo turno: va con la mia mossa (l'altro lo applica prima di risolvere)
+  function oggettoUsato(id) { if (!P) return; const t = turno(); (P.mieOgg[t] = P.mieOgg[t] || []).push(id); }
+  async function provaRisolvi() {
+    if (!P || !B || animazione || B.vincitore >= 0) return;
+    const t = turno();
+    if (P.risolti[t] || !P.mie[t] || !P.loro[t] || B.serveSostituzione(0) || B.serveSostituzione(1)) return;
+    P.risolti[t] = true;
+    P.scadenza = 0;
+    // prima gli oggetti che l'avversario ha usato in questo turno
+    let ev = [];
+    for (const id of (P.loro[t].ogg || []).slice(0, 1)) {   // al massimo uno per turno e tre a partita, come per tutti
+      if ((P.oggLoro = P.oggLoro || 0) >= Zaino.POSTI || !Zaino.info(id).nome) continue;
+      const r = B.usaOggetto(1, id, Zaino.info(id).nome); if (r.ok) { P.oggLoro++; ev = ev.concat(r.ev); }
+    }
+    ev = ev.concat(B.risolviTurno(P.mie[t].az, P.loro[t].az));
+    P.firmeMie[t] = firma();
+    manda({ tipo: "firma", t, h: P.firmeMie[t] });
+    await riproduci(ev);
+    controllaFirme();
+    if (!P) return;
+    if (B.vincitore >= 0) { chiudiSfida(); return; }
+    provaSost();
+    nuovoTurno();
+  }
+  // KO: chi deve sostituire sceglie; l'altro aspetta
+  async function sostituisci(i) {
+    if (!P || !B || animazione || !B.serveSostituzione(0)) return;
+    manda({ tipo: "sost", t: turno(), i });
+    await riproduci(B.sostituisci(0, i));
+    provaRisolvi(); nuovoTurno();
+  }
+  async function provaSost() {
+    if (!P || !B || animazione) return;
+    while (P.sostLoro.length && B.serveSostituzione(1)) {
+      const m = P.sostLoro.shift();
+      await riproduci(B.sostituisci(1, m.i));
+    }
+    provaRisolvi();
+    aggiornaBattaglia();
+  }
+  function controllaFirme() {
+    if (!P || P.finita) return;
+    for (const t of Object.keys(P.firmeLoro)) if (P.firmeMie[t] && P.firmeMie[t] !== P.firmeLoro[t]) {
+      P.finita = true; P.motivo = "contestata";
+      apriModale(`<div class="conferma"><h2>Partita annullata</h2><p>I due telefoni non sono d'accordo su come è andato il turno ${t}: di solito vuol dire che uno dei due ha una versione diversa (o modificata) del gioco. Ricaricate la pagina e riprovate.</p><div class="azioni centro"><button class="btn primario" data-azione="esci-vivo">Ok</button></div></div>`, { bloccata: true });
+      registra(null, "contestata");
+      return;
+    }
+  }
+
+  // ---------------- orologio: tempo per scegliere e per rientrare ----------------
+  function orologio() {
+    if (!P || !B || P.finita) return;
+    // se un messaggio è arrivato mentre partiva un'animazione, lo applico adesso
+    if (!animazione && B.vincitore < 0) { if (P.sostLoro.length) provaSost(); else provaRisolvi(); }
+    if (P.rientro && Date.now() > P.rientro && B.vincitore < 0) {   // l'avversario non è tornato: vinci tu
+      P.motivo = "abbandono"; B.vincitore = 0;
+      aggiungiRegistro({ testo: `${P.avv.nome} non è tornato in tempo: vinci per abbandono.`, avviso: true });
+      if (!animazione) chiudiSfida();
+      return;
+    }
+    // connesso ma fermo (telefono bloccato, scheda in secondo piano): dopo un minuto oltre il suo tempo, vinci tu
+    if (!animazione && B.vincitore < 0 && P.attesaDa && Date.now() - P.attesaDa > (TEMPO_TURNO + TEMPO_RIENTRO) * 1000) {
+      P.motivo = "abbandono"; B.vincitore = 0;
+      aggiungiRegistro({ testo: `${P.avv.nome} non risponde più: vinci per abbandono.`, avviso: true });
+      chiudiSfida();
+      return;
+    }
+    if (P.scadenza && !animazione && B.vincitore < 0 && Date.now() > P.scadenza) {
+      P.scadenza = 0;
+      if (B.serveSostituzione(0)) { const i = B.lati[0].squadra.findIndex(x => x.pv > 0); if (i >= 0) sostituisci(i); }
+      else if (!P.mie[turno()]) { mostraAvviso("Tempo scaduto: parte Carica."); scegli({ tipo: "carica" }); }
+    }
+    segnaAttesa();
+    aggiornaBanner();
+  }
+  function testoBanner() {
+    if (!P || !B || B.vincitore >= 0) return "";
+    if (P.rientro) return `<b class="vivo-allarme">${esc(P.avv.nome)} si è disconnesso</b> · ha ${Math.max(0, Math.ceil((P.rientro - Date.now()) / 1000))} s per rientrare`;
+    if (animazione) return `Turno in corso…`;
+    const s = P.scadenza ? Math.max(0, Math.ceil((P.scadenza - Date.now()) / 1000)) : 0;
+    if (B.serveSostituzione(0)) return `Scegli chi mandare in campo · <b>${s}</b> s`;
+    if (B.serveSostituzione(1)) return `${esc(P.avv.nome)} sceglie chi mandare in campo…`;
+    if (P.mie[turno()]) return `Hai scelto. Aspetto la mossa di ${esc(P.avv.nome)}…`;
+    return `Tocca a te · <b class="${s <= 10 ? "vivo-allarme" : ""}">${s}</b> s per scegliere`;
+  }
+  // da quando aspetto l'avversario (la mia mossa è partita o tocca a lui sostituire)
+  function segnaAttesa() {
+    if (!P || !B) return;
+    const t = turno(), aspetto = B.vincitore < 0 && !animazione && ((P.mie[t] && !P.loro[t]) || B.serveSostituzione(1));
+    P.attesaDa = aspetto ? (P.attesaDa || Date.now()) : 0;
+  }
+  function aggiornaBanner() { const el = $("#vivo-banner"); if (el) el.innerHTML = testoBanner(); }
+  function htmlBanner() { return P ? `<p class="vivo-banner" id="vivo-banner">${testoBanner()}</p>` : ""; }
+  const inAttesa = () => !!(P && B && P.mie[turno()] && B.vincitore < 0);
+  const scelta = () => { const m = P && P.mie[turno()]; if (!m) return ""; const a = m.az; return a.tipo === "mossa" ? B.attivo(0).c.mosse[a.i].nome : a.tipo === "carica" ? "Carica" : "Cambio"; };
+
+  // ---------------- fine ----------------
+  function resa() {
+    if (!P || !B) return;
+    manda({ tipo: "resa" });
+    P.motivo = "resa";
+  }
+  async function registra(vincitore, motivo) {
+    if (!P || P.registrata) return;
+    P.registrata = true;
+    try {
+      const r = await rpcSociale("chiudi_partita_vivo", { partita: P.id, avversario: P.avv.id, sono_a: P.host, chi_vince: vincitore, firma: P.canon ? firma() : "", motivo });
+      P.esitoServer = r && r.stato;
+    } catch (e) { P.esitoServer = "errore"; P.erroreServer = e.message; }
+    if (B && B.vincitore >= 0) aggiornaBattaglia();
+  }
+  function chiudi() {
+    const L = livelloAttuale, vinto = B.vincitore === 0;
+    L.espCarte = premiaCarte(1.8, vinto);
+    const e = { vinto, monete: vinto ? 100 : 30, xp: vinto ? 130 : 50 };
+    if (vinto) { S.stats.vittorie++; S.stats.vinteVivo = (S.stats.vinteVivo || 0) + 1; if (arena) arena.vittoria(0); }
+    else S.stats.sconfitte++;
+    S.monete += e.monete;
+    const su = aggiungiXP(e.xp);
+    L.esito = e;
+    Missioni.evento("amico", { vinto });
+    if (vinto) Missioni.evento("vittoria", { squadra: B.lati[0].squadra.map(x => x.id) });
+    salva(); aggiornaTesta(); aggiornaBattaglia();
+    if (su) setTimeout(() => mostraAvviso(`Pass: livello ${su} raggiunto!`), 900);
+    if (P) {
+      P.finita = true; P.scadenza = 0; P.rientro = 0;
+      registra(vinto ? io() : P.avv.id, P.motivo || "normale");
+      if (vinto) setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 80, forma: "coriandolo", colori: ["#f2c14e", "#ff2e46", "#3fd8ff", "#ffffff"], velocita: 8, dimensione: 5 }); } }, 250);
+    }
+  }
+  function htmlFine() {
+    const e = livelloAttuale.esito || {}, nome = P ? P.avv.nome : livelloAttuale.nome;
+    const motivo = P && P.motivo === "abbandono" ? `${esc(nome)} ha abbandonato la partita.` : P && P.motivo === "resa" ? (e.vinto ? `${esc(nome)} si è arreso.` : "Ti sei arreso.") : "";
+    const srv = !P ? "" : P.esitoServer === "ok" ? (e.vinto ? `<span class="punti-amico">+3 punti classifica</span>` : `<span class="nota">Risultato registrato.</span>`)
+      : P.esitoServer === "attesa" ? `<small class="nota">Aspetto che anche ${esc(nome)} confermi il risultato…</small>`
+      : P.esitoServer === "abbandono" ? `<span class="punti-amico">+1 punto classifica (vittoria per abbandono)</span>`
+      : P.esitoServer === "contestata" ? `<small class="errore">Risultato contestato: nessun punto.</small>`
+      : P.esitoServer === "errore" ? `<small class="errore">${esc(P.erroreServer || "Non riesco a registrare il risultato.")}</small>` : `<small class="nota">Registro il risultato…</small>`;
+    return `<div class="fine ${e.vinto ? "vinto" : "perso"}">
+      <b>${e.vinto ? "Vittoria!" : "Sconfitta"}</b>
+      <span>${e.vinto ? `Hai battuto ${esc(nome)} dal vivo!` : `${esc(nome)} ha vinto questa volta.`}</span>
+      ${motivo ? `<span class="nota">${motivo}</span>` : ""}
+      ${srv}
+      <span>+${e.monete} monete · +${e.xp} XP</span>
+      ${htmlEspCarte()}
+      <div class="azioni centro">${P && eOnline(P.avv.id) ? `<button class="btn primario" data-fx="onda" data-sfida-vivo="${esc(P.avv.id)}">Rivincita</button>` : ""}<button class="btn" data-fx="salto" data-azione="esci-vivo">Torna alle sfide</button></div>
+    </div>`;
+  }
+  // ascolta le conferme del server mentre si guarda il risultato (l'altro può confermare dopo)
+  async function aggiornaEsito() {
+    if (!P || P.esitoServer !== "attesa") return;
+    try { const { data } = await sb().from("partite_vivo").select("stato").eq("id", P.id); const st = data && data[0] && data[0].stato; if (st && st !== "in-corso") { P.esitoServer = st; aggiornaBattaglia(); } } catch (e) {}
+  }
+  setInterval(aggiornaEsito, 3000);
+  function esci() {
+    if (!P) return;
+    const p = P;
+    try { manda({ tipo: "esci" }); } catch (e) {}
+    clearInterval(p.timerOrologio);
+    setTimeout(() => { clearInterval(p.timerRete); try { sb().removeChannel(p.ch); } catch (e) {} }, 5000);   // il tempo di far arrivare le ultime conferme
+    if (P === p) P = null;
+    annuncia();
+  }
+
+  return { avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
+    get inPartita() { return !!P; } };
+})();

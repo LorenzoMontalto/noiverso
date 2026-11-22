@@ -148,11 +148,87 @@ create policy "sfide: le mie" on public.sfide_amici for select to authenticated
 grant select on public.sfide_amici to authenticated;
 revoke all on public.sfide_amici from anon;
 
+-- ---------------- Sfide dal vivo ----------------
+-- I due telefoni giocano la stessa battaglia e alla fine ognuno dice chi ha vinto.
+-- Se dicono la stessa cosa la partita vale (+3 al vincitore, al massimo 5 vittorie al giorno contro lo stesso amico).
+-- Chi ammette di aver perso conferma subito; chi dice di aver vinto aspetta che l'altro confermi.
+-- Se l'altro è sparito (abbandono) vale +1, una volta al giorno per coppia. Se non sono d'accordo: niente punti.
+create table if not exists public.partite_vivo (
+  id         uuid primary key,
+  a          uuid not null references auth.users (id) on delete cascade,   -- chi ha sfidato
+  b          uuid not null references auth.users (id) on delete cascade,   -- chi ha accettato
+  vince_a    uuid, vince_b uuid,          -- chi ha vinto secondo a e secondo b
+  detto_a    boolean not null default false, detto_b boolean not null default false,
+  motivo_a   text, motivo_b text,
+  vincitore  uuid,
+  punti      integer not null default 0,
+  stato      text not null default 'attesa' check (stato in ('attesa', 'ok', 'abbandono', 'contestata')),
+  creata     timestamptz not null default now()
+);
+create index if not exists partite_vivo_a on public.partite_vivo (a, creata);
+create index if not exists partite_vivo_b on public.partite_vivo (b, creata);
+create index if not exists partite_vivo_vincitore on public.partite_vivo (vincitore) where stato in ('ok', 'abbandono');
+alter table public.partite_vivo enable row level security;
+drop policy if exists "partite vivo: le mie" on public.partite_vivo;
+create policy "partite vivo: le mie" on public.partite_vivo for select to authenticated using (a = auth.uid() or b = auth.uid());
+grant select on public.partite_vivo to authenticated;
+revoke all on public.partite_vivo from anon;
+
 create or replace function public.punti_amici(u uuid) returns integer
 language sql stable security definer set search_path = public as $$
   select coalesce((select sum(punti_sfidante) from public.sfide_amici where sfidante = u), 0)
-       + coalesce((select sum(punti_sfidato) from public.sfide_amici where sfidato = u), 0);
+       + coalesce((select sum(punti_sfidato) from public.sfide_amici where sfidato = u), 0)
+       + coalesce((select sum(punti) from public.partite_vivo where vincitore = u and stato in ('ok', 'abbandono')), 0);
 $$;
+
+create or replace function public.chiudi_partita_vivo(partita uuid, avversario uuid, sono_a boolean, chi_vince uuid, firma text, motivo text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); p public.partite_vivo; v uuid; st text := 'attesa'; pt int := 0; n int;
+  inizio timestamptz := date_trunc('day', now() at time zone 'Europe/Rome') at time zone 'Europe/Rome';
+begin
+  if me is null then raise exception 'Devi fare l''accesso'; end if;
+  if avversario is null or avversario = me then raise exception 'Avversario non valido'; end if;
+  if chi_vince is not null and chi_vince <> me and chi_vince <> avversario then raise exception 'Vincitore non valido'; end if;
+  if not exists (select 1 from public.salvataggi where user_id = avversario and slot = 'partita') then raise exception 'Giocatore non trovato'; end if;
+  motivo := left(coalesce(motivo, ''), 20);
+  insert into public.partite_vivo (id, a, b) values (partita, case when sono_a then me else avversario end, case when sono_a then avversario else me end)
+    on conflict (id) do nothing;
+  select * into p from public.partite_vivo where id = partita for update;
+  if not ((sono_a and p.a = me and p.b = avversario) or (not sono_a and p.b = me and p.a = avversario)) then raise exception 'Partita non tua'; end if;
+  if p.creata < now() - interval '3 hours' then raise exception 'Partita troppo vecchia'; end if;
+  -- ognuno lo dice una volta sola
+  if (sono_a and p.detto_a) or (not sono_a and p.detto_b) then return jsonb_build_object('stato', p.stato, 'punti', p.punti); end if;
+  if sono_a then update public.partite_vivo set detto_a = true, vince_a = chi_vince, motivo_a = motivo where id = partita returning * into p;
+  else update public.partite_vivo set detto_b = true, vince_b = chi_vince, motivo_b = motivo where id = partita returning * into p; end if;
+
+  if coalesce(p.motivo_a, '') = 'contestata' or coalesce(p.motivo_b, '') = 'contestata' then st := 'contestata';
+  elsif p.detto_a and p.detto_b then
+    if p.vince_a is not null and p.vince_a = p.vince_b then st := 'ok'; v := p.vince_a; else st := 'contestata'; end if;
+  else
+    -- ha parlato uno solo
+    v := coalesce(p.vince_a, p.vince_b);
+    if v is null then st := 'contestata';
+    elsif v = avversario then st := 'ok';                                  -- ammette di aver perso: vale subito
+    elsif motivo = 'abbandono' then st := 'abbandono';                     -- l'altro è sparito
+    else st := 'attesa'; v := null; end if;
+  end if;
+
+  if st = 'ok' then
+    select count(*) into n from public.partite_vivo where id <> partita and stato = 'ok' and vincitore = v and creata >= inizio
+      and ((a = p.a and b = p.b) or (a = p.b and b = p.a));
+    pt := case when n < 5 then 3 else 0 end;
+  elsif st = 'abbandono' then
+    select count(*) into n from public.partite_vivo where id <> partita and stato = 'abbandono' and creata >= inizio
+      and ((a = p.a and b = p.b) or (a = p.b and b = p.a));
+    pt := case when n < 1 then 1 else 0 end;
+  end if;
+  update public.partite_vivo set stato = st, vincitore = case when st in ('ok', 'abbandono') then v end, punti = pt where id = partita;
+  -- la classifica si ricalcola subito per i due giocatori
+  update public.classifica set aggiornato = now() where user_id in (p.a, p.b);
+  return jsonb_build_object('stato', st, 'punti', pt);
+end $$;
+revoke all on function public.chiudi_partita_vivo(uuid, uuid, boolean, uuid, text, text) from public, anon;
+grant execute on function public.chiudi_partita_vivo(uuid, uuid, boolean, uuid, text, text) to authenticated;
 
 -- La squadra con cui l'amico si difende: quella attiva nel suo salvataggio, con i livelli veri
 create or replace function public.squadra_amico(amico uuid) returns jsonb
@@ -420,6 +496,7 @@ language sql immutable as $$
     when 'olo-1' then 'Brillante' when 'olo-5' then 'Arcobaleno' when 'livello-10' then 'Allenatore' when 'livello-30' then 'Maestro'
     when 'lode-1' then 'Lodato' when 'bustine-50' then 'Strappabustine' when 'stelle-30' then 'Narratore' when 'pass-50' then 'Fedelissimo'
     when 'accessi-7' then 'Sempre presente' when 'amici-10' then 'Bullo di quartiere' when 'boss-20000' then 'Ammazzaboss' when 'scambi-3' then 'Mercante'
+    when 'vivo-5' then 'Campione dal vivo'
   end
 $$;
 -- Il trofeo risulta davvero conquistato? Dove si può, lo verifica sui dati del server (sfide, boss, scambi) o del salvataggio.
@@ -451,6 +528,7 @@ begin
     when t = 'amici-10' then (select count(*) from public.sfide_amici where sfidante = u and vinto) >= 10
     when t = 'boss-20000' then coalesce((select sum(danni) from public.boss_danni where user_id = u), 0) >= 20000
     when t = 'scambi-3' then (select count(*) from public.scambi where (da = u or a = u) and stato = 'accettato') >= 3
+    when t = 'vivo-5' then (select count(*) from public.partite_vivo where vincitore = u and stato = 'ok') >= 5
     else false end;
 end $$;
 -- Il gioco gira sul dispositivo di ognuno, quindi il server controlla i salvataggi:
@@ -520,7 +598,8 @@ begin
     'vittorie', coalesce((s->'stats'->>'vittorie')::int, 0),
     'sconfitte', coalesce((s->'stats'->>'sconfitte')::int, 0),
     'carte', (select count(*) from jsonb_object_keys(coalesce(s->'carte', '{}'::jsonb))),
-    'vinte_amici', (select count(*) from public.sfide_amici where (sfidante = new.user_id and vinto) or (sfidato = new.user_id and not vinto)));
+    'vinte_amici', (select count(*) from public.sfide_amici where (sfidante = new.user_id and vinto) or (sfidato = new.user_id and not vinto)),
+    'vinte_vivo', (select count(*) from public.partite_vivo where vincitore = new.user_id and stato = 'ok'));
   new.aggiornato := now();
   return new;
 end $$;

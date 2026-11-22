@@ -105,21 +105,24 @@ const Zaino = (() => {
     const giaUsato = (B.oggettiTurno || [])[0] === B.turno;
     return `<div class="zaino-riga"><span class="zaino-etichetta">Zaino</span>${B.zaino.map((x, i) => {
       if (!x) return "";
-      const o = info(x.id), off = x.usato || animazione || B.vincitore >= 0 || giaUsato;
+      const o = info(x.id), off = x.usato || animazione || B.vincitore >= 0 || giaUsato || (livelloAttuale && livelloAttuale.vivo && Online.inAttesa());
       return `<button type="button" class="zaino-usa ${x.usato ? "usato" : ""}" data-usa-oggetto="${i}" style="--c:${o.colore}" ${off ? "disabled" : ""} title="${esc(o.desc)}">${htmlIcona(x.id, "piccola")}<span><b>${esc(o.nome)}</b><small>${x.usato ? "Usato" : esc(o.corto)}</small></span></button>`;
     }).join("")}${giaUsato && B.zaino.some(x => x && !x.usato) ? `<small class="zaino-nota">Un oggetto per turno</small>` : ""}</div>`;
   }
   async function usa(i) {
     if (!B || animazione || B.vincitore >= 0) return;
     const x = B.zaino && B.zaino[i]; if (!x || x.usato) return;
+    // dal vivo: l'oggetto parte insieme alla mossa, quindi dopo aver scelto non si può più aprire lo zaino
+    if (livelloAttuale && livelloAttuale.vivo && (Online.inAttesa() || B.serveSostituzione(1))) { mostraAvviso("Hai già scelto la mossa di questo turno."); return; }
     const o = info(x.id), r = B.usaOggetto(0, x.id, o.nome);
     if (!r.ok) { mostraAvviso(r.motivo); return; }
     x.usato = true;
+    if (livelloAttuale && livelloAttuale.vivo) Online.oggettoUsato(x.id);
     if (!livelloAttuale || !livelloAttuale.provaAdmin) {
       const z = stato(); z.oggetti = Object.assign({}, z.oggetti, { [x.id]: Math.max(0, (z.oggetti[x.id] || 0) - 1) }); salva();
     }
     await riproduci(r.ev);
   }
 
-  return { info, quanti, htmlIcona, perBattaglia, compra, htmlNegozio, htmlPannello, apriPosto, metti, htmlBattaglia, usa, ORDINE };
+  return { POSTI, info, quanti, htmlIcona, perBattaglia, compra, htmlNegozio, htmlPannello, apriPosto, metti, htmlBattaglia, usa, ORDINE };
 })();

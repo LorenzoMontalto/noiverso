@@ -980,6 +980,7 @@ function vistaSfida() {
     <div class="titolo-riga"><h2>Scegli l'avversario</h2>
       <div class="filtri">${pronte.map(x => `<button class="chip" data-fx="gelatina" data-squadra-sfida="${x.i}" aria-pressed="${x.i === S.attiva}">${esc(x.s.nome)}</button>`).join("")}</div>
     </div>
+    ${Online.htmlAmici()}
     <div class="prima-partita">${Graffiti.htmlPannello()}${Zaino.htmlPannello()}</div>
     ${socialeAttivo() ? `<div class="sfida-sociale">${Boss.htmlGrande()}<div class="amici-invito"><b>Sfida un amico</b><span class="nota">Combatti contro la squadra vera di un amico, guidata dal computer. Se vinci gli rubi un punto in classifica.</span><button class="btn primario" data-fx="spinta" data-azione="vai-amici">Scegli chi sfidare</button></div></div>
     <div class="titolo-riga piccola"><h3>Contro il computer</h3></div>` : ""}
@@ -1211,8 +1212,8 @@ function vistaClassifica() {
     <table class="classifica">
       <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vittorie</th><th>Carte</th><th>Pass</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
       <tbody>${classificaDati.map((r, i) => `
-        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
-        <td>${Number(r.punti) || 0}</td><td>${Number(r.vittorie) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>Lv ${Number(r.pass) || 0}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
+        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${r.id !== Archivio.uid && Online.eOnline(r.id) ? `<span class="pallino-online" title="Online adesso"></span>` : ""}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
+        <td>${Number(r.punti) || 0}</td><td>${Number(r.vittorie) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>Lv ${Number(r.pass) || 0}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<span class="sfida-celle"><button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>${Online.eOnline(r.id) ? `<button class="btn piccolo primario" data-fx="spinta" data-sfida-vivo="${esc(r.id)}">Dal vivo</button>` : ""}</span>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
     </table>
   </section>`;
 }
@@ -1330,7 +1331,7 @@ async function entra(slot, profiloLocale) {
   Tutorial.allIngresso();
   if (slot !== "admin") Missioni.finestraAccesso();
   Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); });
-  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); }
+  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); }
   Boss.carica();
 }
 
@@ -2039,11 +2040,12 @@ function schermoIntero(entra) {
 async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
   livelloAttuale = typeof idLivello === "object" ? idLivello : LIVELLI_SFIDA.find(l => l.id === idLivello);
   const n = carteForzate ? CARTE_SQUADRA : carteBattaglia();
-  const mia = (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id) }));
+  const mia = livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
+    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id) }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
-  B = new Battaglia(mia, nemici, "Tu", L.nome);
-  B.impostaGraffiti(Graffiti.mio(), Graffiti.nemico(L));
+  B = L.vivo ? Online.creaBattaglia(mia, nemici) : new Battaglia(mia, nemici, "Tu", L.nome);
+  B.impostaGraffiti(L.vivo ? L.vivo.graffitoMio : Graffiti.mio(), Graffiti.nemico(L));
   B.zaino = Zaino.perBattaglia();
   if (L.bossGruppo) Boss.prepara(B);
   document.body.classList.add("in-battaglia");
@@ -2185,6 +2187,12 @@ function htmlAzioni() {
   if (finita && livelloAttuale.storia) return htmlFineStoria();
   if (finita && livelloAttuale.amico) return Amici.htmlFine();
   if (finita && livelloAttuale.bossGruppo) return Boss.htmlFine();
+  if (finita && livelloAttuale.vivo) return Online.htmlFine();
+  const vivo = livelloAttuale.vivo ? Online.htmlBanner() : "";
+  if (vivo && !animazione && B.vincitore < 0 && (Online.inAttesa() || (B.serveSostituzione(1) && !B.serveSostituzione(0)))) {
+    return `${vivo}${Graffiti.htmlBattaglia(B)}<div class="vivo-attesa"><span class="vivo-puntini"><i></i><i></i><i></i></span>
+      <p>${Online.inAttesa() ? `Hai scelto <b>${esc(Online.scelta())}</b>.` : ""} ${esc(livelloAttuale.nome)} sta scegliendo…</p></div>`;
+  }
   if (finita) {
     const vinto = B.vincitore === 0;
     return `<div class="fine ${vinto ? "vinto" : "perso"}">
@@ -2195,13 +2203,13 @@ function htmlAzioni() {
     </div>`;
   }
   if (!animazione && B.serveSostituzione(0)) {
-    return `<p class="consiglio forte"><b>${esc(B.attivo(0).c.nome)} è KO.</b> Scegli chi mandare in campo (puoi anche toccare la carta nell'arena).</p>
+    return `${vivo}<p class="consiglio forte"><b>${esc(B.attivo(0).c.nome)} è KO.</b> Scegli chi mandare in campo (puoi anche toccare la carta nell'arena).</p>
     <div class="panchina grande">${htmlPanchina(true)}</div>`;
   }
   const L = B.lati[0], a = B.attivo(0);
   const prossimo = 2 + (a.c.ruolo === "stratega" ? 1 : 0);
   const cons = animazione || !imp().consigli ? null : consiglio();
-  return `${Graffiti.htmlBattaglia(B)}
+  return `${vivo}${Graffiti.htmlBattaglia(B)}
   <div class="mana-riga">
     <span class="mana-etichetta">Energia</span>
     <div class="cristalli" id="cristalli">${htmlCristalli(L.energia, prossimo)}</div>
@@ -2243,6 +2251,8 @@ function segnaTurno(lato, testo, sotto) {
 function segnaTurnoAttesa() {
   if (!B) return;
   if (B.vincitore >= 0) return segnaTurno(null, B.vincitore === 0 ? "Vittoria!" : "Sconfitta", `Turno ${B.turno}`);
+  if (livelloAttuale && livelloAttuale.vivo && (Online.inAttesa() || (B.serveSostituzione(1) && !B.serveSostituzione(0))))
+    return segnaTurno(1, `Tocca a ${livelloAttuale.nome}`, `Turno ${B.turno} · sta scegliendo`);
   segnaTurno(0, "Tocca a te", B.serveSostituzione(0) ? "Scegli chi mandare in campo" : `Turno ${B.turno} · scegli una mossa`);
 }
 
@@ -2320,6 +2330,7 @@ async function riproduci(eventi) {
 
 async function turnoGiocatore(az) {
   if (animazione || !B || B.vincitore >= 0) return;
+  if (livelloAttuale.vivo) return Online.scegli(az);
   const azC = B.scegliAzione(1, livelloAttuale.abilita);
   let ev = B.risolviTurno(az, azC);
   if (B.serveSostituzione(1)) ev = ev.concat(B.sostituisci(1, B.scegliSostituto(1)));
@@ -2328,6 +2339,7 @@ async function turnoGiocatore(az) {
 }
 async function sostituisciGiocatore(i) {
   if (animazione) return;
+  if (livelloAttuale && livelloAttuale.vivo) return Online.sostituisci(i);
   await riproduci(B.sostituisci(0, i));
 }
 
@@ -2359,6 +2371,7 @@ function chiudiSfida() {
   if (livelloAttuale && livelloAttuale.storia) return chiudiStoria();
   if (livelloAttuale && livelloAttuale.amico) return Amici.chiudi();
   if (livelloAttuale && livelloAttuale.bossGruppo) return Boss.chiudi();
+  if (livelloAttuale && livelloAttuale.vivo) return Online.chiudi();
   livelloAttuale.espCarte = premiaCarte(livelloAttuale.xpCarte || 1, B.vincitore === 0);
   let su = 0;
   const pr = premiSfida(livelloAttuale);
@@ -2378,6 +2391,7 @@ function chiudiSfida() {
 
 function chiudiArena() { if (arena) { if (arena._roCopertura) arena._roCopertura.disconnect(); arena.distruggi(); arena = null; } }
 function esciBattaglia() {
+  if (livelloAttuale && livelloAttuale.vivo && Online.inPartita) Online.esci();
   chiudiArena();
   B = null; animazione = false;
   document.body.classList.remove("in-battaglia");
@@ -2397,7 +2411,7 @@ document.addEventListener("change", e => { if (e.target.dataset && e.target.data
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra-oggetto],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2470,6 +2484,7 @@ document.addEventListener("click", e => {
   if (t.dataset.mossa !== undefined) { turnoGiocatore({ tipo: "mossa", i: +t.dataset.mossa }); return; }
   if (t.dataset.cambia !== undefined) { turnoGiocatore({ tipo: "cambio", i: +t.dataset.cambia }); return; }
   if (t.dataset.sostituisci !== undefined) { sostituisciGiocatore(+t.dataset.sostituisci); return; }
+  if (t.dataset.sfidaVivo !== undefined) { const id = t.dataset.sfidaVivo; if (B) { Online.esci(); esciBattaglia(); } Online.sfida(id); return; }
   if (t.classList.contains("gira")) { t.classList.add("girata"); return; }
   if (t.matches(".carta[role=button]")) { apriDettaglio(t.dataset.id); return; }
   switch (t.dataset.azione) {
@@ -2503,10 +2518,14 @@ document.addEventListener("click", e => {
     case "carica": turnoGiocatore({ tipo: "carica" }); break;
     case "abbandona":
       if (animazione) break;
-      apriModale(`<div class="conferma"><h2>Abbandonare la sfida?</h2><p>Conta come una sconfitta.</p>
+      apriModale(`<div class="conferma"><h2>Abbandonare la sfida?</h2><p>${livelloAttuale.vivo ? `Conta come una sconfitta e ${esc(livelloAttuale.nome)} vince.` : "Conta come una sconfitta."}</p>
         <div class="azioni centro"><button class="btn primario" data-fx="scuoti" data-azione="conferma-abbandono">Abbandona</button><button class="btn" data-fx="onda" data-azione="chiudi">Continua a giocare</button></div></div>`);
       break;
-    case "conferma-abbandono": chiudiModale(); B.vincitore = 1; chiudiSfida(); esciBattaglia(); break;
+    case "conferma-abbandono": chiudiModale(); if (livelloAttuale.vivo) Online.resa(); B.vincitore = 1; chiudiSfida(); if (livelloAttuale.vivo) Online.esci(); esciBattaglia(); break;
+    case "esci-vivo": chiudiModale(); Online.esci(); if (B) esciBattaglia(); break;
+    case "annulla-invito": Online.annullaInvito(); break;
+    case "accetta-invito": Online.rispondi(true); break;
+    case "rifiuta-invito": Online.rispondi(false); break;
     case "rivincita": chiudiArena(); if (livelloAttuale.storia) avviaStoria(livelloAttuale.storia.k, livelloAttuale.storia.i); else avviaSfida(livelloAttuale.id); break;
     case "storia-avanti": {
       const { k, i } = livelloAttuale.storia, p = i + 1 < STORIA[k].tappe.length ? { k, i: i + 1 } : { k: k + 1, i: 0 };

@@ -38,6 +38,7 @@ const Trofei = (() => {
     if (window.NOIVERSO_SUPABASE) v.push(
       { id: "amici-10", nome: "Bullo di quartiere", desc: "Batti 10 volte la squadra di un amico", titolo: "Bullo di quartiere", premio: 300, prog: () => st("vinteAmici"), max: 10 },
       { id: "boss-20000", nome: "Ammazzaboss", desc: "Fai 20.000 danni ai boss del gruppo", titolo: "Ammazzaboss", premio: 300, prog: () => st("danniBoss"), max: 20000 },
+      { id: "vivo-5", nome: "Campione dal vivo", desc: "Vinci 5 sfide dal vivo contro gli amici", titolo: "Campione dal vivo", premio: 400, prog: () => st("vinteVivo"), max: 5 },
       { id: "scambi-3", nome: "Mercante", desc: "Completa 3 scambi con gli amici", titolo: "Mercante", premio: 200, prog: () => st("scambi"), max: 3 },
     );
     return v;
