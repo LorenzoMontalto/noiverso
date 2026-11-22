@@ -35,7 +35,7 @@ const Tutorial = (() => {
         compito: `Tocca ${CARTE_SQUADRA} carte qui sotto per metterle in squadra. <span class="tut-conta"></span>`,
         testo: `La squadra è di ${CARTE_SQUADRA} carte: la prima entra in campo per prima e con le frecce cambi l'ordine. Puoi preparare fino a ${NUM_SQUADRE} squadre diverse.`,
         bersaglioInfo: ".slot5", bollaInfo: null },
-      { vista: "squadra", bersaglio: ".riepilogo", titolo: "Gli stili", testo: `Ogni carta ha uno stile: <span class="s-FOR stile">FOR</span> batte <span class="s-VEL stile">VEL</span>, che batte <span class="s-MEN stile">MEN</span>, che batte <span class="s-FOR stile">FOR</span>. Chi è in vantaggio fa il 30% di danni in più, chi è in svantaggio il 20% in meno. Meglio una squadra con stili misti.` },
+      { vista: "squadra", bersaglio: ".riepilogo", titolo: "I tipi", testo: `Ogni carta ha un tipo che potenzia una sua statistica: <span class="s-FOR stile">FOR</span> Forza (+25% attacco), <span class="s-DIF stile">DIF</span> Difesa (+10% difesa), <span class="s-VEL stile">VEL</span> Velocità (+5 velocità: attacca sempre per prima, e +10% attacco). Forza batte Difesa, Difesa batte Velocità, Velocità batte Forza: chi è in vantaggio fa il 30% di danni in più, chi è in svantaggio il 20% in meno. Meglio una squadra con tipi misti.` },
       { vista: "sfida", bersaglio: ".livelli .livello", titolo: "Le sfide", saltaSe: () => !squadraPiena() || !!B,
         aspetta: () => !!B,
         compito: "Facciamo la tua prima battaglia: tocca <b>Recluta</b>, l'avversario più facile.",

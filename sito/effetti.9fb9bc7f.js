@@ -132,7 +132,7 @@ const FX = (() => {
     s.addEventListener("animationend", () => s.remove(), { once: true });
   }
 
-  const COLORI_STILE = { FOR: ["#ff7a45", "#ffd0a8"], VEL: ["#3fd8ff", "#c8f6ff"], MEN: ["#d08cff", "#f1dcff"] };
+  const COLORI_STILE = { FOR: ["#ff7a45", "#ffd0a8"], VEL: ["#3fd8ff", "#c8f6ff"], DIF: ["#7ddc6a", "#d6f7cc"] };
 
   // Ogni tipo di bottone ha la sua animazione (data-fx)
   function suClick(ev) {

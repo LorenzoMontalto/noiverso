@@ -25,12 +25,19 @@ const RARITA = {
 };
 const ORDINE_RARITA = ["comune", "rara", "epica", "leggendaria"];
 
-// Triangolo degli stili: Forza batte Velocità, Velocità batte Mente, Mente batte Forza.
+// Tre tipi, e ognuno potenzia la sua statistica:
+//   Forza    → +25% attacco                   batte Difesa   (la sfonda)
+//   Difesa   → +10% difesa                    batte Velocità (para i colpi veloci)
+//   Velocità → +5 velocità e +10% attacco     batte Forza    (schiva i colpi lenti)
+// Numeri scelti con 4000 partite simulate: le carte Difesa sono già robuste per ruolo (tank, difensori),
+// quelle Velocità fragili (schivatori, assassini), così ogni tipo pesa circa uguale in una squadra mista.
+// Con +5 la carta Velocità più lenta arriva a 15, le altre al massimo a 12: una Velocità attacca sempre prima.
 const STILI = {
-  FOR: { nome: "Forza",    batte: "VEL" },
-  VEL: { nome: "Velocità", batte: "MEN" },
-  MEN: { nome: "Mente",    batte: "FOR" },
+  FOR: { nome: "Forza",    icona: "⚔️", batte: "DIF", bonus: "+25% attacco" },
+  DIF: { nome: "Difesa",   icona: "🛡️", batte: "VEL", bonus: "+10% difesa" },
+  VEL: { nome: "Velocità", icona: "⚡", batte: "FOR", bonus: "+5 velocità (attacca sempre per prima) e +10% attacco" },
 };
+const BONUS_TIPO = { FOR: { att: 1.25 }, DIF: { dif: 1.10 }, VEL: { vel: 5, att: 1.10 } };
 
 // Statistiche base per ruolo (prima di rarità e livello) + abilità passiva.
 // "cosa" = in due parole a cosa serve, mostrato sulla carta.
@@ -61,16 +68,16 @@ function m(nome, costo, pot, extra = {}) { return { nome, costo, pot, ...extra }
 
 const CARTE = [
   // ---------------- LOS NUEVE ----------------
-  { id: "loca", nome: "La Loca", serie: "nueve", rarita: "leggendaria", stile: "MEN", ruolo: "imprevedibile",
+  { id: "loca", nome: "La Loca", serie: "nueve", rarita: "leggendaria", stile: "FOR", ruolo: "imprevedibile",
     frase: "Nessuno sa cosa farà. Nemmeno lei.",
     mosse: [m("Brindisi Pazzo", 0, 30), m("Risata Isterica", 2, 24, { eff: { tipo: "stordisci", val: 50 } }), m("Ultimo Giro", 5, 98)] },
   { id: "fuego", nome: "La Fuego", serie: "nueve", rarita: "rara", stile: "FOR", ruolo: "incendiario",
     frase: "Dove passa lei resta solo cenere.",
     mosse: [m("Schiaffo Rovente", 0, 26, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Benzina", 2, 38, { eff: { tipo: "brucia", val: 6, turni: 3 } }), m("Inferno", 5, 80, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
-  { id: "reina", nome: "La Reina", serie: "nueve", rarita: "leggendaria", stile: "MEN", ruolo: "capo",
+  { id: "reina", nome: "La Reina", serie: "nueve", rarita: "leggendaria", stile: "DIF", ruolo: "capo",
     frase: "Non alza mai la voce. Non ne ha bisogno.",
     mosse: [m("Sguardo Gelido", 0, 30), m("Ordine Reale", 2, 0, { eff: { tipo: "potenzia", val: 35, turni: 3 } }), m("Corte Marziale", 5, 82, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
-  { id: "chapo", nome: "El Chapo", serie: "nueve", rarita: "rara", stile: "MEN", ruolo: "stratega",
+  { id: "chapo", nome: "El Chapo", serie: "nueve", rarita: "rara", stile: "DIF", ruolo: "stratega",
     frase: "Ogni affare ha il suo prezzo.",
     mosse: [m("Sigaro", 0, 28), m("Affare Fatto", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Colpo Grosso", 5, 88)] },
   { id: "rojo", nome: "El Rojo", serie: "nueve", rarita: "comune", stile: "FOR", ruolo: "picchiatore",
@@ -79,13 +86,13 @@ const CARTE = [
   { id: "ombra", nome: "El Ombra", serie: "nueve", rarita: "leggendaria", stile: "VEL", ruolo: "schivatore",
     frase: "Te ne accorgi quando è già finita.",
     mosse: [m("Lama nel Buio", 0, 30), m("Sparire", 3, 0, { eff: { tipo: "nebbia" } }), m("Colpo alle Spalle", 5, 80, { penetra: 35 })] },
-  { id: "pelado", nome: "El Pelado", serie: "nueve", rarita: "comune", stile: "FOR", ruolo: "tank",
+  { id: "pelado", nome: "El Pelado", serie: "nueve", rarita: "comune", stile: "DIF", ruolo: "tank",
     frase: "Un muro con le catenine.",
     mosse: [m("Spallata", 0, 30), m("Muro", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Schiacciasassi", 5, 82)] },
   { id: "fiesta", nome: "La Fiesta", serie: "nueve", rarita: "comune", stile: "VEL", ruolo: "guaritore",
     frase: "La festa finisce quando lo dice lui.",
     mosse: [m("Cin Cin", 0, 26), m("Dopo Festa", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Fino all'Alba", 5, 72, { drena: 50 })] },
-  { id: "diablo", nome: "El Diablo", serie: "nueve", rarita: "epica", stile: "MEN", ruolo: "stregone",
+  { id: "diablo", nome: "El Diablo", serie: "nueve", rarita: "epica", stile: "DIF", ruolo: "stregone",
     frase: "Firma qui. Poi ne parliamo.",
     mosse: [m("Ghigno", 0, 30), m("Patto", 2, 30, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Fuoco Infernale", 5, 84, { eff: { tipo: "brucia", val: 5, turni: 2 } })] },
   { id: "bandita", nome: "La Bandita", serie: "nueve", rarita: "epica", stile: "VEL", ruolo: "ladro",
@@ -93,7 +100,7 @@ const CARTE = [
     mosse: [m("Borseggio", 0, 25, { eff: { tipo: "ruba", val: 1 } }), m("Rapina", 2, 36, { eff: { tipo: "ruba", val: 1 } }), m("Il Colpo", 5, 86)] },
 
   // ---------------- SUPEREROI ----------------
-  { id: "gossip", nome: "Capitan Gossip", serie: "eroi", rarita: "epica", stile: "MEN", ruolo: "tiratore",
+  { id: "gossip", nome: "Capitan Gossip", serie: "eroi", rarita: "epica", stile: "FOR", ruolo: "tiratore",
     frase: "Sa tutto di tutti, e lo spara a velocità della luce.",
     mosse: [m("Pugno Stellare", 0, 32), m("Raggio Fotonico", 2, 50), m("Supernova", 5, 95)] },
   { id: "comora", nome: "Comora", serie: "eroi", rarita: "rara", stile: "VEL", ruolo: "assassino",
@@ -105,32 +112,32 @@ const CARTE = [
   { id: "spidertoto", nome: "Spider Toto", serie: "eroi", rarita: "epica", stile: "VEL", ruolo: "schivatore",
     frase: "Salta, schiva, sorride. Ripete.",
     mosse: [m("Calcio Acrobatico", 0, 30), m("Ragnatela", 2, 26, { eff: { tipo: "stordisci", val: 55 } }), m("Oscillata Finale", 5, 90)] },
-  { id: "wonderrita", nome: "Wonder Rita", serie: "eroi", rarita: "rara", stile: "FOR", ruolo: "difensore",
+  { id: "wonderrita", nome: "Wonder Rita", serie: "eroi", rarita: "rara", stile: "DIF", ruolo: "difensore",
     frase: "Nata per combattere, cresciuta per vincere.",
     mosse: [m("Bracciali", 0, 28), m("Lazo", 2, 28, { eff: { tipo: "stordisci", val: 40 } }), m("Carica Guerriera", 5, 88)] },
-  { id: "stellascura", nome: "Stella Scura", serie: "eroi", rarita: "comune", stile: "MEN", ruolo: "tiratore",
+  { id: "stellascura", nome: "Stella Scura", serie: "eroi", rarita: "comune", stile: "FOR", ruolo: "tiratore",
     frase: "Brilla di più quando si arrabbia.",
     mosse: [m("Dardo Stellare", 0, 30), m("Raffica", 2, 18, { colpi: 3 }), m("Esplosione Stellare", 5, 88)] },
-  { id: "mieloki", nome: "Mie Loki", serie: "eroi", rarita: "epica", stile: "MEN", ruolo: "stregone",
+  { id: "mieloki", nome: "Mie Loki", serie: "eroi", rarita: "epica", stile: "DIF", ruolo: "stregone",
     frase: "Quello che vedi non è mai quello che c'è.",
     mosse: [m("Pugnale", 0, 30), m("Illusione", 2, 0, { eff: { tipo: "nebbia" } }), m("Inganno Supremo", 5, 80, { eff: { tipo: "indebolisci", val: 35, turni: 2 } })] },
-  { id: "ironlus", nome: "Iron Lus", serie: "eroi", rarita: "leggendaria", stile: "MEN", ruolo: "tiratore",
+  { id: "ironlus", nome: "Iron Lus", serie: "eroi", rarita: "leggendaria", stile: "FOR", ruolo: "tiratore",
     frase: "Genio, armatura e nessuna modestia.",
     mosse: [m("Repulsore", 0, 32), m("Missili", 2, 20, { colpi: 3 }), m("Raggio Centrale", 5, 100)] },
-  { id: "cypips", nome: "CyPips", serie: "eroi", rarita: "comune", stile: "FOR", ruolo: "difensore",
+  { id: "cypips", nome: "CyPips", serie: "eroi", rarita: "comune", stile: "DIF", ruolo: "difensore",
     frase: "Metà uomo, metà blindato.",
     mosse: [m("Mitraglia", 0, 28), m("Blindatura", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Bombardamento", 5, 84)] },
   { id: "mauthor", nome: "Mau Thor", serie: "eroi", rarita: "leggendaria", stile: "FOR", ruolo: "picchiatore",
     frase: "Quando arriva lui, arriva anche il temporale.",
     mosse: [m("Martellata", 0, 34), m("Fulmine", 2, 42, { eff: { tipo: "stordisci", val: 30 } }), m("Tempesta Divina", 5, 95)] },
-  { id: "undercut", nome: "Capitan Undercut", serie: "eroi", rarita: "rara", stile: "FOR", ruolo: "difensore",
+  { id: "undercut", nome: "Capitan Undercut", serie: "eroi", rarita: "rara", stile: "DIF", ruolo: "difensore",
     frase: "Si mette sempre in mezzo. Per fortuna.",
     mosse: [m("Lancio dello Scudo", 0, 30), m("Parata", 2, 0, { eff: { tipo: "scudo", val: 60 } }), m("Assalto", 5, 86)] },
-  { id: "ligulk", nome: "Ligulk", serie: "eroi", rarita: "leggendaria", stile: "FOR", ruolo: "tank",
+  { id: "ligulk", nome: "Ligulk", serie: "eroi", rarita: "leggendaria", stile: "DIF", ruolo: "tank",
     frase: "Non farlo arrabbiare. Davvero.",
     mosse: [m("Schianto", 0, 34), m("Rabbia", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Distruzione", 5, 100)] },
   // ---------------- SUPEREROI (nuovi) ----------------
-  { id: "wandessia", nome: "Wandessia", serie: "eroi", rarita: "epica", stile: "MEN", ruolo: "imprevedibile", frase: "La realtà fa quello che dice lei.",
+  { id: "wandessia", nome: "Wandessia", serie: "eroi", rarita: "epica", stile: "FOR", ruolo: "imprevedibile", frase: "La realtà fa quello che dice lei.",
     mosse: [m("Sfera Scarlatta", 0, 30), m("Distorsione", 2, 26, { eff: { tipo: "stordisci", val: 45 } }), m("Caos Scarlatto", 5, 94)] },
   { id: "waspy", nome: "Waspy", serie: "eroi", rarita: "rara", stile: "VEL", ruolo: "schivatore", frase: "Piccola, veloce e con il pungiglione.",
     mosse: [m("Puntura", 0, 28), m("Rimpicciolisci", 3, 0, { eff: { tipo: "nebbia" } }), m("Sciame", 5, 18, { colpi: 5 })] },
@@ -142,19 +149,19 @@ const CARTE = [
     mosse: [m("Pugno Saiyan", 0, 34), m("Teletrasporto", 2, 44, { penetra: 30 }), m("Onda Energetica Suprema", 5, 100)] },
   { id: "vegerizio", nome: "Vegerizio", serie: "db", rarita: "leggendaria", stile: "VEL", ruolo: "tiratore", frase: "Il principe non chiede scusa. Mai.",
     mosse: [m("Raffica d'Orgoglio", 0, 32), m("Lampo del Principe", 2, 48), m("Esplosione Finale", 5, 100)] },
-  { id: "brolymone", nome: "Brolymone", serie: "db", rarita: "leggendaria", stile: "FOR", ruolo: "tank", frase: "Leggendario, enorme e sempre più arrabbiato.",
+  { id: "brolymone", nome: "Brolymone", serie: "db", rarita: "leggendaria", stile: "DIF", ruolo: "tank", frase: "Leggendario, enorme e sempre più arrabbiato.",
     mosse: [m("Pugno Leggendario", 0, 34), m("Furia Verde", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Meteora Gigante", 5, 98)] },
-  { id: "freezovico", nome: "Freezovico", serie: "db", rarita: "epica", stile: "MEN", ruolo: "stregone", frase: "L'imperatore Ludovico non perdona.",
+  { id: "freezovico", nome: "Freezovico", serie: "db", rarita: "epica", stile: "DIF", ruolo: "stregone", frase: "L'imperatore Ludovico non perdona.",
     mosse: [m("Raggio Mortale", 0, 30, { penetra: 20 }), m("Gelo Imperiale", 2, 30, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Supernova Imperiale", 5, 90)] },
-  { id: "gohanlollo", nome: "Gohan Lollo", serie: "db", rarita: "epica", stile: "MEN", ruolo: "picchiatore", frase: "Studia di giorno, salva il mondo di sera.",
+  { id: "gohanlollo", nome: "Gohan Lollo", serie: "db", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Studia di giorno, salva il mondo di sera.",
     mosse: [m("Calcio Volante", 0, 32), m("Potenziale Nascosto", 2, 0, { eff: { tipo: "potenzia", val: 35, turni: 3 } }), m("Onda Padre e Figlio", 5, 96)] },
-  { id: "pipsccolo", nome: "Pipsccolo", serie: "db", rarita: "epica", stile: "MEN", ruolo: "difensore", frase: "Il namecciano Pips: braccia lunghe, pazienza corta.",
+  { id: "pipsccolo", nome: "Pipsccolo", serie: "db", rarita: "epica", stile: "DIF", ruolo: "difensore", frase: "Il namecciano Pips: braccia lunghe, pazienza corta.",
     mosse: [m("Braccio Allungabile", 0, 28), m("Rigenerazione", 2, 0, { eff: { tipo: "cura", val: 18 } }), m("Cannone a Spirale", 5, 88, { penetra: 25 })] },
   { id: "caulifrita", nome: "Caulif Rita", serie: "db", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Selvaggia, testarda e fortissima.",
     mosse: [m("Pugno Selvaggio", 0, 32), m("Sfera Crescente", 2, 46), m("Raffica Tripla", 5, 30, { colpi: 3 })] },
   { id: "criliziano", nome: "Criliziano", serie: "db", rarita: "rara", stile: "VEL", ruolo: "assassino", frase: "Piccolo, ma con il disco giusto.",
     mosse: [m("Disco Affilato", 0, 30, { penetra: 30 }), m("Lampo Solare", 2, 20, { eff: { tipo: "stordisci", val: 40 } }), m("Disco Distruttore", 5, 88, { penetra: 35 })] },
-  { id: "bulsene", nome: "Bulsene", serie: "db", rarita: "rara", stile: "MEN", ruolo: "stratega", frase: "Genio, capsule e zero pazienza.",
+  { id: "bulsene", nome: "Bulsene", serie: "db", rarita: "rara", stile: "DIF", ruolo: "stratega", frase: "Genio, capsule e zero pazienza.",
     mosse: [m("Invenzione", 0, 26), m("Capsula Energetica", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Robot Capsula", 5, 84)] },
   { id: "c18ora", nome: "C-18 Ora", serie: "db", rarita: "rara", stile: "VEL", ruolo: "schivatore", frase: "Fredda come il metallo, veloce come un lampo.",
     mosse: [m("Calcio Cyborg", 0, 30), m("Barriera Cyborg", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Tempesta di Raggi", 5, 20, { colpi: 4 })] },
@@ -166,33 +173,33 @@ const CARTE = [
     mosse: [m("Calcio della Giustizia", 0, 28), m("Grido di Squadra", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Volo Giustiziere", 5, 80)] },
   { id: "panky", nome: "Panky", serie: "db", rarita: "comune", stile: "VEL", ruolo: "imprevedibile", frase: "Piccola peste, grande potenza.",
     mosse: [m("Pugnetto", 0, 28), m("Capriccio", 2, 26, { eff: { tipo: "stordisci", val: 50 } }), m("Raffica della Nipote", 5, 18, { colpi: 5 })] },
-  { id: "giulmai", nome: "Giulmai", serie: "db", rarita: "comune", stile: "MEN", ruolo: "tiratore", frase: "La guerriera Saiyan carica sempre un'altra sfera.",
+  { id: "giulmai", nome: "Giulmai", serie: "db", rarita: "comune", stile: "FOR", ruolo: "tiratore", frase: "La guerriera Saiyan carica sempre un'altra sfera.",
     mosse: [m("Sfera di Ki", 0, 30), m("Doppia Sfera", 2, 24, { colpi: 2 }), m("Bomba Viola", 5, 86)] },
 
   // ---------------- DEI ----------------
-  { id: "zeutiz", nome: "Zeu Tiz", serie: "dei", rarita: "leggendaria", stile: "MEN", ruolo: "capo", frase: "Sovrano degli dei. Fulmini compresi.",
+  { id: "zeutiz", nome: "Zeu Tiz", serie: "dei", rarita: "leggendaria", stile: "DIF", ruolo: "capo", frase: "Sovrano degli dei. Fulmini compresi.",
     mosse: [m("Saetta", 0, 32), m("Tuono dell'Olimpo", 2, 42, { eff: { tipo: "stordisci", val: 40 } }), m("Ira di Zeus", 5, 104)] },
-  { id: "poseludovico", nome: "Pose Ludovico", serie: "dei", rarita: "leggendaria", stile: "FOR", ruolo: "tank", frase: "Signore dei mari e delle tempeste.",
+  { id: "poseludovico", nome: "Pose Ludovico", serie: "dei", rarita: "leggendaria", stile: "DIF", ruolo: "tank", frase: "Signore dei mari e delle tempeste.",
     mosse: [m("Colpo di Tridente", 0, 32), m("Muro d'Acqua", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Maremoto", 5, 96)] },
-  { id: "adelrizio", nome: "Adel Rizio", serie: "dei", rarita: "epica", stile: "MEN", ruolo: "stregone", frase: "Sovrano degli Inferi: prima o poi passano tutti da lui.",
+  { id: "adelrizio", nome: "Adel Rizio", serie: "dei", rarita: "epica", stile: "DIF", ruolo: "stregone", frase: "Sovrano degli Inferi: prima o poi passano tutti da lui.",
     mosse: [m("Tocco degli Inferi", 0, 30, { drena: 30 }), m("Catene dell'Ade", 2, 28, { eff: { tipo: "indebolisci", val: 35, turni: 2 } }), m("Regno dei Morti", 5, 90, { drena: 40 })] },
   { id: "aresorenzo", nome: "Aresorenzo", serie: "dei", rarita: "leggendaria", stile: "FOR", ruolo: "picchiatore", frase: "Dio della guerra: la pace lo annoia.",
     mosse: [m("Fendente di Guerra", 0, 34), m("Grido di Battaglia", 2, 0, { eff: { tipo: "potenzia", val: 35, turni: 3 } }), m("Furia di Ares", 5, 96)] },
-  { id: "atharita", nome: "Atha Rita", serie: "dei", rarita: "epica", stile: "MEN", ruolo: "difensore", frase: "Dea della saggezza e della strategia.",
+  { id: "atharita", nome: "Atha Rita", serie: "dei", rarita: "epica", stile: "DIF", ruolo: "difensore", frase: "Dea della saggezza e della strategia.",
     mosse: [m("Lancia della Saggezza", 0, 30), m("Egida", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Strategia Divina", 5, 84, { penetra: 25 })] },
   { id: "artalice", nome: "Art Alice", serie: "dei", rarita: "epica", stile: "VEL", ruolo: "tiratore", frase: "Dea della caccia e della luna: non scappa nessuno.",
     mosse: [m("Freccia d'Argento", 0, 32), m("Pioggia di Frecce Lunari", 2, 18, { colpi: 3 }), m("Freccia della Luna", 5, 96)] },
-  { id: "aurera", nome: "Aurera", serie: "dei", rarita: "epica", stile: "MEN", ruolo: "guaritore", frase: "Regina degli dei e del matrimonio.",
+  { id: "aurera", nome: "Aurera", serie: "dei", rarita: "epica", stile: "DIF", ruolo: "guaritore", frase: "Regina degli dei e del matrimonio.",
     mosse: [m("Sguardo Regale", 0, 28), m("Benedizione Nuziale", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Collera della Regina", 5, 80, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
   { id: "herdiego", nome: "Her Diego", serie: "dei", rarita: "rara", stile: "VEL", ruolo: "ladro", frase: "Messaggero degli dei, e un po' ladruncolo.",
     mosse: [m("Sandali Alati", 0, 28, { eff: { tipo: "ruba", val: 1 } }), m("Furto Divino", 2, 36, { eff: { tipo: "ruba", val: 1 } }), m("Messaggero Fulmineo", 5, 22, { colpi: 4 })] },
   { id: "efesamuele", nome: "Efe Samuele", serie: "dei", rarita: "rara", stile: "FOR", ruolo: "incendiario", frase: "Dio del fuoco e della forgia.",
     mosse: [m("Martello Rovente", 0, 28, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Forgia", 2, 38, { eff: { tipo: "brucia", val: 6, turni: 3 } }), m("Eruzione", 5, 82, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
-  { id: "dionpips", nome: "Dion Pips", serie: "dei", rarita: "rara", stile: "MEN", ruolo: "imprevedibile", frase: "Dio del vino e della festa. Soprattutto del vino.",
+  { id: "dionpips", nome: "Dion Pips", serie: "dei", rarita: "rara", stile: "FOR", ruolo: "imprevedibile", frase: "Dio del vino e della festa. Soprattutto del vino.",
     mosse: [m("Brindisi Divino", 0, 30), m("Ebbrezza", 2, 24, { eff: { tipo: "stordisci", val: 50 } }), m("Baccanale", 5, 94)] },
   { id: "nikulia", nome: "Nikulia", serie: "dei", rarita: "rara", stile: "VEL", ruolo: "assassino", frase: "Dea della vittoria: perdere non è un'opzione.",
     mosse: [m("Ali della Vittoria", 0, 32), m("Colpo Vincente", 2, 46, { penetra: 20 }), m("Trionfo", 5, 90, { penetra: 40 })] },
-  { id: "solmone", nome: "Solmone", serie: "dei", rarita: "comune", stile: "MEN", ruolo: "stratega", frase: "Dio del sole e della musica.",
+  { id: "solmone", nome: "Solmone", serie: "dei", rarita: "comune", stile: "DIF", ruolo: "stratega", frase: "Dio del sole e della musica.",
     mosse: [m("Raggio di Sole", 0, 28), m("Melodia della Lira", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Carro del Sole", 5, 84)] },
   { id: "aphroalessia", nome: "Aphro Alessia", serie: "dei", rarita: "comune", stile: "VEL", ruolo: "stregone", frase: "Dea dell'amore e della bellezza.",
     mosse: [m("Bacio Ammaliante", 0, 26), m("Fascino", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Amore Travolgente", 5, 80, { drena: 40 })] },
@@ -206,9 +213,9 @@ const CARTE = [
     mosse: [m("Morso", 0, 32), m("Ululato", 2, 22, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Caccia del Branco", 5, 24, { colpi: 4 })] },
   { id: "eltigre", nome: "El Tigre", serie: "nueve", rarita: "epica", stile: "VEL", ruolo: "assassino", frase: "Silenzioso finché non salta.",
     mosse: [m("Artigli", 0, 32), m("Balzo della Tigre", 2, 46, { penetra: 25 }), m("Zampata Finale", 5, 92, { penetra: 30 })] },
-  { id: "elcuervo", nome: "El Cuervo", serie: "nueve", rarita: "rara", stile: "MEN", ruolo: "tiratore", frase: "Quando arriva lui, è un brutto presagio.",
+  { id: "elcuervo", nome: "El Cuervo", serie: "nueve", rarita: "rara", stile: "FOR", ruolo: "tiratore", frase: "Quando arriva lui, è un brutto presagio.",
     mosse: [m("Piuma Nera", 0, 30), m("Stormo", 2, 18, { colpi: 3 }), m("Presagio", 5, 92)] },
-  { id: "labruja", nome: "La Bruja", serie: "nueve", rarita: "rara", stile: "MEN", ruolo: "stregone", frase: "Ti legge la mano. Poi te la maledice.",
+  { id: "labruja", nome: "La Bruja", serie: "nueve", rarita: "rara", stile: "DIF", ruolo: "stregone", frase: "Ti legge la mano. Poi te la maledice.",
     mosse: [m("Maleficio", 0, 32), m("Pozione Tossica", 2, 32, { eff: { tipo: "brucia", val: 7, turni: 3 } }), m("Sabba", 5, 92, { eff: { tipo: "indebolisci", val: 35, turni: 2 } })] },
   { id: "lasombra", nome: "La Sombra", serie: "nueve", rarita: "comune", stile: "VEL", ruolo: "imprevedibile", frase: "Al tavolo da gioco non perde mai. Quasi.",
     mosse: [m("Shot", 0, 30), m("Carta Truccata", 2, 26, { eff: { tipo: "stordisci", val: 45 } }), m("All In", 5, 96)] },
@@ -216,17 +223,17 @@ const CARTE = [
   // ---------------- MAGHI ----------------
   { id: "samulett", nome: "Samulett Potter", serie: "maghi", rarita: "leggendaria", stile: "VEL", ruolo: "capo", frase: "Il ragazzo sopravvissuto. Con la cicatrice e tutto.",
     mosse: [m("Raggio Disarmante", 0, 32), m("Volo sulla Scopa", 2, 44, { penetra: 20 }), m("Duello Finale", 5, 98)] },
-  { id: "mauriziente", nome: "Mauriziente", serie: "maghi", rarita: "leggendaria", stile: "MEN", ruolo: "stratega", frase: "Il preside più saggio della scuola. E il più eccentrico.",
+  { id: "mauriziente", nome: "Mauriziente", serie: "maghi", rarita: "leggendaria", stile: "DIF", ruolo: "stratega", frase: "Il preside più saggio della scuola. E il più eccentrico.",
     mosse: [m("Lampo di Bacchetta", 0, 30), m("Saggezza Antica", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Fenice di Fuoco", 5, 88, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
-  { id: "simoldemort", nome: "Simoldemort", serie: "maghi", rarita: "leggendaria", stile: "MEN", ruolo: "stregone", frase: "Colui-che-non-si-deve-nominare. E infatti nessuno lo nomina.",
+  { id: "simoldemort", nome: "Simoldemort", serie: "maghi", rarita: "leggendaria", stile: "DIF", ruolo: "stregone", frase: "Colui-che-non-si-deve-nominare. E infatti nessuno lo nomina.",
     mosse: [m("Fiamma Verde", 0, 32, { drena: 20 }), m("Marchio Oscuro", 2, 28, { eff: { tipo: "indebolisci", val: 35, turni: 2 } }), m("Maledizione Suprema", 5, 100)] },
-  { id: "pipverus", nome: "Pipverus Piton", serie: "maghi", rarita: "epica", stile: "MEN", ruolo: "incendiario", frase: "Pozioni, sarcasmo e un segreto lungo una vita.",
+  { id: "pipverus", nome: "Pipverus Piton", serie: "maghi", rarita: "epica", stile: "FOR", ruolo: "incendiario", frase: "Pozioni, sarcasmo e un segreto lungo una vita.",
     mosse: [m("Fendente Oscuro", 0, 32), m("Pozione Velenosa", 2, 30, { eff: { tipo: "brucia", val: 7, turni: 3 } }), m("Principe Mezzosangue", 5, 92, { penetra: 25 })] },
   { id: "vikatrix", nome: "Vikatrix Lestrange", serie: "maghi", rarita: "epica", stile: "VEL", ruolo: "assassino", frase: "Ride sempre. E non è mai un buon segno.",
     mosse: [m("Pugnale Stregato", 0, 34), m("Risata Folle", 2, 44, { penetra: 25 }), m("Tortura Oscura", 5, 92, { penetra: 30 })] },
-  { id: "alessmione", nome: "Alessmione Granger", serie: "maghi", rarita: "leggendaria", stile: "MEN", ruolo: "difensore", frase: "Ha letto tutti i libri. Due volte.",
+  { id: "alessmione", nome: "Alessmione Granger", serie: "maghi", rarita: "leggendaria", stile: "DIF", ruolo: "difensore", frase: "Ha letto tutti i libri. Due volte.",
     mosse: [m("Incanto Levitante", 0, 28), m("Scudo Protettivo", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Tutti i Libri a Memoria", 5, 86, { penetra: 25 })] },
-  { id: "seneverr", nome: "Seneverr McGrannit", serie: "maghi", rarita: "epica", stile: "FOR", ruolo: "tank", frase: "Severa ma giusta. Soprattutto severa.",
+  { id: "seneverr", nome: "Seneverr McGrannit", serie: "maghi", rarita: "epica", stile: "DIF", ruolo: "tank", frase: "Severa ma giusta. Soprattutto severa.",
     mosse: [m("Bacchettata", 0, 28), m("Trasfigurazione", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Armata di Pietra", 5, 90)] },
   { id: "diegirius", nome: "Diegirius Black", serie: "maghi", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Evaso, ribelle e, quando serve, cane nero.",
     mosse: [m("Morso del Cane Nero", 0, 32), m("Fuga dalla Prigione", 2, 0, { eff: { tipo: "potenzia", val: 35, turni: 3 } }), m("Furia del Padrino", 5, 94)] },
@@ -240,7 +247,7 @@ const CARTE = [
     mosse: [m("Fattura Pipistrello", 0, 30), m("Bolide", 2, 24, { colpi: 2 }), m("Tiro da Cacciatrice", 5, 86)] },
   { id: "tizievil", nome: "Tizievil Paciock", serie: "maghi", rarita: "comune", stile: "FOR", ruolo: "guaritore", frase: "Timido fino al momento giusto. Poi tira fuori la spada.",
     mosse: [m("Pianta Carnivora", 0, 26), m("Erbologia", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Spada del Coraggio", 5, 80, { drena: 40 })] },
-  { id: "auroruna", nome: "Auroruna", serie: "maghi", rarita: "rara", stile: "MEN", ruolo: "stregone", frase: "Vede creature che nessun altro vede. Forse esistono davvero.",
+  { id: "auroruna", nome: "Auroruna", serie: "maghi", rarita: "rara", stile: "DIF", ruolo: "stregone", frase: "Vede creature che nessun altro vede. Forse esistono davvero.",
     mosse: [m("Fascino Lunare", 0, 28), m("Creature Invisibili", 2, 24, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Patrono Lepre", 5, 84)] },
   { id: "giulifleur", nome: "Giulifleur", serie: "maghi", rarita: "comune", stile: "VEL", ruolo: "capo", frase: "Elegante, raffinata e campionessa del torneo.",
     mosse: [m("Fiamma Azzurra", 0, 28), m("Fascino Veela", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Torneo dei Tre Maghi", 5, 80)] },
@@ -275,13 +282,14 @@ CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
 // Valori di partenza scritti qui nel codice. L'admin può cambiarli dal gioco:
 // le sue scelte (persona, serie, rarità) stanno nel database e vengono applicate all'avvio.
-const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, persona: c.persona }]));
+const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona }]));
 function applicaConfigCarte(cfg) {
   const mappa = (cfg && cfg.carte) || {};
   CARTE.forEach(c => {
     const o = CARTE_ORIGINALI[c.id], m = mappa[c.id] || {};
     c.serie = SERIE[m.serie] ? m.serie : o.serie;
     c.rarita = RARITA[m.rarita] ? m.rarita : o.rarita;
+    c.stile = STILI[m.stile] ? m.stile : o.stile;
     c.persona = typeof m.persona === "string" ? m.persona.trim().slice(0, 30) : o.persona;
   });
 }
@@ -331,15 +339,16 @@ const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 5);
 // Esempio: El Pelado (Tank, comune) Lv1 → 150 PV; Lv30 → 150 · 1,58 = 237 PV; Lv30 con lode → 249 PV.
 // In battaglia il livello moltiplica PV e danni: due carte allo stesso livello durano come al livello 1.
 function statistiche(c, liv = 1, lode = false) {
-  const b = RUOLI[c.ruolo], fr = RARITA[c.rarita].forza, f = fattoreLivello(liv, lode);
+  const b = RUOLI[c.ruolo], fr = RARITA[c.rarita].forza, f = fattoreLivello(liv, lode), t = BONUS_TIPO[c.stile] || {};
+  const att = b.att * (t.att || 1), pv = b.pv * (t.pv || 1), dif = b.dif * (t.dif || 1);
   return {
-    pv: Math.round(b.pv * fr * f),
-    att: Math.round(b.att * fr * f * 10) / 10,
-    attBase: Math.round(b.att * fr * 10) / 10,
-    dif: Math.round(b.dif * fr * 10) / 10,
-    vel: b.vel,
+    pv: Math.round(pv * fr * f),
+    att: Math.round(att * fr * f * 10) / 10,
+    attBase: Math.round(att * fr * 10) / 10,
+    dif: Math.round(dif * fr * 10) / 10,
+    vel: b.vel + (t.vel || 0),
     f,
   };
 }
 
-if (typeof module !== "undefined") module.exports = { SERIE, RARITA, ORDINE_RARITA, STILI, RUOLI, CARTE, PER_ID, ID_VECCHI, controllaLeggendarie, CARTE_ORIGINALI, applicaConfigCarte, LIVELLO_MAX, XP_LODE, XP_DOPPIONE, POT_DOPPIONE, MONETE_DOPPIONE_30, potPerLivello, monetePerLivello, xpPerLivello, xpPerArrivare, infoLivello, fattoreLivello, statistiche };
+if (typeof module !== "undefined") module.exports = { SERIE, RARITA, ORDINE_RARITA, STILI, BONUS_TIPO, RUOLI, CARTE, PER_ID, ID_VECCHI, controllaLeggendarie, CARTE_ORIGINALI, applicaConfigCarte, LIVELLO_MAX, XP_LODE, XP_DOPPIONE, POT_DOPPIONE, MONETE_DOPPIONE_30, potPerLivello, monetePerLivello, xpPerLivello, xpPerArrivare, infoLivello, fattoreLivello, statistiche };

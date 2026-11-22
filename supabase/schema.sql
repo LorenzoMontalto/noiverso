@@ -710,6 +710,24 @@ create or replace function public.inizio_classifica() returns timestamptz
 language sql stable security definer set search_path = public as $$
   select coalesce((select (dati->>'dal')::timestamptz from public.config where id = 'classifica'), '-infinity'::timestamptz);
 $$;
+create or replace function public.titolo_mese(t timestamptz) returns text
+language sql immutable as $$
+  select 'Classifica di ' || (array['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'])[extract(month from t at time zone 'Europe/Rome')::int]
+         || ' ' || extract(year from t at time zone 'Europe/Rome')::int;
+$$;
+create or replace function public.titolo_classifica(titolo text) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin può cambiare il titolo'; end if;
+  titolo := left(trim(coalesce(titolo, '')), 60);
+  insert into public.config (id, dati) values ('classifica', jsonb_build_object('titolo', titolo))
+    on conflict (id) do update set dati = public.config.dati || jsonb_build_object('titolo', titolo), aggiornato = now();
+end $$;
+-- se la classifica non ha ancora un titolo, prende quello del mese in corso
+insert into public.config (id, dati) values ('classifica', jsonb_build_object('titolo', public.titolo_mese(now())))
+  on conflict (id) do update set dati = public.config.dati || jsonb_build_object('titolo', public.titolo_mese(now())) where not (public.config.dati ? 'titolo');
+revoke all on function public.titolo_classifica(text) from public, anon;
+grant execute on function public.titolo_classifica(text) to authenticated;
 create or replace function public.azzera_classifica() returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare podio jsonb; vecchio jsonb;
@@ -718,10 +736,10 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object('nome', coalesce(dati->>'nome', 'Giocatore'), 'avatar', dati->>'avatar', 'punti', punti) order by punti desc), '[]'::jsonb) into podio
     from (select dati, punti from public.classifica where punti > 0 order by punti desc limit 3) t;
   select dati into vecchio from public.config where id = 'classifica';
-  insert into public.config (id, dati) values ('classifica', jsonb_build_object('dal', now(),
-      'storico', (jsonb_build_array(jsonb_build_object('dal', vecchio->>'dal', 'al', now(), 'podio', podio)) || coalesce(vecchio->'storico', '[]'::jsonb)) - 12))
+  insert into public.config (id, dati) values ('classifica', jsonb_build_object('dal', now(), 'titolo', public.titolo_mese(now()),
+      'storico', (jsonb_build_array(jsonb_build_object('dal', vecchio->>'dal', 'al', now(), 'titolo', vecchio->>'titolo', 'podio', podio)) || coalesce(vecchio->'storico', '[]'::jsonb)) - 12))
     on conflict (id) do update set dati = excluded.dati, aggiornato = now();
-  update public.classifica set aggiornato = now();   -- ricalcola i punti di tutti
+  update public.classifica set aggiornato = now() where user_id is not null;   -- ricalcola i punti di tutti (Supabase vuole sempre un WHERE)
   return jsonb_build_object('podio', podio);
 end $$;
 revoke all on function public.azzera_classifica() from public, anon;
@@ -748,7 +766,8 @@ begin
     'sconfitte', coalesce((s->'stats'->>'sconfitte')::int, 0),
     'carte', (select count(*) from jsonb_object_keys(coalesce(s->'carte', '{}'::jsonb))),
     'vinte_amici', (select count(*) from public.sfide_amici where (sfidante = new.user_id and vinto) or (sfidato = new.user_id and not vinto)),
-    'vinte_vivo', (select count(*) from public.partite_vivo where vincitore = new.user_id and stato in ('ok', 'abbandono') and punti > 0 and creata >= public.inizio_classifica()));
+    'vinte_vivo', (select count(*) from public.partite_vivo where vincitore = new.user_id and stato in ('ok', 'abbandono') and punti > 0 and creata >= public.inizio_classifica()),
+    'giocate_vivo', (select count(*) from public.partite_vivo where (a = new.user_id or b = new.user_id) and stato in ('ok', 'abbandono') and creata >= public.inizio_classifica()));
   new.aggiornato := now();
   return new;
 end $$;

@@ -8,7 +8,7 @@ const Scena3D = (() => {
   const T = window.THREE;
   const COL_RARITA = { comune: 0x9aa3ad, rara: 0x4c95ff, epica: 0xb866ff, leggendaria: 0xf2c14e };
   const HEX_RARITA = { comune: "#9aa3ad", rara: "#4c95ff", epica: "#b866ff", leggendaria: "#f2c14e" };
-  const COL_STILE = { FOR: 0xff7a45, VEL: 0x3fd8ff, MEN: 0xd08cff };
+  const COL_STILE = { FOR: 0xff7a45, VEL: 0x3fd8ff, DIF: 0x7ddc6a };
   const ridotto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   let disponibile = false;
@@ -96,7 +96,7 @@ const Scena3D = (() => {
     const ruolo = (typeof RUOLI !== "undefined" ? RUOLI[c.ruolo].nome : c.ruolo).toUpperCase();
     g.fillText(`${ruolo} · ${RARITA[c.rarita].nome.toUpperCase()}`, 36, H - 40);
     // stile e livello
-    const cs = { FOR: "#ff7a45", VEL: "#3fd8ff", MEN: "#d08cff" }[c.stile];
+    const cs = { FOR: "#ff7a45", VEL: "#3fd8ff", DIF: "#7ddc6a" }[c.stile];
     g.fillStyle = "rgba(13,10,12,.85)"; g.fillRect(30, 30, 78, 38);
     g.strokeStyle = cs; g.lineWidth = 3; g.strokeRect(30, 30, 78, 38);
     g.fillStyle = cs; g.font = '700 24px "Barlow Semi Condensed", sans-serif'; g.fillText(c.stile, 46, 58);
