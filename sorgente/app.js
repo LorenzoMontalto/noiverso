@@ -137,6 +137,14 @@ function infoCarta(id) {
 const livello = id => infoCarta(id).liv;
 const haLode = id => infoCarta(id).lode;
 const possedute = () => CARTE.filter(c => S.carte[c.id] > 0);
+// In quali squadre è una carta (numeri da 1): serve a capire quali conviene potenziare
+const squadreDi = id => (S.squadre || []).map((q, i) => (q.carte || []).includes(id) ? i + 1 : 0).filter(Boolean);
+function htmlBadgeSquadra(id) {
+  const sq = squadreDi(id); if (!sq.length) return "";
+  const attiva = sq.includes((S.attiva || 0) + 1);
+  const testo = sq.length === 1 ? `Squadra ${sq[0]}` : `Squadre ${sq.join(" · ")}`;
+  return `<span class="badge-squadra ${attiva ? "attiva" : ""}" title="${attiva ? "Nella squadra che usi adesso" : "In una delle tue squadre"}">⚑ ${testo}</span>`;
+}
 const potenziabili = () => possedute().filter(c => infoCarta(c.id).puoi).length;
 const squadraAttiva = () => S.squadre[S.attiva] || S.squadre[0];
 const livelloPass = () => Math.min(PASS.livelli, Math.floor(S.pass.xp / PASS.xpLivello));
@@ -445,6 +453,7 @@ function apriDettaglio(id) {
         ${htmlStatGriglia(c, s)}
         ${htmlBonusRarita(c)}
         ${htmlTipo(c)}
+        ${squadreDi(id).length ? `<p class="passiva"><b>⚑ In squadra:</b> ${squadreDi(id).map(n => esc(S.squadre[n - 1].nome || `Squadra ${n}`) + (n === (S.attiva || 0) + 1 ? " (quella che usi adesso)" : "")).join(", ")}.</p>` : ""}
         <ul class="mosse-lista">
           ${c.mosse.map(mo => `<li><span class="costo">${mo.costo}◆</span><b>${esc(mo.nome)}</b><small>${esc(descrMossa(mo))}</small></li>`).join("")}
         </ul>
@@ -932,7 +941,7 @@ function htmlSezioneSerie(id, conTitolo) {
       <div class="serie-progresso"><b>${st.mie}<small>/${st.tot}</small></b><div class="barra"><i style="--p:${st.pct}%;background:${se.colore}"></i></div>${st.mie === st.tot ? `<span class="completa">Serie completa!</span>` : ""}</div>
     </div>
     <div class="griglia">
-      ${elenco.map((c, i) => `<div class="cella" style="--i:${i}">${S.carte[c.id] ? htmlCarta(c, { click: true }) : htmlCarta(c, { coperta: true })}</div>`).join("")}
+      ${elenco.map((c, i) => `<div class="cella" style="--i:${i}">${S.carte[c.id] ? htmlCarta(c, { click: true }) + htmlBadgeSquadra(c.id) : htmlCarta(c, { coperta: true })}</div>`).join("")}
     </div>
   </section>`;
 }
