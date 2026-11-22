@@ -35,6 +35,16 @@ function nuovoCombattente(id, liv, lode, olo) {
     buff: {}, stati: {}, scudo: 0, nebbia: false, stordito: false, carica: false, koAnnunciato: false };
 }
 
+// ---------------- Graffiti ----------------
+// Ogni lato può spruzzare un graffito sul campo: vale per tutta la battaglia (nomi e disegni in graffiti.js).
+// Sono a coppie opposte: se i due lati usano i due graffiti della stessa coppia, si annullano.
+const GRAFFITI_COPPIE = { fiamma: "muro", muro: "fiamma", fulmine: "blackout", blackout: "fulmine", cuore: "spina", spina: "cuore", fortuna: "specchio", specchio: "fortuna" };
+// quanto vale l'effetto al livello 1..5
+function valoreGraffito(id, liv = 1) {
+  const l = Math.max(1, Math.min(5, liv || 1)) - 1;
+  return { fiamma: 3 + 1.5 * l, muro: 3.5 + 1.25 * l, fulmine: l >= 2 ? 2 : 1, blackout: l >= 2 ? 2 : 1, cuore: 1.5 + .4 * l, spina: 2.5 + 1.25 * l, fortuna: 8 + 3 * l, specchio: l >= 3 ? 2 : 1 }[id] || 0;
+}
+
 class Battaglia {
   // squadre: array di {id, liv}
   constructor(sqG, sqC, nomeG = "Tu", nomeC = "Avversario", rng = Math.random) {
@@ -46,7 +56,21 @@ class Battaglia {
     this.turno = 1;
     this.vincitore = -1;
     this.ev = [];
+    this.graffitiAnnullati = null;
   }
+
+  // g0, g1: { id, liv } oppure null
+  impostaGraffiti(g0, g1) {
+    const g = [g0, g1].map(x => x && GRAFFITI_COPPIE[x.id] ? { id: x.id, liv: Math.max(1, Math.min(5, x.liv || 1)) } : null);
+    if (g[0] && g[1] && GRAFFITI_COPPIE[g[0].id] === g[1].id) { this.graffitiAnnullati = [g[0], g[1]]; g[0] = g[1] = null; }
+    this.lati.forEach((L, i) => { L.graffito = g[i]; });
+    for (const l of [0, 1]) {
+      if (this.gv(l, "fulmine")) this.lati[l].energia = Math.min(ENERGIA_MAX, this.lati[l].energia + this.gv(l, "fulmine"));
+      if (this.gv(l, "blackout")) this.lati[1 - l].energia = Math.max(0, this.lati[1 - l].energia - this.gv(l, "blackout"));
+    }
+  }
+  // valore del graffito "id" se il lato l lo sta usando, altrimenti 0
+  gv(l, id) { const x = this.lati[l].graffito; return x && x.id === id ? valoreGraffito(id, x.liv) : 0; }
 
   attivo(l) { const L = this.lati[l]; return L.squadra[L.attivo]; }
   vivi(l) { return this.lati[l].squadra.filter(x => x.pv > 0); }
@@ -80,13 +104,16 @@ class Battaglia {
     let varia = 1, crit = false;
     if (casuale) {
       varia = a.c.ruolo === "imprevedibile" ? 0.6 + this.rng() * 0.9 : 0.9 + this.rng() * 0.2;
-      crit = this.rng() < (a.c.ruolo === "assassino" ? 0.2 : PROB_CRITICO);
+      crit = this.rng() < (a.c.ruolo === "assassino" ? 0.2 : PROB_CRITICO) + this.gv(l, "fortuna") / 100;
     }
+    const parato = crit && this.gv(1 - l, "specchio") > 0;   // lo specchio trasforma i critici in colpi normali
+    if (parato) crit = false;
     let dmg = m.pot * rapporto * stile * varia * (crit ? 1.5 : 1) * K_DANNO * (a.f || 1);
+    dmg *= (1 + this.gv(l, "fiamma") / 100) * (1 - this.gv(1 - l, "muro") / 100);
     if (a.c.ruolo === "tiratore" && m.costo >= 2) dmg *= 1.1;
     if (d.c.ruolo === "tank") dmg *= 0.9;
     if (d.carica) dmg *= 0.7;
-    return { danno: Math.max(1, Math.round(dmg)), crit, stile };
+    return { danno: Math.max(1, Math.round(dmg)), crit, stile, parato };
   }
 
   risolviTurno(azG, azC) {
@@ -151,6 +178,9 @@ class Battaglia {
         totale += dmg;
         const nota = r.stile > 1 ? " Super efficace!" : r.stile < 1 ? " Poco efficace." : "";
         this._log(`${r.crit ? "Critico! " : ""}${d.c.nome} perde ${dmg} PV.${nota}`, { lato: l, colpo: 1 - l, danno: dmg, crit: r.crit, stile: a.c.stile, efficace: r.stile });
+        if (r.parato) { const n = this.gv(1 - l, "specchio"); O.energia = Math.min(ENERGIA_MAX, O.energia + n); this._log(`Graffito Specchio: il critico rimbalza, ${O.nome} prende +${n} energia.`, { lato: 1 - l, anim: "energia", su: 1 - l, graffito: "specchio" }); }
+        const spina = this.gv(1 - l, "spina");
+        if (spina && a.pv > 0) { const rif = Math.max(1, Math.round(dmg * spina / 100)); a.pv = Math.max(0, a.pv - rif); this._log(`Graffito Spina: ${a.c.nome} si punge e perde ${rif} PV.`, { lato: 1 - l, colpo: l, danno: rif, graffito: "spina" }); }
       }
       if (m.drena && totale > 0) this._cura(l, a, Math.round(totale * m.drena / 100));
       if (a.c.ruolo === "ladro" && O.energia > 0 && this.rng() < 0.2) {
@@ -229,6 +259,8 @@ class Battaglia {
           this._log(`${a.c.nome} brucia: −${dmg} PV.`, { lato: l, colpo: l, danno: dmg, stile: "FOR", brucia: true });
           if (--b.turni <= 0) delete a.stati.brucia;
         }
+        const cuore = this.gv(l, "cuore");
+        if (cuore && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(a.pvMax * cuore / 100)));
         if (a.pv > 0 && a.c.ruolo === "guaritore") {
           this._cura(l, a, Math.round(a.pvMax * 0.05));
           for (const x of L.squadra) if (x !== a && x.pv > 0 && x.pv < x.pvMax) x.pv = Math.min(x.pvMax, x.pv + Math.round(x.pvMax * (this.turno >= TURNO_SIRENE ? 0.01 : 0.02)));
@@ -245,7 +277,10 @@ class Battaglia {
         x.carica = false;
       }
       const extra = (a.pv > 0 && a.c.ruolo === "stratega") ? 1 : 0;
-      L.energia = Math.min(ENERGIA_MAX, L.energia + ENERGIA_TURNO + extra);
+      // Fulmine dà +1 energia anche a inizio turno 4, Blackout ne toglie 1 al nemico
+      const g4 = this.turno === 3 && L.graffito;
+      const piu = g4 && L.graffito.id === "fulmine" ? 1 : 0, meno = this.turno === 3 && this.lati[1 - l].graffito && this.lati[1 - l].graffito.id === "blackout" ? 1 : 0;
+      L.energia = Math.max(0, Math.min(ENERGIA_MAX, L.energia + ENERGIA_TURNO + extra + piu - meno));
     }
     this._controllaKO();
     this.turno++;
@@ -312,4 +347,4 @@ class Battaglia {
   }
 }
 
-if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX };
+if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE };

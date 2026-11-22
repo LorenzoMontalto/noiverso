@@ -644,6 +644,7 @@ function vistaNegozio() {
     ${gruppo("classiche", "Classiche", "Da tutte le serie.")}
     ${gruppo("serie", "Per serie", "Solo carte di una serie: per completare l'album.")}
     ${gruppo("stile", "Per stile", "Solo carte di uno stile: per costruire la squadra.")}
+    ${Graffiti.htmlNegozio()}
     <div class="codice-box">
       <h3>Codice promozionale</h3>
       <p class="nota">Hai un codice? Scrivilo qui. Alcuni nascondono delle sorprese…</p>
@@ -700,6 +701,7 @@ function applicaCodice(p) {
   if (!p.gia) {
     if (p.monete) { S.monete += +p.monete; parti.push(`${p.monete} monete`); }
     for (const [t, n] of Object.entries(p.bustine || {})) if (TIPI_BUSTINA[t] && n > 0) { S.inventario[t] = (S.inventario[t] || 0) + +n; parti.push(`${n > 1 ? n + " × " : ""}${TIPI_BUSTINA[t].nome}`); }
+    for (let k = 0; k < Math.min(20, +p.bombolette || 0); k++) { const g = Graffiti.dai(Graffiti.pesca()); parti.push(`graffito «${Graffiti.info(g.id).nome}»`); }
   }
   if (p.ripetibile && p.titolo && !p.prova) {   // le sorprese ripetibili si possono riaprire dal negozio
     const lista = (S.codici || []).filter(x => x.codice !== p.codice);
@@ -792,6 +794,7 @@ function usaBustina(tipo, pagando) {
   const esiti = apriBustina(tipo);
   const su = aggiungiXP(XP_BUSTINA);
   Missioni.evento("bustina");
+  Graffiti.forseInBustina(tipo);
   salva();
   Archivio.pubblicaClassifica();
   aggiornaTesta();
@@ -975,6 +978,7 @@ function vistaSfida() {
     <div class="titolo-riga"><h2>Scegli l'avversario</h2>
       <div class="filtri">${pronte.map(x => `<button class="chip" data-fx="gelatina" data-squadra-sfida="${x.i}" aria-pressed="${x.i === S.attiva}">${esc(x.s.nome)}</button>`).join("")}</div>
     </div>
+    ${Graffiti.htmlPannello()}
     ${socialeAttivo() ? `<div class="sfida-sociale">${Boss.htmlGrande()}<div class="amici-invito"><b>Sfida un amico</b><span class="nota">Combatti contro la squadra vera di un amico, guidata dal computer. Se vinci gli rubi un punto in classifica.</span><button class="btn primario" data-fx="spinta" data-azione="vai-amici">Scegli chi sfidare</button></div></div>
     <div class="titolo-riga piccola"><h3>Contro il computer</h3></div>` : ""}
     <div class="modo-riga">${segmento("modalita", "Modalità", [["classica", "Classica 5 contro 5"], ["rapida", "Rapida 3 contro 3"]])}</div>
@@ -1322,6 +1326,7 @@ async function entra(slot, profiloLocale) {
   if (nuova && S.stats.bustine > 0 && !S.admin) setTimeout(() => mostraAvviso("È arrivata la bustina del giorno!"), 500);
   if (slot === "admin") setTimeout(() => mostraAvviso("Modalità admin: monete infinite e tutte le carte. Questi progressi non vanno in classifica."), 400);
   Tutorial.allIngresso();
+  Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); if (vista === "sfida" && !B) disegna(); });
   if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); }
   Boss.carica();
 }
@@ -1436,6 +1441,7 @@ function vistaAdmin() {
         <p class="nota">Versione del gioco: <b>${VERSIONE}</b> · ${CARTE.length} carte. Il gioco si aggiorna da solo quando pubblico una versione nuova. <button class="btn piccolo" data-fx="salto" data-azione="controlla-versione">Controlla adesso</button></p></div>
       <div class="admin-box largo" id="editor-carte">${htmlEditorCarte()}</div>
       <div class="admin-box largo" id="admin-immagini">${htmlAdminImmagini()}</div>
+      <div class="admin-box largo" id="admin-graffiti">${Graffiti.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-codici">${htmlAdminCodici()}</div>
       <div class="admin-box largo" id="admin-controlli">${htmlAdminControlli()}</div>
       <div class="admin-box"><h3>Il tuo profilo normale</h3>
@@ -1750,6 +1756,7 @@ async function azioneAdmin(cosa, el) {
   if (cosa === "img-trasferisci") { trasferisciImmagini(); return; }
   if (cosa.startsWith("cod-")) { azioneCodici(cosa, el); return; }
   if (cosa.startsWith("ctl-")) { azioneControlli(cosa, el); return; }
+  if (cosa === "graffiti-reset") { if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; } Graffiti.salvaAdmin($("#form-graffiti"), true); return; }
   if (cosa === "ed-annulla") { bozza = nuovaBozza(); aggiornaEditor(true); return; }
   if (cosa === "ed-originali") { bozza = Object.fromEntries(CARTE.map(c => [c.id, { ...CARTE_ORIGINALI[c.id] }])); aggiornaEditor(true); mostraAvviso("Valori di partenza caricati: premi Salva per applicarli a tutti."); return; }
   const metti = (L, lx = 0) => CARTE.forEach(c => { S.carte[c.id] = Math.max(1, S.carte[c.id] || 0); S.liv[c.id] = L; S.lodeXp[c.id] = lx; });
@@ -1944,7 +1951,7 @@ function apriTappa(k, i) {
 function avviaStoria(k, i) {
   const cap = STORIA[k], t = cap.tappe[i];
   chiudiModale();
-  avviaSfida({ id: "storia", nome: t.titolo, abilita: t.abilita, liv: t.liv, premio: 0, punti: 0, xp: 0, storia: { k, i } }, null, t.nemici)
+  avviaSfida({ id: "storia", nome: t.titolo, abilita: t.abilita, liv: t.liv, premio: 0, punti: 0, xp: 0, storia: { k, i }, graffitoNemico: t.boss ? Graffiti.aCaso(k + 1) : null }, null, t.nemici)
     .then(() => { if (B) aggiungiRegistro({ testo: `${PER_ID[t.parla].nome}: «${t.frase}»`, avviso: true }); });
 }
 
@@ -2033,6 +2040,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   B = new Battaglia(mia, nemici, "Tu", L.nome);
+  B.impostaGraffiti(Graffiti.mio(), Graffiti.nemico(L));
   if (L.bossGruppo) Boss.prepara(B);
   document.body.classList.add("in-battaglia");
   $("#app").classList.add("in-battaglia");
@@ -2067,6 +2075,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
   $("#palco").classList.toggle("senza3d", !arena);
   aggiornaBattaglia();
   aggiungiRegistro({ testo: `Sfida contro ${livelloAttuale.nome}. Tocca una mossa per iniziare.`, avviso: true });
+  Graffiti.annunciaInBattaglia(B);
 }
 
 function toccoPanchina(i) {
@@ -2188,7 +2197,8 @@ function htmlAzioni() {
   const L = B.lati[0], a = B.attivo(0);
   const prossimo = 2 + (a.c.ruolo === "stratega" ? 1 : 0);
   const cons = animazione || !imp().consigli ? null : consiglio();
-  return `
+  const gr = B.lati[0].graffito || B.lati[1].graffito ? `<div class="graffiti-riga">${Graffiti.htmlChip(B.lati[0].graffito, 0)}${Graffiti.htmlChip(B.lati[1].graffito, 1)}</div>` : "";
+  return `${gr}
   <div class="mana-riga">
     <span class="mana-etichetta">Energia</span>
     <div class="cristalli" id="cristalli">${htmlCristalli(L.energia, prossimo)}</div>
@@ -2378,10 +2388,11 @@ function esciBattaglia() {
 // ============================================================
 //  EVENTI
 // ============================================================
+document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#form-graffiti")) Graffiti.anteprimaAdmin(e.target); });
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2425,6 +2436,8 @@ document.addEventListener("click", e => {
   if (t.dataset.togli !== undefined) { squadraAttiva().carte.splice(+t.dataset.togli, 1); salva(); setTimeout(disegna, ridotto ? 0 : 200); return; }
   if (t.dataset.apri) { usaBustina(t.dataset.apri, false); return; }
   if (t.dataset.compra) { compraBustina(t.dataset.compra, t); return; }
+  if (t.dataset.bomboletta) { Graffiti.compra(+t.dataset.bomboletta, t); return; }
+  if (t.dataset.scegliGraffito !== undefined) { Graffiti.scegli(t.dataset.scegliGraffito); return; }
   if (t.dataset.schedaAlbum) { albumScheda = t.dataset.schedaAlbum; if (albumScheda === "scambi") Scambi.carica(); disegna(); return; }
   if (t.dataset.trofeo) { Trofei.riscuoti(t.dataset.trofeo, t); return; }
   if (t.dataset.titolo !== undefined) { Trofei.scegliTitolo(t.dataset.titolo); return; }
@@ -2464,6 +2477,7 @@ document.addEventListener("click", e => {
     case "vai-pass": vai("pass"); break;
     case "vai-negozio": vai("negozio"); break;
     case "vai-amici": Amici.apriElenco(); break;
+    case "graffiti-collezione": Graffiti.apriCollezione(); break;
     case "nuovo-scambio": Scambi.apriNuovo(); break;
     case "proponi-scambio": Scambi.proponi(t); break;
     case "attacca-boss": Boss.attacca(); break;
@@ -2503,6 +2517,7 @@ document.addEventListener("submit", e => {
   if (e.target.id === "form-profilo") inviaProfilo(e.target);
   if (e.target.id === "form-codice-promo") usaCodice();
   if (e.target.id === "form-codice") salvaCodiceAdmin(e.target);
+  if (e.target.id === "form-graffiti") Graffiti.salvaAdmin(e.target);
   if (e.target.id === "form-modifica") {
     const nome = $("#nome-modifica").value.trim().slice(0, 20);
     if (nome) S.profilo.nome = nome;

@@ -1216,6 +1216,61 @@ body.in-accesso { overflow: hidden; }
 .controllo li.g0 { color: var(--spento); }
 .controllo .azioni { margin: 0; }
 
+/* ---------- Graffiti ---------- */
+.graffito-pannello { display: grid; grid-template-columns: 150px 1fr auto; gap: 14px; align-items: center; background: var(--asfalto); border: 1px solid color-mix(in srgb, var(--c, var(--neon)) 45%, var(--linea)); border-radius: 16px; padding: 12px 16px; margin-bottom: 18px; background-image: radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--c, var(--neon)) 16%, transparent), transparent 60%); }
+.graffito-pannello.vuoto { grid-template-columns: 1fr auto; }
+.graffito-pannello.vuoto > div { display: grid; gap: 4px; }
+.graffito-pannello img { width: 150px; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .5)); }
+.graffito-info { display: grid; gap: 3px; min-width: 0; }
+.graffito-info small { color: var(--spento); font-weight: 700; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; }
+.graffito-info b { font-size: 1.05rem; }
+.graffito-info .nota { margin: 0; }
+.graffito-liv { display: inline-block; font-size: .72rem; font-weight: 800; color: var(--c, var(--oro)); border: 1px solid currentColor; border-radius: 999px; padding: 1px 7px; vertical-align: 2px; }
+.graffito-azioni { display: grid; gap: 6px; justify-items: stretch; }
+.graffiti-riga { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
+.graffito-chip { display: inline-flex; align-items: center; gap: 4px; font-size: .74rem; font-weight: 700; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--c); color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
+.graffito-chip small { opacity: .8; }
+.graffito-chip.nemico { border-style: dashed; }
+.graffiti-modale { display: grid; gap: 12px; }
+.graffiti-modale h2 { margin: 0; }
+.graffiti-modale .nota { margin: 0; }
+.graffiti-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; max-height: 58vh; overflow-y: auto; padding: 2px; }
+.graffito-carta { position: relative; display: grid; gap: 4px; justify-items: center; text-align: center; background: var(--asfalto); border: 2px solid var(--linea); border-radius: 14px; padding: 10px 8px; color: var(--testo); font: inherit; cursor: pointer; transition: border-color .15s, transform .15s; }
+.graffito-carta:hover { transform: translateY(-2px); border-color: var(--c); }
+.graffito-carta.sel { border-color: var(--c); box-shadow: 0 0 16px color-mix(in srgb, var(--c) 40%, transparent); }
+.graffito-carta img { width: 100%; }
+.graffito-carta small { color: var(--spento); font-size: .74rem; line-height: 1.3; }
+.graffito-inuso { font-size: .72rem; font-weight: 800; color: var(--c); }
+.graffito-carta.bloccato { cursor: default; opacity: .6; }
+.graffito-ombra { width: 100%; aspect-ratio: 2 / 1; display: grid; place-items: center; font-family: var(--display); font-size: 2rem; color: var(--spento); border: 2px dashed var(--linea); border-radius: 10px; }
+.graffito-carta.r-rara { box-shadow: inset 0 0 0 1px rgba(76, 149, 255, .25); }
+.graffito-carta.r-epica { box-shadow: inset 0 0 0 1px rgba(184, 102, 255, .35); }
+.graffiti-rivela { display: grid; gap: 14px; text-align: center; }
+.graffiti-rivela .codice-tag { justify-self: center; }
+.graffiti-usciti { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+.graffiti-usciti.uno { grid-template-columns: minmax(0, 320px); justify-content: center; }
+.graffito-uscito { display: grid; gap: 4px; justify-items: center; animation: spruzza .6s cubic-bezier(.2, .9, .3, 1.3) both; animation-delay: calc(var(--i) * 120ms); }
+.graffito-uscito img { width: 100%; filter: drop-shadow(0 0 12px color-mix(in srgb, var(--c) 50%, transparent)); }
+.graffito-uscito small { color: var(--oro); font-weight: 700; }
+@keyframes spruzza { from { opacity: 0; transform: scale(.4) rotate(-8deg); filter: blur(6px); } }
+.bomboletta-ico { display: grid; grid-template-columns: repeat(3, 1fr); width: 100%; gap: 0; }
+.bomboletta-ico img { width: 100%; margin: 0 -10%; }
+.form-graffiti { display: grid; gap: 10px; }
+.graffito-admin { display: grid; grid-template-columns: 170px 1fr; gap: 12px; align-items: center; border: 1px solid var(--linea); border-radius: 12px; padding: 10px 12px; margin: 0; }
+.graffito-anteprima { width: 170px; }
+.campi-graffito { display: grid; gap: 6px; }
+.campi-graffito label { display: grid; gap: 3px; font-size: .8rem; color: var(--spento); }
+.campi-graffito input:not([type=color]) { background: var(--notte); border: 1px solid var(--linea); border-radius: 8px; padding: 8px 10px; color: var(--testo); font: inherit; width: 100%; }
+.campi-graffito input[type=color] { width: 100%; height: 38px; border: 1px solid var(--linea); border-radius: 8px; background: var(--notte); padding: 2px; }
+@media (max-width: 560px) {
+  .graffito-pannello { grid-template-columns: 110px 1fr; }
+  .graffito-pannello img { width: 110px; }
+  .graffito-azioni { grid-column: 1 / -1; grid-template-columns: 1fr 1fr; }
+  .graffiti-griglia { grid-template-columns: repeat(2, 1fr); }
+  .graffito-admin { grid-template-columns: 1fr; }
+  .graffito-anteprima { width: 200px; justify-self: center; }
+}
+
 /* ---------- Tutorial ---------- */
 #tutorial { position: fixed; inset: 0; z-index: 29; pointer-events: none; }
 #tutorial .tut-velo { position: absolute; inset: 0; pointer-events: auto; }
@@ -1283,16 +1338,17 @@ body.in-accesso { overflow: hidden; }
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
 <script src="carte.e6d9b44b.js"></script>
-<script src="motore.fbe70bdf.js"></script>
+<script src="motore.ef8de161.js"></script>
 <script src="effetti.a35ec068.js"></script>
-<script src="scena3d.3fa28f56.js"></script>
+<script src="scena3d.5be6ba9c.js"></script>
 <script src="mappe.44fde78a.js"></script>
 <script src="storia.495ac110.js"></script>
 <script src="tutorial.5ff47857.js"></script>
 <script src="missioni.eb521373.js"></script>
-<script src="sociale.08500d43.js"></script>
+<script src="sociale.6f24e465.js"></script>
 <script src="collezione.9edea286.js"></script>
-<script src="app.3532b930.js"></script>
+<script src="graffiti.8048210a.js"></script>
+<script src="app.21e02e36.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

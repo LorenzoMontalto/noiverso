@@ -1036,6 +1036,22 @@ const Scena3D = (() => {
       const p0 = u.gruppo.position.clone();
       this.anima(1200, t => { u.gruppo.position.y = p0.y + Math.sin(t * Math.PI) * .5; u.gruppo.rotation.y = t * Math.PI * 2; }, easing.inOut).then(() => { u.occupata = false; });
     }
+    // Graffito spruzzato sul pavimento accanto alla pedana di un lato (segue la pedana quando cambia il layout).
+    // Se i graffiti si annullano, restano sbiaditi.
+    mettiGraffito(l, tela, annullato) {
+      if (!this.pedane || !this.pedane[l]) return;
+      const tex = nuovaTexture(tela);
+      const m = new T.Mesh(new T.PlaneGeometry(2.4, 1.2), new T.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, opacity: 0 }));
+      m.rotation.x = -Math.PI / 2; m.rotation.z = l ? .14 : -.12;
+      m.position.set(l ? -1.45 : 1.4, -.017, l ? .15 : .2);
+      m.renderOrder = 1;
+      this.pedane[l].add(m);
+      // compare come una spruzzata: si allarga e prende colore
+      const fine = annullato ? .32 : .95, t0 = performance.now();
+      const anima = () => { const k = Math.min(1, (performance.now() - t0) / 700); m.material.opacity = fine * k; m.scale.setScalar(.6 + .4 * (1 - Math.pow(1 - k, 3))); if (k < 1 && m.parent) requestAnimationFrame(anima); };
+      requestAnimationFrame(anima);
+    }
+
     distruggi() { this.r.domElement.removeEventListener("pointerdown", this._tocco); super.distruggi(); }
   }
 

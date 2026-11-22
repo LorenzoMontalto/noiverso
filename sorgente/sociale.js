@@ -40,7 +40,7 @@ const Amici = (() => {
     chiudiModale();
     schermoIntero(true);
     setTimeout(() => avviaSfida({ id: "amico", nome: `Squadra di ${amico.nome}`, abilita: .85, liv: [1, 30], premio: 0, punti: 0, xp: 0,
-      amico: { id, nome: amico.nome, avatar: amico.avatar, prova: !!S.admin } }, null, sq), ridotto ? 0 : 220);
+      amico: { id, nome: amico.nome, avatar: amico.avatar, prova: !!S.admin }, graffitoNemico: amico.graffito && GRAFFITI_COPPIE[amico.graffito.id] ? amico.graffito : null }, null, sq), ridotto ? 0 : 220);
   }
 
   async function chiudi() {
@@ -183,7 +183,7 @@ const Boss = (() => {
         <span class="nota">Attacchi oggi: ${S.admin ? "prova admin" : `${colpi}/3`}</span></div>`}
       ${top.length ? `<ol class="boss-classifica">${top.map((x, i) => `<li class="${x.id === Archivio.uid ? "io" : ""}"><span>${i + 1}</span>${htmlAvatar(String(x.avatar || ""), "mini")}<b>${esc(String(x.nome))}</b><em>${Number(x.danni).toLocaleString("it-IT")}</em></li>`).join("")}</ol>`
         : `<p class="nota">Nessuno l'ha ancora colpito. Sii il primo!</p>`}
-      ${grande ? `<p class="nota piccola">Tutti colpiscono lo stesso boss: 3 attacchi al giorno a testa, al massimo 6.000 danni ad attacco. Se cade entro domenica, chi ha partecipato riceve ${testoPremio(PREMIO)}; chi ha fatto più danni anche ${testoPremio(PREMIO_MVP)}.</p>` : ""}
+      ${grande ? `<p class="nota piccola">Tutti colpiscono lo stesso boss: 3 attacchi al giorno a testa, al massimo 6.000 danni ad attacco. Se cade entro domenica, chi ha partecipato riceve ${testoPremio(PREMIO)} e una bomboletta; chi ha fatto più danni anche ${testoPremio(PREMIO_MVP)}.</p>` : ""}
     </div>`;
   }
 
@@ -197,7 +197,7 @@ const Boss = (() => {
     const c = cartaBoss(stato.settimana);
     schermoIntero(true);
     setTimeout(() => avviaSfida({ id: "boss-gruppo", nome: `${c.nome} Gigante`, abilita: .9, liv: [30, 30], premio: 0, punti: 0, xp: 0,
-      bossGruppo: { settimana: stato.settimana, pv: rimasti(), prova: !!S.admin } }, null, [{ id: c.id, liv: LIVELLO_MAX, lode: true }]), ridotto ? 0 : 220);
+      bossGruppo: { settimana: stato.settimana, pv: rimasti(), prova: !!S.admin }, graffitoNemico: { id: Graffiti.ORDINE[(c.id.length + stato.settimana.length * 7) % Graffiti.ORDINE.length], liv: 3 } }, null, [{ id: c.id, liv: LIVELLO_MAX, lode: true }]), ridotto ? 0 : 220);
   }
   // Il boss in battaglia: tanti PV (quelli che restano al boss del gruppo, al massimo 99.999) e colpi più forti
   function prepara(Bt) {
@@ -245,11 +245,13 @@ const Boss = (() => {
       const r = await rpcSociale("riscatta_boss", { sett });
       const p = JSON.parse(JSON.stringify(PREMIO));
       if (r.posizione === 1) for (const [t, n] of Object.entries(PREMIO_MVP.bustine)) p.bustine[t] = (p.bustine[t] || 0) + n;
-      daiPremio(p); salva(); aggiornaTesta();
+      daiPremio(p);
+      const gr = Graffiti.dai(Graffiti.pesca());
+      salva(); aggiornaTesta();
       if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 80, forma: "coriandolo", colori: ["#f2c14e", "#ff2e46", "#3fd8ff", "#fff"], velocita: 9, dimensione: 5 }); }
       apriModale(`<div class="codice-modale"><span class="codice-tag">Boss sconfitto</span><h2>${r.posizione === 1 ? "Sei l'MVP!" : "Missione compiuta"}</h2>
         <p>Siete stati in ${r.partecipanti} a colpirlo. Tu hai fatto <b>${Number(r.danni).toLocaleString("it-IT")}</b> danni (${r.posizione}° posto).</p>
-        <p class="codice-premio">Hai ricevuto: <b>${esc(testoPremio(p))}</b></p>
+        <p class="codice-premio">Hai ricevuto: <b>${esc(testoPremio(p))} + graffito «${esc(Graffiti.info(gr.id).nome)}»</b></p>
         <div class="azioni centro"><button class="btn primario" data-azione="chiudi">Grande!</button></div></div>`);
       carica(true);
     } catch (e) { mostraAvviso(e.message); carica(true); }

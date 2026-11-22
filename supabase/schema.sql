@@ -166,6 +166,9 @@ begin
   return jsonb_build_object(
     'nome', coalesce(nullif(d->'profilo'->>'nome', ''), 'Giocatore'),
     'avatar', coalesce(d->'profilo'->>'avatar', ''),
+    -- il graffito che l'amico ha scelto, con il livello vero (copie, massimo 5)
+    'graffito', case when coalesce(d->>'graffito', '') <> '' and coalesce((d->'graffiti'->>(d->>'graffito'))::int, 0) > 0
+      then jsonb_build_object('id', d->>'graffito', 'liv', least(5, (d->'graffiti'->>(d->>'graffito'))::int)) end,
     'squadra', coalesce((select jsonb_agg(jsonb_build_object(
         'id', x,
         'liv', least(30, greatest(1, coalesce((d->'liv'->>x)::int, 1))),
