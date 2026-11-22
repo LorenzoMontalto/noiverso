@@ -240,7 +240,7 @@ begin
   att := coalesce((d->>'attiva')::int, 0);
   return jsonb_build_object(
     'nome', coalesce(nullif(d->'profilo'->>'nome', ''), 'Giocatore'),
-    'avatar', coalesce(d->'profilo'->>'avatar', ''),
+    'avatar', case when coalesce((d->'carte'->>(d->'profilo'->>'avatar'))::int, 0) > 0 then d->'profilo'->>'avatar' else '' end,
     -- il graffito della squadra che l'amico ha in campo, con il livello vero (copie, massimo 5)
     'graffito', (select case when coalesce(g, '') <> '' and coalesce((d->'graffiti'->>g)::int, 0) > 0
         then jsonb_build_object('id', g, 'liv', least(5, (d->'graffiti'->>g)::int)) end
@@ -840,6 +840,10 @@ begin
   end if;
   new.dati := (coalesce(new.dati, '{}'::jsonb) - 'titolo') || jsonb_build_object('titolo',
     case when public.titolo_valido(new.user_id, new.dati->>'titolo_id', s) then public.testo_titolo(new.dati->>'titolo_id') end);
+  -- l'avatar in classifica dev'essere una carta che il giocatore ha davvero trovato
+  if coalesce(new.dati->>'avatar', '') <> '' and coalesce((s->'carte'->>(new.dati->>'avatar'))::int, 0) <= 0 then
+    new.dati := new.dati || jsonb_build_object('avatar', '');
+  end if;
   new.dati := coalesce(new.dati, '{}'::jsonb) || jsonb_build_object(
     'punti', new.punti,
     'vittorie', coalesce((s->'stats'->>'vittorie')::int, 0),

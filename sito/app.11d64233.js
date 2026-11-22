@@ -1479,8 +1479,12 @@ function applicaImpostazioni() {
 function htmlAvatar(id, cls = "") {
   return PER_ID[id] ? `<img class="avatar ${cls}" src="${imgCarta(id)}" alt="">` : `<span class="avatar vuoto ${cls}" aria-hidden="true">?</span>`;
 }
+// L'avatar si sceglie solo tra le carte che hai trovato (l'admin le ha tutte)
+const avatarValido = id => !!(id && PER_ID[id] && S && S.carte && S.carte[id] > 0);
 function htmlSceltaAvatar(sel) {
-  return `<div class="scelta-avatar" role="radiogroup" aria-label="Scegli il tuo avatar">${CARTE.map(c => `<button type="button" class="av-btn ${c.id === sel ? "sel" : ""}" data-fx="salto" data-avatar="${c.id}" role="radio" aria-checked="${c.id === sel}" title="${esc(c.nome)}"><img src="${imgCarta(c.id)}" alt="${esc(c.nome)}"></button>`).join("")}</div>`;
+  const mie = possedute();
+  if (!mie.length) return `<p class="nota">Puoi scegliere come avatar solo le carte che hai trovato: apri la tua prima bustina e torna qui.</p>`;
+  return `<p class="nota">Puoi scegliere tra le ${mie.length} carte che hai trovato: più ne trovi, più avatar hai.</p><div class="scelta-avatar" role="radiogroup" aria-label="Scegli il tuo avatar">${mie.map(c => `<button type="button" class="av-btn ${c.id === sel ? "sel" : ""}" data-fx="salto" data-avatar="${c.id}" role="radio" aria-checked="${c.id === sel}" title="${esc(c.nome)}"><img src="${imgCarta(c.id)}" alt="${esc(c.nome)}"></button>`).join("")}</div>`;
 }
 
 // ---------- Schermata di accesso ----------
@@ -1508,8 +1512,7 @@ function mostraAccesso(vistaForm) {
         <h2>${vistaForm === "nuovo" ? "Nuovo giocatore" : "Crea il tuo profilo"}</h2>
         <label for="nome-profilo">Nome in gioco</label>
         <input id="nome-profilo" maxlength="20" required autocomplete="nickname" value="${esc(vistaForm === "nuovo" ? "" : (S.profilo.nome || Archivio.nomeAccount || ""))}" placeholder="Come ti chiamano">
-        <p class="etichetta-campo">Scegli il tuo avatar <span class="nota">(anche te stesso, se sei nel mazzo)</span></p>
-        ${htmlSceltaAvatar(avatarScelto)}
+        <p class="nota">L'avatar lo scegli dopo, dal tuo profilo, tra le carte che troverai.</p>
         <p class="errore" id="errore-profilo" hidden></p>
         <button class="btn primario grande" data-fx="onda" type="submit">Entra in strada</button>
         ${vistaForm === "nuovo" ? `<button class="btn" type="button" data-azione="torna-accesso">Indietro</button>` : ""}
@@ -1560,14 +1563,13 @@ async function inviaProfilo(form) {
   const nome = $("#nome-profilo").value.trim().slice(0, 20);
   const err = $("#errore-profilo");
   if (!nome) { err.textContent = "Scrivi un nome per entrare."; err.hidden = false; return; }
-  if (!avatarScelto) { err.textContent = "Scegli un avatar tra le carte."; err.hidden = false; FX.riavvia($(".scelta-avatar"), "fx-scuoti"); return; }
   if (Archivio.modo !== "cloud") {
-    const id = Profili.aggiungi(nome, avatarScelto);
+    const id = Profili.aggiungi(nome, "");
     await entra("partita", id);
-    S.profilo = { nome, avatar: avatarScelto };
+    S.profilo = { nome, avatar: "" };
     salva(); aggiornaTesta();
   } else {
-    S.profilo = { nome, avatar: avatarScelto };
+    S.profilo = { nome, avatar: "" };
     salva();
     await entra("partita");
   }
@@ -1598,14 +1600,14 @@ function segmento(chiave, etichetta, opzioni, aiuto) {
     <div class="segmenti" role="radiogroup" aria-label="${esc(etichetta)}">${opzioni.map(([val, testo]) => `<button type="button" class="seg ${String(v) === String(val) ? "sel" : ""}" data-fx="gelatina" data-imp="${chiave}" data-val="${val}" role="radio" aria-checked="${String(v) === String(val)}">${testo}</button>`).join("")}</div></div>`;
 }
 function apriProfilo() {
-  avatarScelto = S.profilo.avatar || "";
+  avatarScelto = avatarValido(S.profilo.avatar) ? S.profilo.avatar : "";
   const tipo = S.admin ? "Account admin" : Archivio.modo === "cloud" ? (window.NOIVERSO_SUPABASE ? `Account · ${Archivio.nomeAccount}` : "Account Claude") : "Profilo su questo dispositivo";
   apriModale(`
     <div class="profilo-modale">
       <div class="profilo-testa">${htmlAvatar(S.profilo.avatar, "grande")}<div><small>${tipo}</small><h2>${esc(S.profilo.nome || "Giocatore")}</h2>
         <span class="nota">${S.admin ? "Monete infinite · tutte le carte · fuori classifica" : `${S.stats.vittorie} vittorie · ${possedute().length}/${CARTE.length} carte · pass Lv ${livelloPass()}`}</span></div></div>
-      <details class="profilo-modifica">
-        <summary>Cambia nome e avatar</summary>
+      <details class="profilo-modifica" ${!S.profilo.avatar && possedute().length ? "open" : ""}>
+        <summary>${S.profilo.avatar ? "Cambia nome e avatar" : "Scegli il tuo avatar"}</summary>
         <form id="form-modifica">
           <label for="nome-modifica">Nome in gioco</label>
           <input id="nome-modifica" maxlength="20" value="${esc(S.profilo.nome || "")}">
@@ -2847,7 +2849,7 @@ document.addEventListener("submit", e => {
   if (e.target.id === "form-modifica") {
     const nome = $("#nome-modifica").value.trim().slice(0, 20);
     if (nome) S.profilo.nome = nome;
-    if (avatarScelto) S.profilo.avatar = avatarScelto;
+    if (avatarScelto && avatarValido(avatarScelto)) S.profilo.avatar = avatarScelto;
     if (Archivio.modo !== "cloud" && Archivio.profiloLocale) Profili.aggiorna(Archivio.profiloLocale, { nome: S.profilo.nome, avatar: S.profilo.avatar });
     salva(); Archivio.pubblicaClassifica(); aggiornaTesta(); apriProfilo(); mostraAvviso("Profilo aggiornato.");
   }
@@ -2915,6 +2917,8 @@ function applicaSalvataggio(salvato) {
     S.carte = Object.assign({}, S.carte || {});
     // recupero: una carta con un livello è stata trovata in una bustina, anche se la collezione non l'ha registrata
     for (const id of Object.keys(S.liv || {})) if (PER_ID[id] && !(S.carte[id] > 0)) S.carte[id] = 1;
+    // l'avatar deve essere una carta che hai trovato (chi l'aveva scelto prima della regola lo riscegli dal profilo)
+    if (S.profilo && S.profilo.avatar && !(S.carte[S.profilo.avatar] > 0)) S.profilo = Object.assign({}, S.profilo, { avatar: "" });
     S.pass.riscossi = [...new Set((S.pass.riscossi || []).map(Number))];
     S.pass.scelte = Object.assign({}, S.pass.scelte || {});
   }
