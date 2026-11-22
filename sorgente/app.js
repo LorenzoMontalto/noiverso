@@ -1416,6 +1416,7 @@ async function entra(slot, profiloLocale) {
   if (slot === "admin") setTimeout(() => mostraAvviso("Modalità admin: monete infinite e tutte le carte. Questi progressi non vanno in classifica."), 400);
   Tutorial.allIngresso();
   if (slot !== "admin") Missioni.finestraAccesso();
+  Zaino.carica();
   Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); });
   if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); }
   Boss.carica();
@@ -1532,6 +1533,7 @@ function vistaAdmin() {
       <div class="admin-box largo" id="editor-carte">${htmlEditorCarte()}</div>
       <div class="admin-box largo" id="admin-immagini">${htmlAdminImmagini()}</div>
       <div class="admin-box largo" id="admin-graffiti">${Graffiti.htmlAdmin()}</div>
+      <div class="admin-box largo" id="admin-zaino">${Zaino.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-codici">${htmlAdminCodici()}</div>
       <div class="admin-box largo" id="admin-controlli">${htmlAdminControlli()}</div>
       <div class="admin-box"><h3>Classifica</h3>
@@ -1868,6 +1870,10 @@ async function azioneAdmin(cosa, el) {
   if (cosa === "img-trasferisci") { trasferisciImmagini(); return; }
   if (cosa.startsWith("cod-")) { azioneCodici(cosa, el); return; }
   if (cosa.startsWith("ctl-")) { azioneControlli(cosa, el); return; }
+  if (cosa === "zaino-base") {
+    if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
+    Zaino.salvaAdmin(null, true); return;
+  }
   if (cosa === "azzera-classifica") {
     apriModale(`<div class="conferma"><h2>Azzerare la classifica?</h2><p>Tutti ripartono da 0 punti e 0 partite giocate. Il podio di adesso viene salvato nell'albo d'oro. Non si può tornare indietro.</p>
       <div class="azioni centro"><button class="btn" data-azione="chiudi">No</button><button class="btn primario" data-admin="azzera-classifica-si">Sì, azzera</button></div></div>`);
@@ -2674,6 +2680,7 @@ document.addEventListener("submit", e => {
   if (e.target.id === "form-codice-promo") usaCodice();
   if (e.target.id === "form-codice") salvaCodiceAdmin(e.target);
   if (e.target.id === "form-titolo-classifica") salvaTitoloClassifica(e.target);
+  if (e.target.id === "form-zaino") Zaino.salvaAdmin(e.target);
   if (e.target.id === "form-graffiti") Graffiti.pubblica();
   if (e.target.id === "form-modifica") {
     const nome = $("#nome-modifica").value.trim().slice(0, 20);

@@ -23,6 +23,73 @@ const Zaino = (() => {
                 desc: "Una tua carta KO torna in panchina con il 30% dei PV. Una volta sola per battaglia: a quell'ora i taxi sono pochi." },
   };
   const ORDINE = Object.keys(OGGETTI);
+  // ---------- modifiche dell'admin (config 'zaino'): nome, icona, colore, prezzo, descrizione, forza dell'effetto, in vendita sì/no ----------
+  const BASE = JSON.parse(JSON.stringify(OGGETTI)), BASE_EFF = JSON.parse(JSON.stringify(OGGETTI_EFFETTI));
+  // limiti dell'effetto per tipo: [minimo, massimo, unità]
+  const LIMITI = { cura: [5, 100, "% PV"], energia: [1, 8, "energia"], forza: [5, 100, "% attacco"], scudo: [5, 90, "% di danni in meno"], pulisci: [0, 50, "% PV di cura"], rianima: [5, 100, "% PV"] };
+  const cortoDi = id => { const e = OGGETTI_EFFETTI[id] || {}; return { cura: `Cura il ${e.val}%`, energia: `+${e.val} energia`, forza: `+${e.val}% attacco`, scudo: `Scudo ${e.val}%`,
+    pulisci: "Toglie i malus", nebbia: "Schiva 1 attacco", rianima: "Rialza una carta KO" }[e.tipo] || ""; };
+  let personali = {}, caricato = false;
+  function applica(cfg) {
+    personali = cfg && typeof cfg === "object" ? cfg : {};
+    for (const id of ORDINE) {
+      const m = personali[id] || {}, b = BASE[id], o = OGGETTI[id], e = OGGETTI_EFFETTI[id], be = BASE_EFF[id];
+      o.nome = typeof m.nome === "string" && m.nome.trim() ? m.nome.trim().slice(0, 30) : b.nome;
+      o.icona = typeof m.icona === "string" && m.icona.trim() ? [...m.icona.trim()].slice(0, 4).join("") : b.icona;
+      o.colore = /^#[0-9a-f]{6}$/i.test(m.colore || "") ? m.colore : b.colore;
+      o.desc = typeof m.desc === "string" && m.desc.trim() ? m.desc.trim().slice(0, 200) : b.desc;
+      o.prezzo = Number.isFinite(+m.prezzo) && +m.prezzo >= 10 ? Math.min(5000, Math.round(+m.prezzo)) : b.prezzo;
+      o.nascosto = !!m.nascosto;
+      const lim = LIMITI[be.tipo];
+      e.val = lim && Number.isFinite(+m.val) ? Math.max(lim[0], Math.min(lim[1], Math.round(+m.val))) : be.val;
+      if (be.turni) e.turni = Number.isFinite(+m.turni) ? Math.max(1, Math.min(5, Math.round(+m.turni))) : be.turni;
+      o.corto = cortoDi(id);
+    }
+  }
+  async function carica() {
+    if (Archivio.modo !== "cloud" || !Archivio.db) { caricato = true; return; }
+    try { const snap = await Archivio.db.doc("config/zaino").get(); applica(snap && snap.exists ? snap.data() : {}); caricato = true; } catch (e) { return; }
+    if (!B && ["admin", "sfida", "negozio"].includes(vista) && $("#modale").hidden) disegna();
+  }
+  function htmlAdmin() {
+    if (!caricato) { setTimeout(carica, 0); return `<h3>Zaino</h3><p class="nota">Carico gli oggetti…</p>`; }
+    return `<h3>Zaino</h3>
+      <p class="nota">Cambia nome, icona (un'emoji), colore, prezzo, descrizione e forza dell'effetto degli oggetti. Quando salvi vale per tutti, anche nelle partite dal vivo. "Non in vendita" lo toglie dal negozio, ma chi ce l'ha può ancora usarlo.</p>
+      <form id="form-zaino" class="zaino-admin" autocomplete="off">${ORDINE.map(id => { const o = OGGETTI[id], e = OGGETTI_EFFETTI[id], lim = LIMITI[e.tipo];
+        return `<fieldset class="zaino-admin-riga" style="--c:${o.colore}">
+          <legend>${htmlIcona(id, "piccola")} ${esc(o.nome)}${o.nascosto ? ` <small class="nota">(non in vendita)</small>` : ""}</legend>
+          <div class="campi-3">
+            <label>Nome <input name="${id}.nome" maxlength="30" value="${esc(o.nome)}"></label>
+            <label>Icona <input name="${id}.icona" maxlength="8" value="${esc(o.icona)}" class="campo-emoji"></label>
+            <label>Colore <input name="${id}.colore" type="color" value="${esc(o.colore)}"></label>
+          </div>
+          <label>Descrizione <textarea name="${id}.desc" rows="2" maxlength="200">${esc(o.desc)}</textarea></label>
+          <div class="campi-3">
+            <label>Prezzo <input name="${id}.prezzo" type="number" min="10" max="5000" value="${o.prezzo}"></label>
+            ${lim ? `<label>Effetto (${lim[2]}) <input name="${id}.val" type="number" min="${lim[0]}" max="${lim[1]}" value="${e.val}"></label>` : `<label>Effetto <input value="${esc(cortoDi(id))}" disabled></label>`}
+            ${e.turni ? `<label>Turni <input name="${id}.turni" type="number" min="1" max="5" value="${e.turni}"></label>` : `<label class="spunta"><input type="checkbox" name="${id}.nascosto" ${o.nascosto ? "checked" : ""}> Non in vendita</label>`}
+          </div>
+          ${e.turni ? `<label class="spunta"><input type="checkbox" name="${id}.nascosto" ${o.nascosto ? "checked" : ""}> Non in vendita</label>` : ""}
+        </fieldset>`; }).join("")}
+        <div class="azioni"><button class="btn primario" type="submit">Salva per tutti</button><button type="button" class="btn" data-admin="zaino-base">Valori di partenza</button></div>
+      </form>`;
+  }
+  async function salvaAdmin(form, base) {
+    const f = base ? null : new FormData(form), nuovi = {};
+    if (!base) for (const id of ORDINE) {
+      const g = k => f.get(`${id}.${k}`), d = {}, b = BASE[id], be = BASE_EFF[id];
+      for (const k of ["nome", "icona", "desc"]) { const v = String(g(k) || "").trim(); if (v && v !== b[k]) d[k] = v; }
+      if (g("colore") && g("colore") !== b.colore) d.colore = g("colore");
+      if (g("prezzo") && +g("prezzo") !== b.prezzo) d.prezzo = +g("prezzo");
+      if (g("val") !== null && g("val") !== "" && +g("val") !== be.val) d.val = +g("val");
+      if (g("turni") !== null && g("turni") !== "" && +g("turni") !== be.turni) d.turni = +g("turni");
+      if (g("nascosto")) d.nascosto = true;
+      if (Object.keys(d).length) nuovi[id] = d;
+    }
+    try { await Archivio.db.doc("config/zaino").set(nuovi); applica(nuovi); mostraAvviso(base ? "Oggetti tornati ai valori di partenza per tutti." : "Oggetti dello zaino salvati: ora valgono per tutti."); }
+    catch (e) { mostraAvviso("Non sono riuscito a salvare. Serve la pagina online con il tuo account admin."); }
+    const box = $("#admin-zaino"); if (box) box.innerHTML = htmlAdmin();
+  }
   const info = id => Object.assign({ id }, OGGETTI[id]);
   const stato = () => { if (!S.zaino) S.zaino = { oggetti: {}, porta: [] }; return S.zaino; };
   const quanti = id => (stato().oggetti || {})[id] || 0;
@@ -41,7 +108,7 @@ const Zaino = (() => {
 
   // ---------- negozio ----------
   function compra(id, n, el) {
-    const o = OGGETTI[id]; if (!o) return;
+    const o = OGGETTI[id]; if (!o || o.nascosto) return;
     const costo = o.prezzo * n;
     if (!S.admin && S.monete < costo) { mostraAvviso("Non hai abbastanza monete."); return; }
     if (!S.admin) S.monete -= costo;
@@ -57,7 +124,7 @@ const Zaino = (() => {
   }
   function htmlNegozio() {
     return `<div class="titolo-riga piccola"><h3>Zaino</h3><p class="nota">Oggetti da usare in battaglia: uno per turno, senza perdere la mossa. Ne porti ${POSTI} a partita e si consumano solo se li usi.</p></div>
-      <div class="vetrina zaino-vetrina">${ORDINE.map(id => { const o = info(id), n = quanti(id);
+      <div class="vetrina zaino-vetrina">${ORDINE.filter(id => !OGGETTI[id].nascosto || quanti(id)).map(id => { const o = info(id), n = quanti(id);
         return `<div class="prodotto prodotto-oggetto" style="--c:${o.colore}">
           ${htmlIcona(id, "grande")}
           <b>${esc(o.nome)}</b>
@@ -124,5 +191,5 @@ const Zaino = (() => {
     await riproduci(r.ev);
   }
 
-  return { POSTI, elenco: () => Object.entries(OGGETTI), info, quanti, htmlIcona, perBattaglia, compra, htmlNegozio, htmlPannello, apriPosto, metti, htmlBattaglia, usa, ORDINE };
+  return { POSTI, carica, htmlAdmin, salvaAdmin, elenco: () => Object.entries(OGGETTI), info, quanti, htmlIcona, perBattaglia, compra, htmlNegozio, htmlPannello, apriPosto, metti, htmlBattaglia, usa, ORDINE };
 })();

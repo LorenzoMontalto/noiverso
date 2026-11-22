@@ -1466,6 +1466,18 @@ body.in-accesso { overflow: hidden; }
 .badge-squadra { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); z-index: 3; white-space: nowrap; pointer-events: none;
   font-size: .66rem; font-weight: 800; letter-spacing: .02em; padding: 2px 8px; border-radius: 999px; background: #2a2330; color: var(--testo); border: 1px solid var(--linea); box-shadow: 0 2px 6px rgba(0, 0, 0, .5); }
 .badge-squadra.attiva { background: #6fe3a0; color: #0d1a12; border-color: #6fe3a0; }
+
+/* admin: oggetti dello zaino */
+.zaino-admin { display: grid; gap: 12px; }
+.zaino-admin-riga { border: 1px solid var(--linea); border-left: 3px solid var(--c); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; margin: 0; }
+.zaino-admin-riga legend { display: flex; align-items: center; gap: 8px; font-weight: 700; padding: 0 6px; }
+.zaino-admin label { display: grid; gap: 4px; font-size: .82rem; color: var(--spento); }
+.zaino-admin label.spunta { display: flex; align-items: center; gap: 8px; }
+.zaino-admin input, .zaino-admin textarea { width: 100%; }
+.zaino-admin input[type=color] { height: 38px; padding: 2px; }
+.campi-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; }
+.campo-emoji { font-size: 1.3rem; text-align: center; }
+@media (max-width: 520px) { .campi-3 { grid-template-columns: 1fr 1fr; } }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.8816af04.js"></script>
@@ -1519,9 +1531,9 @@ body.in-accesso { overflow: hidden; }
 <script src="sociale.341222c9.js"></script>
 <script src="collezione.eecd2a2b.js"></script>
 <script src="graffiti.99c0b499.js"></script>
-<script src="zaino.5f11272f.js"></script>
+<script src="zaino.9d5ca11e.js"></script>
 <script src="online.b1df317e.js"></script>
-<script src="app.2fa7c0ea.js"></script>
+<script src="app.2d85da3f.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
