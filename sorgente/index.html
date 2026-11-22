@@ -1197,6 +1197,20 @@ body.in-accesso { overflow: hidden; }
   .scambio-coppia .carta { width: 64px; }
 }
 
+/* ---------- Controlli admin ---------- */
+.controlli { display: grid; gap: 10px; margin-top: 10px; }
+.controllo { background: var(--notte); border: 1px solid var(--linea); border-left: 4px solid var(--linea); border-radius: 12px; padding: 12px 14px; display: grid; gap: 6px; }
+.controllo.medio { border-left-color: var(--oro); }
+.controllo.grave { border-left-color: var(--neon); box-shadow: 0 0 16px rgba(255, 46, 70, .12); }
+.controllo-testa { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.controllo-livello { font-size: .75rem; font-weight: 700; color: var(--spento); }
+.controllo.grave .controllo-livello { color: var(--neon); }
+.controllo.medio .controllo-livello { color: var(--oro); }
+.controllo ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: .85rem; line-height: 1.4; }
+.controllo li small { color: var(--spento); margin-right: 4px; }
+.controllo li.g0 { color: var(--spento); }
+.controllo .azioni { margin: 0; }
+
 /* ---------- Tutorial ---------- */
 #tutorial { position: fixed; inset: 0; z-index: 29; pointer-events: none; }
 #tutorial .tut-velo { position: absolute; inset: 0; pointer-events: auto; }

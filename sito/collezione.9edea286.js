@@ -55,6 +55,7 @@ const Trofei = (() => {
     }
   }
   function titoloAttuale() { const t = elenco().find(x => x.id === S.titolo); return t && presi()[t.id] ? t.titolo : ""; }
+  const titoloId = () => titoloAttuale() ? S.titolo : "";
   function riscuoti(id, el) {
     const t = elenco().find(x => x.id === id);
     if (!t || !raggiunto(t) || presi()[id] || S.admin) return;
@@ -87,7 +88,7 @@ const Trofei = (() => {
           : preso ? (usato ? `<span class="chip sel">In uso</span>` : `<button class="btn piccolo" data-titolo="${t.id}">Usa titolo</button>`) : ""}</div>
       </div>`; }).join("")}</div>`;
   }
-  return { html, pronti, controlla, riscuoti, scegliTitolo, titoloAttuale };
+  return { html, pronti, controlla, riscuoti, scegliTitolo, titoloAttuale, titoloId };
 })();
 
 // ---------------- SCAMBI ----------------

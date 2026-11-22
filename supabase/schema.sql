@@ -390,6 +390,65 @@ revoke all on function public.boss_attuale(), public.colpisci_boss(integer), pub
 grant execute on function public.boss_attuale(), public.colpisci_boss(integer), public.riscatta_boss(text) to authenticated;
 
 -- ---------------- Controlli contro i trucchi ----------------
+-- Registro delle cose sospette: lo legge solo l'admin (pannello Admin → Controlli)
+create table if not exists public.registro (
+  id       bigint generated always as identity primary key,
+  user_id  uuid references auth.users (id) on delete cascade,
+  tipo     text not null,
+  dettagli jsonb not null default '{}'::jsonb,
+  quando   timestamptz not null default now()
+);
+create index if not exists registro_quando on public.registro (quando desc);
+alter table public.registro enable row level security;
+drop policy if exists "registro: solo l'admin" on public.registro;
+create policy "registro: solo l'admin" on public.registro for select to authenticated using (public.sono_admin());
+grant select on public.registro to authenticated;
+revoke all on public.registro from anon;
+
+-- I titoli dei trofei: il testo lo decide il server, il gioco manda solo quale trofeo vuole mostrare
+create or replace function public.testo_titolo(t text) returns text
+language sql immutable as $$
+  select case t
+    when 'vittoria-1' then 'Recluta' when 'vittorie-50' then 'Veterano' when 'vittorie-200' then 'Leggenda'
+    when 'carte-25' then 'Collezionista' when 'carte-50' then 'Archivista' when 'carte-tutte' then 'Completista'
+    when 'serie-eroi' then 'Supereroe' when 'serie-db' then 'Guerriero leggendario' when 'serie-dei' then 'Divinità'
+    when 'serie-nueve' then 'Boss della mala' when 'serie-maghi' then 'Arcimago'
+    when 'olo-1' then 'Brillante' when 'olo-5' then 'Arcobaleno' when 'livello-10' then 'Allenatore' when 'livello-30' then 'Maestro'
+    when 'lode-1' then 'Lodato' when 'bustine-50' then 'Strappabustine' when 'stelle-30' then 'Narratore' when 'pass-50' then 'Fedelissimo'
+    when 'accessi-7' then 'Sempre presente' when 'amici-10' then 'Bullo di quartiere' when 'boss-20000' then 'Ammazzaboss' when 'scambi-3' then 'Mercante'
+  end
+$$;
+-- Il trofeo risulta davvero conquistato? Dove si può, lo verifica sui dati del server (sfide, boss, scambi) o del salvataggio.
+create or replace function public.titolo_valido(u uuid, t text, d jsonb) returns boolean
+language plpgsql stable security definer set search_path = public as $$
+declare n int; carte int := (select count(*) from jsonb_object_keys(coalesce(d->'carte', '{}'::jsonb)));
+  olo int := (select count(*) from jsonb_each_text(coalesce(d->'olo', '{}'::jsonb)) where value = 'true');
+  liv int := coalesce((select max(value::int) from jsonb_each_text(coalesce(d->'liv', '{}'::jsonb)) where value ~ '^[0-9]+$'), 1);
+  st jsonb := coalesce(d->'stats', '{}'::jsonb);
+begin
+  if t is null or public.testo_titolo(t) is null or not coalesce((d->'trofei'->>t)::boolean, false) then return false; end if;
+  return case
+    when t = 'vittoria-1' then coalesce((st->>'vittorie')::int, 0) >= 1
+    when t = 'vittorie-50' then coalesce((st->>'vittorie')::int, 0) >= 50
+    when t = 'vittorie-200' then coalesce((st->>'vittorie')::int, 0) >= 200
+    when t = 'carte-25' then carte >= 25
+    when t = 'carte-50' then carte >= 50
+    when t = 'carte-tutte' then carte >= 70
+    when t like 'serie-%' then carte >= 12
+    when t = 'olo-1' then olo >= 1
+    when t = 'olo-5' then olo >= 5
+    when t = 'livello-10' then liv >= 10
+    when t = 'livello-30' then liv >= 30
+    when t = 'lode-1' then exists (select 1 from jsonb_each_text(coalesce(d->'lodeXp', '{}'::jsonb)) where value ~ '^[0-9]+$' and value::int >= 2000)
+    when t = 'bustine-50' then coalesce((st->>'bustine')::int, 0) >= 50
+    when t = 'stelle-30' then coalesce((select sum(value::int) from jsonb_each_text(coalesce(d->'storia'->'stelle', '{}'::jsonb)) where value ~ '^[0-9]+$'), 0) >= 30
+    when t = 'pass-50' then coalesce((d->'pass'->>'xp')::int, 0) >= 50 * 200
+    when t = 'accessi-7' then coalesce((st->>'serieMax')::int, 0) >= 7
+    when t = 'amici-10' then (select count(*) from public.sfide_amici where sfidante = u and vinto) >= 10
+    when t = 'boss-20000' then coalesce((select sum(danni) from public.boss_danni where user_id = u), 0) >= 20000
+    when t = 'scambi-3' then (select count(*) from public.scambi where (da = u or a = u) and stato = 'accettato') >= 3
+    else false end;
+end $$;
 -- Il gioco gira sul dispositivo di ognuno, quindi il server controlla i salvataggi:
 -- rifiuta valori impossibili da ottenere giocando e tiene la classifica allineata al salvataggio vero.
 create or replace function public.controlla_salvataggio() returns trigger
@@ -422,6 +481,15 @@ begin
        or coalesce((d->'stats'->>'punti')::int, 0) - coalesce((vecchio->'stats'->>'punti')::int, 0) > 200 then
       raise exception 'Salvataggio non valido (troppe vittorie in una volta)';
     end if;
+    -- salti grandi ma ancora possibili: li annoto per l'admin (un premio grosso li spiega, tanti di fila no)
+    if coalesce((d->>'monete')::numeric, 0) - coalesce((vecchio->>'monete')::numeric, 0) > 5000 then
+      insert into public.registro (user_id, tipo, dettagli) values (new.user_id, 'monete',
+        jsonb_build_object('da', coalesce((vecchio->>'monete')::numeric, 0), 'a', coalesce((d->>'monete')::numeric, 0)));
+    end if;
+    if coalesce((d->'stats'->>'vittorie')::int, 0) - coalesce((vecchio->'stats'->>'vittorie')::int, 0) > 5 then
+      insert into public.registro (user_id, tipo, dettagli) values (new.user_id, 'vittorie',
+        jsonb_build_object('da', coalesce((vecchio->'stats'->>'vittorie')::int, 0), 'a', coalesce((d->'stats'->>'vittorie')::int, 0)));
+    end if;
   end if;
   return new;
 end $$;
@@ -436,6 +504,13 @@ begin
   -- i numeri in classifica arrivano dal salvataggio, non da quello che manda il dispositivo
   select dati into s from public.salvataggi where user_id = new.user_id and slot = 'partita';
   new.punti := greatest(0, coalesce((s->'stats'->>'punti')::int, 0) + public.punti_amici(new.user_id));
+  -- il titolo si vede solo se il trofeo risulta davvero conquistato (altrimenti finisce nel registro)
+  if new.dati ? 'titolo_id' and coalesce(new.dati->>'titolo_id', '') <> '' and not public.titolo_valido(new.user_id, new.dati->>'titolo_id', s)
+     and coalesce((select dati->>'titolo_id' from public.classifica where user_id = new.user_id), '') <> new.dati->>'titolo_id' then
+    insert into public.registro (user_id, tipo, dettagli) values (new.user_id, 'titolo', jsonb_build_object('titolo', new.dati->>'titolo_id'));
+  end if;
+  new.dati := (coalesce(new.dati, '{}'::jsonb) - 'titolo') || jsonb_build_object('titolo',
+    case when public.titolo_valido(new.user_id, new.dati->>'titolo_id', s) then public.testo_titolo(new.dati->>'titolo_id') end);
   new.dati := coalesce(new.dati, '{}'::jsonb) || jsonb_build_object(
     'punti', new.punti,
     'vittorie', coalesce((s->'stats'->>'vittorie')::int, 0),
@@ -501,6 +576,57 @@ begin
 end $$;
 revoke all on function public.riscatta_codice(text, boolean) from public, anon;
 grant execute on function public.riscatta_codice(text, boolean) to authenticated;
+
+-- ---------------- Pannello controlli (solo admin) ----------------
+-- Mette insieme le cose strane delle ultime 2 settimane: il registro più alcuni controlli fatti al momento.
+create or replace function public.segnalazioni() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare r jsonb := '[]'::jsonb;
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin'; end if;
+  -- 1. dal registro: titoli non validi, salti di monete e vittorie
+  r := r || coalesce((select jsonb_agg(jsonb_build_object('user_id', user_id, 'tipo', tipo, 'dettagli', dettagli, 'quando', quando) order by quando desc)
+    from (select * from public.registro where quando > now() - interval '14 days' order by quando desc limit 150) x), '[]'::jsonb);
+  -- 2. sfide tra amici troppo veloci: due sfide dello stesso giocatore a meno di 25 secondi (una battaglia vera dura di più)
+  r := r || coalesce((select jsonb_agg(jsonb_build_object('user_id', sfidante, 'tipo', 'sfide-veloci', 'dettagli', jsonb_build_object('quante', n, 'giorno', g), 'quando', ultimo))
+    from (select sfidante, (quando at time zone 'Europe/Rome')::date g, count(*) n, max(quando) ultimo from (
+            select sfidante, quando, quando - lag(quando) over (partition by sfidante order by quando) as dopo from public.sfide_amici where quando > now() - interval '14 days') y
+          where dopo < interval '25 seconds' group by 1, 2) z), '[]'::jsonb);
+  -- 3. sempre vittorie contro gli amici: almeno 8 sfide in 2 settimane e nessuna persa
+  r := r || coalesce((select jsonb_agg(jsonb_build_object('user_id', sfidante, 'tipo', 'sempre-vinte', 'dettagli', jsonb_build_object('quante', n), 'quando', ultimo))
+    from (select sfidante, count(*) n, max(quando) ultimo from public.sfide_amici where quando > now() - interval '14 days' group by 1 having count(*) >= 8 and bool_and(vinto)) z), '[]'::jsonb);
+  -- 4. boss: media vicina al massimo per attacco (6.000)
+  r := r || coalesce((select jsonb_agg(jsonb_build_object('user_id', user_id, 'tipo', 'boss-alto', 'dettagli', jsonb_build_object('media', media, 'colpi', colpi, 'settimana', settimana), 'quando', now()))
+    from (select user_id, settimana, colpi, round(danni::numeric / nullif(colpi, 0)) media from public.boss_danni
+          where settimana >= to_char(now() - interval '14 days', 'IYYY-"W"IW') and colpi >= 2 and danni::numeric / nullif(colpi, 0) >= 5000) z), '[]'::jsonb);
+  -- i nomi dalla classifica
+  return coalesce((select jsonb_agg(e || jsonb_build_object('nome', coalesce((select c.dati->>'nome' from public.classifica c where c.user_id = (e->>'user_id')::uuid), 'Giocatore')))
+    from jsonb_array_elements(r) e), '[]'::jsonb);
+end $$;
+
+-- Rimedi: annullare le sfide tra amici degli ultimi giorni di un giocatore (i punti tornano a posto da soli)
+create or replace function public.annulla_sfide_di(u uuid, giorni integer default 14) returns integer
+language plpgsql security definer set search_path = public as $$
+declare n int; vittime uuid[];
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin'; end if;
+  select array_agg(distinct sfidato) into vittime from public.sfide_amici where sfidante = u and quando > now() - make_interval(days => giorni);
+  delete from public.sfide_amici where sfidante = u and quando > now() - make_interval(days => giorni);
+  get diagnostics n = row_count;
+  update public.classifica set aggiornato = now() where user_id = u or user_id = any (coalesce(vittime, '{}'));
+  insert into public.registro (user_id, tipo, dettagli) values (u, 'rimedio', jsonb_build_object('cosa', 'sfide annullate', 'quante', n));
+  return n;
+end $$;
+-- ... e azzerare i suoi danni al boss di questa settimana
+create or replace function public.azzera_boss_di(u uuid) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin'; end if;
+  update public.boss_danni set danni = 0 where user_id = u and settimana = public.settimana_attuale();
+  insert into public.registro (user_id, tipo, dettagli) values (u, 'rimedio', jsonb_build_object('cosa', 'danni al boss azzerati'));
+end $$;
+revoke all on function public.segnalazioni(), public.annulla_sfide_di(uuid, integer), public.azzera_boss_di(uuid), public.titolo_valido(uuid, text, jsonb) from public, anon;
+grant execute on function public.segnalazioni(), public.annulla_sfide_di(uuid, integer), public.azzera_boss_di(uuid) to authenticated;
 
 -- Fine. Dopo esserti registrato nel gioco, esegui supabase/importa-progressi.sql
 -- (porta i tuoi progressi e ti rende admin).

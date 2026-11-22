@@ -261,7 +261,7 @@ const Archivio = {
   async pubblicaClassifica() {
     if (this.modo !== "cloud" || this.admin) return; // l'admin non entra in classifica
     const voce = { punti: S.stats.punti, vittorie: S.stats.vittorie, sconfitte: S.stats.sconfitte,
-      carte: possedute().length, pass: livelloPass(), nome: (S.profilo.nome || "").slice(0, 22), avatar: S.profilo.avatar || "", titolo: Trofei.titoloAttuale(),
+      carte: possedute().length, pass: livelloPass(), nome: (S.profilo.nome || "").slice(0, 22), avatar: S.profilo.avatar || "", titolo_id: Trofei.titoloId(),
       aggiornato: new Date().toISOString() };
     try { await this.db.doc(`classifica/${this.uid}`).set(voce); } catch (e) { /* la classifica è un extra */ }
   },
@@ -1436,6 +1436,7 @@ function vistaAdmin() {
       <div class="admin-box largo" id="editor-carte">${htmlEditorCarte()}</div>
       <div class="admin-box largo" id="admin-immagini">${htmlAdminImmagini()}</div>
       <div class="admin-box largo" id="admin-codici">${htmlAdminCodici()}</div>
+      <div class="admin-box largo" id="admin-controlli">${htmlAdminControlli()}</div>
       <div class="admin-box"><h3>Il tuo profilo normale</h3>
         <p class="nota">Riparte da zero il tuo profilo da giocatore (non quello admin).</p>
         <button class="btn" data-fx="scuoti" data-admin="reset-normale">Azzera profilo normale</button></div>
@@ -1486,6 +1487,64 @@ async function caricaFileImmagini(files) {
     try { await ImmaginiCarte.carica(id, f, /\.webp$/i.test(f.name) && f.name.toLowerCase() === id + ".webp"); ok++; } catch (e) { ko.push(f.name); }
   }
   await dopoImmagini(ok, ko, "Caricamento");
+}
+
+// ---------- Controlli contro i trucchi (solo admin) ----------
+// Il server annota le cose strane; qui le metto in ordine per giocatore, in parole semplici, con i rimedi.
+let segnalazioni = null;
+async function caricaControlli() {
+  try { segnalazioni = await rpcSociale("segnalazioni"); } catch (e) { segnalazioni = { errore: e.message }; }
+  const box = $("#admin-controlli"); if (box) box.innerHTML = htmlAdminControlli();
+}
+function testoSegnalazione(x) {
+  const d = x.dettagli || {}, n = v => Number(v || 0).toLocaleString("it-IT");
+  const quando = new Date(x.quando).toLocaleString("it-IT", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const T = {
+    titolo: [2, `Ha provato a mostrare in classifica un titolo che non ha conquistato. Il server l'ha nascosto da solo.`],
+    monete: [1, `In un solo salvataggio le monete sono passate da ${n(d.da)} a ${n(d.a)}. Se gli hai dato un codice con tante monete è normale; se succede spesso, no.`],
+    vittorie: [2, `In un solo salvataggio le vittorie sono passate da ${n(d.da)} a ${n(d.a)}: di solito il gioco salva dopo ogni battaglia.`],
+    "sfide-veloci": [3, `Il ${d.giorno ? new Date(d.giorno).toLocaleDateString("it-IT") : "?"} ha fatto ${n(d.quante)} sfide tra amici a meno di 25 secondi l'una dall'altra: una battaglia vera dura di più.`],
+    "sempre-vinte": [1, `${n(d.quante)} sfide tra amici in 2 settimane, tutte vinte. Può essere solo molto forte: guarda se ci sono anche altre segnalazioni.`],
+    "boss-alto": [2, `Media di ${n(d.media)} danni per attacco al boss in ${n(d.colpi)} attacchi (il massimo è 6.000).`],
+    rimedio: [0, `Hai già fatto: ${esc(String(d.cosa || ""))}${d.quante !== undefined ? ` (${n(d.quante)})` : ""}.`],
+  }[x.tipo] || [1, esc(x.tipo)];
+  return { gravita: T[0], testo: T[1], quando };
+}
+function htmlAdminControlli() {
+  const titolo = `<h3>Controlli contro i trucchi</h3>`;
+  if (!window.NOIVERSO_SUPABASE) return titolo + `<p class="nota">Funzionano nella versione pubblicata su Supabase.</p>`;
+  if (!segnalazioni) { setTimeout(caricaControlli, 0); return titolo + `<p class="nota">Controllo…</p>`; }
+  if (segnalazioni.errore) return titolo + `<p class="errore">${esc(segnalazioni.errore)}. Hai eseguito di nuovo schema.sql su Supabase?</p>`;
+  const perGiocatore = {};
+  for (const x of segnalazioni) (perGiocatore[x.user_id] = perGiocatore[x.user_id] || { nome: x.nome, voci: [] }).voci.push(x);
+  const giocatori = Object.entries(perGiocatore).map(([id, g]) => {
+    const voci = g.voci.map(x => ({ x, ...testoSegnalazione(x) })).sort((a, b) => b.gravita - a.gravita);
+    return { id, nome: g.nome, voci, peso: voci.reduce((s, v) => s + v.gravita, 0) };
+  }).sort((a, b) => b.peso - a.peso);
+  return titolo + `
+    <p class="nota">Le cose strane delle ultime 2 settimane. Una segnalazione da sola non vuol dire che qualcuno bari: conta se se ne accumulano tante sullo stesso giocatore. I rimedi qui sotto rimettono a posto i punti da soli.</p>
+    <div class="azioni"><button class="btn piccolo" data-admin="ctl-aggiorna">Aggiorna</button></div>
+    ${giocatori.length ? `<div class="controlli">${giocatori.map(g => {
+      const tipi = new Set(g.voci.map(v => v.x.tipo));
+      return `<div class="controllo ${g.peso >= 5 ? "grave" : g.peso >= 2 ? "medio" : ""}">
+        <div class="controllo-testa"><b>${esc(String(g.nome))}</b><span class="controllo-livello">${g.peso >= 5 ? "Da guardare" : g.peso >= 2 ? "Qualcosa di strano" : "Probabilmente niente"}</span></div>
+        <ul>${g.voci.slice(0, 8).map(v => `<li class="g${v.gravita}"><small>${v.quando}</small> ${v.testo}</li>`).join("")}</ul>
+        ${g.voci.length > 8 ? `<p class="nota">…e altre ${g.voci.length - 8}.</p>` : ""}
+        <div class="azioni">
+          ${tipi.has("sfide-veloci") || tipi.has("sempre-vinte") ? `<button class="btn piccolo" data-admin="ctl-sfide:${g.id}">Annulla le sue sfide tra amici (14 giorni)</button>` : ""}
+          ${tipi.has("boss-alto") ? `<button class="btn piccolo" data-admin="ctl-boss:${g.id}">Azzera i suoi danni al boss di questa settimana</button>` : ""}
+        </div></div>`; }).join("")}</div>` : `<p class="nota">Nessuna segnalazione: tutto tranquillo.</p>`}
+    <p class="nota piccola">Monete o vittorie sbagliate le puoi correggere a mano su Supabase: Table Editor → salvataggi → riga del giocatore → colonna «dati».</p>`;
+}
+async function azioneControlli(cosa, el) {
+  const [az, id] = cosa.split(":");
+  if (az === "ctl-aggiorna") { segnalazioni = null; const box = $("#admin-controlli"); if (box) box.innerHTML = htmlAdminControlli(); return; }
+  if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
+  try {
+    if (az === "ctl-sfide") { const n = await rpcSociale("annulla_sfide_di", { u: id, giorni: 14 }); mostraAvviso(`${n} sfide annullate: i punti in classifica tornano a posto.`); }
+    if (az === "ctl-boss") { await rpcSociale("azzera_boss_di", { u: id }); mostraAvviso("Danni al boss azzerati."); Boss.carica(true); }
+  } catch (e) { mostraAvviso(e.message); }
+  caricaControlli();
 }
 
 // ---------- Codici promozionali (solo admin) ----------
@@ -1689,6 +1748,7 @@ async function azioneAdmin(cosa, el) {
   if (cosa === "ed-salva") { salvaEditor(el); return; }
   if (cosa === "img-trasferisci") { trasferisciImmagini(); return; }
   if (cosa.startsWith("cod-")) { azioneCodici(cosa, el); return; }
+  if (cosa.startsWith("ctl-")) { azioneControlli(cosa, el); return; }
   if (cosa === "ed-annulla") { bozza = nuovaBozza(); aggiornaEditor(true); return; }
   if (cosa === "ed-originali") { bozza = Object.fromEntries(CARTE.map(c => [c.id, { ...CARTE_ORIGINALI[c.id] }])); aggiornaEditor(true); mostraAvviso("Valori di partenza caricati: premi Salva per applicarli a tutti."); return; }
   const metti = (L, lx = 0) => CARTE.forEach(c => { S.carte[c.id] = Math.max(1, S.carte[c.id] || 0); S.liv[c.id] = L; S.lodeXp[c.id] = lx; });
