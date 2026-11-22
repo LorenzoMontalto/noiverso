@@ -169,7 +169,8 @@ begin
     'squadra', coalesce((select jsonb_agg(jsonb_build_object(
         'id', x,
         'liv', least(30, greatest(1, coalesce((d->'liv'->>x)::int, 1))),
-        'lode', coalesce((d->'liv'->>x)::int, 1) >= 30 and coalesce((d->'lodeXp'->>x)::int, 0) >= 2000) order by n)
+        'lode', coalesce((d->'liv'->>x)::int, 1) >= 30 and coalesce((d->'lodeXp'->>x)::int, 0) >= 2000,
+        'olo', coalesce((d->'olo'->>x)::boolean, false)) order by n)
       from jsonb_array_elements_text(coalesce(d->'squadre'->att->'carte', '[]'::jsonb)) with ordinality as t(x, n)), '[]'::jsonb));
 end $$;
 
@@ -199,6 +200,107 @@ language sql security definer set search_path = public as $$
 $$;
 revoke all on function public.punti_amici(uuid), public.squadra_amico(uuid), public.registra_sfida(uuid, boolean), public.segna_sfide_viste() from public, anon;
 grant execute on function public.punti_amici(uuid), public.squadra_amico(uuid), public.registra_sfida(uuid, boolean), public.segna_sfide_viste() to authenticated;
+
+-- ---------------- Scambi di carte tra amici ----------------
+-- Si scambiano solo doppioni: chi propone offre una carta di cui ha almeno 2 copie e chiede una carta che non ha,
+-- di cui l'amico ha almeno 2 copie. Così nessuno perde mai una carta dall'album.
+-- Il server controlla le copie vere nei salvataggi, contando anche gli scambi già in corso.
+create table if not exists public.scambi (
+  id       bigint generated always as identity primary key,
+  da       uuid not null references auth.users (id) on delete cascade,
+  a        uuid not null references auth.users (id) on delete cascade,
+  offro    text not null,
+  chiedo   text not null,
+  stato    text not null default 'aperto' check (stato in ('aperto', 'accettato', 'rifiutato', 'annullato')),
+  ritirato boolean not null default false,   -- chi ha proposto ha già ricevuto la carta
+  creato   timestamptz not null default now(),
+  chiuso   timestamptz
+);
+create index if not exists scambi_a on public.scambi (a, stato);
+create index if not exists scambi_da on public.scambi (da, stato);
+alter table public.scambi enable row level security;
+drop policy if exists "scambi: i miei" on public.scambi;
+create policy "scambi: i miei" on public.scambi for select to authenticated using (da = auth.uid() or a = auth.uid());
+grant select on public.scambi to authenticated;
+revoke all on public.scambi from anon;
+
+-- copie che un giocatore può ancora dare: quelle nel salvataggio, meno quelle già promesse o già date ma non ancora ritirate
+create or replace function public.copie_libere(u uuid, carta text, tranne bigint default null) returns integer
+language sql stable security definer set search_path = public as $$
+  select coalesce((select (dati->'carte'->>carta)::int from public.salvataggi where user_id = u and slot = 'partita'), 0)
+       - (select count(*) from public.scambi where da = u and offro = carta and (id <> coalesce(tranne, -1))
+            and (stato = 'aperto' or (stato = 'accettato' and not ritirato)))::int;
+$$;
+
+create or replace function public.proponi_scambio(amico uuid, offro text, chiedo text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); nuovo bigint;
+begin
+  if me is null then raise exception 'Devi fare l''accesso'; end if;
+  if amico = me then raise exception 'Non puoi scambiare con te stesso'; end if;
+  if offro = chiedo then raise exception 'Scegli due carte diverse'; end if;
+  if public.copie_libere(me, offro) < 2 then raise exception 'Puoi offrire solo carte di cui hai almeno 2 copie (non già promesse in altri scambi)'; end if;
+  if coalesce((select (dati->'carte'->>chiedo)::int from public.salvataggi where user_id = me and slot = 'partita'), 0) > 0 then raise exception 'Questa carta ce l''hai già'; end if;
+  if public.copie_libere(amico, chiedo) < 2 then raise exception 'Il tuo amico non ha un doppione di questa carta'; end if;
+  if (select count(*) from public.scambi where da = me and stato = 'aperto') >= 5 then raise exception 'Hai già 5 proposte aperte: aspetta che ti rispondano o annullane una'; end if;
+  if exists (select 1 from public.scambi s where s.da = me and s.a = amico and s.chiedo = proponi_scambio.chiedo and s.stato = 'aperto') then raise exception 'Hai già chiesto questa carta a questo amico'; end if;
+  insert into public.scambi (da, a, offro, chiedo) values (me, amico, offro, chiedo) returning id into nuovo;
+  return jsonb_build_object('id', nuovo);
+end $$;
+
+create or replace function public.rispondi_scambio(scambio bigint, accetto boolean) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare x public.scambi;
+begin
+  select * into x from public.scambi where id = scambio for update;
+  if x is null or x.a <> auth.uid() then raise exception 'Scambio non trovato'; end if;
+  if x.stato <> 'aperto' then raise exception 'Questo scambio non è più aperto'; end if;
+  if x.creato < now() - interval '7 days' then
+    update public.scambi set stato = 'annullato', chiuso = now() where id = scambio;
+    raise exception 'Questa proposta è scaduta (dura 7 giorni)';
+  end if;
+  if not accetto then
+    update public.scambi set stato = 'rifiutato', chiuso = now() where id = scambio;
+    return jsonb_build_object('stato', 'rifiutato');
+  end if;
+  if public.copie_libere(x.a, x.chiedo) < 2 then raise exception 'Non hai più un doppione di questa carta'; end if;
+  if public.copie_libere(x.da, x.offro, x.id) < 2 then
+    update public.scambi set stato = 'annullato', chiuso = now() where id = scambio;
+    raise exception 'Il tuo amico non ha più il doppione che offriva: proposta annullata';
+  end if;
+  update public.scambi set stato = 'accettato', chiuso = now() where id = scambio;
+  -- chi accetta riceve subito: il gioco toglie una copia di "chiedo" e aggiunge "offro"
+  return jsonb_build_object('stato', 'accettato', 'dai', x.chiedo, 'ricevi', x.offro);
+end $$;
+
+create or replace function public.annulla_scambio(scambio bigint) returns void
+language sql security definer set search_path = public as $$
+  update public.scambi set stato = 'annullato', chiuso = now() where id = scambio and da = auth.uid() and stato = 'aperto';
+$$;
+
+-- Chi ha proposto ritira le carte degli scambi accettati (una volta sola per scambio)
+create or replace function public.ritira_scambi() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  with presi as (
+    update public.scambi set ritirato = true
+    where da = auth.uid() and stato = 'accettato' and not ritirato
+    returning id, offro, chiedo
+  ) select coalesce(jsonb_agg(jsonb_build_object('id', id, 'dai', offro, 'ricevi', chiedo)), '[]'::jsonb) into r from presi;
+  return r;
+end $$;
+
+-- I doppioni di un amico che si possono chiedere (solo gli id delle carte, niente altro del suo salvataggio)
+create or replace function public.doppioni_amico(amico uuid) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(k), '[]'::jsonb) from (
+    select k from public.salvataggi s, jsonb_each_text(coalesce(s.dati->'carte', '{}'::jsonb)) as e(k, v)
+    where s.user_id = amico and s.slot = 'partita' and auth.uid() is not null and v ~ '^[0-9]+$' and public.copie_libere(amico, k) >= 2
+  ) t;
+$$;
+revoke all on function public.copie_libere(uuid, text, bigint), public.proponi_scambio(uuid, text, text), public.rispondi_scambio(bigint, boolean), public.annulla_scambio(bigint), public.ritira_scambi(), public.doppioni_amico(uuid) from public, anon;
+grant execute on function public.proponi_scambio(uuid, text, text), public.rispondi_scambio(bigint, boolean), public.annulla_scambio(bigint), public.ritira_scambi(), public.doppioni_amico(uuid) to authenticated;
 
 -- ---------------- Boss del gruppo ----------------
 -- Ogni settimana (da lunedì a domenica) un boss con tanti PV che tutti colpiscono insieme.

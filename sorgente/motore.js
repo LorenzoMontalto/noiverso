@@ -26,9 +26,12 @@ function multStile(sa, sd) {
   return 1;
 }
 
-function nuovoCombattente(id, liv, lode) {
-  const c = _PER_ID[id], s = _stat(c, liv, lode);
-  return { id, c, liv, lode: !!lode, f: s.f, pv: s.pv, pvMax: s.pv, att: s.attBase, dif: s.dif, vel: s.vel,
+// Le carte olografiche hanno il 5% in più di PV e di danni (come un piccolo livello extra)
+const BONUS_OLO = 1.05;
+function nuovoCombattente(id, liv, lode, olo) {
+  const c = _PER_ID[id], s = _stat(c, liv, lode), k = olo ? BONUS_OLO : 1;
+  const pv = Math.round(s.pv * k);
+  return { id, c, liv, lode: !!lode, olo: !!olo, f: s.f * k, pv, pvMax: pv, att: s.attBase, dif: s.dif, vel: s.vel,
     buff: {}, stati: {}, scudo: 0, nebbia: false, stordito: false, carica: false, koAnnunciato: false };
 }
 
@@ -37,8 +40,8 @@ class Battaglia {
   constructor(sqG, sqC, nomeG = "Tu", nomeC = "Avversario", rng = Math.random) {
     this.rng = rng;
     this.lati = [
-      { nome: nomeG, squadra: sqG.map(x => nuovoCombattente(x.id, x.liv, x.lode)), attivo: 0, energia: ENERGIA_INIZIALE },
-      { nome: nomeC, squadra: sqC.map(x => nuovoCombattente(x.id, x.liv, x.lode)), attivo: 0, energia: ENERGIA_INIZIALE },
+      { nome: nomeG, squadra: sqG.map(x => nuovoCombattente(x.id, x.liv, x.lode, x.olo)), attivo: 0, energia: ENERGIA_INIZIALE },
+      { nome: nomeC, squadra: sqC.map(x => nuovoCombattente(x.id, x.liv, x.lode, x.olo)), attivo: 0, energia: ENERGIA_INIZIALE },
     ];
     this.turno = 1;
     this.vincitore = -1;

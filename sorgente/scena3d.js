@@ -59,8 +59,8 @@ const Scena3D = (() => {
 
   // Faccia della carta disegnata su canvas: foto, cornice, nome, ruolo
   const cacheFronte = {};
-  async function texFronte(c, liv, lode) {
-    const k = c.id + ":" + liv + (lode ? "L" : "");
+  async function texFronte(c, liv, lode, olo) {
+    const k = c.id + ":" + liv + (lode ? "L" : "") + (olo ? "O" : "");
     if (cacheFronte[k]) return cacheFronte[k];
     await font();
     const W = 512, H = 716, cv = document.createElement("canvas");
@@ -100,6 +100,20 @@ const Scena3D = (() => {
       g.fillStyle = lode ? "#1b1206" : "#f4ece8"; g.fillText(testo, W - 16 - lw, 58);
     }
     if (lode) { g.lineWidth = 6; g.strokeStyle = "#f2c14e"; g.shadowColor = "#f2c14e"; g.shadowBlur = 20; g.strokeRect(20, 20, W - 40, H - 40); g.shadowBlur = 0; }
+    if (olo) {   // olografica: riflesso arcobaleno in diagonale e cornice iridescente
+      g.save(); g.globalCompositeOperation = "screen";
+      const iri = g.createLinearGradient(0, 0, W, H);
+      ["rgba(255,80,120,.30)", "rgba(255,210,90,.26)", "rgba(90,255,170,.26)", "rgba(80,190,255,.30)", "rgba(200,110,255,.30)", "rgba(255,80,120,.26)"].forEach((col, i, a) => iri.addColorStop(i / (a.length - 1), col));
+      g.fillStyle = iri; g.fillRect(0, 0, W, H);
+      const lampo = g.createLinearGradient(W * .1, 0, W * .9, H);
+      lampo.addColorStop(.38, "rgba(255,255,255,0)"); lampo.addColorStop(.5, "rgba(255,255,255,.35)"); lampo.addColorStop(.62, "rgba(255,255,255,0)");
+      g.fillStyle = lampo; g.fillRect(0, 0, W, H); g.restore();
+      const bordo = g.createLinearGradient(0, 0, W, H);
+      ["#ff5078", "#ffd25a", "#5affaa", "#50beff", "#c86eff", "#ff5078"].forEach((col, i, a) => bordo.addColorStop(i / (a.length - 1), col));
+      g.lineWidth = 18; g.strokeStyle = bordo; g.strokeRect(9, 9, W - 18, H - 18);
+      g.font = '700 22px "Barlow Semi Condensed", sans-serif'; g.fillStyle = "#ffffff"; g.shadowColor = "#c86eff"; g.shadowBlur = 12;
+      g.fillText("✦ OLOGRAFICA", 36, 100); g.shadowBlur = 0;
+    }
     const tf = tieni(nuovaTexture(cv));
     return (cacheFronte[k] = tf);
   }
@@ -537,7 +551,7 @@ const Scena3D = (() => {
     pos(l) { const u = this.attiva(l); return u ? u.gruppo.position.clone() : this.posAttiva(l); }
 
     async _creaUnita(l, i, x) {
-      const carta = creaCarta(await texFronte(x.c, x.liv, x.lode), texRetro(), x.c.rarita);
+      const carta = creaCarta(await texFronte(x.c, x.liv, x.lode, x.olo), texRetro(), x.c.rarita);
       carta.userData.i = i;
       const gruppo = new T.Group();
       gruppo.add(carta);
@@ -1531,7 +1545,7 @@ const Scena3D = (() => {
     async prepara() {
       this.carte = await Promise.all(this.esiti.map(async (e, i) => {
         const c = PER_ID[e.id];
-        const m = creaCarta(await texFronte(c, e.liv, e.lode), texRetro(), c.rarita, 1.1, 1.54);
+        const m = creaCarta(await texFronte(c, e.liv, e.lode, e.olo), texRetro(), c.rarita, 1.1, 1.54);
         m.rotation.y = Math.PI; m.visible = false;
         m.userData = { ...m.userData, i, rarita: c.rarita, girata: false, base: this.posizione(i) };
         const al = aloneSprite(COL_RARITA[c.rarita], c.rarita === "leggendaria" ? 3.2 : c.rarita === "epica" ? 2.6 : 2.0);
@@ -1614,8 +1628,9 @@ const Scena3D = (() => {
         for (let k = 1; k < 4; k++) setTimeout(() => this.esplosione(p.clone().add(new T.Vector3(0, .3, .2)), [0xf2c14e, 0xffffff, 0xff2e46][k - 1], 50, { velocita: 3.5, su: 1.6, durata: 1300 }), k * 200);
       }
       const e = this.esiti[i];
-      const etichetta = e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : "";
-      if (etichetta) this.scritta(etichetta, e.nuova ? "#ff2e46" : "#f2c14e", p.clone().add(new T.Vector3(0, .95, .3)), .3, 1800);
+      const etichetta = e.olo ? "Olografica!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : "";
+      if (etichetta) this.scritta(etichetta, e.olo ? "#c86eff" : e.nuova ? "#ff2e46" : "#f2c14e", p.clone().add(new T.Vector3(0, .95, .3)), .3, e.olo ? 2600 : 1800);
+      if (e.olo) { this.scossa = Math.max(this.scossa || 0, .2); [0xff5078, 0xffd25a, 0x5affaa, 0x50beff, 0xc86eff].forEach((col, k) => setTimeout(() => this.esplosione(p.clone().add(new T.Vector3(0, .2, .2)), col, 40, { velocita: 3.2, su: 1.4, durata: 1400 }), k * 140)); }
       this.cb.onGira && this.cb.onGira(i, this.carte.every(x => x.userData.girata));
     }
     giraTutte() { this.carte.forEach((c, i) => setTimeout(() => this.gira(i), i * 260)); }

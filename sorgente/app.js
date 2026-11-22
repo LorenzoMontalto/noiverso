@@ -261,7 +261,7 @@ const Archivio = {
   async pubblicaClassifica() {
     if (this.modo !== "cloud" || this.admin) return; // l'admin non entra in classifica
     const voce = { punti: S.stats.punti, vittorie: S.stats.vittorie, sconfitte: S.stats.sconfitte,
-      carte: possedute().length, pass: livelloPass(), nome: (S.profilo.nome || "").slice(0, 22), avatar: S.profilo.avatar || "",
+      carte: possedute().length, pass: livelloPass(), nome: (S.profilo.nome || "").slice(0, 22), avatar: S.profilo.avatar || "", titolo: Trofei.titoloAttuale(),
       aggiornato: new Date().toISOString() };
     try { await this.db.doc(`classifica/${this.uid}`).set(voce); } catch (e) { /* la classifica è un extra */ }
   },
@@ -353,9 +353,10 @@ function aggiornaTesta() {
   const pb = $("#profilo-btn");
   if (pb) { pb.hidden = !S.profilo.nome; pb.innerHTML = `${htmlAvatar(S.profilo.avatar)}<span>${esc(S.profilo.nome || "")}</span>${S.admin ? `<em>Admin</em>` : ""}`; }
   const na = $('[data-vista="admin"]'); if (na) na.hidden = !S.admin;
+  Trofei.controlla();
   const nst = $('[data-vista="strada"] .badge'); if (nst) { const q = Missioni.pronte(); nst.textContent = q; nst.hidden = !q; }
   const ns = $('[data-vista="storia"] .badge'); if (ns) { const q = scrigniPronti(); ns.textContent = q; ns.hidden = !q; }
-  const nal = $('[data-vista="album"] .badge'); if (nal) { const q = potenziabili(); nal.textContent = q; nal.hidden = !q; }
+  const nal = $('[data-vista="album"] .badge'); if (nal) { const q = potenziabili() + Trofei.pronti() + Scambi.inArrivo; nal.textContent = q; nal.hidden = !q; }
   const b = bustineTotali(), r = daRiscuotere();
   const nb = $('[data-vista="bustine"] .badge'), np = $('[data-vista="pass"] .badge');
   if (nb) { nb.textContent = b; nb.hidden = !b; }
@@ -380,13 +381,15 @@ function aggiungiXP(n) {
 // ============================================================
 //  CARTA (componente grafico)
 // ============================================================
+const PROB_OLO = 1 / 50;
+const haOlo = id => !!(S.olo && S.olo[id]);
 function htmlCarta(c, opz = {}) {
   const liv = opz.liv ?? livello(c.id);
   const lode = opz.lode ?? (opz.liv === undefined && haLode(c.id));
   const info = opz.liv === undefined && S.carte[c.id] ? infoCarta(c.id) : null;
   const coperta = opz.coperta;
   return `
-  <div class="carta r-${c.rarita}${coperta ? " sconosciuta" : ""}${opz.piccola ? " piccola" : ""}${opz.mini ? " mini" : ""}" data-id="${c.id}" ${opz.click ? 'role="button" tabindex="0"' : ""}>
+  <div class="carta r-${c.rarita}${coperta ? " sconosciuta" : ""}${opz.piccola ? " piccola" : ""}${opz.mini ? " mini" : ""}${!coperta && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? " olo" : ""}" data-id="${c.id}" ${opz.click ? 'role="button" tabindex="0"' : ""}>
     <img src="${imgCarta(c.id)}" alt="${coperta ? "Carta da scoprire" : esc(c.nome)}" loading="lazy" draggable="false">
     ${coperta ? `<div class="punto-domanda">?</div>` : opz.mini ? "" : `
     <div class="carta-testa"><span class="stile s-${c.stile}" title="${STILI[c.stile].nome}">${c.stile}</span><span class="serie-ico" style="--c:${SERIE[c.serie].colore}" title="${esc(SERIE[c.serie].nome)}">${SERIE[c.serie].simbolo}</span>${liv ? `<span class="liv ${lode ? "lode" : ""}">${lode ? "30 e lode" : `Lv ${liv}`}</span>` : ""}</div>
@@ -444,6 +447,7 @@ function apriDettaglio(id) {
             <span class="costi"><span class="${inf.pronta ? "ok" : "manca"}">${inf.servePot} potenziatori</span><span class="${monOk ? "ok" : "manca"}">${inf.serveMon} monete</span></span>
             <button class="btn primario" data-fx="stelle" data-azione="potenzia" data-id="${id}" ${inf.puoi ? "" : "disabled"}>Potenzia</button>
           </div>`; })() : ""}
+          ${haOlo(c.id) ? `<p class="olo-nota">✦ <b>Olografica</b>: +5% di PV e di danni in battaglia. Ne esce una ogni 50 carte circa.</p>` : ""}
           <p class="nota piccola">${lode ? "Ha la lode: è al massimo. I suoi doppioni ora danno monete." : liv < LIVELLO_MAX ? `Ogni doppione di questa carta dà ${POT_DOPPIONE[c.rarita]} potenziatori.${!inf.pronta ? ` Te ne mancano ${inf.servePot - inf.pot}.` : !inf.puoi ? ` Ti mancano ${inf.serveMon - S.monete} monete.` : ""}` : "È al 30: continua a giocarci in battaglia per prendere la lode. I suoi doppioni ora danno monete."} · ${copie} ${copie === 1 ? "copia" : "copie"}</p>
         </div>
       </div>
@@ -491,7 +495,7 @@ function mostraAvviso(testo) {
 // ============================================================
 const VISTE = ["strada", "storia", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin"];
 let vista = "strada";
-let filtroAlbum = "tutte", filtroSquadra = "tutte";
+let filtroAlbum = "tutte", filtroSquadra = "tutte", albumScheda = "carte";
 
 function vai(v) {
   if (!VISTE.includes(v)) v = "strada";
@@ -763,7 +767,10 @@ function apriBustina(tipo) {
     else if (infoPrima.liv >= LIVELLO_MAX) { extra = MONETE_DOPPIONE_30[r]; S.monete += extra; }
     else { pot = POT_DOPPIONE[r]; S.pot[id] = (S.pot[id] || 0) + pot; }
     const dopo = infoCarta(id);
-    return { id, nuova: prima === 0, pot, pronta: !infoPrima.pronta && dopo.pronta, extra, liv: dopo.liv, lode: dopo.lode };
+    // 1 carta su 50 esce olografica (se non ce l'hai già così)
+    const olo = !haOlo(id) && Math.random() < PROB_OLO;
+    if (olo) { S.olo = Object.assign({}, S.olo, { [id]: true }); S.stats.olo = (S.stats.olo || 0) + 1; }
+    return { id, nuova: prima === 0, pot, pronta: !infoPrima.pronta && dopo.pronta, extra, liv: dopo.liv, lode: dopo.lode, olo };
   });
   S.stats.bustine++;
   // riempie da sola la prima squadra finché non è completa
@@ -831,7 +838,7 @@ function mostraApertura2D(esiti) {
             <div class="faccia retro"><span class="neon">NV</span></div>
             <div class="faccia fronte">
               ${htmlCarta(PER_ID[e.id], { liv: e.liv, lode: e.lode })}
-              <span class="etichetta">${e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : ""}</span>
+              <span class="etichetta ${e.olo ? "olo-tag" : ""}">${e.olo ? "Olografica!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : ""}</span>
             </div>
           </button>`).join("")}
       </div>
@@ -868,11 +875,19 @@ function htmlSezioneSerie(id, conTitolo) {
     </div>
   </section>`;
 }
+function htmlSchedeAlbum() {
+  const n = { trofei: Trofei.pronti(), scambi: Scambi.inArrivo };
+  return `<div class="schede-album" role="tablist">${[["carte", "Carte"], ["trofei", "Trofei"], ["scambi", "Scambi"]].map(([k, t]) =>
+    `<button class="scheda ${albumScheda === k ? "sel" : ""}" role="tab" aria-selected="${albumScheda === k}" data-scheda-album="${k}">${t}${n[k] ? `<span class="badge">${n[k]}</span>` : ""}</button>`).join("")}</div>`;
+}
 function vistaAlbum() {
-  const tot = possedute().length;
+  if (albumScheda === "trofei") return `<section>${htmlSchedeAlbum()}${Trofei.html()}</section>`;
+  if (albumScheda === "scambi") return `<section>${htmlSchedeAlbum()}${Scambi.html()}</section>`;
+  const tot = possedute().length, olo = Object.keys(S.olo || {}).filter(id => S.olo[id] && PER_ID[id]).length;
   return `
   <section>
-    <div class="titolo-riga"><h2>Album</h2><p class="nota">${tot}/${CARTE.length} carte trovate in ${ORDINE_SERIE.length} serie.</p></div>
+    ${htmlSchedeAlbum()}
+    <div class="titolo-riga"><h2>Album</h2><p class="nota">${tot}/${CARTE.length} carte trovate in ${ORDINE_SERIE.length} serie${olo ? ` · <span class="olo-testo">✦ ${olo} olografiche</span>` : ""}.</p></div>
     <div class="serie-copertine">
       ${ORDINE_SERIE.map((id, k) => {
         const se = SERIE[id], st = statSerie(id);
@@ -1189,7 +1204,7 @@ function vistaClassifica() {
     <table class="classifica">
       <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vittorie</th><th>Carte</th><th>Pass</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
       <tbody>${classificaDati.map((r, i) => `
-        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}</td>
+        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
         <td>${Number(r.punti) || 0}</td><td>${Number(r.vittorie) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>Lv ${Number(r.pass) || 0}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
     </table>
   </section>`;
@@ -1210,6 +1225,7 @@ function avviaClassifica() {
       }
     } catch (e) { /* senza nomi si vede "Giocatore" */ }
     if (vista === "classifica") disegna();
+    if (vista === "album" && albumScheda === "scambi" && !B && $("#modale").hidden) disegna();
     Amici.aggiornaElenco();
   }, () => { clearTimeout(classificaTimer); classificaErrore = true; if (vista === "classifica") disegna(); });
 }
@@ -1305,7 +1321,7 @@ async function entra(slot, profiloLocale) {
   if (nuova && S.stats.bustine > 0 && !S.admin) setTimeout(() => mostraAvviso("È arrivata la bustina del giorno!"), 500);
   if (slot === "admin") setTimeout(() => mostraAvviso("Modalità admin: monete infinite e tutte le carte. Questi progressi non vanno in classifica."), 400);
   Tutorial.allIngresso();
-  if (slot !== "admin") { Amici.controllaRicevute(); }
+  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); }
   Boss.carica();
 }
 
@@ -1399,7 +1415,7 @@ function vistaAdmin() {
     <div class="titolo-riga"><h2>Pannello admin</h2><p class="nota">Solo tu vedi questa pagina. Qui le monete sono infinite e niente finisce in classifica.</p></div>
     <div class="admin-griglia">
       <div class="admin-box"><h3>Carte · ${possedute().length}/${CARTE.length}</h3>
-        <div class="azioni"><button class="btn oro" data-fx="coriandoli" data-admin="carte-lode">Tutte al 30 e lode</button><button class="btn" data-fx="stelle" data-admin="carte-max">Tutte al livello 30</button><button class="btn" data-fx="salto" data-admin="carte-15">Tutte al livello 15</button><button class="btn" data-fx="salto" data-admin="carte-1">Tutte al livello 1</button><button class="btn" data-fx="monete" data-admin="pot-100">+100 potenziatori a tutte</button><button class="btn" data-fx="scuoti" data-admin="carte-zero">Svuota collezione</button></div></div>
+        <div class="azioni"><button class="btn oro" data-fx="coriandoli" data-admin="carte-lode">Tutte al 30 e lode</button><button class="btn" data-fx="stelle" data-admin="carte-max">Tutte al livello 30</button><button class="btn" data-fx="salto" data-admin="carte-15">Tutte al livello 15</button><button class="btn" data-fx="salto" data-admin="carte-1">Tutte al livello 1</button><button class="btn" data-fx="monete" data-admin="pot-100">+100 potenziatori a tutte</button><button class="btn" data-fx="stelle" data-admin="olo-5">5 olografiche a caso</button><button class="btn" data-fx="scuoti" data-admin="carte-zero">Svuota collezione</button></div></div>
       <div class="admin-box"><h3>Bustine</h3>
         <div class="azioni"><button class="btn" data-fx="onda" data-admin="bustine">+10 di ogni tipo</button><button class="btn oro" data-fx="coriandoli" data-apri="leggendaria">Apri una leggendaria</button></div>
         <p class="nota">Ne hai: ${ORDINE_BUSTINE.filter(t => S.inventario[t]).map(t => `${TIPI_BUSTINA[t].nome.replace("Bustina ", "").replace("Bustina", "Normali")} ${S.inventario[t]}`).join(" · ") || "nessuna"}</p></div>
@@ -1681,6 +1697,7 @@ async function azioneAdmin(cosa, el) {
   if (cosa === "carte-15") metti(15);
   if (cosa === "carte-1") { metti(1); CARTE.forEach(c => { S.carte[c.id] = 1; S.pot[c.id] = 0; }); }
   if (cosa === "pot-100") CARTE.forEach(c => { if (S.carte[c.id]) S.pot[c.id] = (S.pot[c.id] || 0) + 100; });
+  if (cosa === "olo-5") { const ok = possedute().filter(c => !haOlo(c.id)).sort(() => Math.random() - .5).slice(0, 5); S.olo = Object.assign({}, S.olo); ok.forEach(c => { S.olo[c.id] = true; }); }
   if (cosa === "carte-zero") { S.carte = {}; S.liv = {}; S.pot = {}; S.lodeXp = {}; S.squadre.forEach(s => { s.carte = []; }); }
   if (cosa === "bustine") { for (const t of ["normale", "epica", "leggendaria"]) S.inventario[t] += 10; FX.volaIcona(el, $('[data-vista="bustine"]'), "b-normale"); }
   if (cosa === "pass") { S.pass.xp = +$("#admin-pass").value * PASS.xpLivello; }
@@ -1951,7 +1968,7 @@ function schermoIntero(entra) {
 async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
   livelloAttuale = typeof idLivello === "object" ? idLivello : LIVELLI_SFIDA.find(l => l.id === idLivello);
   const n = carteForzate ? CARTE_SQUADRA : carteBattaglia();
-  const mia = (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id) }));
+  const mia = (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id) }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   B = new Battaglia(mia, nemici, "Tu", L.nome);
@@ -2303,7 +2320,7 @@ function esciBattaglia() {
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2347,6 +2364,16 @@ document.addEventListener("click", e => {
   if (t.dataset.togli !== undefined) { squadraAttiva().carte.splice(+t.dataset.togli, 1); salva(); setTimeout(disegna, ridotto ? 0 : 200); return; }
   if (t.dataset.apri) { usaBustina(t.dataset.apri, false); return; }
   if (t.dataset.compra) { compraBustina(t.dataset.compra, t); return; }
+  if (t.dataset.schedaAlbum) { albumScheda = t.dataset.schedaAlbum; if (albumScheda === "scambi") Scambi.carica(); disegna(); return; }
+  if (t.dataset.trofeo) { Trofei.riscuoti(t.dataset.trofeo, t); return; }
+  if (t.dataset.titolo !== undefined) { Trofei.scegliTitolo(t.dataset.titolo); return; }
+  if (t.dataset.scambioAmico) { Scambi.sceltoAmico(t.dataset.scambioAmico); return; }
+  if (t.dataset.scambioChiedo) { Scambi.scegli("chiedo", t.dataset.scambioChiedo); return; }
+  if (t.dataset.scambioOffro) { Scambi.scegli("offro", t.dataset.scambioOffro); return; }
+  if (t.dataset.scambioIndietro) { Scambi.indietro(t.dataset.scambioIndietro); return; }
+  if (t.dataset.scambioAccetta) { Scambi.rispondi(t.dataset.scambioAccetta, true, t); return; }
+  if (t.dataset.scambioRifiuta) { Scambi.rispondi(t.dataset.scambioRifiuta, false, t); return; }
+  if (t.dataset.scambioAnnulla) { Scambi.annulla(t.dataset.scambioAnnulla); return; }
   if (t.dataset.sfidaAmico) { if (B) { chiudiArena(); B = null; animazione = false; } Amici.sfida(t.dataset.sfidaAmico); return; }
   if (t.dataset.missione) { Missioni.riscuoti(t.dataset.missione, t); return; }
   if (t.dataset.bossPremio) { t.disabled = true; Boss.riscatta(t.dataset.bossPremio, t); return; }
@@ -2376,6 +2403,8 @@ document.addEventListener("click", e => {
     case "vai-pass": vai("pass"); break;
     case "vai-negozio": vai("negozio"); break;
     case "vai-amici": Amici.apriElenco(); break;
+    case "nuovo-scambio": Scambi.apriNuovo(); break;
+    case "proponi-scambio": Scambi.proponi(t); break;
     case "attacca-boss": Boss.attacca(); break;
     case "esci-amici": esciBattaglia(); setTimeout(() => Amici.apriElenco(), 300); break;
     case "esci-boss": esciBattaglia(); break;

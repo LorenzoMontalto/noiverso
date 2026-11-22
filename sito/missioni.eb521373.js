@@ -119,6 +119,7 @@ const Missioni = (() => {
   function riscuotiAccesso(el) {
     const a = accesso(); if (!a.pronto || S.admin) return;
     S.accessi = { ultimo: giorno(), riscosso: giorno(), serie: a.giorno };
+    S.stats.serieMax = Math.max(S.stats.serieMax || 0, a.giorno);
     const dato = dai(ACCESSI[a.giorno - 1]);
     salva(); aggiornaTesta();
     if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 50, forma: "stella", colori: ["#f2c14e", "#fff3c4", "#ff2e46"], velocita: 7, dimensione: 6 }); }

@@ -52,7 +52,7 @@ const Amici = (() => {
     const e = { vinto, monete: 10, xp: XP_SCONFITTA, stato: a.prova ? "prova" : "invio" };
     if (vinto) {
       e.monete = S.amiciOggi.vinte < VINTE_PAGATE ? 90 : 20; e.xp = 110;
-      S.amiciOggi.vinte++; S.stats.vittorie++;
+      S.amiciOggi.vinte++; S.stats.vittorie++; if (!a.prova) S.stats.vinteAmici = (S.stats.vinteAmici || 0) + 1;
       if (arena) arena.vittoria(0);
       setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 70, forma: "coriandolo", colori: ["#f2c14e", "#ff2e46", "#3fd8ff", "#ffffff"], velocita: 8, dimensione: 5, durata: 1500 }); } }, 200);
     } else S.stats.sconfitte++;
@@ -214,7 +214,7 @@ const Boss = (() => {
     S.monete += e.monete;
     const su = aggiungiXP(e.xp);
     L.esito = e;
-    if (!b.prova) Missioni.evento("boss", { danni: e.contati });
+    if (!b.prova) { Missioni.evento("boss", { danni: e.contati }); S.stats.danniBoss = (S.stats.danniBoss || 0) + e.contati; }
     if (B.vincitore === 0 && arena) arena.vittoria(0);
     salva(); aggiornaTesta(); aggiornaBattaglia();
     if (su) setTimeout(() => mostraAvviso(`Pass: livello ${su} raggiunto!`), 900);

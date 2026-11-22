@@ -1,0 +1,242 @@
+// ============================================================
+//  PER I COLLEZIONISTI: trofei con titoli, e scambi di doppioni tra amici
+// ============================================================
+
+// ---------------- TROFEI E TITOLI ----------------
+// Ogni trofeo dà monete (una volta) e sblocca un titolo da mostrare sotto il nome in classifica.
+const Trofei = (() => {
+  const TITOLI_SERIE = { eroi: "Supereroe", db: "Guerriero leggendario", dei: "Divinità", nueve: "Boss della mala", maghi: "Arcimago" };
+  const stelleTot = () => Object.values((S.storia || {}).stelle || {}).reduce((a, n) => a + n, 0);
+  const lodi = () => possedute().filter(c => haLode(c.id)).length;
+  const oloTot = () => Object.keys(S.olo || {}).filter(id => S.olo[id] && PER_ID[id]).length;
+  const livMax = () => possedute().reduce((m, c) => Math.max(m, livello(c.id) || 1), 1);
+  const st = k => (S.stats || {})[k] || 0;
+  function elenco() {
+    const v = [
+      { id: "vittoria-1", nome: "Prima vittoria", desc: "Vinci la tua prima battaglia", titolo: "Recluta", premio: 50, prog: () => st("vittorie"), max: 1 },
+      { id: "vittorie-50", nome: "Veterano", desc: "Vinci 50 battaglie", titolo: "Veterano", premio: 200, prog: () => st("vittorie"), max: 50 },
+      { id: "vittorie-200", nome: "Leggenda della strada", desc: "Vinci 200 battaglie", titolo: "Leggenda", premio: 600, prog: () => st("vittorie"), max: 200 },
+      { id: "carte-25", nome: "Collezionista", desc: "Trova 25 carte diverse", titolo: "Collezionista", premio: 150, prog: () => possedute().length, max: 25 },
+      { id: "carte-50", nome: "Archivista", desc: "Trova 50 carte diverse", titolo: "Archivista", premio: 300, prog: () => possedute().length, max: 50 },
+      { id: "carte-tutte", nome: "Album completo", desc: `Trova tutte le ${CARTE.length} carte`, titolo: "Completista", premio: 1000, prog: () => possedute().length, max: CARTE.length },
+    ];
+    for (const id of ORDINE_SERIE) {
+      const tot = CARTE.filter(c => c.serie === id).length;
+      if (tot) v.push({ id: `serie-${id}`, nome: `Serie ${SERIE[id].nome} completa`, desc: `Trova tutte le ${tot} carte della serie ${SERIE[id].nome}`, titolo: TITOLI_SERIE[id] || `Re della serie ${SERIE[id].nome}`, premio: 300, prog: () => possedute().filter(c => c.serie === id).length, max: tot, colore: SERIE[id].colore });
+    }
+    v.push(
+      { id: "olo-1", nome: "Che brillantezza", desc: "Trova una carta olografica", titolo: "Brillante", premio: 100, prog: oloTot, max: 1 },
+      { id: "olo-5", nome: "Cacciatore di arcobaleni", desc: "Trova 5 carte olografiche", titolo: "Arcobaleno", premio: 400, prog: oloTot, max: 5 },
+      { id: "livello-10", nome: "Allenatore", desc: "Porta una carta al livello 10", titolo: "Allenatore", premio: 100, prog: livMax, max: 10 },
+      { id: "livello-30", nome: "Al massimo", desc: "Porta una carta al livello 30", titolo: "Maestro", premio: 300, prog: livMax, max: 30 },
+      { id: "lode-1", nome: "Trenta e lode", desc: "Porta una carta al 30 e lode", titolo: "Lodato", premio: 400, prog: lodi, max: 1 },
+      { id: "bustine-50", nome: "Strappabustine", desc: "Apri 50 bustine", titolo: "Strappabustine", premio: 200, prog: () => st("bustine"), max: 50 },
+      { id: "stelle-30", nome: "Narratore", desc: "Prendi 30 stelle nella storia", titolo: "Narratore", premio: 250, prog: stelleTot, max: 30 },
+      { id: "pass-50", nome: "Fedelissimo", desc: "Arriva al livello 50 del pass", titolo: "Fedelissimo", premio: 300, prog: livelloPass, max: 50 },
+      { id: "accessi-7", nome: "Sempre presente", desc: "Riscuoti il premio di accesso 7 giorni di fila", titolo: "Sempre presente", premio: 200, prog: () => st("serieMax"), max: 7 },
+    );
+    if (window.NOIVERSO_SUPABASE) v.push(
+      { id: "amici-10", nome: "Bullo di quartiere", desc: "Batti 10 volte la squadra di un amico", titolo: "Bullo di quartiere", premio: 300, prog: () => st("vinteAmici"), max: 10 },
+      { id: "boss-20000", nome: "Ammazzaboss", desc: "Fai 20.000 danni ai boss del gruppo", titolo: "Ammazzaboss", premio: 300, prog: () => st("danniBoss"), max: 20000 },
+      { id: "scambi-3", nome: "Mercante", desc: "Completa 3 scambi con gli amici", titolo: "Mercante", premio: 200, prog: () => st("scambi"), max: 3 },
+    );
+    return v;
+  }
+  const presi = () => S.trofei || {};
+  const raggiunto = t => t.prog() >= t.max;
+  const pronti = () => S.admin ? 0 : elenco().filter(t => raggiunto(t) && !presi()[t.id]).length;
+  const annunciati = new Set();
+  function controlla() {   // avvisa una volta quando un trofeo diventa riscuotibile
+    if (S.admin || B || !$("#apertura").hidden) return;
+    for (const t of elenco()) if (raggiunto(t) && !presi()[t.id] && !annunciati.has(t.id)) {
+      annunciati.add(t.id);
+      if (annunciati.size > elenco().length) break;
+      setTimeout(() => mostraAvviso(`Trofeo sbloccato: ${t.nome}! Riscuotilo nell'Album, scheda Trofei.`), 900);
+    }
+  }
+  function titoloAttuale() { const t = elenco().find(x => x.id === S.titolo); return t && presi()[t.id] ? t.titolo : ""; }
+  function riscuoti(id, el) {
+    const t = elenco().find(x => x.id === id);
+    if (!t || !raggiunto(t) || presi()[id] || S.admin) return;
+    S.trofei = Object.assign({}, presi(), { [id]: true });
+    S.monete += t.premio;
+    if (!S.titolo) S.titolo = id;
+    salva(); aggiornaTesta(); Archivio.pubblicaClassifica();
+    if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 60, forma: "stella", colori: ["#f2c14e", "#fff3c4", "#ff2e46"], velocita: 8, dimensione: 6 }); }
+    mostraAvviso(`${t.nome}: +${t.premio} monete e il titolo «${t.titolo}»`);
+    disegna();
+  }
+  function scegliTitolo(id) {
+    if (id && !presi()[id]) return;
+    S.titolo = id || ""; salva(); Archivio.pubblicaClassifica(); disegna();
+  }
+  function html() {
+    const v = elenco(), fatti = v.filter(t => presi()[t.id]).length;
+    const ordine = t => presi()[t.id] ? 2 : raggiunto(t) ? 0 : 1;
+    return `
+    <div class="titolo-riga"><h2>Trofei</h2><p class="nota">${fatti}/${v.length} conquistati. Ogni trofeo dà monete e un titolo da mostrare in classifica.</p></div>
+    <div class="titolo-scelto">Il tuo titolo: <b>${esc(titoloAttuale() || "nessuno")}</b>${titoloAttuale() ? ` <button class="btn piccolo" data-titolo="">Toglilo</button>` : ""}</div>
+    <div class="trofei">${[...v].sort((a, b) => ordine(a) - ordine(b)).map(t => {
+      const p = Math.min(t.prog(), t.max), preso = presi()[t.id], pronto = raggiunto(t) && !preso, usato = S.titolo === t.id;
+      return `<div class="trofeo ${preso ? "preso" : pronto ? "pronto" : ""}" ${t.colore ? `style="--c:${t.colore}"` : ""}>
+        <div class="trofeo-icona">${preso ? "🏆" : pronto ? "✦" : "🔒"}</div>
+        <div class="trofeo-testo"><b>${esc(t.nome)}</b><small>${esc(t.desc)}</small>
+          <div class="missione-barra"><i style="--p:${Math.round(p / t.max * 100)}%"></i><span>${t.max >= 1000 ? `${p.toLocaleString("it-IT")}/${t.max.toLocaleString("it-IT")}` : `${p}/${t.max}`}</span></div>
+          <small class="trofeo-premio">Titolo «${esc(t.titolo)}» · ${t.premio} monete</small></div>
+        <div class="trofeo-azione">${pronto ? `<button class="btn oro piccolo" data-fx="coriandoli" data-trofeo="${t.id}">Riscuoti</button>`
+          : preso ? (usato ? `<span class="chip sel">In uso</span>` : `<button class="btn piccolo" data-titolo="${t.id}">Usa titolo</button>`) : ""}</div>
+      </div>`; }).join("")}</div>`;
+  }
+  return { html, pronti, controlla, riscuoti, scegliTitolo, titoloAttuale };
+})();
+
+// ---------------- SCAMBI ----------------
+const Scambi = (() => {
+  let lista = null, inArrivo = 0, errore = null, nuovo = null;   // nuovo = scambio in preparazione: { amico, nome, chiedo, offro, doppioni }
+  const attivo = () => socialeAttivo();
+  const nome = id => { const r = (classificaDati || []).find(x => x.id === id); return r ? String(r.nome || "Giocatore") : "un amico"; };
+  const mieOfferte = id => (lista || []).filter(x => x.da === Archivio.uid && x.offro === id && x.stato === "aperto").length;
+  const doppioniMiei = () => possedute().filter(c => (S.carte[c.id] || 0) - mieOfferte(c.id) >= 2);
+
+  async function carica() {
+    if (!attivo()) return;
+    try {
+      const { data, error } = await sbSociale().from("scambi").select("*").order("creato", { ascending: false }).limit(40);
+      if (error) throw error;
+      lista = data || []; errore = null;
+      inArrivo = lista.filter(x => x.a === Archivio.uid && x.stato === "aperto").length;
+    } catch (e) { errore = "Non riesco a leggere gli scambi. Hai eseguito di nuovo schema.sql su Supabase?"; }
+    aggiornaTesta();
+    if (vista === "album" && albumScheda === "scambi" && !B) disegna();
+  }
+  // una carta che arriva da uno scambio conta come se l'avessi trovata in una bustina
+  function ricevi(id) {
+    const prima = S.carte[id] || 0, r = PER_ID[id].rarita, inf = infoCarta(id);
+    S.carte[id] = prima + 1;
+    if (prima === 0) { S.liv[id] = S.liv[id] || 1; return "Nuova carta!"; }
+    if (inf.liv >= LIVELLO_MAX) { S.monete += MONETE_DOPPIONE_30[r]; return `Doppione: +${MONETE_DOPPIONE_30[r]} monete`; }
+    S.pot[id] = (S.pot[id] || 0) + POT_DOPPIONE[r]; return `Doppione: +${POT_DOPPIONE[r]} potenziatori`;
+  }
+  function dai(id) { S.carte[id] = Math.max(1, (S.carte[id] || 1) - 1); }
+  function mostraRicevuta(titolo, testo, id, cosa) {
+    apriModale(`<div class="codice-modale"><span class="codice-tag">Scambio completato</span><h2>${esc(titolo)}</h2>
+      <div class="scambio-ricevuta">${htmlCarta(PER_ID[id])}</div>
+      <p>${testo}</p><p class="codice-premio"><b>${esc(cosa)}</b></p>
+      <div class="azioni centro"><button class="btn primario" data-azione="chiudi">Grande!</button></div></div>`);
+  }
+  // chi ha proposto: ritira le carte degli scambi che gli amici hanno accettato
+  async function ritira() {
+    if (!attivo() || S.admin) return;
+    try {
+      const fatti = await rpcSociale("ritira_scambi");
+      if (!fatti || !fatti.length) return;
+      if (!classificaDati) await new Promise(ok => { avviaClassifica(); setTimeout(ok, 1500); });
+      const righe = [];
+      for (const f of fatti) { if (!PER_ID[f.ricevi]) continue; dai(f.dai); righe.push({ f, cosa: ricevi(f.ricevi) }); S.stats.scambi = (S.stats.scambi || 0) + 1; }
+      salva(); aggiornaTesta();
+      const x = righe[0], altri = righe.length - 1;
+      const mostra = () => { if (B || Tutorial.attivo || !$("#modale").hidden || !$("#accesso").hidden) { setTimeout(mostra, 2500); return; }
+        const sc = (lista || []).find(s => s.id === x.f.id);
+        mostraRicevuta(`Hai ricevuto ${PER_ID[x.f.ricevi].nome}`, `${sc ? esc(nome(sc.a)) : "Un amico"} ha accettato il tuo scambio: gli hai dato ${esc(PER_ID[x.f.dai].nome)}.${altri ? ` E altri ${altri} scambi sono andati a buon fine.` : ""}`, x.f.ricevi, x.cosa); };
+      if (x) setTimeout(mostra, 800);
+      carica();
+    } catch (e) { /* riprova la prossima volta */ }
+  }
+  async function rispondi(id, accetto, el) {
+    if (el) el.disabled = true;
+    try {
+      const r = await rpcSociale("rispondi_scambio", { scambio: +id, accetto });
+      if (r.stato === "accettato") {
+        dai(r.dai); const cosa = ricevi(r.ricevi); S.stats.scambi = (S.stats.scambi || 0) + 1;
+        salva(); aggiornaTesta();
+        const sc = (lista || []).find(s => s.id === +id);
+        mostraRicevuta(`Hai ricevuto ${PER_ID[r.ricevi].nome}`, `Hai dato ${esc(PER_ID[r.dai].nome)} a ${sc ? esc(nome(sc.da)) : "un amico"}.`, r.ricevi, cosa);
+      } else mostraAvviso("Proposta rifiutata.");
+    } catch (e) { mostraAvviso(e.message); }
+    carica();
+  }
+  async function annulla(id) { try { await rpcSociale("annulla_scambio", { scambio: +id }); mostraAvviso("Proposta annullata."); } catch (e) { mostraAvviso(e.message); } carica(); }
+
+  // ---- proporre uno scambio: amico → carta che chiedi → carta che offri → conferma ----
+  function apriNuovo() {
+    if (!attivo()) return;
+    if (!classificaDati) { avviaClassifica(); setTimeout(apriNuovo, 900); return; }
+    nuovo = null;
+    const altri = classificaDati.filter(r => r.id !== Archivio.uid);
+    apriModale(`<div class="amici-modale"><h2>Nuovo scambio</h2><p class="nota">Con chi vuoi scambiare?</p>
+      ${altri.length ? `<ul class="amici-lista">${altri.map(r => `<li>${htmlAvatar(String(r.avatar || ""), "mini")}<div class="amico-info"><b>${esc(String(r.nome || "Giocatore"))}</b><small>${Number(r.carte) || 0} carte</small></div><button class="btn primario piccolo" data-scambio-amico="${esc(r.id)}">Scegli</button></li>`).join("")}</ul>` : `<p class="nota">Non c'è ancora nessun amico in classifica.</p>`}</div>`);
+  }
+  async function sceltoAmico(id) {
+    nuovo = { amico: id, nome: nome(id) };
+    $("#modale-corpo").innerHTML = `<div class="amici-modale"><h2>Scambio con ${esc(nuovo.nome)}</h2><p class="nota">Guardo i suoi doppioni…</p></div>`;
+    try { nuovo.doppioni = (await rpcSociale("doppioni_amico", { amico: id })).filter(c => PER_ID[c] && !S.carte[c]); }
+    catch (e) { mostraAvviso(e.message); chiudiModale(); return; }
+    passo();
+  }
+  function griglia(carte, attr) {
+    return `<div class="scambio-griglia">${carte.map(c => `<button type="button" class="scambio-carta" ${attr}="${c.id}">${htmlCarta(c, { piccola: true })}<small>${RARITA[c.rarita].nome}${attr === "data-scambio-offro" ? ` · ${S.carte[c.id] - mieOfferte(c.id)} copie` : ""}</small></button>`).join("")}</div>`;
+  }
+  function passo() {
+    const corpo = $("#modale-corpo"); if (!corpo || !nuovo) return;
+    const ordina = l => l.map(id => PER_ID[id]).sort((a, b) => ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita));
+    if (!nuovo.chiedo) {
+      corpo.innerHTML = `<div class="amici-modale"><h2>Cosa vuoi da ${esc(nuovo.nome)}?</h2>
+        ${nuovo.doppioni.length ? `<p class="nota">Questi sono i suoi doppioni che a te mancano.</p>${griglia(ordina(nuovo.doppioni), "data-scambio-chiedo")}`
+          : `<p class="nota">${esc(nuovo.nome)} non ha doppioni di carte che ti mancano. Riprova con un altro amico.</p><div class="azioni centro"><button class="btn" data-azione="nuovo-scambio">Scegli un altro amico</button></div>`}</div>`;
+    } else if (!nuovo.offro) {
+      const miei = doppioniMiei();
+      corpo.innerHTML = `<div class="amici-modale"><h2>Cosa offri in cambio?</h2>
+        <p class="nota">Chiedi <b>${esc(PER_ID[nuovo.chiedo].nome)}</b> (${RARITA[PER_ID[nuovo.chiedo].rarita].nome}). Puoi offrire solo carte di cui hai almeno 2 copie.</p>
+        ${miei.length ? griglia(miei.sort((a, b) => ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita)), "data-scambio-offro") : `<p class="nota">Non hai ancora doppioni da offrire: apri qualche bustina!</p>`}
+        <div class="azioni centro"><button class="btn" data-scambio-indietro="chiedo">Indietro</button></div></div>`;
+    } else {
+      const a = PER_ID[nuovo.offro], b = PER_ID[nuovo.chiedo];
+      corpo.innerHTML = `<div class="amici-modale"><h2>Confermi?</h2>
+        <div class="scambio-riepilogo"><div><small>Dai</small>${htmlCarta(a, { piccola: true })}</div><span class="scambio-freccia">⇄</span><div><small>Ricevi</small>${htmlCarta(b, { piccola: true })}</div></div>
+        <p class="nota">${esc(nuovo.nome)} vedrà la proposta e potrà accettarla o rifiutarla. Dura 7 giorni.${ORDINE_RARITA.indexOf(a.rarita) < ORDINE_RARITA.indexOf(b.rarita) ? " Occhio: chiedi una carta più rara di quella che offri, potrebbe dire di no." : ""}</p>
+        <div class="azioni centro"><button class="btn" data-scambio-indietro="offro">Indietro</button><button class="btn primario" data-fx="onda" data-azione="proponi-scambio">Proponi lo scambio</button></div></div>`;
+    }
+  }
+  function scegli(cosa, id) { if (!nuovo) return; nuovo[cosa] = id; passo(); }
+  function indietro(cosa) { if (!nuovo) return; nuovo[cosa] = null; if (cosa === "chiedo") nuovo.offro = null; passo(); }
+  async function proponi(el) {
+    if (!nuovo || !nuovo.offro || !nuovo.chiedo) return;
+    if (el) el.disabled = true;
+    try { await rpcSociale("proponi_scambio", { amico: nuovo.amico, offro: nuovo.offro, chiedo: nuovo.chiedo }); chiudiModale(); mostraAvviso(`Proposta inviata a ${nuovo.nome}.`); nuovo = null; }
+    catch (e) { mostraAvviso(e.message); if (el) el.disabled = false; }
+    carica();
+  }
+
+  function htmlRiga(x) {
+    const ricevuta = x.a === Archivio.uid, a = PER_ID[x.offro], b = PER_ID[x.chiedo];
+    if (!a || !b) return "";
+    const chi = esc(nome(ricevuta ? x.da : x.a));
+    const stato = { aperto: "In attesa", accettato: "Accettato", rifiutato: "Rifiutato", annullato: "Annullato" }[x.stato];
+    return `<li class="scambio-riga ${x.stato}">
+      <div class="scambio-chi"><b>${chi}</b><small>${ricevuta ? "ti offre ⇄ ti chiede" : "gli offri ⇄ gli chiedi"}</small></div>
+      <div class="scambio-coppia">${htmlCarta(a, { mini: true })}<span>⇄</span>${htmlCarta(b, { mini: true })}</div>
+      <div class="scambio-nomi"><span>${esc(a.nome)}</span><span>${esc(b.nome)}${ricevuta ? ` <small>(ne hai ${S.carte[b.id] || 0})</small>` : ""}</span></div>
+      <div class="scambio-azioni">${x.stato === "aperto" ? (ricevuta
+        ? `<button class="btn primario piccolo" data-fx="onda" data-scambio-accetta="${x.id}">Accetta</button><button class="btn piccolo" data-scambio-rifiuta="${x.id}">Rifiuta</button>`
+        : `<button class="btn piccolo" data-scambio-annulla="${x.id}">Annulla</button>`) : `<span class="scambio-stato">${stato}</span>`}</div>
+    </li>`;
+  }
+  function html() {
+    if (!attivo()) return `<div class="titolo-riga"><h2>Scambi</h2></div><p class="nota">Gli scambi funzionano nella versione online del gioco.</p>`;
+    if (!lista && !errore) setTimeout(carica, 0);
+    if (!classificaDati) setTimeout(avviaClassifica, 0);   // per i nomi degli amici
+    const ricevute = (lista || []).filter(x => x.a === Archivio.uid && x.stato === "aperto");
+    const mie = (lista || []).filter(x => x.da === Archivio.uid && x.stato === "aperto");
+    const vecchie = (lista || []).filter(x => x.stato !== "aperto").slice(0, 8);
+    return `
+    <div class="titolo-riga"><h2>Scambi</h2><p class="nota">Scambia i tuoi doppioni con le carte che ti mancano. Nessuno perde mai una carta dall'album: si scambiano solo copie in più.</p>
+      <button class="btn primario" data-fx="onda" data-azione="nuovo-scambio" ${S.admin ? "disabled" : ""}>Nuovo scambio</button></div>
+    ${errore ? `<p class="errore">${esc(errore)}</p>` : !lista ? `<p class="nota">Carico gli scambi…</p>` : `
+    <h3 class="scambi-titolo">Proposte per te ${ricevute.length ? `<span class="badge-in">${ricevute.length}</span>` : ""}</h3>
+    ${ricevute.length ? `<ul class="scambi">${ricevute.map(htmlRiga).join("")}</ul>` : `<p class="nota">Nessuna proposta in arrivo.</p>`}
+    <h3 class="scambi-titolo">Le tue proposte</h3>
+    ${mie.length ? `<ul class="scambi">${mie.map(htmlRiga).join("")}</ul>` : `<p class="nota">Non hai proposte aperte.</p>`}
+    ${vecchie.length ? `<h3 class="scambi-titolo">Ultimi scambi</h3><ul class="scambi vecchi">${vecchie.map(htmlRiga).join("")}</ul>` : ""}`}`;
+  }
+  return { html, carica, ritira, rispondi, annulla, apriNuovo, sceltoAmico, scegli, indietro, proponi, get inArrivo() { return inArrivo; } };
+})();
