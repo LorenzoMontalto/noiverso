@@ -15,12 +15,13 @@ const SERIE = {
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
 // peso4 = probabilità relativa nella 4ª carta (garantita almeno Rara)
-// forza = moltiplicatore su PV, attacco e difesa
+// forza = moltiplicatore su PV, attacco e difesa: ogni gradino di rarità vale il 10% in più
+// (es. stesso ruolo, Lv1: comune 100 PV → rara 110 → epica 120 → leggendaria 130)
 const RARITA = {
   comune:      { nome: "Comune",      peso: 62,  peso4: 0,  forza: 1.00 },
-  rara:        { nome: "Rara",        peso: 28,  peso4: 70, forza: 1.06 },
-  epica:       { nome: "Epica",       peso: 8.5, peso4: 24, forza: 1.12 },
-  leggendaria: { nome: "Leggendaria", peso: 1.5, peso4: 6,  forza: 1.18 },
+  rara:        { nome: "Rara",        peso: 28,  peso4: 70, forza: 1.10 },
+  epica:       { nome: "Epica",       peso: 8.5, peso4: 24, forza: 1.20 },
+  leggendaria: { nome: "Leggendaria", peso: 1.5, peso4: 6,  forza: 1.30 },
 };
 const ORDINE_RARITA = ["comune", "rara", "epica", "leggendaria"];
 

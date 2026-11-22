@@ -435,6 +435,7 @@ function apriDettaglio(id) {
           <div><b>${s.pv}</b><span>PV</span></div><div><b>${s.att}</b><span>Attacco</span></div>
           <div><b>${s.dif}</b><span>Difesa</span></div><div><b>${s.vel}</b><span>Velocità</span></div>
         </div>
+        ${htmlBonusRarita(c)}
         <p class="passiva"><b>Stile ${STILI[c.stile].nome}.</b> Batte ${STILI[STILI[c.stile].batte].nome}, soffre ${Object.values(STILI).find(x => x.batte === c.stile).nome}.</p>
         <ul class="mosse-lista">
           ${c.mosse.map(mo => `<li><span class="costo">${mo.costo}◆</span><b>${esc(mo.nome)}</b><small>${esc(descrMossa(mo))}</small></li>`).join("")}
@@ -703,6 +704,8 @@ function applicaCodice(p) {
     if (p.monete) { S.monete += +p.monete; parti.push(`${p.monete} monete`); }
     for (const [t, n] of Object.entries(p.bustine || {})) if (TIPI_BUSTINA[t] && n > 0) { S.inventario[t] = (S.inventario[t] || 0) + +n; parti.push(`${n > 1 ? n + " × " : ""}${TIPI_BUSTINA[t].nome}`); }
     for (let k = 0; k < Math.min(20, +p.bombolette || 0); k++) { const g = Graffiti.dai(Graffiti.pesca()); parti.push(`graffito «${Graffiti.info(g.id).nome}»`); }
+    for (const [id, n] of Object.entries(p.oggetti || {})) { const o = Zaino.info(id), q = Math.min(20, Math.max(0, +n || 0)); if (!o.nome || !q) continue;
+      if (!S.zaino) S.zaino = { oggetti: {}, porta: [] }; S.zaino.oggetti[id] = (S.zaino.oggetti[id] || 0) + q; parti.push(`${q > 1 ? q + " × " : ""}${o.icona} ${o.nome}`); }
   }
   if (p.ripetibile && p.titolo && !p.prova) {   // le sorprese ripetibili si possono riaprire dal negozio
     const lista = (S.codici || []).filter(x => x.codice !== p.codice);
@@ -821,22 +824,68 @@ function mostraApertura(esiti, tipo, livelloSu) {
       apertura = new Scena3D.Apertura($("#tela-bustina"), esiti, tipo, {
         onApri: () => { $("#sugg").textContent = ""; },
         onPronte: () => { $("#sugg").textContent = "Tocca le carte per girarle"; $('[data-azione="gira-tutte"]').hidden = false; $('[data-azione="chiudi-apertura"]').hidden = false; },
-        onGira: (i, tutte) => { if (tutte) { $("#sugg").textContent = livelloSu ? `Pass: livello ${livelloSu} raggiunto!` : ""; $('[data-azione="gira-tutte"]').hidden = true; } },
+        onGira: (i, tutte) => {
+          $("#sugg").textContent = tutte ? `${livelloSu ? `Pass: livello ${livelloSu} raggiunto! · ` : ""}Tocca una carta per vedere le statistiche` : "Tocca di nuovo una carta girata per vedere le statistiche";
+          if (tutte) $('[data-azione="gira-tutte"]').hidden = true;
+        },
+        onDettaglio: i => apriSchedaCarta(esiti[i]),
       });
       return;
     } catch (e) { ov.hidden = true; ov.innerHTML = ""; apertura = null; }
   }
   mostraApertura2D(esiti);
 }
+// Scheda veloce di una carta appena trovata: sta sopra la bustina aperta e si chiude con un tocco
+const PIU_RARITA = r => Math.round((RARITA[r].forza - 1) * 100);
+function htmlBonusRarita(c) {
+  const p = PIU_RARITA(c.rarita);
+  return p ? `<p class="bonus-rarita r-${c.rarita}"><b>${esc(RARITA[c.rarita].nome)}</b>: +${p}% a PV, attacco e difesa rispetto a una comune</p>` : "";
+}
+function apriSchedaCarta(e) {
+  const c = PER_ID[e.id]; if (!c) return;
+  chiudiSchedaCarta();
+  const inf = infoCarta(c.id), liv = inf.liv || e.liv || 1, lode = inf.lode || e.lode, olo = haOlo(c.id) || e.olo;
+  const s = statistiche(c, liv, lode), r = RUOLI[c.ruolo], st = STILI[c.stile];
+  const el = document.createElement("div");
+  el.className = "scheda-veloce"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", `Statistiche di ${c.nome}`);
+  el.innerHTML = `<div class="scheda-box">
+    <button class="scheda-x" aria-label="Chiudi">✕</button>
+    <div class="scheda-testa">
+      <div class="scheda-carta">${htmlCarta(c, { liv, lode, olo })}</div>
+      <div>
+        <p class="serie-nome">${esc(SERIE[c.serie].nome)} · <span class="r-testo r-${c.rarita}">${esc(RARITA[c.rarita].nome)}</span></p>
+        <h2>${esc(c.nome)}</h2>
+        <p class="nota">${lode ? "Livello 30 e lode" : `Livello ${liv}`} · ${esc(r.nome)} · Stile ${esc(st.nome)}</p>
+        ${e.olo ? `<p class="olo-nota">✦ <b>Olografica</b>: +5% di PV e di danni in battaglia</p>` : ""}
+      </div>
+    </div>
+    <div class="stat-griglia">
+      <div><b>${s.pv}</b><span>PV</span></div><div><b>${s.att}</b><span>Attacco</span></div>
+      <div><b>${s.dif}</b><span>Difesa</span></div><div><b>${s.vel}</b><span>Velocità</span></div>
+    </div>
+    ${htmlBonusRarita(c)}
+    <p class="passiva"><b>${esc(r.cosa)}.</b> ${esc(r.passiva)} Batte ${esc(STILI[st.batte].nome)}, soffre ${esc(Object.values(STILI).find(x => x.batte === c.stile).nome)}.</p>
+    <ul class="mosse-lista">${c.mosse.map(mo => `<li><span class="costo">${mo.costo}◆</span><b>${esc(mo.nome)}</b><small>${esc(descrMossa(mo))}</small></li>`).join("")}</ul>
+    <p class="nota centro">Tocca ✕ o fuori dalla scheda per tornare alle carte</p>
+  </div>`;
+  el.addEventListener("click", ev => { if (ev.target === el || ev.target.closest(".scheda-x")) { ev.stopPropagation(); chiudiSchedaCarta(); } });
+  document.body.appendChild(el);
+}
+function chiudiSchedaCarta() { const v = document.querySelector(".scheda-veloce"); if (v) v.remove(); }
+addEventListener("keydown", e => { if (e.key === "Escape") chiudiSchedaCarta(); });
 function chiudiApertura() {
+  chiudiSchedaCarta();
   if (apertura) { apertura.distruggi(); apertura = null; }
   const ov = $("#apertura"); ov.hidden = true; ov.innerHTML = "";
   disegna();
 }
+let esitiAperti = [];
 function mostraApertura2D(esiti) {
+  esitiAperti = esiti;
   apriModale(`
     <div class="apertura2d">
       <h2>Tocca le carte per girarle</h2>
+      <p class="nota centro">Tocca di nuovo una carta girata per vedere le statistiche.</p>
       <div class="apertura-carte">
         ${esiti.map((e, i) => `
           <button class="gira r-${PER_ID[e.id].rarita}" data-i="${i}" aria-label="Gira la carta ${i + 1}">
@@ -1575,6 +1624,8 @@ function riassuntoPremio(p) {
   const v = [];
   if (p.monete) v.push(`${p.monete} monete`);
   for (const [t, n] of Object.entries(p.bustine || {})) v.push(`${n} × ${TIPI_BUSTINA[t] ? TIPI_BUSTINA[t].nome : t}`);
+  if (p.bombolette) v.push(`${p.bombolette} graffiti a sorpresa`);
+  for (const [id, n] of Object.entries(p.oggetti || {})) v.push(`${n} × ${Zaino.info(id).nome || id}`);
   if (p.pagina) v.push("pagina segreta");
   if (p.messaggio) v.push("messaggio");
   if (p.effetto) v.push(EFFETTI_CODICE[p.effetto] || p.effetto);
@@ -1605,6 +1656,10 @@ function htmlAdminCodici() {
       <div class="campi-2">
         <label>Monete <input name="monete" type="number" min="0" max="50000" value="${p.monete || ""}" placeholder="0"></label>
         <label>Bustine <span class="campi-2"><select name="bustina"><option value="">nessuna</option>${ORDINE_BUSTINE.filter(t => t !== "benvenuto").map(t => `<option value="${t}" ${t === bt ? "selected" : ""}>${esc(TIPI_BUSTINA[t].nome)}</option>`).join("")}</select><input name="quante" type="number" min="1" max="50" value="${bn}"></span></label>
+      </div>
+      <div class="campi-2">
+        <label>Graffiti a sorpresa <input name="bombolette" type="number" min="0" max="20" value="${p.bombolette || ""}" placeholder="0"></label>
+        <label>Oggetto dello zaino <span class="campi-2"><select name="oggetto"><option value="">nessuno</option>${Zaino.elenco().map(([id, o]) => `<option value="${id}" ${p.oggetti && p.oggetti[id] ? "selected" : ""}>${o.icona} ${esc(o.nome)}</option>`).join("")}</select><input name="quanti-ogg" type="number" min="1" max="20" value="${p.oggetti ? Object.values(p.oggetti)[0] || 1 : 1}"></span></label>
       </div>
       <label>Titolo della sorpresa <input name="titolo" maxlength="40" value="${esc(p.titolo || "")}" placeholder="Compare nel messaggio e tra le sorprese trovate"></label>
       <label>Messaggio <textarea name="messaggio" rows="3" maxlength="2000" placeholder="Facoltativo">${esc(p.messaggio || "")}</textarea></label>
@@ -1643,6 +1698,8 @@ async function salvaCodiceAdmin(form) {
   const premio = {};
   const monete = Math.min(50000, Math.max(0, parseInt(f.get("monete")) || 0)); if (monete) premio.monete = monete;
   if (f.get("bustina")) premio.bustine = { [f.get("bustina")]: Math.min(50, Math.max(1, parseInt(f.get("quante")) || 1)) };
+  const bomb = Math.min(20, Math.max(0, parseInt(f.get("bombolette")) || 0)); if (bomb) premio.bombolette = bomb;
+  if (f.get("oggetto")) premio.oggetti = { [f.get("oggetto")]: Math.min(20, Math.max(1, parseInt(f.get("quanti-ogg")) || 1)) };
   for (const k of ["titolo", "messaggio", "effetto"]) { const v = String(f.get(k) || "").trim(); if (v) premio[k] = v; }
   const pag = paginaCodice !== null ? paginaCodice : (codiceModifica && codiceModifica.premio && codiceModifica.premio.pagina) || "";
   if (pag) premio.pagina = pag;
@@ -2485,7 +2542,7 @@ document.addEventListener("click", e => {
   if (t.dataset.cambia !== undefined) { turnoGiocatore({ tipo: "cambio", i: +t.dataset.cambia }); return; }
   if (t.dataset.sostituisci !== undefined) { sostituisciGiocatore(+t.dataset.sostituisci); return; }
   if (t.dataset.sfidaVivo !== undefined) { const id = t.dataset.sfidaVivo; if (B) { Online.esci(); esciBattaglia(); } Online.sfida(id); return; }
-  if (t.classList.contains("gira")) { t.classList.add("girata"); return; }
+  if (t.classList.contains("gira")) { if (t.classList.contains("girata")) apriSchedaCarta(esitiAperti[+t.dataset.i]); else t.classList.add("girata"); return; }
   if (t.matches(".carta[role=button]")) { apriDettaglio(t.dataset.id); return; }
   switch (t.dataset.azione) {
     case "entra": entra("partita"); break;

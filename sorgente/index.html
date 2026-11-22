@@ -1429,6 +1429,24 @@ body.in-accesso { overflow: hidden; }
 .vivo-puntini i:nth-child(2) { animation-delay: .2s; } .vivo-puntini i:nth-child(3) { animation-delay: .4s; }
 @keyframes puntino { 0%, 80%, 100% { opacity: .25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .pallino-online, .invito-anello, .vivo-puntini i { animation: none; } }
+
+/* ---------- scheda veloce di una carta (dalla bustina aperta) ---------- */
+.scheda-veloce { position: fixed; inset: 0; z-index: 40; background: rgba(5, 3, 4, .78); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 16px; overflow-y: auto; animation: dissolvi .2s ease-out; }
+.scheda-box { position: relative; width: min(460px, 100%); background: var(--asfalto); border: 1px solid var(--linea); border-radius: 18px; padding: 18px 16px 14px; display: grid; gap: 12px; box-shadow: 0 20px 50px rgba(0, 0, 0, .55); animation: sale-su .25s ease-out; }
+@keyframes sale-su { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+.scheda-x { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--linea); background: rgba(0, 0, 0, .3); color: var(--testo); font-size: 1rem; cursor: pointer; }
+.scheda-testa { display: grid; grid-template-columns: 112px 1fr; gap: 14px; align-items: center; }
+.scheda-carta .carta { width: 112px; }
+.scheda-testa h2 { margin: 2px 0 4px; }
+.scheda-testa .serie-nome, .scheda-testa .nota { margin: 0; }
+.scheda-box .mosse-lista { margin: 0; }
+.scheda-box .mosse-lista li { display: grid; grid-template-columns: 38px 1fr; column-gap: 8px; align-items: center; }
+.scheda-box .mosse-lista li .costo { grid-row: span 2; text-align: center; }
+.scheda-box .nota.centro { margin: 0; text-align: center; font-size: .8rem; }
+.r-testo.r-rara { color: var(--r-rara); } .r-testo.r-epica { color: var(--r-epica); } .r-testo.r-leggendaria { color: var(--oro); } .r-testo.r-comune { color: var(--r-comune); }
+.bonus-rarita { margin: 0; padding: 7px 10px; border-radius: 10px; font-size: .85rem; background: rgba(255, 255, 255, .05); border-left: 3px solid var(--r-comune); }
+.bonus-rarita.r-rara { border-color: var(--r-rara); } .bonus-rarita.r-epica { border-color: var(--r-epica); } .bonus-rarita.r-leggendaria { border-color: var(--oro); }
+.bonus-rarita.r-rara b { color: var(--r-rara); } .bonus-rarita.r-epica b { color: var(--r-epica); } .bonus-rarita.r-leggendaria b { color: var(--oro); }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>

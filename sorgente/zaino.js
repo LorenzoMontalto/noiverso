@@ -124,5 +124,5 @@ const Zaino = (() => {
     await riproduci(r.ev);
   }
 
-  return { POSTI, info, quanti, htmlIcona, perBattaglia, compra, htmlNegozio, htmlPannello, apriPosto, metti, htmlBattaglia, usa, ORDINE };
+  return { POSTI, elenco: () => Object.entries(OGGETTI), info, quanti, htmlIcona, perBattaglia, compra, htmlNegozio, htmlPannello, apriPosto, metti, htmlBattaglia, usa, ORDINE };
 })();

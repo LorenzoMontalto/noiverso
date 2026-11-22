@@ -1586,7 +1586,11 @@ const Scena3D = (() => {
       const v = new T.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
       this.ray.setFromCamera(v, this.cam);
       const hit = this.ray.intersectObjects(this.carte, false)[0];
-      if (hit) this.gira(hit.object.userData.i);
+      if (!hit) return;
+      const i = hit.object.userData.i, c = this.carte[i];
+      // già girata: un altro tocco apre le statistiche
+      if (c.userData.girata) { if (!c.userData.occupata && this.cb.onDettaglio) this.cb.onDettaglio(i); }
+      else this.gira(i);
     }
     async apri() {
       if (this.fase !== "attesa") return;
