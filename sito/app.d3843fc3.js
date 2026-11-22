@@ -519,6 +519,7 @@ let filtroAlbum = "tutte", filtroSquadra = "tutte", albumScheda = "carte";
 function vai(v) {
   if (!VISTE.includes(v)) v = "strada";
   const cambiata = v !== vista;
+  if (cambiata) selSq = null;
   vista = v;
   if (location.hash.slice(1) !== v) { try { history.replaceState(null, "", "#" + v); } catch (e) { location.hash = v; } }
   $$(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.vista === v ? "page" : "false"));
@@ -992,8 +993,9 @@ function vistaSquadra() {
   const slot = Array.from({ length: CARTE_SQUADRA }, (_, i) => {
     const id = sq.carte[i];
     if (!id) return `<div class="slot"><div class="slot-vuoto">Posto ${i + 1}</div></div>`;
-    return `<div class="slot pieno" style="--i:${i}">
-      ${htmlCarta(PER_ID[id], { piccola: true })}
+    const sel = selSq && selSq.id === id, bersaglio = selSq && selSq.modo === "slot" && !sel;
+    return `<div class="slot pieno ${sel ? "selezionata" : ""} ${bersaglio ? "bersaglio" : ""}" style="--i:${i}">
+      <div class="slot-carta" data-slot="${i}" role="button" tabindex="0" aria-label="${esc(PER_ID[id].nome)}: tocca per le opzioni">${htmlCarta(PER_ID[id], { piccola: true })}</div>
       <div class="slot-comandi">
         <button class="mini-btn" data-fx="salto" data-sposta="${i}:-1" ${i === 0 ? "disabled" : ""} aria-label="Sposta a sinistra">◀</button>
         <button class="mini-btn togli" data-fx="scuoti" data-togli="${i}" aria-label="Togli dalla squadra">✕</button>
@@ -1027,13 +1029,95 @@ function vistaSquadra() {
       <div><span>PV totali</span><b>${pv}</b></div>
     </div>
     <div class="titolo-riga piccola">
-      <p class="nota">Tocca una carta per aggiungerla o toglierla. Usa le frecce per cambiare l'ordine.</p>
+      <p class="nota">Tocca una carta per vedere cosa puoi fare: aggiungerla, scambiarla con una della squadra o confrontarla con un'altra. Le frecce cambiano l'ordine.</p>
       <div class="filtri">${["tutte", "FOR", "DIF", "VEL", ...Object.keys(SERIE)].map(f => `<button class="chip" data-fx="gelatina" data-filtro-sq="${f}" aria-pressed="${filtroSquadra === f}">${f === "tutte" ? "Tutte" : STILI[f] ? STILI[f].nome : SERIE[f].simbolo + " " + esc(SERIE[f].nome)}</button>`).join("")}</div>
     </div>
     <div class="griglia">
-      ${elenco.map((c, i) => `<div class="scegli cella ${sq.carte.includes(c.id) ? "scelta" : ""}" style="--i:${i}" data-fx="stelle" data-scegli="${c.id}" role="button" tabindex="0" aria-pressed="${sq.carte.includes(c.id)}">${htmlCarta(c)}</div>`).join("")}
+      ${elenco.map((c, i) => `<div class="scegli cella ${sq.carte.includes(c.id) ? "scelta" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" role="button" tabindex="0" aria-pressed="${sq.carte.includes(c.id)}">${htmlCarta(c)}</div>`).join("")}
     </div>
-  </section>`;
+  </section>
+  ${htmlAzioniCarta()}`;
+}
+
+// ---------- Squadre: tocchi una carta e scegli cosa farne ----------
+// selSq = { id, modo }   modo: null | "slot" (scambia: tocca la carta della squadra da sostituire)
+//                              | "carta" (scambia: tocca la carta da mettere al suo posto) | "confronta"
+let selSq = null;
+function htmlAzioniCarta() {
+  if (!selSq || !PER_ID[selSq.id] || !S.carte[selSq.id]) return "";
+  const c = PER_ID[selSq.id], sq = squadraAttiva(), dentro = sq.carte.includes(c.id), s = statistiche(c, livello(c.id), haLode(c.id));
+  const guida = selSq.modo === "slot" ? `Tocca la carta della squadra da sostituire con <b>${esc(c.nome)}</b>.`
+    : selSq.modo === "carta" ? `Tocca una carta qui sotto da mettere al posto di <b>${esc(c.nome)}</b>.`
+    : selSq.modo === "confronta" ? `Tocca un'altra carta da confrontare con <b>${esc(c.nome)}</b>.` : "";
+  return `<div class="vista-squadra-spazio"></div><div class="azioni-carta" id="azioni-carta" role="dialog" aria-label="Opzioni per ${esc(c.nome)}">
+    <div class="azioni-carta-testa">
+      <div class="azioni-carta-mini">${htmlCarta(c, { mini: true })}</div>
+      <div class="azioni-carta-info"><b>${esc(c.nome)}</b><small><span class="s-${c.stile}">${STILI[c.stile].icona} ${STILI[c.stile].nome}</span> · ${esc(RUOLI[c.ruolo].nome)} · Lv ${livello(c.id)}</small>
+        <small>PV ${s.pv} · Att ${s.att} · Dif ${s.dif} · Vel ${s.vel}</small></div>
+      <button type="button" class="mini-btn" data-sq-az="chiudi" aria-label="Chiudi">✕</button>
+    </div>
+    ${guida ? `<p class="azioni-carta-guida">${guida} <button type="button" class="btn piccolo" data-sq-az="annulla">Annulla</button></p>` : `<div class="azioni-carta-bottoni">
+      ${dentro ? `<button type="button" class="btn" data-sq-az="togli">Togli dalla squadra</button>`
+        : sq.carte.length < CARTE_SQUADRA ? `<button type="button" class="btn primario" data-fx="stelle" data-sq-az="aggiungi">Aggiungi in squadra</button>` : ""}
+      ${sq.carte.length ? `<button type="button" class="btn ${!dentro && sq.carte.length >= CARTE_SQUADRA ? "primario" : ""}" data-sq-az="scambia">⇄ Scambia</button>` : ""}
+      <button type="button" class="btn" data-sq-az="confronta">⚖ Confronta</button>
+      <button type="button" class="btn" data-sq-az="dettagli">Dettagli</button>
+    </div>`}
+  </div>`;
+}
+function ridisegnaSquadra() { const y = scrollY; disegna(); scrollTo(0, y); }
+// tocco su una carta (della collezione o della squadra) mentre sta scegliendo
+function toccoCartaSquadra(id) {
+  const sq = squadraAttiva();
+  if (selSq && selSq.modo === "confronta" && id !== selSq.id) { const a = selSq.id; selSq = { id: a }; ridisegnaSquadra(); confrontaCarte(a, id); return; }
+  if (selSq && selSq.modo === "carta" && id !== selSq.id) {
+    const i = sq.carte.indexOf(selSq.id);
+    if (sq.carte.includes(id)) { const j = sq.carte.indexOf(id); [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]]; mostraAvviso("Ordine scambiato."); }
+    else { sq.carte[i] = id; mostraAvviso(`${PER_ID[selSq.id].nome} esce, entra ${PER_ID[id].nome}.`); }
+    selSq = null; salva(); ridisegnaSquadra(); return;
+  }
+  if (selSq && selSq.modo === "slot") {
+    const j = sq.carte.indexOf(id);
+    if (j < 0 || id === selSq.id) return;
+    const i = sq.carte.indexOf(selSq.id);
+    if (i >= 0) [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]];
+    else { mostraAvviso(`${PER_ID[id].nome} esce, entra ${PER_ID[selSq.id].nome}.`); sq.carte[j] = selSq.id; }
+    selSq = null; salva(); ridisegnaSquadra(); return;
+  }
+  selSq = selSq && selSq.id === id && !selSq.modo ? null : { id };
+  ridisegnaSquadra();
+}
+function azioneCartaSquadra(az) {
+  if (!selSq) return;
+  const sq = squadraAttiva(), id = selSq.id;
+  if (az === "chiudi") selSq = null;
+  else if (az === "annulla") selSq = { id };
+  else if (az === "aggiungi") { if (sq.carte.length < CARTE_SQUADRA && !sq.carte.includes(id)) sq.carte.push(id); selSq = null; salva(); }
+  else if (az === "togli") { sq.carte = sq.carte.filter(x => x !== id); selSq = null; salva(); }
+  else if (az === "scambia") selSq = { id, modo: sq.carte.includes(id) ? "carta" : "slot" };
+  else if (az === "confronta") selSq = { id, modo: "confronta" };
+  else if (az === "dettagli") { apriDettaglio(id); return; }
+  ridisegnaSquadra();
+}
+// Confronto di due carte, fianco a fianco: la statistica migliore è evidenziata
+function confrontaCarte(a, b) {
+  const ca = PER_ID[a], cb = PER_ID[b]; if (!ca || !cb) return;
+  const sa = statistiche(ca, livello(a), haLode(a)), sb = statistiche(cb, livello(b), haLode(b));
+  const righe = [["PV", "pv"], ["Attacco", "att"], ["Difesa", "dif"], ["Velocità", "vel"]];
+  const cella = (x, y) => x > y ? "meglio" : x < y ? "peggio" : "";
+  const vs = multStile(ca.stile, cb.stile), testoVs = vs > 1 ? `${esc(ca.nome)} batte ${esc(cb.nome)}: fa il 30% di danni in più, e prende il 20% in meno.`
+    : vs < 1 ? `${esc(cb.nome)} batte ${esc(ca.nome)}: fa il 30% di danni in più, e prende il 20% in meno.` : "Stesso tipo: nessun vantaggio tra loro.";
+  const colonna = (c, st) => `<div class="confronto-col"><div class="confronto-carta">${htmlCarta(c, { piccola: true })}</div><b>${esc(c.nome)}</b>
+    <small><span class="r-testo r-${c.rarita}">${RARITA[c.rarita].nome}</span> · Lv ${livello(c.id)}</small>
+    <small><span class="s-${c.stile}">${STILI[c.stile].icona} ${STILI[c.stile].nome}</span> · ${esc(RUOLI[c.ruolo].nome)}</small></div>`;
+  apriModale(`<div class="confronto"><h2>Confronto</h2>
+    <div class="confronto-testa">${colonna(ca, sa)}<span class="confronto-vs">VS</span>${colonna(cb, sb)}</div>
+    <table class="confronto-tab"><tbody>${righe.map(([n, k]) => `<tr><td class="${cella(sa[k], sb[k])}">${sa[k]}</td><th>${n}</th><td class="${cella(sb[k], sa[k])}">${sb[k]}</td></tr>`).join("")}
+      <tr><td class="piccolo">${esc(RUOLI[ca.ruolo].passiva)}</td><th>Abilità</th><td class="piccolo">${esc(RUOLI[cb.ruolo].passiva)}</td></tr>
+      <tr><td class="piccolo">${ca.mosse.map(m => `${m.costo}◆ ${esc(m.nome)}`).join("<br>")}</td><th>Mosse</th><td class="piccolo">${cb.mosse.map(m => `${m.costo}◆ ${esc(m.nome)}`).join("<br>")}</td></tr>
+    </tbody></table>
+    <p class="nota centro">${testoVs}</p>
+    <div class="azioni centro"><button class="btn primario" data-azione="chiudi">Ok</button></div></div>`);
 }
 
 function vuoto(testo, bottone, azione) {
@@ -2601,7 +2685,7 @@ document.addEventListener("change", e => { if (e.target.id === "img-file" && e.t
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2629,13 +2713,9 @@ document.addEventListener("click", e => {
   if (t.dataset.filtroSq) { filtroSquadra = t.dataset.filtroSq; disegna(); return; }
   if (t.dataset.squadra !== undefined) { S.attiva = +t.dataset.squadra; salva(); disegna(); return; }
   if (t.dataset.squadraSfida !== undefined) { S.attiva = +t.dataset.squadraSfida; salva(); disegna(); return; }
-  if (t.dataset.scegli) {
-    const id = t.dataset.scegli, sq = squadraAttiva(), i = sq.carte.indexOf(id);
-    if (i >= 0) sq.carte.splice(i, 1);
-    else if (sq.carte.length < CARTE_SQUADRA) sq.carte.push(id);
-    else { mostraAvviso(`La squadra ha già ${CARTE_SQUADRA} carte: togline una prima.`); return; }
-    salva(); setTimeout(disegna, ridotto ? 0 : 160); return;
-  }
+  if (t.dataset.scegli) { toccoCartaSquadra(t.dataset.scegli); return; }
+  if (t.dataset.slot !== undefined) { const id = squadraAttiva().carte[+t.dataset.slot]; if (id) toccoCartaSquadra(id); return; }
+  if (t.dataset.sqAz) { azioneCartaSquadra(t.dataset.sqAz); return; }
   if (t.dataset.sposta) {
     const [i, d] = t.dataset.sposta.split(":").map(Number), c = squadraAttiva().carte, j = i + d;
     if (j < 0 || j >= c.length) return;

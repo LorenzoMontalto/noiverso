@@ -1558,6 +1558,37 @@ body.in-accesso { overflow: hidden; }
 @media (min-width: 1100px) {
   .amici-strada { float: right; width: 290px; margin: 0 0 18px 22px; position: sticky; top: 90px; z-index: 2; }
 }
+
+/* Squadre: carta selezionata e pannello delle azioni */
+.scegli.selezionata, .slot.selezionata .slot-carta { outline: 3px solid #3fd8ff; outline-offset: 3px; border-radius: 14px; }
+.slot.bersaglio .slot-carta { outline: 2px dashed #f2c14e; outline-offset: 3px; border-radius: 14px; animation: respira 1.4s infinite; }
+.slot-carta { cursor: pointer; }
+.scegli { position: relative; }
+.azioni-carta { position: fixed; z-index: 12; left: 50%; transform: translateX(-50%); bottom: max(12px, env(safe-area-inset-bottom)); width: min(560px, calc(100vw - 20px));
+  background: rgba(22, 17, 21, .97); border: 1px solid var(--linea); border-radius: 18px; padding: 10px 12px; box-shadow: 0 14px 40px rgba(0, 0, 0, .6); display: grid; gap: 8px; animation: sale-su .2s ease-out; }
+.azioni-carta-testa { display: flex; align-items: center; gap: 10px; }
+.azioni-carta-mini .carta { width: 44px; }
+.azioni-carta-info { flex: 1; display: grid; min-width: 0; }
+.azioni-carta-info small { color: var(--spento); font-size: .78rem; }
+.azioni-carta-bottoni { display: flex; flex-wrap: wrap; gap: 6px; }
+.azioni-carta-bottoni .btn { flex: 1 1 auto; }
+.azioni-carta-guida { margin: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #f2c14e; font-size: .9rem; }
+.vista-squadra-spazio { height: 140px; }
+/* Confronto tra due carte */
+.confronto { display: grid; gap: 12px; }
+.confronto h2 { margin: 0; text-align: center; }
+.confronto-testa { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+.confronto-col { display: grid; justify-items: center; text-align: center; gap: 2px; }
+.confronto-col small { color: var(--spento); font-size: .78rem; }
+.confronto-carta .carta { width: 110px; }
+.confronto-vs { font-family: var(--display); font-size: 1.6rem; color: #ff2e46; }
+.confronto-tab { width: 100%; border-collapse: collapse; }
+.confronto-tab td, .confronto-tab th { padding: 6px 8px; border-bottom: 1px solid var(--linea); text-align: center; }
+.confronto-tab th { color: var(--spento); font-weight: 600; font-size: .8rem; }
+.confronto-tab td { font-weight: 800; font-size: 1.05rem; width: 42%; }
+.confronto-tab td.meglio { color: #6fe3a0; } .confronto-tab td.meglio::after { content: " ▲"; font-size: .7rem; }
+.confronto-tab td.peggio { color: var(--spento); }
+.confronto-tab td.piccolo { font-weight: 400; font-size: .76rem; color: var(--spento); text-align: left; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>
