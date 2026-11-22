@@ -2563,6 +2563,12 @@ function avvisoFineConsigli() {
   S.consigliFiniti = true; salva();
   setTimeout(() => mostraAvviso("Hai finito il capitolo 1: da ora in battaglia niente più consigli, decidi tu la mossa giusta!"), 1200);
 }
+// Promemoria sempre visibile in battaglia: chi batte chi (e cosa vuol dire)
+function htmlLegendaTipi() {
+  const t = k => `<span class="lt-tipo s-${k}">${STILI[k].icona} ${STILI[k].nome}</span>`;
+  return `<div class="legenda-tipi" aria-label="Chi batte chi">${t("FOR")}<i>batte</i>${t("DIF")}<i>batte</i>${t("VEL")}<i>batte</i>${t("FOR")}
+    <small>La freccia vuol dire «batte»: chi è in vantaggio fa +30% di danni, chi è in svantaggio −20% e niente critici.</small></div>`;
+}
 function consiglio() {
   const L = B.lati[0], a = B.attivo(0), d = B.attivo(1);
   const usabili = a.c.mosse.map((m, i) => i).filter(i => B.puoUsare(0, i));
@@ -2679,6 +2685,7 @@ function htmlAzioni() {
     : `Velocità pari (${a.vel}): il primo attacco si decide a sorte, poi si va a turno`;
   return `${vivo}${diretta}${Graffiti.htmlBattaglia(B)}
   <p class="ordine-turno ${primo === 0 ? "mio" : primo === 1 ? "suo" : ""}">⚡ ${ordine}</p>
+  ${htmlLegendaTipi()}
   <div class="mana-riga">
     <span class="mana-etichetta">Energia</span>
     <div class="cristalli" id="cristalli">${htmlCristalli(L.energia, prossimo)}</div>

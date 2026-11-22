@@ -1653,6 +1653,18 @@ body.in-accesso { overflow: hidden; }
 .sin-mini { display: inline-grid; place-items: center; min-width: 24px; height: 18px; padding: 0 4px; border-radius: 9px; font-size: .62rem; font-weight: 900; background: var(--c, #c38bff); color: #0b0a10; }
 .sin-mini.multiverso { --c: #c38bff; }
 .sin-admin fieldset { border: 1px solid var(--linea); border-left: 3px solid var(--c, #c38bff); border-radius: 12px; margin: 0 0 8px; padding: 8px 10px; }
+
+/* legenda dei tipi in battaglia */
+.legenda-tipi { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 6px; margin: 2px 0 8px; padding: 6px 10px; border-radius: 12px; background: rgba(255, 255, 255, .04); border: 1px solid var(--linea); font-size: .78rem; }
+.legenda-tipi i { font-style: normal; color: var(--spento); font-size: .72rem; }
+.legenda-tipi i::after { content: " →"; }
+@media (max-width: 560px) {
+  .legenda-tipi { gap: 4px; font-size: .72rem; padding: 6px 6px; }
+  .legenda-tipi i { font-size: 0; } .legenda-tipi i::after { content: "→"; font-size: .8rem; }
+  .lt-tipo { padding: 2px 6px; }
+}
+.lt-tipo { font-weight: 800; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
+.legenda-tipi small { flex-basis: 100%; text-align: center; color: var(--spento); font-size: .7rem; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.8816af04.js"></script>
@@ -1709,7 +1721,7 @@ body.in-accesso { overflow: hidden; }
 <script src="zaino.be6cf23c.js"></script>
 <script src="online.a4e7bb46.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
-<script src="app.e338c777.js"></script>
+<script src="app.d91213a8.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
