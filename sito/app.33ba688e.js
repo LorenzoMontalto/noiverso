@@ -1013,6 +1013,7 @@ function htmlSezioneSerie(id, conTitolo) {
       <div class="serie-info">
         ${conTitolo ? `<h3>${esc(se.nome)}</h3>` : `<h2>${esc(se.nome)}</h2>`}
         <p class="nota">${esc(se.desc)}</p>
+        ${Sinergie.htmlSerieAlbum(id)}
         <div class="serie-rarita">${perRarita}</div>
       </div>
       <div class="serie-progresso"><b>${st.mie}<small>/${st.tot}</small></b><div class="barra"><i style="--p:${st.pct}%;background:${se.colore}"></i></div>${st.mie === st.tot ? `<span class="completa">Serie completa!</span>` : ""}</div>
@@ -1078,6 +1079,7 @@ function vistaAlbum() {
       }).join("")}
       <button class="copertina tutte ${filtroAlbum === "tutte" ? "scelta" : ""}" data-fx="gelatina" data-filtro="tutte" aria-pressed="${filtroAlbum === "tutte"}"><span class="copertina-testo"><b>Tutte le serie</b><small>${tot}/${CARTE.length}</small></span></button>
     </div>
+    ${filtroAlbum === "pot" ? "" : Sinergie.htmlMultiversoAlbum()}
     ${filtroAlbum === "pot" ? htmlSezionePot() : filtroAlbum === "tutte" ? ORDINE_SERIE.map(id => htmlSezioneSerie(id, true)).join("") : htmlSezioneSerie(filtroAlbum, false)}
   </section>`;
 }
@@ -1197,7 +1199,31 @@ const Sinergie = (() => {
     catch (e) { mostraAvviso("Non sono riuscito a salvare. Serve la pagina online con il tuo account admin."); }
     const box = $("#admin-sinergie"); if (box) box.innerHTML = htmlAdmin();
   }
-  return { carica, htmlSquadra, htmlBattaglia, htmlAdmin, salvaAdmin };
+  // Album: cosa fa la sinergia di una serie (sotto il titolo della serie)
+  function htmlSerieAlbum(k) {
+    if (!SINERGIE[k]) return "";
+    return `<p class="sin-album"><b>Sinergia</b> <span>3 carte: ${testoSerie(k, 1)}</span><span>5 carte: ${testoSerie(k, 2)}</span></p>`;
+  }
+  // Album: il Multiverso, persona per persona (le versioni che non hai trovato restano un "?")
+  function htmlMultiversoAlbum() {
+    const perPersona = {};
+    for (const c of CARTE) if (c.persona) (perPersona[c.persona] = perPersona[c.persona] || []).push(c);
+    const persone = Object.entries(perPersona).filter(([, l]) => l.length >= 2)
+      .map(([p, l]) => ({ p, l: l.sort((a, b) => ORDINE_SERIE.indexOf(a.serie) - ORDINE_SERIE.indexOf(b.serie)), mie: l.filter(c => S.carte[c.id]).length }))
+      .sort((a, b) => b.mie - a.mie || a.p.localeCompare(b.p));
+    if (!persone.length) return "";
+    const pronte = persone.filter(x => x.mie >= 2).length;
+    return `<details class="multiverso-album">
+      <summary><span class="sin-ico">∞</span><span><b>Sinergie del Multiverso</b><small>2 versioni della stessa persona in squadra: <b>+${MULTIVERSO.v2}%</b> a tutte le loro statistiche · 3 o più: <b>+${MULTIVERSO.v3}%</b>${pronte ? ` · ne puoi già fare ${pronte}` : ""}</small></span></summary>
+      <div class="mv-lista">${persone.map(x => `<div class="mv-persona ${x.mie >= 3 ? "tre" : x.mie >= 2 ? "due" : ""}">
+        <div class="mv-testa"><b>${esc(x.p)}</b><small>${x.mie}/${x.l.length} versioni${x.mie >= 3 ? ` · +${MULTIVERSO.v3}%` : x.mie >= 2 ? ` · +${MULTIVERSO.v2}%` : ""}</small></div>
+        <div class="mv-carte">${x.l.map(c => S.carte[c.id]
+          ? `<button class="mv-carta" data-dettaglio="${c.id}" style="--c:${SERIE[c.serie].colore}" title="${esc(SERIE[c.serie].nome)}"><img src="${imgCarta(c.id)}" alt="" loading="lazy"><span>${esc(c.nome)}</span></button>`
+          : `<span class="mv-carta buia" style="--c:${SERIE[c.serie].colore}" title="Da trovare (${esc(SERIE[c.serie].nome)})"><i>?</i><span>${SERIE[c.serie].simbolo}</span></span>`).join("")}</div>
+      </div>`).join("")}</div>
+    </details>`;
+  }
+  return { carica, htmlSquadra, htmlBattaglia, htmlAdmin, salvaAdmin, htmlSerieAlbum, htmlMultiversoAlbum };
 })();
 
 // ---------- Squadre: tocchi una carta e scegli cosa farne ----------
@@ -2927,7 +2953,7 @@ document.addEventListener("change", e => { if (e.target.id === "img-file" && e.t
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3010,6 +3036,7 @@ document.addEventListener("click", e => {
   if (t.dataset.sfidaVivo !== undefined) { const id = t.dataset.sfidaVivo; if (B) { Online.esci(); esciBattaglia(); } Online.sfida(id); return; }
   if (t.classList.contains("gira")) { if (t.classList.contains("girata")) apriSchedaCarta(esitiAperti[+t.dataset.i]); else t.classList.add("girata"); return; }
   if (t.matches(".carta[role=button]")) { apriDettaglio(t.dataset.id); return; }
+  if (t.dataset.dettaglio) { apriDettaglio(t.dataset.dettaglio); return; }
   switch (t.dataset.azione) {
     case "entra": entra("partita"); break;
     case "entra-admin": chiudiModale(); if (Archivio.proprietario) entra("admin"); break;

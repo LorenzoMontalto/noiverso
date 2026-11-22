@@ -1669,6 +1669,28 @@ body.in-accesso { overflow: hidden; }
 .esp-carta { position: relative; }
 .esp-pot { position: absolute; top: 34px; left: 50%; transform: translateX(-50%); white-space: nowrap; z-index: 2; padding: 1px 6px; border-radius: 9px; background: #6fe3a0; color: #08130d; font-size: .66rem; font-weight: 900; box-shadow: 0 0 10px rgba(111, 227, 160, .7); }
 .esp-pot-nota { margin: 6px 0 2px; font-size: .82rem; color: var(--spento); } .esp-pot-nota b { color: #6fe3a0; }
+
+/* sinergie nell'album */
+.sin-album { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; margin: 6px 0 2px; font-size: .8rem; }
+.sin-album b { color: var(--c); text-transform: uppercase; font-size: .7rem; letter-spacing: .06em; }
+.sin-album span { padding: 2px 8px; border-radius: 8px; background: rgba(255, 255, 255, .05); border: 1px solid var(--linea); }
+.multiverso-album { margin: 14px 0; border-radius: 16px; background: var(--muro); border: 1px solid #c38bff55; }
+.multiverso-album > summary { display: flex; gap: 10px; align-items: center; padding: 12px 14px; cursor: pointer; list-style: none; --c: #c38bff; }
+.multiverso-album > summary::-webkit-details-marker { display: none; }
+.multiverso-album > summary::after { content: "▾"; margin-left: auto; color: var(--spento); transition: transform .2s; }
+.multiverso-album[open] > summary::after { transform: rotate(180deg); }
+.multiverso-album summary b { color: #c38bff; } .multiverso-album summary small { display: block; color: var(--spento); font-size: .78rem; }
+.multiverso-album summary small b { color: inherit; }
+.mv-lista { display: grid; gap: 8px; padding: 0 12px 12px; }
+.mv-persona { padding: 8px 10px; border-radius: 12px; background: rgba(255, 255, 255, .03); border-left: 3px solid var(--linea); }
+.mv-persona.due { border-left-color: #c38bff; } .mv-persona.tre { border-left-color: #f2c14e; }
+.mv-testa { display: flex; gap: 8px; align-items: baseline; margin-bottom: 6px; } .mv-testa small { color: var(--spento); font-size: .75rem; }
+.mv-carte { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.mv-carta { flex: none; width: 64px; display: grid; gap: 3px; justify-items: center; padding: 3px; border-radius: 10px; border: 2px solid var(--c); background: #0006; color: inherit; font: inherit; cursor: pointer; }
+.mv-carta img { width: 100%; aspect-ratio: 5 / 7; object-fit: cover; border-radius: 7px; }
+.mv-carta span { font-size: .6rem; line-height: 1.1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+.mv-carta.buia { cursor: default; opacity: .55; border-style: dashed; }
+.mv-carta.buia i { display: grid; place-items: center; width: 100%; aspect-ratio: 5 / 7; border-radius: 7px; background: #0008; font-style: normal; font-weight: 900; font-size: 1.3rem; color: var(--spento); }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>
