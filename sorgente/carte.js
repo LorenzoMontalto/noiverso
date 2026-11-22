@@ -27,17 +27,18 @@ const ORDINE_RARITA = ["comune", "rara", "epica", "leggendaria"];
 
 // Tre tipi, e ognuno potenzia la sua statistica:
 //   Forza    → +25% attacco                   batte Difesa   (la sfonda)
-//   Difesa   → +10% difesa                    batte Velocità (para i colpi veloci)
-//   Velocità → +5 velocità e +10% attacco     batte Forza    (schiva i colpi lenti)
+//   Difesa   → +5% difesa                     batte Velocità (para i colpi veloci)
+//   Velocità → +5 velocità e +15% attacco     batte Forza    (schiva i colpi lenti)
+// In più, potenziando, la statistica del tipo cresce più delle altre (vedi statistiche()).
 // Numeri scelti con 4000 partite simulate: le carte Difesa sono già robuste per ruolo (tank, difensori),
 // quelle Velocità fragili (schivatori, assassini), così ogni tipo pesa circa uguale in una squadra mista.
 // Con +5 la carta Velocità più lenta arriva a 15, le altre al massimo a 12: una Velocità attacca sempre prima.
 const STILI = {
-  FOR: { nome: "Forza",    icona: "⚔️", batte: "DIF", bonus: "+25% attacco" },
-  DIF: { nome: "Difesa",   icona: "🛡️", batte: "VEL", bonus: "+10% difesa" },
-  VEL: { nome: "Velocità", icona: "⚡", batte: "FOR", bonus: "+5 velocità (attacca sempre per prima) e +10% attacco" },
+  FOR: { nome: "Forza",    icona: "⚔️", batte: "DIF", bonus: "+25% attacco, e potenziando l'attacco cresce di più" },
+  DIF: { nome: "Difesa",   icona: "🛡️", batte: "VEL", bonus: "+5% difesa, e potenziando la difesa cresce di più" },
+  VEL: { nome: "Velocità", icona: "⚡", batte: "FOR", bonus: "+5 velocità (attacca sempre per prima) e +15% attacco, e potenziando la velocità cresce di più" },
 };
-const BONUS_TIPO = { FOR: { att: 1.25 }, DIF: { dif: 1.10 }, VEL: { vel: 5, att: 1.10 } };
+const BONUS_TIPO = { FOR: { att: 1.25 }, DIF: { dif: 1.05 }, VEL: { vel: 5, att: 1.15 } };
 
 // Statistiche base per ruolo (prima di rarità e livello) + abilità passiva.
 // "cosa" = in due parole a cosa serve, mostrato sulla carta.
@@ -336,17 +337,23 @@ const potPerLivello = L => 3 + Math.floor(L / 2);
 const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 5);
 
 // Statistiche reali di una carta.
-// Esempio: El Pelado (Tank, comune) Lv1 → 150 PV; Lv30 → 150 · 1,58 = 237 PV; Lv30 con lode → 249 PV.
-// In battaglia il livello moltiplica PV e danni: due carte allo stesso livello durano come al livello 1.
+// Potenziare fa salire TUTTE le statistiche allo stesso modo (+2% a livello: al 30 è +58%),
+// e quella del tipo sale di più (+2,8% a livello: al 30 è +81%). La velocità sale di poco:
+// +1 al livello 30 per tutti, +3 per le carte Velocità (così restano sempre le più veloci).
+// Esempio: El Pelado (Tank, Difesa, comune) Lv1 → 150 PV, attacco 10, difesa 16,8; Lv30 → 237 PV, attacco 15,8, difesa 30,4.
+const CRESCITA_TIPO = 1.4;
 function statistiche(c, liv = 1, lode = false) {
   const b = RUOLI[c.ruolo], fr = RARITA[c.rarita].forza, f = fattoreLivello(liv, lode), t = BONUS_TIPO[c.stile] || {};
-  const att = b.att * (t.att || 1), pv = b.pv * (t.pv || 1), dif = b.dif * (t.dif || 1);
+  const g = f - 1, fT = 1 + g * CRESCITA_TIPO;
+  const pv = b.pv * (t.pv || 1) * fr * f;
+  const att = b.att * (t.att || 1) * fr * (c.stile === "FOR" ? fT : f);
+  const dif = b.dif * (t.dif || 1) * fr * (c.stile === "DIF" ? fT : f);
   return {
-    pv: Math.round(pv * fr * f),
-    att: Math.round(att * fr * f * 10) / 10,
-    attBase: Math.round(att * fr * 10) / 10,
-    dif: Math.round(dif * fr * 10) / 10,
-    vel: b.vel + (t.vel || 0),
+    pv: Math.round(pv),
+    att: Math.round(att * 10) / 10,
+    attBase: Math.round(att / f * 100) / 100,   // in battaglia l'attacco si moltiplica per f (livello)
+    dif: Math.round(dif * 10) / 10,
+    vel: b.vel + (t.vel || 0) + Math.round(g * (c.stile === "VEL" ? 5 : 2)),
     f,
   };
 }

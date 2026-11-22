@@ -535,14 +535,21 @@ revoke all on public.boss_settimana, public.boss_danni from anon;
 create or replace function public.settimana_attuale() returns text
 language sql stable as $$ select to_char(now() at time zone 'Europe/Rome', 'IYYY-"W"IW') $$;
 
+create or replace function public.pv_boss_nuovo() returns integer
+language sql stable security definer set search_path = public as $$
+  select greatest(20000, 6000 * (select count(*) from public.salvataggi where slot = 'partita' and aggiornato > now() - interval '14 days'))::int;
+$$;
+-- il boss di questa settimana, se era stato creato con i PV vecchi (troppi), si abbassa
+update public.boss_settimana set pv_max = least(pv_max, public.pv_boss_nuovo()) where settimana = to_char(now() at time zone 'Europe/Rome', 'IYYY-"W"IW');
 create or replace function public.boss_attuale() returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare s text := public.settimana_attuale(); oggi date := (now() at time zone 'Europe/Rome')::date; b public.boss_settimana; tot int;
 begin
   if auth.uid() is null then raise exception 'Devi fare l''accesso'; end if;
-  -- i PV crescono con quanti giocano: 10.000 per ogni giocatore attivo nelle ultime 2 settimane (almeno 30.000)
+  -- i PV crescono con quanti giocano: 6.000 per ogni giocatore attivo nelle ultime 2 settimane (almeno 20.000).
+  -- Un attacco fa in media 700-800 danni: servono circa 8 attacchi a testa nella settimana (se ne hanno 21).
   insert into public.boss_settimana (settimana, pv_max)
-    values (s, greatest(30000, 10000 * (select count(*) from public.salvataggi where slot = 'partita' and aggiornato > now() - interval '14 days')))
+    values (s, public.pv_boss_nuovo())
     on conflict (settimana) do nothing;
   select * into b from public.boss_settimana where settimana = s;
   select coalesce(sum(danni), 0) into tot from public.boss_danni where settimana = s;
@@ -728,6 +735,42 @@ insert into public.config (id, dati) values ('classifica', jsonb_build_object('t
   on conflict (id) do update set dati = public.config.dati || jsonb_build_object('titolo', public.titolo_mese(now())) where not (public.config.dati ? 'titolo');
 revoke all on function public.titolo_classifica(text) from public, anon;
 grant execute on function public.titolo_classifica(text) to authenticated;
+-- Premi per i primi 3 quando si azzera la classifica: restano in attesa finché il giocatore non apre il gioco
+create table if not exists public.premi_classifica (
+  id        bigint generated always as identity primary key,
+  user_id   uuid not null references auth.users (id) on delete cascade,
+  posizione integer not null,
+  titolo    text,
+  punti     integer not null default 0,
+  premio    jsonb not null,
+  riscosso  boolean not null default false,
+  creato    timestamptz not null default now()
+);
+create index if not exists premi_classifica_utente on public.premi_classifica (user_id, riscosso);
+alter table public.premi_classifica enable row level security;
+drop policy if exists "premi classifica: i miei" on public.premi_classifica;
+create policy "premi classifica: i miei" on public.premi_classifica for select to authenticated using (user_id = auth.uid());
+grant select on public.premi_classifica to authenticated;
+revoke all on public.premi_classifica from anon;
+create or replace function public.premio_posizione(pos integer) returns jsonb language sql immutable as $$
+  select case pos
+    when 1 then '{"monete": 1000, "bustine": {"leggendaria": 1}}'::jsonb
+    when 2 then '{"monete": 600, "bustine": {"epica": 1}}'::jsonb
+    when 3 then '{"monete": 300, "bustine": {"normale": 2}}'::jsonb
+  end;
+$$;
+create or replace function public.riscatta_premi_classifica() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare r jsonb;
+begin
+  if auth.uid() is null then return '[]'::jsonb; end if;
+  with presi as (update public.premi_classifica set riscosso = true where user_id = auth.uid() and not riscosso returning posizione, titolo, punti, premio)
+  select coalesce(jsonb_agg(jsonb_build_object('posizione', posizione, 'titolo', titolo, 'punti', punti, 'premio', premio) order by posizione), '[]'::jsonb) into r from presi;
+  return r;
+end $$;
+revoke all on function public.riscatta_premi_classifica() from public, anon;
+grant execute on function public.riscatta_premi_classifica() to authenticated;
+
 create or replace function public.azzera_classifica() returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare podio jsonb; vecchio jsonb;
@@ -736,6 +779,10 @@ begin
   select coalesce(jsonb_agg(jsonb_build_object('nome', coalesce(dati->>'nome', 'Giocatore'), 'avatar', dati->>'avatar', 'punti', punti) order by punti desc), '[]'::jsonb) into podio
     from (select dati, punti from public.classifica where punti > 0 order by punti desc limit 3) t;
   select dati into vecchio from public.config where id = 'classifica';
+  -- premi ai primi 3 (solo a chi ha fatto almeno un punto)
+  insert into public.premi_classifica (user_id, posizione, titolo, punti, premio)
+    select user_id, pos, coalesce(vecchio->>'titolo', 'Classifica'), punti, public.premio_posizione(pos::int)
+    from (select user_id, punti, row_number() over (order by punti desc, aggiornato asc) as pos from public.classifica where punti > 0) t where pos <= 3;
   insert into public.config (id, dati) values ('classifica', jsonb_build_object('dal', now(), 'titolo', public.titolo_mese(now()),
       'storico', (jsonb_build_array(jsonb_build_object('dal', vecchio->>'dal', 'al', now(), 'titolo', vecchio->>'titolo', 'podio', podio)) || coalesce(vecchio->'storico', '[]'::jsonb)) - 12))
     on conflict (id) do update set dati = excluded.dati, aggiornato = now();

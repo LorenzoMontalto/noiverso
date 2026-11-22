@@ -461,7 +461,7 @@ function apriDettaglio(id) {
           <div class="livello-riga"><b>${lode ? "Livello 30 e lode" : `Livello ${liv}`}</b><span>${lode ? "+5% a PV e danni" : liv < LIVELLO_MAX ? `Potenziatori ${inf.pot}/${inf.servePot}` : `Lode: ${inf.dentro}/${inf.serve} XP`}</span></div>
           <div class="xp-barra ${liv < LIVELLO_MAX ? "pot" : ""}"><i style="--p:${lode ? 100 : Math.round(inf.dentro / inf.serve * 100)}%"></i></div>
           ${copie && liv < LIVELLO_MAX ? (() => { const s2 = statistiche(c, liv + 1, false), monOk = S.admin || S.monete >= inf.serveMon; return `
-          <p class="prossimo">Al livello ${liv + 1}: PV ${s.pv} → <b>${s2.pv}</b> · Attacco ${s.att} → <b>${s2.att}</b></p>
+          <p class="prossimo">Al livello ${liv + 1}: PV ${s.pv} → <b>${s2.pv}</b> · Attacco ${s.att} → <b>${s2.att}</b> · Difesa ${s.dif} → <b>${s2.dif}</b>${s2.vel !== s.vel ? ` · Velocità ${s.vel} → <b>${s2.vel}</b>` : ""}</p>
           <div class="potenzia-riga">
             <span class="costi"><span class="${inf.pronta ? "ok" : "manca"}">${inf.servePot} potenziatori</span><span class="${monOk ? "ok" : "manca"}">${inf.serveMon} monete</span></span>
             <button class="btn primario" data-fx="stelle" data-azione="potenzia" data-id="${id}" ${inf.puoi ? "" : "disabled"}>Potenzia</button>
@@ -588,7 +588,7 @@ function vistaStrada() {
       <li><b>Squadre.</b> Prepari fino a ${NUM_SQUADRE} squadre da ${CARTE_SQUADRA}, nell'ordine che vuoi: la prima entra in campo per prima.</li>
       <li><b>Battaglia.</b> Cinque contro cinque. Ogni turno scegli una mossa, <i>Carica</i> (+2 energia e ti proteggi) o un cambio. Ogni carta fa una sola mossa per turno: la più veloce attacca per prima (a pari velocità si alterna). L'energia è della squadra: si parte da 3 e si guadagnano 2 punti a turno.</li>
       <li><b>Classifica.</b> Si fanno punti solo con le sfide dal vivo contro gli amici online: +3 per ogni vittoria, 0 per le sconfitte.</li>
-      <li><b>Tipi.</b> Ogni carta è di un tipo che potenzia una sua statistica: <span class="s-FOR stile">FOR</span> Forza +25% attacco, <span class="s-DIF stile">DIF</span> Difesa +10% difesa, <span class="s-VEL stile">VEL</span> Velocità +5 velocità e +10% attacco (una carta Velocità attacca sempre prima delle altre). Forza batte Difesa, Difesa batte Velocità, Velocità batte Forza: il vantaggio vale ×1,3, lo svantaggio ×0,8.</li>
+      <li><b>Tipi.</b> Ogni carta è di un tipo che potenzia una sua statistica: <span class="s-FOR stile">FOR</span> Forza +25% attacco, <span class="s-DIF stile">DIF</span> Difesa +5% difesa, <span class="s-VEL stile">VEL</span> Velocità +5 velocità e +15% attacco (una carta Velocità attacca sempre prima delle altre). Potenziando salgono tutte le statistiche, quella del tipo di più. Forza batte Difesa, Difesa batte Velocità, Velocità batte Forza: il vantaggio vale ×1,3, lo svantaggio ×0,8.</li>
       <li><b>Pass.</b> Ogni sfida e ogni bustina danno punti esperienza. Ogni livello del pass sblocca un premio.</li>
     </ol>
   </section>`;
@@ -816,16 +816,24 @@ function usaBustina(tipo, pagando) {
   const esiti = apriBustina(tipo);
   const su = aggiungiXP(XP_BUSTINA);
   Missioni.evento("bustina");
-  Graffiti.forseInBustina(tipo);
+  const graffito = Graffiti.forseInBustina(tipo);
   salva();
   Archivio.pubblicaClassifica();
   aggiornaTesta();
-  mostraApertura(esiti, tipo, su);
+  mostraApertura(esiti, tipo, su, graffito);
 }
 
 // ---------- Apertura bustina (3D, con riserva 2D) ----------
 let apertura = null;
-function mostraApertura(esiti, tipo, livelloSu) {
+// la bomboletta trovata nella bustina: una "carta" in più da girare
+const htmlBombolettaBustina = g => g ? `<button type="button" class="bomboletta-bustina" data-azione="gira-bomboletta" hidden aria-label="Gira la bomboletta">
+    <span class="bomboletta-retro"><i>🎨</i><b>Bomboletta!</b><small>Tocca per girarla</small></span>${Graffiti.htmlInBustina(g)}</button>` : "";
+function giraBomboletta() {
+  const b = $(".bomboletta-bustina"); if (!b || b.classList.contains("girata")) return;
+  b.classList.add("girata");
+  const [x, y] = FX.centro(b); FX.esplosione(x, y, { n: 50, forma: "coriandolo", colori: ["#ff2e46", "#3fd8ff", "#f2c14e", "#b866ff"], velocita: 7, dimensione: 5 });
+}
+function mostraApertura(esiti, tipo, livelloSu, graffito) {
   if (usa3D()) {
     const ov = $("#apertura");
     ov.hidden = false;
@@ -833,6 +841,7 @@ function mostraApertura(esiti, tipo, livelloSu) {
       <div class="apertura-tela" id="tela-bustina"></div>
       <div class="apertura-ui">
         <p class="suggerimento" id="sugg">Tocca la bustina per aprirla</p>
+        ${htmlBombolettaBustina(graffito)}
         <div class="azioni centro">
           <button class="btn" data-fx="gelatina" data-azione="gira-tutte" hidden>Gira tutte</button>
           <button class="btn primario" data-fx="onda" data-azione="chiudi-apertura" hidden>Continua</button>
@@ -841,7 +850,7 @@ function mostraApertura(esiti, tipo, livelloSu) {
     try {
       apertura = new Scena3D.Apertura($("#tela-bustina"), esiti, tipo, {
         onApri: () => { $("#sugg").textContent = ""; },
-        onPronte: () => { $("#sugg").textContent = "Tocca le carte per girarle"; $('[data-azione="gira-tutte"]').hidden = false; $('[data-azione="chiudi-apertura"]').hidden = false; },
+        onPronte: () => { $("#sugg").textContent = graffito ? "Tocca le carte per girarle: c'è anche una bomboletta!" : "Tocca le carte per girarle"; $('[data-azione="gira-tutte"]').hidden = false; $('[data-azione="chiudi-apertura"]').hidden = false; const bb = $(".bomboletta-bustina"); if (bb) bb.hidden = false; },
         onGira: (i, tutte) => {
           $("#sugg").textContent = tutte ? `${livelloSu ? `Pass: livello ${livelloSu} raggiunto! · ` : ""}Tocca una carta per vedere le statistiche` : "Tocca di nuovo una carta girata per vedere le statistiche";
           if (tutte) $('[data-azione="gira-tutte"]').hidden = true;
@@ -851,7 +860,7 @@ function mostraApertura(esiti, tipo, livelloSu) {
       return;
     } catch (e) { ov.hidden = true; ov.innerHTML = ""; apertura = null; }
   }
-  mostraApertura2D(esiti);
+  mostraApertura2D(esiti, graffito);
 }
 // Scheda veloce di una carta appena trovata: sta sopra la bustina aperta e si chiude con un tocco
 const PIU_RARITA = r => Math.round((RARITA[r].forza - 1) * 100);
@@ -896,7 +905,7 @@ function chiudiApertura() {
   disegna();
 }
 let esitiAperti = [];
-function mostraApertura2D(esiti) {
+function mostraApertura2D(esiti, graffito) {
   esitiAperti = esiti;
   apriModale(`
     <div class="apertura2d">
@@ -912,6 +921,7 @@ function mostraApertura2D(esiti) {
             </div>
           </button>`).join("")}
       </div>
+      ${htmlBombolettaBustina(graffito).replace(" hidden ", " ")}
       <div class="azioni centro">
         <button class="btn" data-azione="gira-tutte-2d">Gira tutte</button>
         <button class="btn primario" data-azione="chiudi">Continua</button>
@@ -1263,6 +1273,33 @@ async function apriScrignoBonus(origine) {
 
 // ---------- CLASSIFICA ----------
 let classificaDati = null, classificaErrore = false, nomiCache = {};
+// Premi di fine mese per i primi 3 (li assegna il server quando l'admin azzera la classifica)
+const PREMI_CLASSIFICA = ["1000 monete + Bustina Leggendaria", "600 monete + Bustina Epica", "300 monete + 2 Bustine"];
+async function ritiraPremiClassifica() {
+  if (!socialeAttivo() || S.admin) return;
+  let lista = [];
+  try { lista = await rpcSociale("riscatta_premi_classifica"); } catch (e) { return; }
+  if (!Array.isArray(lista) || !lista.length) return;
+  const righe = [];
+  for (const x of lista) {
+    const p = x.premio || {};
+    if (p.monete) S.monete += Math.min(5000, +p.monete || 0);
+    for (const [t, n] of Object.entries(p.bustine || {})) if (TIPI_BUSTINA[t]) S.inventario[t] = (S.inventario[t] || 0) + Math.min(10, +n || 0);
+    righe.push(x);
+  }
+  salva(); aggiornaTesta();
+  const medaglie = ["🥇", "🥈", "🥉"];
+  const mostra = () => {
+    if (B || Tutorial.attivo || !$("#accesso").hidden || !$("#modale").hidden || !$("#apertura").hidden) { setTimeout(mostra, 2000); return; }
+    apriModale(`<div class="codice-modale premio-classifica"><span class="codice-tag">Classifica del mese</span>
+      ${righe.map(x => `<div class="premio-podio"><span class="medaglia">${medaglie[x.posizione - 1] || "🏅"}</span>
+        <h2>${x.posizione}° posto!</h2><p>${esc(String(x.titolo || "Classifica"))} · ${Number(x.punti) || 0} punti</p>
+        <p class="codice-premio">Hai ricevuto: <b>${esc(PREMI_CLASSIFICA[x.posizione - 1] || "")}</b></p></div>`).join("")}
+      <div class="azioni centro"><button class="btn oro" data-azione="chiudi">Grande!</button></div></div>`);
+    FX.esplosione(innerWidth / 2, innerHeight / 3, { n: 110, forma: "coriandolo", colori: ["#f2c14e", "#fff3c4", "#ff2e46", "#3fd8ff"], velocita: 9, dimensione: 6 });
+  };
+  setTimeout(mostra, 1200);
+}
 // albo d'oro: da quando conta la classifica e i podi delle classifiche azzerate
 let albo = null;
 async function caricaAlbo() {
@@ -1293,7 +1330,7 @@ function vistaClassifica() {
   return `
   <section>
     <div class="titolo-riga"><h2>${esc(titoloClassifica())}</h2></div>
-    <p class="nota">Contano solo le sfide dal vivo: +3 punti per ogni vittoria, 0 per le sconfitte.</p>
+    <p class="nota">Contano solo le sfide dal vivo: +3 punti per ogni vittoria, 0 per le sconfitte. A fine mese premi ai primi tre: 🥇 ${PREMI_CLASSIFICA[0]} · 🥈 ${PREMI_CLASSIFICA[1]} · 🥉 ${PREMI_CLASSIFICA[2]}.</p>
     ${htmlAlbo()}
     <table class="classifica">
       <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vinte / giocate</th><th>Carte</th><th>Pass</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
@@ -1418,7 +1455,7 @@ async function entra(slot, profiloLocale) {
   if (slot !== "admin") Missioni.finestraAccesso();
   Zaino.carica(); Reazioni.carica();
   Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); });
-  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); }
+  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); ritiraPremiClassifica(); }
   Boss.carica();
 }
 
@@ -1542,7 +1579,7 @@ function vistaAdmin() {
           <label>Titolo della classifica <input name="titolo" maxlength="60" value="${esc(albo ? titoloClassifica() : "")}" placeholder="${albo ? "" : "Carico…"}"></label>
           <div class="azioni"><button class="btn primario" type="submit">Salva il titolo</button></div>
         </form>${albo ? "" : (setTimeout(caricaAlbo, 0), "")}
-        <p class="nota">Azzera punti e partite giocate di tutti, per esempio all'inizio di ogni mese. Il podio di adesso finisce nell'albo d'oro, visibile in classifica, e il titolo diventa quello del mese nuovo (poi puoi cambiarlo). Le vittorie restano valide per i trofei.</p>
+        <p class="nota">Azzera punti e partite giocate di tutti, per esempio all'inizio di ogni mese. Il podio di adesso finisce nell'albo d'oro, visibile in classifica, i primi tre ricevono i premi (🥇 ${PREMI_CLASSIFICA[0]}, 🥈 ${PREMI_CLASSIFICA[1]}, 🥉 ${PREMI_CLASSIFICA[2]}) la prossima volta che aprono il gioco, e il titolo diventa quello del mese nuovo (poi puoi cambiarlo). Le vittorie restano valide per i trofei.</p>
         <div class="azioni"><button class="btn" data-admin="azzera-classifica">Azzera la classifica</button></div></div>
       <div class="admin-box"><h3>Il tuo profilo normale</h3>
         <p class="nota">Riparte da zero il tuo profilo da giocatore (non quello admin).</p>
@@ -2172,11 +2209,18 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
     : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id) }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
-  B = L.spettatore ? Online.creaGuarda(mia, nemici) : L.vivo ? Online.creaBattaglia(mia, nemici) : new Battaglia(mia, nemici, "Tu", L.nome);
-  B.impostaGraffiti(L.spettatore ? L.spettatore.gA : L.vivo ? L.vivo.graffitoMio : Graffiti.mio(), Graffiti.nemico(L));
+  // contro il computer: battaglia con un seme, così gli amici possono guardarla in diretta (le scelte del computer restano a caso)
+  const seme = Math.floor(Math.random() * 2 ** 31);
+  B = L.spettatore ? Online.creaGuarda(mia, nemici) : L.vivo ? Online.creaBattaglia(mia, nemici) : new Battaglia(mia, nemici, "Tu", L.nome, mulberry32(seme));
+  if (!L.spettatore && !L.vivo) B.rngIA = Math.random;
+  const gMio = L.spettatore ? L.spettatore.gA : L.vivo ? L.vivo.graffitoMio : Graffiti.mio(), gNem = Graffiti.nemico(L);   // una volta sola: per i bot può essere a caso
+  B.impostaGraffiti(gMio, gNem);
   B.zaino = L.spettatore ? null : Zaino.perBattaglia();
   if (L.spettatore) Online.rigioca(B);   // porta la battaglia al punto in cui è adesso, prima di disegnare l'arena
   if (L.bossGruppo) Boss.prepara(B);
+  if (!L.spettatore && !L.vivo && !L.provaAdmin && !S.admin)
+    Online.iniziaDiretta({ seme, sqA: mia, sqB: nemici, gA: gMio, gB: gNem, nomeA: (S.profilo.nome || "Giocatore").slice(0, 22), nomeB: `${L.nome} (computer)`,
+      bossPv: L.bossGruppo ? B.lati[1].squadra[0].pvMax : null });
   document.body.classList.add("in-battaglia");
   $("#app").classList.add("in-battaglia");
   const main = $("#vista");
@@ -2320,6 +2364,7 @@ function htmlAzioni() {
   if (finita && livelloAttuale.vivo) return Online.htmlFine();
   if (livelloAttuale.spettatore) return finita ? Online.htmlFineGuarda() : Online.htmlGuarda();
   const vivo = livelloAttuale.vivo ? Online.htmlBanner() : "";
+  const diretta = !livelloAttuale.vivo && Online.inDiretta ? Online.htmlDiretta() : "";
   if (vivo && !animazione && B.vincitore < 0 && (Online.inAttesa() || (B.serveSostituzione(1) && !B.serveSostituzione(0)))) {
     return `${vivo}${Graffiti.htmlBattaglia(B)}<div class="vivo-attesa"><span class="vivo-puntini"><i></i><i></i><i></i></span>
       <p>${Online.inAttesa() ? `Hai scelto <b>${esc(Online.scelta())}</b>.` : ""} ${esc(livelloAttuale.nome)} sta scegliendo…</p></div>`;
@@ -2334,7 +2379,7 @@ function htmlAzioni() {
     </div>`;
   }
   if (!animazione && B.serveSostituzione(0)) {
-    return `${vivo}<p class="consiglio forte"><b>${esc(B.attivo(0).c.nome)} è KO.</b> Scegli chi mandare in campo (puoi anche toccare la carta nell'arena).</p>
+    return `${vivo}${diretta}<p class="consiglio forte"><b>${esc(B.attivo(0).c.nome)} è KO.</b> Scegli chi mandare in campo (puoi anche toccare la carta nell'arena).</p>
     <div class="panchina grande">${htmlPanchina(true)}</div>`;
   }
   const L = B.lati[0], a = B.attivo(0);
@@ -2345,7 +2390,7 @@ function htmlAzioni() {
   const ordine = primo === 0 ? `<b>Attacchi per primo</b> (${perche})`
     : primo === 1 ? `<b>${esc(d.c.nome)} attacca per primo</b> (${perche})`
     : `Velocità pari (${a.vel}): il primo attacco si decide a sorte, poi si va a turno`;
-  return `${vivo}${Graffiti.htmlBattaglia(B)}
+  return `${vivo}${diretta}${Graffiti.htmlBattaglia(B)}
   <p class="ordine-turno ${primo === 0 ? "mio" : primo === 1 ? "suo" : ""}">⚡ ${ordine}</p>
   <div class="mana-riga">
     <span class="mana-etichetta">Energia</span>
@@ -2471,14 +2516,16 @@ async function turnoGiocatore(az) {
   if (livelloAttuale.vivo) return Online.scegli(az);
   const azC = B.scegliAzione(1, livelloAttuale.abilita);
   let ev = B.risolviTurno(az, azC);
-  if (B.serveSostituzione(1)) ev = ev.concat(B.sostituisci(1, B.scegliSostituto(1)));
+  Online.loggaDiretta({ o: "turno", a: az, b: azC });
+  if (B.serveSostituzione(1)) { const i = B.scegliSostituto(1); ev = ev.concat(B.sostituisci(1, i)); Online.loggaDiretta({ o: "sost", l: 1, i }); }
   await riproduci(ev);
   if (B.vincitore >= 0) chiudiSfida();
 }
 async function sostituisciGiocatore(i) {
   if (animazione || (livelloAttuale && livelloAttuale.spettatore)) return;
   if (livelloAttuale && livelloAttuale.vivo) return Online.sostituisci(i);
-  await riproduci(B.sostituisci(0, i));
+  const ev = B.sostituisci(0, i); Online.loggaDiretta({ o: "sost", l: 0, i });
+  await riproduci(ev);
 }
 
 // Dopo una battaglia: le carte al 30 fanno esperienza verso la lode, le altre mostrano i potenziatori
@@ -2506,6 +2553,7 @@ function htmlEspCarte() {
 }
 
 function chiudiSfida() {
+  if (livelloAttuale && !livelloAttuale.vivo && !livelloAttuale.spettatore) Online.fineDiretta(B.vincitore);
   if (livelloAttuale && livelloAttuale.storia) return chiudiStoria();
   if (livelloAttuale && livelloAttuale.amico) return Amici.chiudi();
   if (livelloAttuale && livelloAttuale.bossGruppo) return Boss.chiudi();
@@ -2532,6 +2580,7 @@ function chiudiArena() { if (arena) { if (arena._roCopertura) arena._roCopertura
 function esciBattaglia() {
   if (livelloAttuale && livelloAttuale.vivo && Online.inPartita) Online.esci();
   if (livelloAttuale && livelloAttuale.spettatore && Online.inGuarda) Online.esciGuarda();
+  Online.chiudiDiretta();
   chiudiArena();
   B = null; animazione = false;
   document.body.classList.remove("in-battaglia");
@@ -2655,8 +2704,9 @@ document.addEventListener("click", e => {
     case "esci-amici": esciBattaglia(); setTimeout(() => Amici.apriElenco(), 300); break;
     case "esci-boss": esciBattaglia(); break;
     case "riscuoti-accesso": Missioni.riscuotiAccesso(t); break;
-    case "gira-tutte": if (apertura) apertura.giraTutte(); break;
-    case "gira-tutte-2d": $$(".gira").forEach((g, i) => setTimeout(() => g.classList.add("girata"), ridotto ? 0 : i * 180)); break;
+    case "gira-tutte": if (apertura) apertura.giraTutte(); setTimeout(giraBomboletta, 1600); break;
+    case "gira-bomboletta": giraBomboletta(); break;
+    case "gira-tutte-2d": $$(".gira").forEach((g, i) => setTimeout(() => g.classList.add("girata"), ridotto ? 0 : i * 180)); setTimeout(giraBomboletta, 1000); break;
     case "chiudi-apertura": chiudiApertura(); break;
     case "pass-bonus": apriScrignoBonus(t); break;
     case "riscuoti-tutto": riscuoti(Array.from({ length: livelloPass() }, (_, i) => i + 1), t); break;

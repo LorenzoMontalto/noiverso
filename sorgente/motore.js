@@ -57,6 +57,10 @@ const OGGETTI_EFFETTI = {
   taxi:     { tipo: "rianima", val: 30 },
 };
 
+// Cure, bruciature e sirene (tutto quello che è "una percentuale dei PV") si calcolano sui PV "normali" della carta:
+// il boss del gruppo ha decine di migliaia di PV, e curarsi del 5% di quelli lo rendeva imbattibile.
+const pvCura = a => a.pvCura || a.pvMax;
+
 class Battaglia {
   // squadre: array di {id, liv}
   constructor(sqG, sqC, nomeG = "Tu", nomeC = "Avversario", rng = Math.random) {
@@ -96,16 +100,16 @@ class Battaglia {
     this.ev = [];
     this.oggettiTurno = this.oggettiTurno || []; this.oggettiTurno[l] = this.turno;
     this._log(`${L.nome} apre lo zaino: ${nome || id}!`, { lato: l, oggetto: id, avviso: true });
-    if (e.tipo === "cura") this._cura(l, a, Math.round(a.pvMax * e.val / 100));
+    if (e.tipo === "cura") this._cura(l, a, Math.round(pvCura(a) * e.val / 100));
     else if (e.tipo === "energia") { L.energia = Math.min(ENERGIA_MAX, L.energia + e.val); this._log(`+${e.val} energia.`, { lato: l, anim: "energia", su: l }); }
     else if (e.tipo === "forza") { a.buff.att = { val: e.val, turni: e.turni }; this._log(`Attacco di ${a.c.nome} +${e.val}% per ${e.turni} turni.`, { lato: l, anim: "potenzia", su: l }); }
     else if (e.tipo === "scudo") { a.scudo = Math.max(a.scudo, e.val); this._log(`${a.c.nome} è protetto: il prossimo colpo fa il ${e.val}% di danni in meno.`, { lato: l, anim: "scudo", su: l }); }
     else if (e.tipo === "pulisci") {
       delete a.stati.brucia; delete a.buff.debole; a.stordito = false;
       this._log(`${a.c.nome} si rimette in sesto: niente più bruciature, debolezza o stordimento.`, { lato: l });
-      this._cura(l, a, Math.round(a.pvMax * e.val / 100));
+      this._cura(l, a, Math.round(pvCura(a) * e.val / 100));
     }
-    else if (e.tipo === "nebbia") { a.nebbia = true; this._log(`Fumo dappertutto: il prossimo attacco contro ${a.c.nome} andrà a vuoto.`, { lato: l, anim: "nebbia", su: l }); }
+    else if (e.tipo === "nebbia") { a.nebbia = true; a.nebbiaFino = this.turno; this._log(`Fumo dappertutto: il prossimo attacco contro ${a.c.nome} andrà a vuoto.`, { lato: l, anim: "nebbia", su: l }); }
     else if (e.tipo === "rianima") {
       ko.pv = Math.max(1, Math.round(ko.pvMax * e.val / 100)); ko.koAnnunciato = false; ko.stati = {}; ko.buff = {};
       this.rianimato = this.rianimato || []; this.rianimato[l] = true;
@@ -144,13 +148,15 @@ class Battaglia {
   calcolaDanno(l, a, d, m, casuale = true) {
     const att = this.attaccoEffettivo(l, a);
     const dif = d.dif * (1 - (m.penetra || 0) / 100);
-    const rapporto = (att + SMUSSO) / (dif + SMUSSO);
+    const rapporto = (att * (a.f || 1) + SMUSSO) / (dif + SMUSSO);   // attacco e difesa entrambi col livello
     const stile = multStile(a.c.stile, d.c.stile);
     let varia = 1, crit = false;
     if (casuale) {
       varia = a.c.ruolo === "imprevedibile" ? 0.6 + this.rng() * 0.9 : 0.9 + this.rng() * 0.2;
-      crit = this.rng() < (a.c.ruolo === "assassino" ? 0.2 : PROB_CRITICO) + this.gv(l, "fortuna") / 100;
+      crit = this.rng() < Math.min(0.35, (a.c.ruolo === "assassino" ? 0.2 : PROB_CRITICO) + this.gv(l, "fortuna") / 100);
     }
+    // chi è in svantaggio di tipo non fa colpi critici: il tipo deve contare davvero
+    if (stile < 1) crit = false;
     const parato = crit && this.gv(1 - l, "specchio") > 0;   // lo specchio trasforma i critici in colpi normali
     if (parato) crit = false;
     let dmg = m.pot * rapporto * stile * varia * (crit ? 1.5 : 1) * K_DANNO * (a.f || 1);
@@ -189,14 +195,19 @@ class Battaglia {
         : (this.rng() < 0.5 ? 0 : 1);
       chiMuove.splice(0, 2, primo, 1 - primo);
     }
+    this._mosso = [false, false];   // chi ha già agito in questo turno (per la durata della nebbia)
     for (const l of chiMuove) {
       if (this.vincitore >= 0) break;
+      this._mosso[l] = true;
       const a = this.attivo(l);
       if (a.pv <= 0) continue;
       if (a.stordito) { a.stordito = false; this._log(`${a.c.nome} è stordito e salta il turno.`, { lato: l }); continue; }
       const m = a.c.mosse[az[l].i];
-      if (this.lati[l].energia < m.costo) { this._log(`${a.c.nome} non ha abbastanza energia.`, { lato: l }); continue; }
-      this._usaMossa(l, m);
+      // se nel frattempo ha perso energia (gliel'hanno rubata), usa la mossa gratis invece di saltare il turno
+      const mm = this.lati[l].energia < m.costo ? (a.c.mosse.find(x => x.costo === 0) || a.c.mosse[0]) : m;
+      if (mm !== m) this._log(`${a.c.nome} non ha più abbastanza energia per ${m.nome}: usa ${mm.nome}.`, { lato: l });
+      if (this.lati[l].energia < mm.costo) { this._log(`${a.c.nome} non ha abbastanza energia.`, { lato: l }); continue; }
+      this._usaMossa(l, mm);
       this._controllaKO();
     }
     if (this.vincitore < 0) this._fineTurno();
@@ -282,10 +293,10 @@ class Battaglia {
     else if (e.tipo === "scudo") { a.scudo = e.val; this._log(`${a.c.nome} si protegge: il prossimo colpo fa il ${e.val}% di danni in meno.`, { lato: l, anim: "scudo", su: l }); }
     else if (e.tipo === "nebbia") {
       if (a.ultimaNebbia === this.turno - 1) { this._log(`${a.c.nome} prova a sparire di nuovo, ma non ci riesce.`, { lato: l }); }
-      else { a.nebbia = true; this._log(`${a.c.nome} sparisce: il prossimo attacco nemico andrà a vuoto.`, { lato: l, anim: "nebbia", su: l }); }
+      else { a.nebbia = true; a.nebbiaFino = this.turno + (this._mosso && this._mosso[1 - l] ? 1 : 0); this._log(`${a.c.nome} sparisce per un turno: il prossimo attacco nemico andrà a vuoto.`, { lato: l, anim: "nebbia", su: l }); }
       a.ultimaNebbia = this.turno;
     }
-    else if (e.tipo === "cura") this._cura(l, a, Math.round(a.pvMax * e.val / 100));
+    else if (e.tipo === "cura") this._cura(l, a, Math.round(pvCura(a) * e.val / 100));
     else if (e.tipo === "energia") { L.energia = Math.min(ENERGIA_MAX, L.energia + e.val); this._log(`${L.nome} guadagna ${e.val} energia.`, { lato: l, anim: "energia", su: l }); }
   }
 
@@ -311,25 +322,27 @@ class Battaglia {
   }
 
   _fineTurno() {
+    // l'invisibilità dura un turno solo: se nessuno l'ha colpita, finisce qui
+    for (const l of [0, 1]) { const a = this.attivo(l); if (a.nebbia && this.turno >= (a.nebbiaFino ?? this.turno)) { a.nebbia = false; this._log(`${a.c.nome} torna visibile.`, { lato: l }); } }
     for (const l of [0, 1]) {
       const L = this.lati[l], a = this.attivo(l);
       if (a.pv > 0) {
         const b = a.stati.brucia;
         if (b) {
-          const dmg = Math.max(1, Math.round(a.pvMax * b.val / 100));
+          const dmg = Math.max(1, Math.round(pvCura(a) * b.val / 100));
           a.pv = Math.max(0, a.pv - dmg);
           this._log(`${a.c.nome} brucia: −${dmg} PV.`, { lato: l, colpo: l, danno: dmg, stile: "FOR", brucia: true });
           if (--b.turni <= 0) delete a.stati.brucia;
         }
         const cuore = this.gv(l, "cuore");
-        if (cuore && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(a.pvMax * cuore / 100)));
+        if (cuore && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * cuore / 100)));
         if (a.pv > 0 && a.c.ruolo === "guaritore") {
-          this._cura(l, a, Math.round(a.pvMax * 0.05));
+          this._cura(l, a, Math.round(pvCura(a) * 0.05));
           for (const x of L.squadra) if (x !== a && x.pv > 0 && x.pv < x.pvMax) x.pv = Math.min(x.pvMax, x.pv + Math.round(x.pvMax * (this.turno >= TURNO_SIRENE ? 0.01 : 0.02)));
         }
         if (a.pv > 0 && this.turno >= TURNO_SIRENE) {
           const pct = 4 + 2 * (this.turno - TURNO_SIRENE);
-          const dmg = Math.max(1, Math.round(a.pvMax * pct / 100));
+          const dmg = Math.max(1, Math.round(pvCura(a) * pct / 100));
           a.pv = Math.max(0, a.pv - dmg);
           this._log(`Sirene in arrivo: ${a.c.nome} perde ${dmg} PV.`, { lato: l, colpo: l, danno: dmg });
         }
@@ -357,12 +370,12 @@ class Battaglia {
   scegliAzione(l, abilita) {
     const L = this.lati[l], a = this.attivo(l), d = this.attivo(1 - l);
     const usabili = a.c.mosse.map((m, i) => i).filter(i => L.energia >= a.c.mosse[i].costo);
-    if (this.rng() > abilita) {
-      if (this.rng() < 0.15) return { tipo: "carica" };
-      return { tipo: "mossa", i: usabili[Math.floor(this.rng() * usabili.length)] };
+    if ((this.rngIA || this.rng)() > abilita) {
+      if ((this.rngIA || this.rng)() < 0.15) return { tipo: "carica" };
+      return { tipo: "mossa", i: usabili[Math.floor((this.rngIA || this.rng)() * usabili.length)] };
     }
     // Cambio se è in svantaggio di stile e messo male
-    if (a.pv / a.pvMax < 0.35 && multStile(d.c.stile, a.c.stile) > 1 && this.rng() < abilita * 0.5) {
+    if (a.pv / a.pvMax < 0.35 && multStile(d.c.stile, a.c.stile) > 1 && (this.rngIA || this.rng)() < abilita * 0.5) {
       const i = L.squadra.findIndex((x, k) => k !== L.attivo && x.pv > 0 && multStile(d.c.stile, x.c.stile) <= 1);
       if (i >= 0) return { tipo: "cambio", i };
     }
@@ -372,7 +385,7 @@ class Battaglia {
       if (p > punti) { punti = p; meglio = i; }
     }
     // Se ha solo la mossa base e poca energia, a volte carica per la mossa finale
-    if (a.c.mosse[meglio].costo === 0 && L.energia < 5 && L.energia >= 3 && this.rng() < 0.3) return { tipo: "carica" };
+    if (a.c.mosse[meglio].costo === 0 && L.energia < 5 && L.energia >= 3 && (this.rngIA || this.rng)() < 0.3) return { tipo: "carica" };
     return { tipo: "mossa", i: meglio };
   }
 

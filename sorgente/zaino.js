@@ -184,7 +184,7 @@ const Zaino = (() => {
     const o = info(x.id), r = B.usaOggetto(0, x.id, o.nome);
     if (!r.ok) { mostraAvviso(r.motivo); return; }
     x.usato = true;
-    if (livelloAttuale && livelloAttuale.vivo) Online.oggettoUsato(x.id);
+    if (livelloAttuale && livelloAttuale.vivo) Online.oggettoUsato(x.id); else Online.loggaDiretta({ o: "ogg", l: 0, id: x.id });
     if (!livelloAttuale || !livelloAttuale.provaAdmin) {
       const z = stato(); z.oggetti = Object.assign({}, z.oggetti, { [x.id]: Math.max(0, (z.oggetti[x.id] || 0) - 1) }); salva();
     }

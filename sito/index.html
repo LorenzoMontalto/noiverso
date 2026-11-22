@@ -1524,6 +1524,25 @@ body.in-accesso { overflow: hidden; }
 .reaz-anteprima { width: 46px; height: 46px; display: grid; place-items: center; font-size: 1.7rem; background: rgba(255, 255, 255, .06); border-radius: 10px; flex: none; overflow: hidden; }
 .reaz-anteprima img { width: 40px; height: 40px; object-fit: contain; }
 .reaz-frecce { display: inline-flex; gap: 4px; }
+
+.premio-podio { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.premio-podio .medaglia { font-size: 4rem; line-height: 1; filter: drop-shadow(0 6px 16px rgba(242, 193, 78, .45)); }
+.premio-podio h2, .premio-podio p { margin: 0; }
+
+/* bomboletta trovata nella bustina: si gira come una carta */
+.bomboletta-bustina { position: relative; display: block; margin: 0 auto 10px; width: min(300px, 82vw); min-height: 120px; border: 0; padding: 0; background: none; cursor: pointer; perspective: 800px; color: var(--testo); }
+.bomboletta-bustina[hidden] { display: none; }
+.apertura-ui .bomboletta-bustina { pointer-events: auto; }
+.bomboletta-retro, .bomboletta-faccia { position: absolute; inset: 0; border-radius: 14px; backface-visibility: hidden; transition: transform .6s cubic-bezier(.3, 1.4, .5, 1); }
+.bomboletta-retro { display: grid; place-content: center; gap: 2px; text-align: center; background: repeating-linear-gradient(135deg, #2a1a2e 0 10px, #1b1220 10px 20px); border: 2px dashed #ff2e46; box-shadow: 0 0 18px rgba(255, 46, 70, .35); animation: respira 1.6s infinite; }
+.bomboletta-retro i { font-size: 2rem; font-style: normal; } .bomboletta-retro small { color: var(--spento); }
+.bomboletta-faccia { transform: rotateY(180deg); display: grid; grid-template-columns: 112px 1fr; grid-template-rows: auto auto 1fr; column-gap: 10px; align-items: center; text-align: left; padding: 10px; background: #171117; border: 2px solid var(--c); box-shadow: 0 0 22px color-mix(in srgb, var(--c) 45%, transparent); }
+.bomboletta-faccia img { grid-row: 1 / 4; width: 112px; height: 56px; object-fit: contain; border-radius: 6px; }
+.bomboletta-faccia small { color: var(--c); font-weight: 700; }
+.bomboletta-faccia .nota { font-size: .76rem; }
+.bomboletta-bustina.girata .bomboletta-retro { transform: rotateY(-180deg); }
+.bomboletta-bustina.girata .bomboletta-faccia { transform: rotateY(0); }
+@media (prefers-reduced-motion: reduce) { .bomboletta-retro, .bomboletta-faccia { transition: none; } .bomboletta-retro { animation: none; } }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.8816af04.js"></script>
@@ -1566,21 +1585,21 @@ body.in-accesso { overflow: hidden; }
 <div id="avviso" role="status" hidden></div>
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
-<script src="carte.48ac65ce.js"></script>
-<script src="motore.56d03b70.js"></script>
+<script src="carte.c10c055d.js"></script>
+<script src="motore.a5d463f6.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
 <script src="scena3d.c693551b.js"></script>
 <script src="mappe.44fde78a.js"></script>
 <script src="storia.495ac110.js"></script>
-<script src="tutorial.e7b94569.js"></script>
-<script src="missioni.d61aa50f.js"></script>
-<script src="sociale.341222c9.js"></script>
+<script src="tutorial.90874b9d.js"></script>
+<script src="missioni.80068fac.js"></script>
+<script src="sociale.870259fd.js"></script>
 <script src="collezione.eecd2a2b.js"></script>
-<script src="graffiti.99c0b499.js"></script>
-<script src="zaino.9d5ca11e.js"></script>
-<script src="online.19aaf824.js"></script>
+<script src="graffiti.1ecab573.js"></script>
+<script src="zaino.be6cf23c.js"></script>
+<script src="online.d0bd4d91.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
-<script src="app.1fe44287.js"></script>
+<script src="app.ce89fd06.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

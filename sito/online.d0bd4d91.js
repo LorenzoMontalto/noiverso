@@ -75,8 +75,8 @@ const Online = (() => {
   }
   function annuncia() {
     if (!canale) return;
-    try { canale.track({ nome: mioNome(), avatar: S.profilo.avatar || "", stato: P ? "in-battaglia" : G ? "spettatore" : "libero",
-      partita: P && P.iniziata && !P.finita ? P.id : null, contro: P ? P.avv.nome : null, t: Date.now() }); } catch (e) {}
+    try { canale.track({ nome: mioNome(), avatar: S.profilo.avatar || "", stato: P || D ? "in-battaglia" : G ? "spettatore" : "libero",
+      partita: P && P.iniziata && !P.finita ? P.id : D && !D.finita ? D.id : null, contro: P ? P.avv.nome : D ? D.dati.nomeB : null, t: Date.now() }); } catch (e) {}
   }
   function leggiPresenti() {
     const st = canale ? canale.presenceState() : {}, nuovi = {};
@@ -403,7 +403,7 @@ const Online = (() => {
   // ---------------- fine ----------------
   // reazioni: niente conferma di ricezione, se una si perde pazienza
   function mandaReazione(i) {
-    const ch = P ? P.ch : G ? G.ch : null; if (!ch) return;
+    const ch = P ? P.ch : G ? G.ch : D ? D.ch : null; if (!ch) return;
     try { ch.send({ type: "broadcast", event: "r", payload: G && !P ? { da: io(), r: i, spett: true, nome: mioNome() } : { da: io(), r: i } }); } catch (e) {}
   }
 
@@ -462,8 +462,54 @@ const Online = (() => {
   // chiamata da avviaSfida: la battaglia vera, già portata al punto in cui è adesso (senza animazioni)
   function creaGuarda(sqA, sqB) {
     const d = G.dati, bt = new Battaglia(sqA, sqB, d.nomeA, d.nomeB, mulberry32(d.seme));
+    if (d.bossPv) Boss.prepara(bt, d.bossPv);   // il boss del gruppo, trasformato come lo vede chi gioca
     return bt;
   }
+
+  // ---------------- diretta delle sfide contro il computer ----------------
+  // Chi gioca contro un bot apre un canale come quello delle sfide dal vivo: gli amici possono guardare.
+  // La battaglia usa un seme (così lo spettatore la rigioca uguale); le scelte del computer usano un caso a parte.
+  let D = null;
+  function iniziaDiretta(dati) {
+    chiudiDiretta();
+    if (!attivo || P || G || !sb()) return false;
+    const id = crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random();
+    D = { id, dati: Object.assign({}, dati, { idA: io(), idB: null, cpu: true }), log: [], spettatori: 0 };
+    const d = D, ch = sb().channel(`noiverso-vivo-${id}`, { config: { presence: { key: io() }, broadcast: { self: false } } });
+    d.ch = ch;
+    ch.on("broadcast", { event: "spett" }, ({ payload }) => {
+        if (D !== d || !payload || payload.tipo !== "ciao") return;
+        try { ch.send({ type: "broadcast", event: "spett", payload: { tipo: "stato", per: payload.da, dati: d.dati, log: d.log } }); } catch (e) {}
+      })
+      .on("broadcast", { event: "r" }, ({ payload }) => { if (D === d && payload && payload.spett) Reazioni.riceviSpettatore(payload.r, payload.nome, payload.da); })
+      .on("presence", { event: "sync" }, () => {
+        if (D !== d) return;
+        const n = Object.keys(ch.presenceState() || {}).filter(k => k.startsWith("spett:")).length;
+        if (n !== d.spettatori) { d.spettatori = n; const el = $("#diretta-spett"); if (el) el.outerHTML = htmlDiretta(); else if (B && !animazione) aggiornaBattaglia(); }
+      })
+      .subscribe(st => { if (st === "SUBSCRIBED" && D === d) try { ch.track({ t: Date.now() }); } catch (e) {} });
+    annuncia();
+    return true;
+  }
+  function loggaDiretta(e) {
+    if (!D || D.finita) return;
+    D.log.push(e);
+    try { D.ch.send({ type: "broadcast", event: "spett", payload: { tipo: "passo", n: D.log.length - 1, e } }); } catch (x) {}
+  }
+  function fineDiretta(vincitore, motivo) {
+    if (!D || D.finita) return;
+    try { D.ch.send({ type: "broadcast", event: "spett", payload: { tipo: "fine", vincitore, motivo: motivo || "normale" } }); } catch (e) {}
+    D.finita = true;
+    annuncia();
+  }
+  function chiudiDiretta() {
+    if (!D) return;
+    const d = D; D = null;
+    if (!d.finita) try { d.ch.send({ type: "broadcast", event: "spett", payload: { tipo: "fine", vincitore: 1, motivo: "resa" } }); } catch (e) {}
+    setTimeout(() => { try { sb().removeChannel(d.ch); } catch (e) {} }, 1500);
+    annuncia();
+  }
+  const htmlDiretta = () => D && D.spettatori ? `<p class="vivo-spett" id="diretta-spett">👀 ${D.spettatori} ${D.spettatori === 1 ? "amico sta guardando" : "amici stanno guardando"}</p>` : `<span id="diretta-spett" hidden></span>`;
   function rigioca(bt) { for (const e of G.logIniziale || []) applica(bt, e); G.logIniziale = null; }
   function applica(bt, e) {
     if (e.o === "ogg") { const r = bt.usaOggetto(e.l, e.id, Zaino.info(e.id).nome || e.id); return r.ev || []; }
@@ -489,7 +535,7 @@ const Online = (() => {
     if (!G || !G.ch || !G.dati) return;
     const st = G.ch.presenceState() || {};
     G.spettatori = Object.keys(st).filter(k => k.startsWith("spett:")).length;
-    G.giocatori = [G.dati.idA, G.dati.idB].filter(k => st[k]).length;
+    G.giocatori = [G.dati.idA, G.dati.idB].filter(k => k && st[k]).length + (G.dati.cpu ? 1 : 0);
     const el = $("#guarda-info"); if (el) el.innerHTML = testoGuarda();
   }
   const testoGuarda = () => !G || !G.dati ? "" : `👀 ${G.spettatori || 1} ${G.spettatori === 1 || !G.spettatori ? "spettatore" : "spettatori"}${G.giocatori === 2 || G.giocatori === undefined ? "" : " · <b class=\"vivo-allarme\">un giocatore si è disconnesso</b>"}`;
@@ -584,6 +630,6 @@ const Online = (() => {
     annuncia();
   }
 
-  return { guarda, creaGuarda, rigioca, htmlGuarda, chiudiGuarda, htmlFineGuarda, esciGuarda, get inGuarda() { return !!G; }, mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
+  return { iniziaDiretta, loggaDiretta, fineDiretta, chiudiDiretta, htmlDiretta, get inDiretta() { return !!D; }, guarda, creaGuarda, rigioca, htmlGuarda, chiudiGuarda, htmlFineGuarda, esciGuarda, get inGuarda() { return !!G; }, mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
     get inPartita() { return !!P; } };
 })();

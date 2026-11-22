@@ -205,8 +205,7 @@ const Graffiti = (() => {
   function forseInBustina(tipo) {
     if (tipo === "benvenuto" || Math.random() >= PROB_IN_BUSTINA) return null;
     const e = dai(pesca()); salva();
-    setTimeout(() => mostraAvviso(`Nella bustina c'era anche una bomboletta: graffito «${info(e.id).nome}»${e.nuovo ? " (nuovo!)" : ` (livello ${e.liv})`}.`), 2600);
-    return e;
+    return e;   // la bomboletta si vede insieme alle carte, nell'apertura della bustina
   }
   // il primo graffito è un regalo
   function regaloIniziale() {
@@ -477,5 +476,10 @@ const Graffiti = (() => {
     anteprimaAdmin(campo);
   }
 
-  return { pesca, info, liv, copie, posseduti, scelto, descrivi, url, tela, mio, nemico, aCaso, htmlChip, htmlBattaglia, annunciaInBattaglia, htmlPannello, apriCollezione, scegli, compra, apriBombolette, forseInBustina, regaloIniziale, htmlNegozio, htmlSquadra, compraUno, carica, htmlAdmin, anteprimaAdmin, pubblica, azioneAdmin, immagineScelta, apriEmoji, dai, ORDINE };
+  // la bomboletta trovata in una bustina, da girare come una carta
+  function htmlInBustina(e) {
+    const g = info(e.id);
+    return `<div class="bomboletta-faccia" style="--c:${g.colore}"><img src="${url(e.id)}" alt=""><b>${esc(g.nome)}</b><small>${e.nuovo ? "Graffito nuovo!" : e.extra ? `Già al massimo: +${e.extra} monete` : `Graffito · sale al livello ${e.liv}`}</small><span class="nota">${esc(descrivi(e.id, e.liv))}</span></div>`;
+  }
+  return { htmlInBustina, pesca, info, liv, copie, posseduti, scelto, descrivi, url, tela, mio, nemico, aCaso, htmlChip, htmlBattaglia, annunciaInBattaglia, htmlPannello, apriCollezione, scegli, compra, apriBombolette, forseInBustina, regaloIniziale, htmlNegozio, htmlSquadra, compraUno, carica, htmlAdmin, anteprimaAdmin, pubblica, azioneAdmin, immagineScelta, apriEmoji, dai, ORDINE };
 })();

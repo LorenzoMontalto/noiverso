@@ -1524,6 +1524,25 @@ body.in-accesso { overflow: hidden; }
 .reaz-anteprima { width: 46px; height: 46px; display: grid; place-items: center; font-size: 1.7rem; background: rgba(255, 255, 255, .06); border-radius: 10px; flex: none; overflow: hidden; }
 .reaz-anteprima img { width: 40px; height: 40px; object-fit: contain; }
 .reaz-frecce { display: inline-flex; gap: 4px; }
+
+.premio-podio { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.premio-podio .medaglia { font-size: 4rem; line-height: 1; filter: drop-shadow(0 6px 16px rgba(242, 193, 78, .45)); }
+.premio-podio h2, .premio-podio p { margin: 0; }
+
+/* bomboletta trovata nella bustina: si gira come una carta */
+.bomboletta-bustina { position: relative; display: block; margin: 0 auto 10px; width: min(300px, 82vw); min-height: 120px; border: 0; padding: 0; background: none; cursor: pointer; perspective: 800px; color: var(--testo); }
+.bomboletta-bustina[hidden] { display: none; }
+.apertura-ui .bomboletta-bustina { pointer-events: auto; }
+.bomboletta-retro, .bomboletta-faccia { position: absolute; inset: 0; border-radius: 14px; backface-visibility: hidden; transition: transform .6s cubic-bezier(.3, 1.4, .5, 1); }
+.bomboletta-retro { display: grid; place-content: center; gap: 2px; text-align: center; background: repeating-linear-gradient(135deg, #2a1a2e 0 10px, #1b1220 10px 20px); border: 2px dashed #ff2e46; box-shadow: 0 0 18px rgba(255, 46, 70, .35); animation: respira 1.6s infinite; }
+.bomboletta-retro i { font-size: 2rem; font-style: normal; } .bomboletta-retro small { color: var(--spento); }
+.bomboletta-faccia { transform: rotateY(180deg); display: grid; grid-template-columns: 112px 1fr; grid-template-rows: auto auto 1fr; column-gap: 10px; align-items: center; text-align: left; padding: 10px; background: #171117; border: 2px solid var(--c); box-shadow: 0 0 22px color-mix(in srgb, var(--c) 45%, transparent); }
+.bomboletta-faccia img { grid-row: 1 / 4; width: 112px; height: 56px; object-fit: contain; border-radius: 6px; }
+.bomboletta-faccia small { color: var(--c); font-weight: 700; }
+.bomboletta-faccia .nota { font-size: .76rem; }
+.bomboletta-bustina.girata .bomboletta-retro { transform: rotateY(-180deg); }
+.bomboletta-bustina.girata .bomboletta-faccia { transform: rotateY(0); }
+@media (prefers-reduced-motion: reduce) { .bomboletta-retro, .bomboletta-faccia { transition: none; } .bomboletta-retro { animation: none; } }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>

@@ -199,11 +199,12 @@ const Boss = (() => {
       bossGruppo: { settimana: stato.settimana, pv: rimasti(), prova: !!S.admin }, graffitoNemico: { id: Graffiti.ORDINE[(c.id.length + stato.settimana.length * 7) % Graffiti.ORDINE.length], liv: 3 } }, null, [{ id: c.id, liv: LIVELLO_MAX, lode: true }]), ridotto ? 0 : 220);
   }
   // Il boss in battaglia: tanti PV (quelli che restano al boss del gruppo, al massimo 99.999) e colpi più forti
-  function prepara(Bt) {
-    const x = Bt.lati[1].squadra[0], L = livelloAttuale.bossGruppo;
-    x.pvMax = x.pv = Math.max(1, Math.min(L.pv, 99999));
-    x.att = Math.round(x.att * 1.45); x.dif = Math.round(x.dif * 1.2); x.vel += 4;
-    L.pvInizio = x.pv;
+  function prepara(Bt, pv) {
+    const x = Bt.lati[1].squadra[0], L = livelloAttuale && livelloAttuale.bossGruppo;
+    x.pvCura = Math.round(x.pvMax * 1.5);   // le cure del boss contano come se avesse PV normali (×1,5), non i suoi 99.999
+    x.pvMax = x.pv = Math.max(1, Math.min(pv || L.pv, 99999));
+    x.att = Math.round(x.att * 1.2); x.vel += 4;   // colpisce più forte, ma non troppo: così l'attacco dura e si fanno danni
+    if (L) L.pvInizio = x.pv;
   }
   async function chiudi() {
     const L = livelloAttuale, b = L.bossGruppo, x = B.lati[1].squadra[0];

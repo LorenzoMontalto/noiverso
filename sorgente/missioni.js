@@ -129,11 +129,15 @@ const Missioni = (() => {
     disegna();
   }
   // Appena apri il gioco: la finestra del premio di accesso (aspetta tutorial, battaglie e altre finestre)
+  let finestraInAttesa = false, giornoVisto = null;
   function finestraAccesso() {
-    if (S.admin || !accesso().pronto) return;
+    giornoVisto = giorno();
+    if (S.admin || !accesso().pronto || finestraInAttesa) return;
+    finestraInAttesa = true;
     let tentativi = 0;
     const prova = () => {
-      if (S.admin || !accesso().pronto || ++tentativi > 60) return;
+      // aspetta anche a lungo che si chiudano le altre finestre (fino a 10 minuti)
+      if (S.admin || !accesso().pronto || ++tentativi > 400 || document.querySelector(".accesso-pop")) { finestraInAttesa = false; return; }
       if (B || Tutorial.attivo || !$("#accesso").hidden || !$("#modale").hidden || !$("#apertura").hidden) { setTimeout(prova, 1500); return; }
       const a = accesso();
       apriModale(`<div class="accesso-pop">
@@ -144,9 +148,17 @@ const Missioni = (() => {
         <div class="azioni centro"><button class="btn oro grande" data-fx="coriandoli" data-azione="riscuoti-accesso">Riscuoti: ${esc(nomeAccesso(ACCESSI[a.giorno - 1]))}</button></div>
         <button class="btn piccolo accesso-dopo" data-azione="chiudi">Più tardi (lo trovi nella Strada)</button>
       </div>`);
+      finestraInAttesa = false;
     };
     setTimeout(prova, 1800);
   }
+  // Sul telefono il gioco spesso non si riapre da zero ma torna da "in sottofondo": se nel frattempo è cambiato giorno,
+  // la finestra del premio deve comparire lo stesso (prima usciva solo riaprendo la pagina)
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || giornoVisto === null || typeof S === "undefined" || !S) return;
+    if (giorno() !== giornoVisto) { finestraAccesso(); if (typeof disegna === "function" && !B) disegna(); }
+  });
+  setInterval(() => { if (document.visibilityState === "visible" && giornoVisto !== null && giorno() !== giornoVisto) finestraAccesso(); }, 60000);
   function htmlCalendario(a) {
     return `<ol class="accessi-giorni">${ACCESSI.map((p, k) => { const n = k + 1, preso = a.pronto ? n < a.giorno : n <= a.giorno, oggiQui = a.pronto && n === a.giorno;
       return `<li class="${preso ? "preso" : ""} ${oggiQui ? "oggi-qui" : ""} ${n === 7 ? "settimo" : ""}"><small>G${n}</small><span>${esc(nomeAccesso(p))}</span></li>`; }).join("")}</ol>`;
