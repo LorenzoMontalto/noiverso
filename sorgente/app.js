@@ -93,7 +93,7 @@ const attesa = ms => new Promise(r => setTimeout(r, ms));
 const ridotto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---------------- Stato del giocatore ----------------
-const IMPOSTAZIONI_BASE = { modalita: "classica", velocita: "normale", effetti: true, grafica: "alta" };
+const IMPOSTAZIONI_BASE = { modalita: "classica", velocita: "normale", effetti: true, consigli: true, grafica: "alta" };
 function statoNuovo() {
   return {
     v: 2, monete: MONETE_INIZIALI, carte: {},
@@ -1788,6 +1788,7 @@ function apriProfilo() {
       <h3>Impostazioni</h3>
       ${segmento("modalita", "Modalità di gioco", [["classica", "Classica 5 contro 5"], ["rapida", "Rapida 3 contro 3"]], "La rapida usa le prime 3 carte della squadra e dà premi ridotti.")}
       ${segmento("velocita", "Velocità animazioni", [["normale", "Normale"], ["veloce", "Veloce"], ["turbo", "Turbo"]])}
+      ${segmento("consigli", "Mossa consigliata", [["true", "Sì"], ["false", "No"]], "Solo contro il computer: nelle sfide dal vivo con gli amici è sempre spenta.")}
       ${segmento("effetti", "Effetti delle mosse finali", [["true", "Sì"], ["false", "No"]], "Fascia con il nome della mossa ed effetti su tutto lo schermo.")}
       ${segmento("grafica", "Grafica", [["alta", "3D alta"], ["bassa", "3D leggera"], ["2d", "2D"]], "Se il telefono scalda o va a scatti, prova la leggera o il 2D.")}
       <h3>Account</h3>
@@ -2555,13 +2556,15 @@ function stimaMossa(i) {
   return { danno, eff, ko: !d.nebbia && danno >= d.pv, vuoto: d.nebbia };
 }
 
-// I consigli (mossa consigliata, "batte il nemico", efficace, KO) aiutano solo all'inizio:
-// si spengono da soli quando hai battuto il boss del capitolo 1 della storia.
+// Indicazioni su chi batte chi ("▲ batte il nemico", "efficace"): solo all'inizio, si spengono da sole
+// quando hai battuto il boss del capitolo 1 della storia (poi resta la legenda dei tipi).
 const consigliAttivi = () => !(S && S.storia && STORIA[0] && stelleTappa(0, STORIA[0].tappe.length - 1) > 0);
+// Mossa consigliata: si accende o si spegne dal profilo e vale solo contro il computer (mai dal vivo né quando guardi)
+const mossaConsigliataAttiva = () => imp().consigli !== false && !(livelloAttuale && (livelloAttuale.vivo || livelloAttuale.spettatore));
 function avvisoFineConsigli() {
   if (consigliAttivi() || S.consigliFiniti || S.admin) return;
   S.consigliFiniti = true; salva();
-  setTimeout(() => mostraAvviso("Hai finito il capitolo 1: da ora in battaglia niente più consigli, decidi tu la mossa giusta!"), 1200);
+  setTimeout(() => mostraAvviso("Hai finito il capitolo 1: da ora in battaglia non ti dico più chi batte chi. Guarda la legenda dei tipi!"), 1200);
 }
 // Promemoria sempre visibile in battaglia: chi batte chi (e cosa vuol dire)
 function htmlLegendaTipi() {
@@ -2570,12 +2573,12 @@ function htmlLegendaTipi() {
     <small>La freccia vuol dire «batte»: chi è in vantaggio fa +30% di danni, chi è in svantaggio −20% e niente critici.</small></div>`;
 }
 function consiglio() {
-  const L = B.lati[0], a = B.attivo(0), d = B.attivo(1);
+  const L = B.lati[0], a = B.attivo(0), d = B.attivo(1), tipi = consigliAttivi();
   const usabili = a.c.mosse.map((m, i) => i).filter(i => B.puoUsare(0, i));
   const nome = i => a.c.mosse[i].nome;
   const ko = usabili.find(i => stimaMossa(i).ko);
   if (ko !== undefined) return { mossa: ko, testo: `Puoi mandare KO ${d.c.nome} con <b>${esc(nome(ko))}</b>!` };
-  if (multStile(d.c.stile, a.c.stile) > 1 && a.pv / a.pvMax < 0.55) {
+  if (tipi && multStile(d.c.stile, a.c.stile) > 1 && a.pv / a.pvMax < 0.55) {
     const r = L.squadra.findIndex((x, k) => k !== L.attivo && x.pv > 0 && multStile(x.c.stile, d.c.stile) > 1);
     if (r >= 0) return { cambio: r, testo: `${esc(d.c.nome)} (${d.c.stile}) è forte contro di te: cambia con <b>${esc(L.squadra[r].c.nome)}</b> (${L.squadra[r].c.stile}), che lo batte.` };
   }
@@ -2587,7 +2590,7 @@ function consiglio() {
     return { carica: true, testo: `Usa <b>Carica</b>: al prossimo turno avrai ${Math.min(ENERGIA_MAX, L.energia + 2 + BONUS_CARICA_UI)} energia per <b>${esc(nome(fin))}</b>.` };
   }
   const s = stimaMossa(meglio), e = s.eff;
-  const nota = e > 1 ? " Il tuo stile batte il suo (×1,3)." : e < 1 ? " Attento: il suo stile batte il tuo (×0,8)." : "";
+  const nota = !tipi ? "" : e > 1 ? " Il tuo stile batte il suo (×1,3)." : e < 1 ? " Attento: il suo stile batte il tuo (×0,8)." : "";
   return { mossa: meglio, testo: `<b>${esc(nome(meglio))}</b>${s.danno ? ` fa circa ${s.danno} danni` : " è la mossa più utile adesso"}.${nota}` };
 }
 const BONUS_CARICA_UI = 2;
@@ -2676,8 +2679,8 @@ function htmlAzioni() {
   }
   const L = B.lati[0], a = B.attivo(0);
   const prossimo = 2 + (a.c.ruolo === "stratega" ? 1 : 0);
-  const aiuti = consigliAttivi();
-  const cons = animazione || !aiuti ? null : consiglio();
+  const aiuti = consigliAttivi(), consOn = mossaConsigliataAttiva();
+  const cons = animazione || !consOn ? null : consiglio();
   const primo = B.chiPrimo(), d = B.attivo(1);
   const perche = a.vel === d.vel ? `velocità pari, ${a.vel}: si tiene l'ordine così nessuno attacca due volte di fila` : `velocità ${Math.max(a.vel, d.vel)} contro ${Math.min(a.vel, d.vel)}`;
   const ordine = primo === 0 ? `<b>Attacchi per primo</b> (${perche})`
@@ -2697,7 +2700,7 @@ function htmlAzioni() {
   <div class="mosse">
     ${a.c.mosse.map((mo, i) => {
       const puo = B.puoUsare(0, i), s = stimaMossa(i), manca = mo.costo - L.energia;
-      const tag = !puo ? `<span class="mossa-tag manca">Mancano ${manca} ◆</span>` : aiuti && s.ko ? `<span class="mossa-tag ko">KO!</span>` : cons && cons.mossa === i ? `<span class="mossa-tag cons">Consigliata</span>` : "";
+      const tag = !puo ? `<span class="mossa-tag manca">Mancano ${manca} ◆</span>` : consOn && s.ko ? `<span class="mossa-tag ko">KO!</span>` : cons && cons.mossa === i ? `<span class="mossa-tag cons">Consigliata</span>` : "";
       const stima = mo.pot ? (s.vuoto ? "Andrà a vuoto" : `≈ ${s.danno} danni${!aiuti ? "" : s.eff > 1 ? ' · <em class="su">efficace</em>' : s.eff < 1 ? ' · <em class="giu">poco efficace</em>' : ""}`) : esc(descrMossa(mo));
       return `<button class="mossa${mo.costo >= 5 ? " finale" : ""}${cons && cons.mossa === i ? " consigliata" : ""}" data-fx="scintille" data-stile="${a.c.stile}" data-mossa="${i}" data-costo="${mo.costo}" ${puo && !animazione ? "" : "disabled"}>
         <span class="mossa-costo">${mo.costo ? "◆".repeat(mo.costo) : "Gratis"}</span>
