@@ -2797,7 +2797,9 @@ function htmlCampo() {
 }
 function aggiornaBattaglia() {
   if (!B || !$("#arena")) return;
-  $("#arena").dataset.campo = B.campo || "";
+  // il campo: in 3D lo disegna la scena (pioggia, stelle, fari, lava, colonne), senza 3D un velo colorato
+  if (arena && arena.impostaCampo) { arena.impostaCampo(B.campo); delete $("#arena").dataset.campo; }
+  else $("#arena").dataset.campo = B.campo || "";
   if (!animazione) segnaTurnoAttesa();
   $("#hud-1").innerHTML = htmlHud(1);
   $("#hud-0").innerHTML = htmlHud(0);

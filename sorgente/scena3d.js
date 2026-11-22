@@ -1065,6 +1065,107 @@ const Scena3D = (() => {
       requestAnimationFrame(anima);
     }
 
+
+    // ---------- campo di battaglia: ambiente leggero (poche particelle, nessuna luce in più) ----------
+    impostaCampo(id) {
+      if (id === this.campo) return;
+      this.campo = id;
+      const s = this.scena, poche = imp.qualita === "bassa";
+      if (this._campo) { s.remove(this._campo.gruppo); this.aggiornatori = this.aggiornatori.filter(f => f !== this._campo.agg); this._campo = null; }
+      // colori di base di pavimento, nebbia, luci e pozze (salvati la prima volta)
+      if (!this._base) this._base = { pav: this.pavimento.material.color.getHex(), nebbia: s.fog.color.getHex(), amb: this.ambiente.intensity, pozze: this.pozze.map(p => p.material.color.getHex()), griglia: this.griglia.material.opacity };
+      const b = this._base;
+      this.pavimento.material.color.setHex(b.pav); s.fog.color.setHex(b.nebbia); this.ambiente.intensity = b.amb; this.griglia.material.opacity = b.griglia;
+      this.pozze.forEach((p, k) => p.material.color.setHex(b.pozze[k]));
+      const g = new T.Group(); g.userData.tieni = false; s.add(g);
+      const punti = (n, col, dim, fn) => {
+        const geo = new T.BufferGeometry(), arr = new Float32Array(n * 3);
+        for (let q = 0; q < n; q++) { const [x, y, z] = fn(q); arr[q * 3] = x; arr[q * 3 + 1] = y; arr[q * 3 + 2] = z; }
+        geo.setAttribute("position", new T.BufferAttribute(arr, 3));
+        const pts = new T.Points(geo, new T.PointsMaterial({ map: puntino(), color: col, size: dim, transparent: true, opacity: .85, blending: T.AdditiveBlending, depthWrite: false }));
+        g.add(pts); return pts;
+      };
+      const caso = (a, b) => a + Math.random() * (b - a);
+      let agg = null;
+      if (id === "pioggia") {
+        s.fog.color.setHex(0x0a1220); this.pavimento.material.color.setHex(0x0c1420);
+        this.pozze.forEach((p, k) => p.material.color.setHex(k === 1 ? 0x5aa9ff : k === 0 ? 0x2a4a80 : 0x9fc8ff));
+        // gocce: segmenti corti che cadono in diagonale
+        const n = poche ? 90 : 220, geo = new T.BufferGeometry(), arr = new Float32Array(n * 6);
+        const pos = [...Array(n)].map(() => [caso(-11, 11), caso(0, 9), caso(-8, 6)]);
+        geo.setAttribute("position", new T.BufferAttribute(arr, 3));
+        const linee = new T.LineSegments(geo, new T.LineBasicMaterial({ color: 0xcfe3ff, transparent: true, opacity: .75, depthWrite: false }));
+        g.add(linee);
+        let prossimo = caso(4, 9);
+        agg = (t, dt) => {
+          for (let q = 0; q < n; q++) {
+            const p = pos[q]; p[1] -= dt * 11; p[0] -= dt * 2.2;
+            if (p[1] < 0) { p[1] = caso(7, 9); p[0] = caso(-11, 13); p[2] = caso(-8, 5); if (Math.random() < .15) this.esplosione(V(p[0], .05, p[2]), 0x9fc8ff, 2, { velocita: .6, su: 1, gravita: 3, durata: 300, dimensione: .05 }); }
+            arr.set([p[0], p[1], p[2], p[0] + .16, p[1] + .7, p[2]], q * 6);
+          }
+          geo.attributes.position.needsUpdate = true;
+          if ((prossimo -= dt) < 0) { prossimo = caso(6, 12); this.flash.color.setHex(0xcfe3ff); this.flash.intensity = 6; this.anima(500, k => { this.flash.intensity = 6 * (1 - k) * (k < .2 || k > .35 ? 1 : .2); }); }
+        };
+      } else if (id === "notte") {
+        s.fog.color.setHex(0x05030c); this.pavimento.material.color.setHex(0x07050e); this.ambiente.intensity = b.amb * .5; this.griglia.material.opacity = b.griglia * .6;
+        this.pozze.forEach((p, k) => p.material.color.setHex(k === 2 ? 0xbcc8ff : 0x4a3a9a));
+        const stelle = punti(poche ? 80 : 180, 0xdfe6ff, .1, () => [caso(-16, 16), caso(1.5, 8), caso(-14, -4)]);
+        const luna = new T.Mesh(new T.CircleGeometry(.9, 32), new T.MeshBasicMaterial({ color: 0xf2f0ff, transparent: true, opacity: .9, fog: false }));
+        luna.position.set(-5.5, 4.2, -12); g.add(luna);
+        const alone = new T.Mesh(new T.PlaneGeometry(5, 5), new T.MeshBasicMaterial({ map: puntino(), color: 0x9b7bff, transparent: true, opacity: .45, blending: T.AdditiveBlending, depthWrite: false, fog: false }));
+        alone.position.copy(luna.position).add(V(0, 0, -.1)); g.add(alone);
+        agg = t => { stelle.material.opacity = .6 + Math.sin(t * 2.3) * .25; alone.material.opacity = .38 + Math.sin(t * .8) * .08; };
+      } else if (id === "stadio") {
+        this.pavimento.material.color.setHex(0x14110a);
+        this.pozze.forEach((p, k) => p.material.color.setHex(k === 2 ? 0xfff6c0 : 0xf2c14e));
+        // 4 fasci di luce che si muovono piano (coni trasparenti, niente luci vere)
+        const fasci = [-1, 1].flatMap(sx => [-1, 1].map(sz => {
+          const cono = new T.Mesh(new T.ConeGeometry(1.4, 9, 20, 1, true), new T.MeshBasicMaterial({ color: 0xfff1b0, transparent: true, opacity: .14, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide }));
+          cono.position.set(sx * 5.5, 4.5, sz * 3 - 3); cono.userData.fase = Math.random() * 6; g.add(cono); return cono;
+        }));
+        const pubblico = punti(poche ? 80 : 180, 0xf2c14e, .06, () => { const a = caso(0, Math.PI * 2); return [Math.cos(a) * caso(10, 13), caso(.5, 3), Math.sin(a) * caso(8, 10) - 2]; });
+        agg = t => {
+          fasci.forEach(c => { c.rotation.z = Math.sin(t * .6 + c.userData.fase) * .35 + (c.position.x > 0 ? .4 : -.4); c.rotation.x = Math.cos(t * .5 + c.userData.fase) * .25; c.material.opacity = .12 + Math.sin(t * 1.5 + c.userData.fase) * .04; });
+          pubblico.material.opacity = .45 + Math.abs(Math.sin(t * 3)) * .4;   // flash del pubblico
+        };
+      } else if (id === "lava") {
+        s.fog.color.setHex(0x1a0602); this.pavimento.material.color.setHex(0x1c0804);
+        this.pozze.forEach((p, k) => p.material.color.setHex(k === 2 ? 0xffb347 : 0xff4a1a));
+        // crepe di lava sul pavimento
+        for (let k = 0; k < (poche ? 6 : 12); k++) {
+          const crepa = new T.Mesh(new T.PlaneGeometry(caso(1, 2.6), caso(.03, .07)), new T.MeshBasicMaterial({ color: 0xff6a1a, transparent: true, opacity: .8, blending: T.AdditiveBlending, depthWrite: false }));
+          crepa.rotation.x = -Math.PI / 2; crepa.rotation.z = caso(0, Math.PI); crepa.position.set(caso(-9, 9), .006, caso(-8, 1.5)); g.add(crepa);
+        }
+        const braci = punti(poche ? 50 : 120, 0xff7a2a, .09, () => [caso(-10, 10), caso(0, 6), caso(-8, 4)]);
+        const arr = braci.geometry.attributes.position.array;
+        agg = (t, dt) => {
+          for (let q = 0; q < arr.length; q += 3) { arr[q + 1] += dt * caso(.4, 1.2); arr[q] += Math.sin(t + q) * dt * .2; if (arr[q + 1] > 6) arr[q + 1] = 0; }
+          braci.geometry.attributes.position.needsUpdate = true;
+          this.pozze.forEach((p, k) => { if (k < 2) p.material.opacity = .3 + Math.sin(t * 2 + k) * .08; });
+        };
+      } else if (id === "tempio") {
+        this.pavimento.material.color.setHex(0x0e1410);
+        this.pozze.forEach((p, k) => p.material.color.setHex(k === 2 ? 0xffffff : 0x7dffb0));
+        const marmo = new T.MeshBasicMaterial({ color: 0x8f9a92 });
+        for (let k = 0; k < 6; k++) {
+          const col = new T.Mesh(new T.CylinderGeometry(.3, .34, 2.6, poche ? 8 : 14), marmo);
+          col.position.set(-7.5 + k * 3, 1.3, -9); g.add(col);
+          const capitello = new T.Mesh(new T.BoxGeometry(.85, .22, .85), marmo); capitello.position.set(col.position.x, 2.7, -9); g.add(capitello);
+        }
+        const architrave = new T.Mesh(new T.BoxGeometry(17, .45, 1), marmo); architrave.position.set(0, 2.95, -9); g.add(architrave);
+        const raggi = new T.Mesh(new T.PlaneGeometry(10, 9), new T.MeshBasicMaterial({ map: puntino(), color: 0xc8ffd8, transparent: true, opacity: .18, blending: T.AdditiveBlending, depthWrite: false }));
+        raggi.position.set(0, 2.5, -7); g.add(raggi);
+        const scintille = punti(poche ? 40 : 90, 0xb8ffd0, .06, () => [caso(-8, 8), caso(0, 5), caso(-6, 3)]);
+        const arr = scintille.geometry.attributes.position.array;
+        agg = (t, dt) => {
+          for (let q = 0; q < arr.length; q += 3) { arr[q + 1] += dt * .35; if (arr[q + 1] > 5) arr[q + 1] = 0; }
+          scintille.geometry.attributes.position.needsUpdate = true;
+          raggi.material.opacity = .14 + Math.sin(t * .9) * .05;
+        };
+      }
+      this._campo = { gruppo: g, agg: agg || (() => {}) };
+      this.aggiornatori.push(this._campo.agg);
+    }
     distruggi() { this.r.domElement.removeEventListener("pointerdown", this._tocco); super.distruggi(); }
   }
 
