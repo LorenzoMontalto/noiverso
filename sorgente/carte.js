@@ -11,6 +11,7 @@ const SERIE = {
   dei:   { nome: "Dei",         colore: "#f2c14e", simbolo: "♛", desc: "L'Olimpo al completo, tra fulmini, mari in tempesta e inferi." },
   nueve: { nome: "Mafiosi",     colore: "#ff2e46", simbolo: "♠", desc: "La banda al completo, tra vicoli e luci al neon." },
   maghi: { nome: "Maghi",       colore: "#43d39e", simbolo: "☾", desc: "Bacchette, pozioni e una scuola di magia piena di guai." },
+  demoni: { nome: "Demoni",     colore: "#d4145a", simbolo: "♆", desc: "Corna, troni e patti col diavolo: gli Inferi hanno aperto le porte." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -155,7 +156,7 @@ const CARTE = [
     mosse: [m("Pugno Leggendario", 0, 34), m("Furia Verde", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Meteora Gigante", 5, 98)] },
   { id: "freezovico", nome: "Freezovico", serie: "db", rarita: "epica", stile: "DIF", ruolo: "stregone", frase: "L'imperatore Ludovico non perdona.",
     mosse: [m("Raggio Mortale", 0, 30, { penetra: 20 }), m("Gelo Imperiale", 2, 30, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Supernova Imperiale", 5, 90)] },
-  { id: "gohanlollo", nome: "Gohan Lollo", serie: "db", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Studia di giorno, salva il mondo di sera.",
+  { id: "gohanlollo", nome: "Lohan", serie: "db", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Studia di giorno, salva il mondo di sera.",
     mosse: [m("Calcio Volante", 0, 32), m("Potenziale Nascosto", 2, 0, { eff: { tipo: "potenzia", val: 35, turni: 3 } }), m("Onda Padre e Figlio", 5, 96)] },
   { id: "pipsccolo", nome: "Pipsccolo", serie: "db", rarita: "epica", stile: "DIF", ruolo: "difensore", frase: "Il namecciano Pips: braccia lunghe, pazienza corta.",
     mosse: [m("Braccio Allungabile", 0, 28), m("Rigenerazione", 2, 0, { eff: { tipo: "cura", val: 18 } }), m("Cannone a Spirale", 5, 88, { penetra: 25 })] },
@@ -171,7 +172,7 @@ const CARTE = [
     mosse: [m("Raffica Cyborg", 0, 26, { eff: { tipo: "ruba", val: 1 } }), m("Assorbimento", 2, 36, { eff: { tipo: "ruba", val: 1 } }), m("Super Barriera Esplosiva", 5, 88)] },
   { id: "chichice", nome: "Chichice", serie: "db", rarita: "comune", stile: "FOR", ruolo: "guaritore", frase: "Prima i compiti, poi si combatte.",
     mosse: [m("Padellata", 0, 28), m("Pranzo Saiyan", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Furia di Mamma", 5, 76, { drena: 40 })] },
-  { id: "vidalessia", nome: "Vidalessia", serie: "db", rarita: "comune", stile: "VEL", ruolo: "capo", frase: "La giustizia ha un nuovo idolo.",
+  { id: "vidalessia", nome: "Videssia", serie: "db", rarita: "comune", stile: "VEL", ruolo: "capo", frase: "La giustizia ha un nuovo idolo.",
     mosse: [m("Calcio della Giustizia", 0, 28), m("Grido di Squadra", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Volo Giustiziere", 5, 80)] },
   { id: "panky", nome: "Panky", serie: "db", rarita: "comune", stile: "VEL", ruolo: "imprevedibile", frase: "Piccola peste, grande potenza.",
     mosse: [m("Pugnetto", 0, 28), m("Capriccio", 2, 26, { eff: { tipo: "stordisci", val: 50 } }), m("Raffica della Nipote", 5, 18, { colpi: 5 })] },
@@ -253,6 +254,37 @@ const CARTE = [
     mosse: [m("Fascino Lunare", 0, 28), m("Creature Invisibili", 2, 24, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Patrono Lepre", 5, 84)] },
   { id: "giulifleur", nome: "Giulifleur", serie: "maghi", rarita: "comune", stile: "VEL", ruolo: "capo", frase: "Elegante, raffinata e campionessa del torneo.",
     mosse: [m("Fiamma Azzurra", 0, 28), m("Fascino Veela", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Torneo dei Tre Maghi", 5, 80)] },
+  // ---------------- DEMONI ----------------
+  { id: "lollifer", nome: "Lollifer", serie: "demoni", rarita: "leggendaria", stile: "FOR", ruolo: "capo", frase: "Il re degli Inferi. È caduto dal cielo, ma con stile.",
+    mosse: [m("Artiglio Infernale", 0, 34), m("Ali Nere", 2, 44, { penetra: 30 }), m("Caduta dal Cielo", 5, 100)] },
+  { id: "samuzebub", nome: "Samuzebub", serie: "demoni", rarita: "leggendaria", stile: "DIF", ruolo: "stratega", frase: "Il Signore delle Mosche: ronza, comanda e non si stanca mai.",
+    mosse: [m("Sciame Ronzante", 0, 30), m("Banchetto Infernale", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Signore delle Mosche", 5, 90, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "simothan", nome: "Simothan", serie: "demoni", rarita: "leggendaria", stile: "DIF", ruolo: "tank", frase: "Il serpente degli abissi. Quando si muove lui, si muove il mare.",
+    mosse: [m("Coda dell'Abisso", 0, 32), m("Scaglie d'Acciaio", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Maremoto Infernale", 5, 98)] },
+  { id: "alissith", nome: "Alissith", serie: "demoni", rarita: "leggendaria", stile: "VEL", ruolo: "stregone", frase: "La prima delle streghe: un sorriso, e sei già suo.",
+    mosse: [m("Bacio Velenoso", 0, 32, { drena: 20 }), m("Incanto della Notte", 2, 28, { eff: { tipo: "indebolisci", val: 35, turni: 2 } }), m("Luna Nera", 5, 94, { drena: 30 })] },
+  { id: "mauriphomet", nome: "Mauriphomet", serie: "demoni", rarita: "epica", stile: "DIF", ruolo: "stregone", frase: "Il caprone del sabba. Basta lo sguardo come maledizione.",
+    mosse: [m("Cornata", 0, 30), m("Sabba Oscuro", 2, 30, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Pentacolo di Fuoco", 5, 88, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  { id: "ludomodeus", nome: "Ludomodeus", serie: "demoni", rarita: "epica", stile: "FOR", ruolo: "imprevedibile", frase: "Il demone dei vizi: tutto o niente, sempre.",
+    mosse: [m("Tentazione", 0, 32), m("Dado Truccato", 2, 42, { penetra: 25 }), m("Mille Vizi", 5, 26, { colpi: 4 })] },
+  { id: "tiziazel", nome: "Tiziazel", serie: "demoni", rarita: "epica", stile: "VEL", ruolo: "assassino", frase: "Il ribelle con la cicatrice. Colpisce e sparisce.",
+    mosse: [m("Lama Spezzata", 0, 34), m("Fuga nell'Ombra", 2, 0, { eff: { tipo: "nebbia" } }), m("Marchio del Ribelle", 5, 92, { penetra: 30 })] },
+  { id: "aurorrigan", nome: "Aurorrigan", serie: "demoni", rarita: "epica", stile: "VEL", ruolo: "tiratore", frase: "La regina dei corvi: vede la tua sconfitta prima di te.",
+    mosse: [m("Piuma Affilata", 0, 32), m("Stormo di Corvi", 2, 16, { colpi: 3 }), m("Profezia di Sangue", 5, 90)] },
+  { id: "pipmon", nome: "Pipmon", serie: "demoni", rarita: "rara", stile: "VEL", ruolo: "ladro", frase: "Il demone dell'oro: quello che è tuo, presto sarà suo.",
+    mosse: [m("Monetina Affilata", 0, 26, { eff: { tipo: "ruba", val: 1 } }), m("Patto d'Oro", 2, 36, { eff: { tipo: "ruba", val: 1 } }), m("Pioggia di Monete", 5, 20, { colpi: 4 })] },
+  { id: "diegial", nome: "Diegial", serie: "demoni", rarita: "rara", stile: "FOR", ruolo: "picchiatore", frase: "Il principe senza regole. Prima picchia, poi (forse) parla.",
+    mosse: [m("Pugno Infernale", 0, 32), m("Rabbia Senza Freni", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Trono in Fiamme", 5, 86)] },
+  { id: "ritacubus", nome: "Ritacubus", serie: "demoni", rarita: "rara", stile: "VEL", ruolo: "schivatore", frase: "Un sorriso, uno sguardo, e ti scordi perché stavi combattendo.",
+    mosse: [m("Graffio Gentile", 0, 30), m("Sguardo Ammaliante", 2, 24, { eff: { tipo: "stordisci", val: 45 } }), m("Danza della Notte", 5, 80, { drena: 30 })] },
+  { id: "alistaroth", nome: "Alistaroth", serie: "demoni", rarita: "rara", stile: "DIF", ruolo: "difensore", frase: "La duchessa degli Inferi: elegante, paziente, inattaccabile.",
+    mosse: [m("Scettro di Rubino", 0, 28), m("Barriera di Rubini", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Corona Infernale", 5, 84, { penetra: 25 })] },
+  { id: "giulimaah", nome: "Giulimaah", serie: "demoni", rarita: "comune", stile: "FOR", ruolo: "tiratore", frase: "Canta, sorride e ti incenerisce a tempo di musica.",
+    mosse: [m("Nota Stonata", 0, 30), m("Doppio Acuto", 2, 24, { colpi: 2 }), m("Canto degli Inferi", 5, 84)] },
+  { id: "vikamashtu", nome: "Vikamashtu", serie: "demoni", rarita: "comune", stile: "FOR", ruolo: "incendiario", frase: "Dolce fuori, brace viva dentro.",
+    mosse: [m("Soffio di Brace", 0, 28), m("Fiamme Gemelle", 2, 26, { eff: { tipo: "brucia", val: 6, turni: 3 } }), m("Rogo Infernale", 5, 82)] },
+  { id: "senecate", nome: "Senecate", serie: "demoni", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "La strega dei crocevia: il suo libro sa sempre la strada.",
+    mosse: [m("Colpo di Libro", 0, 26), m("Erbe del Crocevia", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Tre Lune", 5, 76, { drena: 40 })] },
 ];
 
 
@@ -279,6 +311,10 @@ const PERSONE = {
   alessmione: "Alessia", ritadora: "Rita", pipverus: "Pips", lollon: "Lorenzo", diegirius: "Diego", samulett: "Samuele",
   ludraco: "Ludovico", mauriziente: "Maurizio", tizievil: "Tiziano", ginice: "Alice", vikatrix: "Viky", simoldemort: "Simone",
   seneverr: "Senè", auroruna: "Aurora", giulifleur: "Giulia",
+  // Demoni
+  lollifer: "Lorenzo", samuzebub: "Samuele", simothan: "Simone", alissith: "Alessia", mauriphomet: "Maurizio", ludomodeus: "Ludovico",
+  tiziazel: "Tiziano", aurorrigan: "Aurora", pipmon: "Pips", diegial: "Diego", ritacubus: "Rita", alistaroth: "Alice",
+  giulimaah: "Giulia", vikamashtu: "Viky", senecate: "Senè",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -286,7 +322,7 @@ CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 // le sue scelte (persona, serie, rarità) stanno nel database e vengono applicate all'avvio.
 // Versione Ultra: alcune carte (scelte dall'admin) hanno anche una versione Ultra da trovare, come l'olografica:
 // la carta base resta quella, la versione Ultra le dà la cornice nera e oro e +10% di PV e danni.
-const ULTRA_DI_PARTENZA = ["reina", "gokiele", "zeutiz", "ironlus", "simoldemort"];
+const ULTRA_DI_PARTENZA = ["reina", "gokiele", "zeutiz", "ironlus", "simoldemort", "lollifer"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {
