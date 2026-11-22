@@ -5,7 +5,7 @@
 // ---------------- TROFEI E TITOLI ----------------
 // Ogni trofeo dà monete (una volta) e sblocca un titolo da mostrare sotto il nome in classifica.
 const Trofei = (() => {
-  const TITOLI_SERIE = { eroi: "Supereroe", db: "Guerriero leggendario", dei: "Divinità", nueve: "Boss della mala", maghi: "Arcimago", demoni: "Signore degli Inferi" };
+  const TITOLI_SERIE = { eroi: "Supereroe", db: "Guerriero leggendario", dei: "Divinità", nueve: "Boss della mala", maghi: "Arcimago", demoni: "Signore degli Inferi", mestieri: "Stacanovista" };
   const stelleTot = () => Object.values((S.storia || {}).stelle || {}).reduce((a, n) => a + n, 0);
   const lodi = () => possedute().filter(c => haLode(c.id)).length;
   const oloTot = () => Object.keys(S.olo || {}).filter(id => S.olo[id] && PER_ID[id]).length;
@@ -32,7 +32,7 @@ const Trofei = (() => {
       { id: "lode-1", nome: "Trenta e lode", desc: "Porta una carta al 30 e lode", titolo: "Lodato", premio: 400, prog: lodi, max: 1 },
       { id: "bustine-50", nome: "Strappabustine", desc: "Apri 50 bustine", titolo: "Strappabustine", premio: 200, prog: () => st("bustine"), max: 50 },
       { id: "stelle-30", nome: "Narratore", desc: "Prendi 30 stelle nella storia", titolo: "Narratore", premio: 250, prog: stelleTot, max: 30 },
-      { id: "ultra-1", nome: "Ultra!", desc: "Trova la versione Ultra di una carta", titolo: "Ultra", premio: 500, prog: () => CARTE.filter(c => haUltra(c.id)).length, max: 1 },
+      { id: "ultra-1", nome: "Tocco Ultra", desc: "Trova la versione Ultra di una carta", titolo: "Ultra", premio: 500, prog: () => CARTE.filter(c => haUltra(c.id)).length, max: 1 },
       { id: "stelle-120", nome: "Giramondo", desc: "Prendi 120 stelle nella storia", titolo: "Giramondo", premio: 600, prog: stelleTot, max: 120 },
       { id: "pass-50", nome: "Fedelissimo", desc: "Arriva al livello 50 del pass", titolo: "Fedelissimo", premio: 300, prog: livelloPass, max: 50 },
       { id: "accessi-7", nome: "Sempre presente", desc: "Riscuoti il premio di accesso 7 giorni di fila", titolo: "Sempre presente", premio: 200, prog: () => st("serieMax"), max: 7 },

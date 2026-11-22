@@ -12,6 +12,7 @@ const SERIE = {
   nueve: { nome: "Mafiosi",     colore: "#ff2e46", simbolo: "♠", desc: "La banda al completo, tra vicoli e luci al neon." },
   maghi: { nome: "Maghi",       colore: "#43d39e", simbolo: "☾", desc: "Bacchette, pozioni e una scuola di magia piena di guai." },
   demoni: { nome: "Demoni",     colore: "#d4145a", simbolo: "♆", desc: "Corna, troni e patti col diavolo: gli Inferi hanno aperto le porte." },
+  mestieri: { nome: "Mestieri", colore: "#a6e22e", simbolo: "⚒", desc: "Hacker, spie, calciatori e pianisti: ognuno con il suo lavoro, tutti pronti a combattere." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -285,6 +286,37 @@ const CARTE = [
     mosse: [m("Soffio di Brace", 0, 28), m("Fiamme Gemelle", 2, 26, { eff: { tipo: "brucia", val: 6, turni: 3 } }), m("Rogo Infernale", 5, 82)] },
   { id: "senecate", nome: "Senecate", serie: "demoni", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "La strega dei crocevia: il suo libro sa sempre la strada.",
     mosse: [m("Colpo di Libro", 0, 26), m("Erbe del Crocevia", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Tre Lune", 5, 76, { drena: 40 })] },
+  // ---------------- MESTIERI ----------------
+  { id: "ludhacker", nome: "Ludhacker", serie: "mestieri", rarita: "leggendaria", stile: "VEL", ruolo: "ladro", frase: "Il genio col cappuccio: entra ovunque, esce sempre.",
+    mosse: [m("Codice Malevolo", 0, 28, { eff: { tipo: "ruba", val: 1 } }), m("Furto di Password", 2, 38, { eff: { tipo: "ruba", val: 1 } }), m("Sistema Violato", 5, 96, { penetra: 35 })] },
+  { id: "lollinista", nome: "Lollinista", serie: "mestieri", rarita: "leggendaria", stile: "FOR", ruolo: "capo", frase: "Il maestro al pianoforte: quando suona lui, la squadra va a tempo.",
+    mosse: [m("Accordo Potente", 0, 34), m("Crescendo", 2, 0, { eff: { tipo: "potenzia", val: 35, turni: 3 } }), m("Gran Finale", 5, 100)] },
+  { id: "tiziegista", nome: "Tiziegista", serie: "mestieri", rarita: "leggendaria", stile: "DIF", ruolo: "stratega", frase: "Azione! E tutti fanno esattamente quello che dice lui.",
+    mosse: [m("Ciak", 0, 30), m("Pausa sul Set", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Effetti Speciali", 5, 90, { eff: { tipo: "stordisci", val: 40 } })] },
+  { id: "alispia", nome: "Alispia", serie: "mestieri", rarita: "leggendaria", stile: "VEL", ruolo: "assassino", frase: "Nome in codice: Alice. Il resto è top secret.",
+    mosse: [m("Colpo Silenziato", 0, 34, { penetra: 20 }), m("Travestimento", 2, 0, { eff: { tipo: "nebbia" } }), m("Missione Impossibile", 5, 98, { penetra: 35 })] },
+  { id: "senebroker", nome: "Senebroker", serie: "mestieri", rarita: "epica", stile: "DIF", ruolo: "stregone", frase: "Compra basso, vende alto, e ti lascia in rosso.",
+    mosse: [m("Telefonata Urgente", 0, 30), m("Crollo di Borsa", 2, 30, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Lupo di Borsa", 5, 86, { drena: 30 })] },
+  { id: "maurialpinista", nome: "Maurialpinista", serie: "mestieri", rarita: "epica", stile: "DIF", ruolo: "tank", frase: "Ottomila metri, zero lamentele.",
+    mosse: [m("Colpo di Piccozza", 0, 30), m("Corda di Sicurezza", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Valanga", 5, 92)] },
+  { id: "pipciatore", nome: "Pipciatore", serie: "mestieri", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Il numero 10 sulla maglia, e in campo si sente.",
+    mosse: [m("Tiro a Giro", 0, 32), m("Rovesciata", 2, 46), m("Gol all'Ultimo Minuto", 5, 94)] },
+  { id: "simonducer", nome: "Simonducer", serie: "mestieri", rarita: "epica", stile: "FOR", ruolo: "imprevedibile", frase: "Mette il beat e il pavimento trema.",
+    mosse: [m("Cassa Dritta", 0, 32), m("Drop del Beat", 2, 44, { penetra: 20 }), m("Hit dell'Estate", 5, 24, { colpi: 4 })] },
+  { id: "diegarman", nome: "Diegarman", serie: "mestieri", rarita: "rara", stile: "FOR", ruolo: "incendiario", frase: "Shakera, fa il flambé e ti porta il conto.",
+    mosse: [m("Shakerata", 0, 28), m("Cocktail Flambé", 2, 28, { eff: { tipo: "brucia", val: 6, turni: 3 } }), m("Giro della Casa", 5, 84)] },
+  { id: "samutografo", nome: "Samutografo", serie: "mestieri", rarita: "rara", stile: "VEL", ruolo: "tiratore", frase: "Uno scatto e sei immortale. O accecato.",
+    mosse: [m("Scatto Rapido", 0, 30), m("Flash Accecante", 2, 22, { eff: { tipo: "stordisci", val: 45 } }), m("Raffica di Scatti", 5, 20, { colpi: 4 })] },
+  { id: "alessiologa", nome: "Alessiologa", serie: "mestieri", rarita: "rara", stile: "DIF", ruolo: "stregone", frase: "Al microscopio vede tutto. Anche i tuoi punti deboli.",
+    mosse: [m("Provetta", 0, 28), m("Coltura Batterica", 2, 28, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Mutazione Genetica", 5, 84, { penetra: 25 })] },
+  { id: "vikyventura", nome: "Vikyventura", serie: "mestieri", rarita: "rara", stile: "VEL", ruolo: "schivatore", frase: "Mappa, zaino e nessuna paura di perdersi.",
+    mosse: [m("Colpo di Machete", 0, 30), m("Salto con la Liana", 2, 40, { penetra: 20 }), m("Tesoro Perduto", 5, 82)] },
+  { id: "auroressa", nome: "Auroressa", serie: "mestieri", rarita: "comune", stile: "DIF", ruolo: "difensore", frase: "Interrogazione a sorpresa. Hai studiato?",
+    mosse: [m("Gessetto", 0, 26), m("Nota sul Registro", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Compito in Classe", 5, 80)] },
+  { id: "ritanimatrice", nome: "Ritanimatrice", serie: "mestieri", rarita: "comune", stile: "FOR", ruolo: "guaritore", frase: "Balli di gruppo e acqua per tutti: lo staff c'è.",
+    mosse: [m("Ballo di Gruppo", 0, 28), m("Pausa Acqua", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Baby Dance", 5, 76, { drena: 40 })] },
+  { id: "giudella", nome: "Giudella", serie: "mestieri", rarita: "comune", stile: "VEL", ruolo: "capo", frase: "Passerella, sguardo, pausa. Tutti gli occhi su di lei.",
+    mosse: [m("Colpo di Tacco", 0, 28), m("Tutti gli Occhi su di Me", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Sfilata Finale", 5, 80)] },
 ];
 
 
@@ -315,6 +347,10 @@ const PERSONE = {
   lollifer: "Lorenzo", samuzebub: "Samuele", simothan: "Simone", alissith: "Alessia", mauriphomet: "Maurizio", ludomodeus: "Ludovico",
   tiziazel: "Tiziano", aurorrigan: "Aurora", pipmon: "Pips", diegial: "Diego", ritacubus: "Rita", alistaroth: "Alice",
   giulimaah: "Giulia", vikamashtu: "Viky", senecate: "Senè",
+  // Mestieri
+  ludhacker: "Ludovico", lollinista: "Lorenzo", tiziegista: "Tiziano", alispia: "Alice", senebroker: "Senè", maurialpinista: "Maurizio",
+  pipciatore: "Pips", simonducer: "Simone", diegarman: "Diego", samutografo: "Samuele", alessiologa: "Alessia", vikyventura: "Viky",
+  auroressa: "Aurora", ritanimatrice: "Rita", giudella: "Giulia",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -322,7 +358,7 @@ CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 // le sue scelte (persona, serie, rarità) stanno nel database e vengono applicate all'avvio.
 // Versione Ultra: alcune carte (scelte dall'admin) hanno anche una versione Ultra da trovare, come l'olografica:
 // la carta base resta quella, la versione Ultra le dà la cornice nera e oro e +10% di PV e danni.
-const ULTRA_DI_PARTENZA = ["reina", "gokiele", "zeutiz", "ironlus", "simoldemort", "lollifer"];
+const ULTRA_DI_PARTENZA = ["reina", "gokiele", "zeutiz", "ironlus", "simoldemort", "lollifer", "ludhacker"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {

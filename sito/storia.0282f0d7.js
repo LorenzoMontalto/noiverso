@@ -164,7 +164,43 @@ const STORIA = [
       { titolo: "Il cratere", nemici: ["ligulk", "brolymone", "seneverr", "pelado", "poseludovico"], liv: [1, 1], abilita: 0.92, monete: 260,
         parla: "ligulk", frase: "Ligulk spacca. Ligulk spacca anche il vulcano." },
       { titolo: "Fuoco e tuoni", boss: true, nemici: ["mauthor", "vegerizio", "samulett", "aresorenzo", "alessmione"], liv: [1, 1], abilita: 0.94, monete: 450, bustina: "leggendaria",
-        parla: "mauthor", frase: "Fuoco e tuoni: questa è la mia montagna. Inginocchiati, se le ginocchia non ti si sono sciolte.", vittoria: "Il vulcano si calma sotto i tuoi piedi. Resta un'ultima porta, in cima al cratere: quella che porta da Los Nueve." },
+        parla: "mauthor", frase: "Fuoco e tuoni: questa è la mia montagna. Inginocchiati, se le ginocchia non ti si sono sciolte.", vittoria: "Il vulcano si calma sotto i tuoi piedi. Ma sul fondo del cratere si apre una crepa che scende verso gli Inferi..." },
+    ],
+  },
+  {
+    id: "c11", titolo: "Discesa agli Inferi", serie: "demoni", colore: "#d4145a", simbolo: "♆",
+    intro: "Dal cratere del vulcano si è aperta una crepa che scende sempre più giù. Fiumi neri, patti col diavolo e un trono di fuoco: i Demoni ti stavano aspettando.",
+    tappe: [
+      { titolo: "La porta degli Inferi", nemici: ["vikamashtu", "senecate", "giulimaah", "ritacubus", "pipmon"], liv: [1, 1], abilita: 0.86, monete: 240,
+        parla: "vikamashtu", frase: "Benvenuto all'inferno. Scotta un po', ma ti abitui. Forse." },
+      { titolo: "Il fiume Stige", nemici: ["aurorrigan", "giulimaah", "alistaroth", "senecate", "diegial"], liv: [1, 1], abilita: 0.88, monete: 250,
+        parla: "aurorrigan", frase: "I miei corvi ti hanno visto arrivare. Hanno visto anche come finisce." },
+      { titolo: "Il mercato dei patti", nemici: ["pipmon", "ludomodeus", "ritacubus", "vikamashtu", "tiziazel"], liv: [1, 1], abilita: 0.9, monete: 260, bustina: "epica",
+        parla: "pipmon", frase: "Firma qui. Poi qui. E qui. Non leggere le scritte piccole." },
+      { titolo: "Il cerchio del sabba", nemici: ["mauriphomet", "alissith", "senecate", "aurorrigan", "alistaroth"], liv: [1, 1], abilita: 0.92, monete: 270,
+        parla: "mauriphomet", frase: "Sei entrato nel cerchio. Da qui non si esce camminando." },
+      { titolo: "L'abisso", nemici: ["simothan", "samuzebub", "diegial", "tiziazel", "ludomodeus"], liv: [1, 1], abilita: 0.94, monete: 280,
+        parla: "simothan", frase: "Più scendi, più l'acqua è scura. E io sono quello che ci nuota dentro." },
+      { titolo: "Il trono di fuoco", boss: true, nemici: ["lollifer", "alissith", "samuzebub", "simothan", "mauriphomet"], liv: [1, 1], abilita: 0.96, monete: 480, bustina: "leggendaria",
+        parla: "lollifer", frase: "Sono caduto dal cielo per costruirmi questo trono. Credi davvero di potermelo togliere?", vittoria: "Il trono di fuoco è vuoto e la crepa si richiude. Risali in superficie: in città è appena iniziata una giornata di lavoro molto strana." }
+    ],
+  },
+  {
+    id: "c12", titolo: "La città dei mestieri", serie: "mestieri", colore: "#a6e22e", simbolo: "⚒",
+    intro: "Di giorno la città lavora: c'è chi insegna, chi segna gol, chi gira film e chi entra nei computer degli altri. Ma oggi ogni mestiere ha una sfida per te.",
+    tappe: [
+      { titolo: "Il villaggio vacanze", nemici: ["ritanimatrice", "giudella", "auroressa", "diegarman", "samutografo"], liv: [1, 1], abilita: 0.88, monete: 250,
+        parla: "ritanimatrice", frase: "Tutti in piscina per il ballo di gruppo! Chi non balla, combatte." },
+      { titolo: "La scuola", nemici: ["auroressa", "alessiologa", "samutografo", "vikyventura", "giudella"], liv: [1, 1], abilita: 0.9, monete: 260,
+        parla: "auroressa", frase: "Interrogazione a sorpresa. Domanda numero uno: sai perdere con dignità?" },
+      { titolo: "Lo stadio", nemici: ["pipciatore", "maurialpinista", "diegarman", "vikyventura", "simonducer"], liv: [1, 1], abilita: 0.92, monete: 270, bustina: "epica",
+        parla: "pipciatore", frase: "Novantesimo minuto, palla al numero dieci. Indovina come finisce." },
+      { titolo: "La borsa", nemici: ["senebroker", "ludhacker", "alessiologa", "giudella", "samutografo"], liv: [1, 1], abilita: 0.94, monete: 280,
+        parla: "senebroker", frase: "Le tue azioni stanno crollando. E le tue difese pure." },
+      { titolo: "Il set del film", nemici: ["tiziegista", "simonducer", "alispia", "maurialpinista", "pipciatore"], liv: [1, 1], abilita: 0.95, monete: 290,
+        parla: "tiziegista", frase: "Scena della battaglia, prima ripresa. Tu fai quello che perde. Azione!" },
+      { titolo: "Il grande concerto", boss: true, nemici: ["lollinista", "ludhacker", "alispia", "tiziegista", "senebroker"], liv: [1, 1], abilita: 0.97, monete: 500, bustina: "leggendaria",
+        parla: "lollinista", frase: "Il teatro è pieno e il pianoforte è pronto. L'ultima nota la suono io.", vittoria: "Applausi in piedi: la città intera ha visto la tua vittoria. Ora resta un'ultima porta, quella che porta da Los Nueve." }
     ],
   },
   {
@@ -182,7 +218,7 @@ const STORIA = [
       { titolo: "Gli strateghi", nemici: ["reina", "freezovico", "mieloki", "adelrizio", "atharita"], liv: [4, 5], abilita: 0.94, monete: 300,
         parla: "atharita", frase: "Ogni tua mossa l'ho già prevista. Anche questa." },
       { titolo: "La squadra finale", boss: true, nemici: ["gokiele", "zeutiz", "reina", "ironlus", "aresorenzo"], liv: [5, 5], abilita: 0.97, monete: 700, bustina: "leggendaria", bustine: 2,
-        parla: "aresorenzo", frase: "Sei arrivato fin qui. Ora dimostra di meritare il posto tra Los Nueve.", vittoria: "Ce l'hai fatta: sei uno di Los Nueve. Dalla città al vulcano, in tutti i mondi parlano solo di te." },
+        parla: "aresorenzo", frase: "Sei arrivato fin qui. Ora dimostra di meritare il posto tra Los Nueve.", vittoria: "Ce l'hai fatta: sei uno di Los Nueve. Dalla città agli Inferi, in tutti i mondi parlano solo di te." },
     ],
   },
 ];
@@ -198,11 +234,12 @@ function scrigniCapitolo(k) {
 
 
 
-// Livelli dei nemici in base alla posizione nella storia: dalla prima tappa (Lv1–3) al boss finale (Lv29–30).
+// Livelli dei nemici in base alla posizione nella storia: dalla prima tappa (Lv1–3) al boss finale (Lv30).
 STORIA.forEach((cap, k) => cap.tappe.forEach((t, i) => {
   const g = k * cap.tappe.length + i;
   t.indice = g;
-  const b = Math.round(g < 30 ? g * .62 : 18 + (g - 30) * .36);
+  const ultima = STORIA.reduce((n, c) => n + c.tappe.length, 0) - 1;
+  const b = Math.round(g < 30 ? g * .62 : 18 + (g - 30) * 12 / Math.max(1, ultima - 30));
   t.liv = t.boss ? [Math.min(30, b + 1), Math.min(30, b + 2)] : [Math.max(1, b), Math.min(30, b + 2)];
 }));
 if (typeof module !== "undefined") module.exports = { STORIA, scrigniCapitolo };
