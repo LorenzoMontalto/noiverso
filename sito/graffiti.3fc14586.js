@@ -330,7 +330,8 @@ const Graffiti = (() => {
     try { const snap = await Archivio.db.doc("config/graffiti").get(); personali = snap && snap.exists ? copiaLibera(snap.data()) || {} : {}; caricato = true; erroreCarica = false; }
     catch (e) { erroreCarica = true; }
     await firma(Object.values(personali).map(x => x && x.immagine));
-    if (vista === "admin" && $("#admin-graffiti")) ridisegnaAdmin();
+    // le pagine già disegnate con i nomi di partenza si aggiornano con quelli veri
+    if (!B && ["admin", "sfida", "squadra", "negozio"].includes(vista) && $("#modale").hidden) disegna();
   }
   const CAMPI = ["nome", "scritta", "colore", "simbolo", "immagine"];
   const pubblicato = id => Object.assign({}, BASE[id], personali[id] || {});
