@@ -73,6 +73,28 @@ const Online = (() => {
       .subscribe(stato => { if (stato === "SUBSCRIBED") annuncia(); });
     addEventListener("beforeunload", () => { try { canale && canale.untrack(); } catch (e) {} });
   }
+  function riavvia() {
+    const vecchio = canale; canale = null; attivo = false; presenti = {};
+    try { if (vecchio) sb().removeChannel(vecchio); } catch (e) {}
+    avvia();
+  }
+  let timerNascosto = null;
+  setInterval(() => {
+    if (!attivo) { if (typeof S !== "undefined" && S && socialeAttivo() && !S.admin && sb()) avvia(); return; }
+    // canale caduto (rete persa, telefono in sottofondo a lungo): mi ricollego
+    if (canale && canale.state && !["joined", "joining"].includes(canale.state)) { riavvia(); return; }
+    annuncia();   // ogni tanto mi rifaccio vedere, così chi è appena arrivato mi trova
+  }, 20000);
+  document.addEventListener("visibilitychange", () => {
+    if (!attivo || !canale) return;
+    clearTimeout(timerNascosto);
+    if (document.visibilityState === "visible") {
+      if (canale.state && !["joined", "joining"].includes(canale.state)) riavvia(); else annuncia();
+    } else if (!P && !D && !G) {
+      // app in sottofondo da più di 2 minuti: non risulto più online (torno appena riapri)
+      timerNascosto = setTimeout(() => { try { canale && canale.untrack(); } catch (e) {} }, 120000);
+    }
+  });
   function annuncia() {
     if (!canale) return;
     try { canale.track({ nome: mioNome(), avatar: S.profilo.avatar || "", stato: P || D ? "in-battaglia" : G ? "spettatore" : "libero",
@@ -85,7 +107,22 @@ const Online = (() => {
     if (!B) {
       if (vista === "classifica") disegna();
       const box = $("#amici-online"); if (box) box.outerHTML = htmlAmici();
+      const st = $("#amici-strada"); if (st) st.outerHTML = htmlStrada();
     }
+  }
+  // Riquadro "Amici online" nella Strada (a destra sui computer, in alto sul telefono)
+  function htmlStrada() {
+    if (!socialeAttivo() || S.admin) return "";
+    const lista = Object.entries(presenti).sort((a, b) => (a[1].stato === "libero" ? 0 : 1) - (b[1].stato === "libero" ? 0 : 1));
+    return `<aside class="amici-strada" id="amici-strada" aria-label="Amici online">
+      <div class="online-testa"><b><span class="pallino-online"></span> Amici online</b><span class="badge-online">${lista.length}</span></div>
+      ${!attivo ? `<p class="nota">Mi collego…</p>` : lista.length ? `<ul>${lista.map(([id, x]) => `<li>
+        ${htmlAvatar(String(x.avatar || ""), "mini")}
+        <span class="amico-info"><b>${esc(String(x.nome || "Giocatore"))}</b><small>${x.stato === "libero" ? "Online" : x.stato === "spettatore" ? "Guarda una sfida" : `Contro ${esc(String(x.contro || "un amico"))}`}</small></span>
+        ${x.stato === "in-battaglia" && x.partita ? `<button class="btn piccolo" data-guarda="${esc(String(x.partita))}" aria-label="Guarda">👀</button>`
+          : x.stato === "libero" ? `<button class="btn primario piccolo" data-sfida-vivo="${esc(id)}">Sfida</button>` : ""}</li>`).join("")}</ul>`
+        : `<p class="nota">Nessuno online adesso. Quando un amico apre il gioco compare qui.</p>`}
+    </aside>`;
   }
   const eOnline = id => !!presenti[id];
   const quantiOnline = () => Object.keys(presenti).length;
@@ -630,6 +667,6 @@ const Online = (() => {
     annuncia();
   }
 
-  return { iniziaDiretta, loggaDiretta, fineDiretta, chiudiDiretta, htmlDiretta, get inDiretta() { return !!D; }, guarda, creaGuarda, rigioca, htmlGuarda, chiudiGuarda, htmlFineGuarda, esciGuarda, get inGuarda() { return !!G; }, mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
+  return { htmlStrada, iniziaDiretta, loggaDiretta, fineDiretta, chiudiDiretta, htmlDiretta, get inDiretta() { return !!D; }, guarda, creaGuarda, rigioca, htmlGuarda, chiudiGuarda, htmlFineGuarda, esciGuarda, get inGuarda() { return !!G; }, mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
     get inPartita() { return !!P; } };
 })();

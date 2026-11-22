@@ -551,7 +551,7 @@ function vistaStrada() {
   const b = bustineTotali(), r = daRiscuotere();
   const giocate = S.stats.vittorie + S.stats.sconfitte;
   const anteprima = ["reina", "gokiele", "zeutiz", "ironlus", "brolymone"].map(id => PER_ID[id]).filter(Boolean);
-  return `
+  return `${Online.htmlStrada()}
   <section class="eroe">
     <div class="eroe-testo">
       <h1 class="neon">Noiverso</h1>
