@@ -7,6 +7,7 @@
 // ============================================================
 const Graffiti = (() => {
   const LIV_MAX = 5, PREZZO = 250, MONETE_EXTRA = 60, PROB_IN_BUSTINA = .08;
+  const PREZZI = { comune: 300, rara: 600, epica: 1200 };   // per comprare un graffito preciso nel negozio
   const BASE = {
     fiamma:   { rarita: "comune", nome: "Fuoco",            scritta: "BRUCIA TUTTO", colore: "#ff5a2e", simbolo: "🔥" },
     muro:     { rarita: "comune", nome: "Muro",             scritta: "NON SI PASSA", colore: "#a9b4c4", simbolo: "🧱" },
@@ -25,7 +26,11 @@ const Graffiti = (() => {
   const copie = id => (S.graffiti || {})[id] || 0;
   const liv = id => Math.min(LIV_MAX, copie(id));
   const posseduti = () => ORDINE.filter(id => copie(id) > 0);
-  const scelto = () => (S.graffito && copie(S.graffito) ? S.graffito : null);
+  // ogni squadra ha il suo graffito: si sceglie quando la componi
+  const graffitoDi = i => { const q = (S.squadre || [])[i]; return q && q.graffito && copie(q.graffito) ? q.graffito : null; };
+  const scelto = () => graffitoDi(S.attiva);
+  function impostaSuSquadra(i, id) { S.squadre = S.squadre.map((q, k) => k === i ? Object.assign({}, q, { graffito: id || null }) : q); }
+  let perSquadra = null;   // squadra per cui si sta scegliendo nella finestra
 
   function descrivi(id, l = 1) {
     const v = valoreGraffito(id, l), n = x => String(Math.round(x * 10) / 10).replace(".", ",");
@@ -166,7 +171,7 @@ const Graffiti = (() => {
     S.graffiti = Object.assign({}, S.graffiti, { [id]: prima + 1 });
     let extra = 0;
     if (prima >= LIV_MAX) { extra = MONETE_EXTRA; S.monete += extra; }
-    if (!S.graffito) S.graffito = id;
+    if (S.squadre && S.squadre[S.attiva] && !scelto()) impostaSuSquadra(S.attiva, id);
     return { id, nuovo: prima === 0, liv: liv(id), extra };
   }
   function apriBombolette(n) {
@@ -207,7 +212,7 @@ const Graffiti = (() => {
   function regaloIniziale() {
     if (S.admin || S.graffitiRegalo) return;
     S.graffitiRegalo = true;
-    if (!posseduti().length) { dai("fiamma"); salva(); setTimeout(() => mostraAvviso(`Novità: i graffiti! Te ne regalo uno, «${info("fiamma").nome}». Lo trovi nella pagina Sfida.`), 2200); }
+    if (!posseduti().length) { dai("fiamma"); salva(); setTimeout(() => mostraAvviso(`Novità: i graffiti! Te ne regalo uno, «${info("fiamma").nome}»: è già nella tua squadra, lo cambi dalla pagina Squadre.`), 2200); }
   }
 
   // ---------------- in battaglia ----------------
@@ -243,37 +248,74 @@ const Graffiti = (() => {
   function htmlPannello() {
     if (S.admin && !posseduti().length) S.graffiti = Object.fromEntries(ORDINE.map(id => [id, LIV_MAX]));
     const id = scelto();
-    if (!id) return `<div class="graffito-pannello vuoto"><div><b>Graffiti</b><span class="nota">Spruzza un graffito sul campo prima della battaglia: vale per tutta la partita. Si trovano nelle bombolette.</span></div>
-      <button class="btn oro" data-fx="monete" data-bomboletta="1">Bomboletta · ${PREZZO}</button></div>`;
+    if (!id) return `<div class="graffito-pannello vuoto"><div><b>Nessun graffito in ${esc(squadraAttiva().nome)}</b><span class="nota">Un graffito si spruzza sul campo e vale per tutta la partita. Sceglilo tu, o compralo nel negozio.</span></div>
+      <button class="btn oro" data-fx="salto" data-azione="graffiti-collezione">${posseduti().length ? "Scegli" : "Vai al negozio"}</button></div>`;
     const g = info(id), l = liv(id);
     return `<div class="graffito-pannello" style="--c:${g.colore}">
       <img src="${url(id)}" alt="">
-      <div class="graffito-info"><small>Il tuo graffito</small><b>${esc(g.nome)} <span class="graffito-liv">Lv ${l}</span></b><span class="nota">${esc(descrivi(id, l))}</span>
+      <div class="graffito-info"><small>Graffito di ${esc(squadraAttiva().nome)}</small><b>${esc(g.nome)} <span class="graffito-liv">Lv ${l}</span></b><span class="nota">${esc(descrivi(id, l))}</span>
         <span class="nota piccola">Si annulla contro «${esc(nomeOpposto(id))}».</span></div>
-      <div class="graffito-azioni"><button class="btn" data-fx="salto" data-azione="graffiti-collezione">Cambia</button><button class="btn oro piccolo" data-fx="monete" data-bomboletta="1">Bomboletta · ${PREZZO}</button></div>
+      <div class="graffito-azioni"><button class="btn" data-fx="salto" data-azione="graffiti-collezione">Cambia</button><button class="btn piccolo" data-fx="salto" data-azione="vai-negozio">Negozio</button></div>
     </div>`;
   }
   function htmlCollezione() {
-    return `<div class="graffiti-modale"><h2>I tuoi graffiti</h2>
-      <p class="nota">Scegli quello da spruzzare nelle prossime battaglie. Ogni copia in più alza il livello (massimo ${LIV_MAX}). I graffiti della stessa coppia si annullano a vicenda.</p>
-      <div class="graffiti-griglia">${ORDINE.map(id => { const g = info(id), c = copie(id), l = liv(id), sel = scelto() === id;
-        return c ? `<button type="button" class="graffito-carta r-${g.rarita} ${sel ? "sel" : ""}" style="--c:${g.colore}" data-scegli-graffito="${id}">
+    const i = perSquadra ?? S.attiva, q = S.squadre[i], sel = graffitoDi(i);
+    return `<div class="graffiti-modale"><h2>Graffito per ${esc(q.nome)}</h2>
+      <p class="nota">Lo spruzzi sul campo ogni volta che giochi con questa squadra. Ogni copia in più alza il livello (massimo ${LIV_MAX}). I graffiti della stessa coppia si annullano a vicenda. Quelli che non hai li trovi nel negozio.</p>
+      <div class="graffiti-griglia">${ORDINE.map(id => { const g = info(id), c = copie(id), l = liv(id), usato = sel === id;
+        return c ? `<button type="button" class="graffito-carta r-${g.rarita} ${usato ? "sel" : ""}" style="--c:${g.colore}" data-scegli-graffito="${id}">
             <img src="${url(id)}" alt=""><b>${esc(g.nome)}</b><span class="graffito-liv">Lv ${l}${l < LIV_MAX ? ` · ${c}/${LIV_MAX}` : " · max"}</span>
-            <small>${esc(descrivi(id, l))}</small>${sel ? `<span class="graffito-inuso">✓ In uso</span>` : ""}</button>`
+            <small>${esc(descrivi(id, l))}</small>${usato ? `<span class="graffito-inuso">✓ In questa squadra</span>` : ""}</button>`
           : `<div class="graffito-carta bloccato r-${g.rarita}"><div class="graffito-ombra">?</div><b>???</b><span class="graffito-liv">${RARITA[g.rarita] ? RARITA[g.rarita].nome : g.rarita}</span><small>Ancora da trovare</small></div>`; }).join("")}</div>
-      <div class="azioni centro"><button class="btn" data-scegli-graffito="">Nessun graffito</button><button class="btn oro" data-fx="monete" data-bomboletta="1">Bomboletta · ${PREZZO}</button><button class="btn oro" data-fx="monete" data-bomboletta="5">5 bombolette · ${PREZZO * 5 - 100}</button></div>
+      <div class="azioni centro"><button class="btn" data-scegli-graffito="">Nessun graffito</button><button class="btn oro" data-fx="salto" data-azione="vai-negozio">Compra graffiti</button></div>
     </div>`;
   }
-  function apriCollezione() { apriModale(htmlCollezione()); }
-  function scegli(id) { S.graffito = id || null; salva(); if (!$("#modale").hidden) $("#modale-corpo").innerHTML = htmlCollezione(); if (vista === "sfida") disegna(); }
+  function apriCollezione(i) { perSquadra = i ?? S.attiva; apriModale(htmlCollezione()); }
+  function scegli(id) {
+    const i = perSquadra ?? S.attiva;
+    impostaSuSquadra(i, id || null); salva();
+    if (!$("#modale").hidden) chiudiModale();
+    mostraAvviso(id ? `«${info(id).nome}» assegnato a ${S.squadre[i].nome}.` : `${S.squadre[i].nome} gioca senza graffito.`);
+    if (vista === "sfida" || vista === "squadra") disegna();
+  }
+  // riquadro nella pagina Squadre
+  function htmlSquadra() {
+    const id = scelto();
+    if (!id) return `<div class="graffito-squadra vuoto"><span><b>Graffito</b> <span class="nota">nessuno: ${posseduti().length ? "sceglilo per questa squadra" : "compralo nel negozio"}</span></span>
+      <button class="btn piccolo" data-fx="salto" data-azione="${posseduti().length ? "graffiti-collezione" : "vai-negozio"}">${posseduti().length ? "Scegli" : "Negozio"}</button></div>`;
+    const g = info(id), l = liv(id);
+    return `<div class="graffito-squadra" style="--c:${g.colore}"><img src="${url(id)}" alt="">
+      <span><b>${esc(g.nome)}</b> <span class="graffito-liv">Lv ${l}</span><br><span class="nota">${esc(descrivi(id, l))}</span></span>
+      <button class="btn piccolo" data-fx="salto" data-azione="graffiti-collezione">Cambia</button></div>`;
+  }
+  // negozio: ogni graffito si compra singolarmente; ogni copia in più alza il livello
+  function compraUno(id, el) {
+    const g = info(id), p = PREZZI[g.rarita];
+    if (!p) return;
+    if (copie(id) >= LIV_MAX && !S.admin) { mostraAvviso("Questo graffito è già al livello massimo."); return; }
+    if (!S.admin && S.monete < p) { mostraAvviso("Non hai abbastanza monete."); return; }
+    if (!S.admin) S.monete -= p;
+    const e = dai(id); salva(); aggiornaTesta();
+    if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 40, forma: "coriandolo", colori: [g.colore, "#ffffff"], velocita: 7, dimensione: 5 }); }
+    mostraAvviso(e.nuovo ? `Hai comprato «${g.nome}»! Assegnalo a una squadra nella pagina Squadre.` : `«${g.nome}» sale al livello ${e.liv}.`);
+    disegna();
+  }
 
   // ---------------- negozio ----------------
   function htmlNegozio() {
     const tutti = ORDINE.slice(0, 3);
-    return `<div class="titolo-riga piccola"><h3>Graffiti</h3><p class="nota">Una bomboletta = un graffito a caso (comune 70%, raro 25%, epico 5%). Le copie in più alzano il livello.</p></div>
-      <div class="vetrina"><div class="prodotto" style="--c:#ff5a2e">
+    return `<div class="titolo-riga piccola"><h3>Graffiti</h3><p class="nota">Si spruzzano sul campo e valgono per tutta la battaglia. Ogni copia in più alza il livello (massimo ${LIV_MAX}). Poi li assegni alle tue squadre.</p></div>
+      <div class="vetrina graffiti-vetrina">${ORDINE.map(id => { const g = info(id), c = copie(id), l = liv(id), p = PREZZI[g.rarita], max = c >= LIV_MAX;
+        return `<div class="prodotto prodotto-graffito r-${g.rarita}" style="--c:${g.colore}">
+          <img src="${url(id)}" alt="" class="graffito-vetrina-img">
+          <b>${esc(g.nome)}</b>
+          <span class="nota">${esc(descrivi(id, Math.min(LIV_MAX, l + (max ? 0 : 1))))}</span>
+          <span class="ne-hai">${c ? `Lv ${l}` : RARITA[g.rarita] ? RARITA[g.rarita].nome : g.rarita}</span>
+          <div class="prodotto-prezzi">${max && !S.admin ? `<span class="nota">Al massimo</span>` : `<button class="btn primario" data-fx="monete" data-compra-graffito="${id}" ${S.admin || S.monete >= p ? "" : "disabled"}>${c ? "Lv " + (l + 1) : "Compra"} · ${p} <i class="moneta-ico"></i></button>`}</div>
+        </div>`; }).join("")}
+      <div class="prodotto" style="--c:#ff5a2e">
         <div class="bomboletta-ico">${tutti.map(id => `<img src="${url(id)}" alt="">`).join("")}</div>
-        <b>Bomboletta</b><span class="nota">Un graffito da spruzzare in battaglia.</span>
+        <b>Bomboletta a sorpresa</b><span class="nota">Un graffito a caso, costa meno: comune 70%, raro 25%, epico 5%.</span>
         <div class="prodotto-prezzi"><button class="btn primario" data-fx="monete" data-bomboletta="1" ${S.admin || S.monete >= PREZZO ? "" : "disabled"}>${PREZZO} <i class="moneta-ico"></i></button>
           <button class="btn" data-fx="monete" data-bomboletta="5" ${S.admin || S.monete >= PREZZO * 5 - 100 ? "" : "disabled"}>×5 · ${PREZZO * 5 - 100}</button></div>
       </div></div>`;
@@ -413,5 +455,5 @@ const Graffiti = (() => {
     anteprimaAdmin(campo);
   }
 
-  return { pesca, info, liv, copie, posseduti, scelto, descrivi, url, tela, mio, nemico, aCaso, htmlChip, annunciaInBattaglia, htmlPannello, apriCollezione, scegli, compra, apriBombolette, forseInBustina, regaloIniziale, htmlNegozio, carica, htmlAdmin, anteprimaAdmin, pubblica, azioneAdmin, immagineScelta, apriEmoji, dai, ORDINE };
+  return { pesca, info, liv, copie, posseduti, scelto, descrivi, url, tela, mio, nemico, aCaso, htmlChip, annunciaInBattaglia, htmlPannello, apriCollezione, scegli, compra, apriBombolette, forseInBustina, regaloIniziale, htmlNegozio, htmlSquadra, compraUno, carica, htmlAdmin, anteprimaAdmin, pubblica, azioneAdmin, immagineScelta, apriEmoji, dai, ORDINE };
 })();

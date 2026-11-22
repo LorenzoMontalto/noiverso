@@ -1299,6 +1299,21 @@ body.in-accesso { overflow: hidden; }
 .emoji-griglia button:hover, .emoji-griglia button:focus-visible { background: var(--asfalto); border-color: var(--linea); transform: scale(1.15); }
 @media (max-width: 560px) { .emoji-griglia { grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); } .emoji-griglia button { font-size: 1.5rem; } }
 
+/* ---------- Graffiti: squadra e negozio ---------- */
+.graffito-squadra { display: grid; grid-template-columns: 120px 1fr auto; gap: 12px; align-items: center; margin: 12px 0 4px; padding: 10px 14px; background: var(--asfalto); border: 1px solid color-mix(in srgb, var(--c, var(--linea)) 45%, var(--linea)); border-radius: 14px; background-image: radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--c, transparent) 14%, transparent), transparent 60%); }
+.graffito-squadra.vuoto { grid-template-columns: 1fr auto; border-style: dashed; }
+.graffito-squadra img { width: 120px; aspect-ratio: 2 / 1; object-fit: contain; }
+.graffito-squadra .nota { margin: 0; font-size: .82rem; }
+.graffiti-vetrina { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.prodotto-graffito .btn { white-space: nowrap; padding-left: 12px; padding-right: 12px; }
+.prodotto-graffito .graffito-vetrina-img { width: 100%; aspect-ratio: 2 / 1; object-fit: contain; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--c) 35%, transparent)); }
+@media (max-width: 560px) {
+  .graffito-squadra { grid-template-columns: 90px 1fr; }
+  .graffito-squadra img { width: 90px; }
+  .graffito-squadra .btn { grid-column: 1 / -1; }
+  .graffiti-vetrina { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ---------- Tutorial ---------- */
 #tutorial { position: fixed; inset: 0; z-index: 29; pointer-events: none; }
 #tutorial .tut-velo { position: absolute; inset: 0; pointer-events: auto; }

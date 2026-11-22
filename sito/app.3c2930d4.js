@@ -944,6 +944,7 @@ function vistaSquadra() {
       <span class="nota">${sq.carte.length === CARTE_SQUADRA ? "Squadra pronta per le sfide." : `Mancano ${CARTE_SQUADRA - sq.carte.length} ${CARTE_SQUADRA - sq.carte.length === 1 ? "carta" : "carte"}.`}</span>
     </div>
     <div class="slot5">${slot.join("")}</div>
+    ${Graffiti.htmlSquadra()}
     <div class="riepilogo">
       <div><span>Stili</span>${Object.entries(stili).map(([k, n]) => `<b class="stile s-${k}">${k} ${n}</b>`).join(" ")}</div>
       <div><span>Ruoli</span>${ruoli.length ? ruoli.map(r => `<b class="ruolo-pill">${esc(r)}</b>`).join(" ") : "—"}</div>
@@ -2393,7 +2394,7 @@ document.addEventListener("change", e => { if (e.target.dataset && e.target.data
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2437,6 +2438,7 @@ document.addEventListener("click", e => {
   if (t.dataset.togli !== undefined) { squadraAttiva().carte.splice(+t.dataset.togli, 1); salva(); setTimeout(disegna, ridotto ? 0 : 200); return; }
   if (t.dataset.apri) { usaBustina(t.dataset.apri, false); return; }
   if (t.dataset.compra) { compraBustina(t.dataset.compra, t); return; }
+  if (t.dataset.compraGraffito) { Graffiti.compraUno(t.dataset.compraGraffito, t); return; }
   if (t.dataset.emojiPer) { Graffiti.apriEmoji(t.dataset.emojiPer); return; }
   if (t.dataset.bomboletta) { Graffiti.compra(+t.dataset.bomboletta, t); return; }
   if (t.dataset.scegliGraffito !== undefined) { Graffiti.scegli(t.dataset.scegliGraffito); return; }
@@ -2610,7 +2612,9 @@ function applicaSalvataggio(salvato) {
   S.liv = Object.assign({}, S.liv || {}); S.pot = Object.assign({}, S.pot || {}); S.lodeXp = Object.assign({}, S.lodeXp || {});
   S.squadre = Array.from({ length: NUM_SQUADRE }, (_, i) => {
     const q = (S.squadre || [])[i] || { nome: `Squadra ${i + 1}`, carte: [] };
-    return { nome: q.nome || `Squadra ${i + 1}`, carte: [...new Set(q.carte || [])].filter(id => PER_ID[id] && S.carte[id] > 0).slice(0, CARTE_SQUADRA) };
+    // il graffito della squadra (prima del cambio era uno solo per tutte: lo do alla squadra attiva)
+    const graffito = q.graffito || (i === (S.attiva || 0) && S.graffito ? S.graffito : null);
+    return { nome: q.nome || `Squadra ${i + 1}`, carte: [...new Set(q.carte || [])].filter(id => PER_ID[id] && S.carte[id] > 0).slice(0, CARTE_SQUADRA), graffito };
   });
 }
 
