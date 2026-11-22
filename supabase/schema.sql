@@ -307,7 +307,7 @@ revoke all on public.scambi from anon;
 alter table public.scambi add column if not exists ritirato_il timestamptz;
 
 -- ---------------- Scambi con i potenziatori ----------------
--- Un doppione, quando lo trovi, diventa potenziatori di quella carta (10 comune, 12 rara, 30 epica, 100 leggendaria).
+-- Un doppione, quando lo trovi, diventa potenziatori di quella carta (10 comune, 12 rara, 24 epica, 60 leggendaria).
 -- Per scambiare una carta paghi proprio quei potenziatori: è come dare via un doppione. La carta resta nel tuo album.
 -- Si scambia solo tra carte della stessa rarità, e si riceve solo una carta che non si ha.
 -- INIZIO RARITA (scritto da costruisci.py a partire da sorgente/carte.js: non modificarlo a mano)
@@ -428,7 +428,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 create or replace function public.costo_scambio(carta text) returns integer
 language sql stable security definer set search_path = public as $$
-  select case public.rarita_carta(carta) when 'comune' then 10 when 'rara' then 12 when 'epica' then 30 when 'leggendaria' then 100 when 'ultra' then 200 end;
+  select case public.rarita_carta(carta) when 'comune' then 10 when 'rara' then 12 when 'epica' then 24 when 'leggendaria' then 60 when 'ultra' then 120 end;
 $$;
 create or replace function public.possiede(u uuid, carta text) returns boolean
 language sql stable security definer set search_path = public as $$

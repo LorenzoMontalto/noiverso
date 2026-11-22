@@ -99,7 +99,7 @@ const Scambi = (() => {
   let lista = null, inArrivo = 0, errore = null, nuovo = null;   // nuovo = scambio in preparazione: { amico, nome, chiedo, offro, doppioni }
   const attivo = () => socialeAttivo();
   const nome = id => { const r = (classificaDati || []).find(x => x.id === id); return r ? String(r.nome || "Giocatore") : "un amico"; };
-  // Scambiare una carta costa i potenziatori che ti dà un suo doppione (10 comune, 12 rara, 30 epica, 100 leggendaria):
+  // Scambiare una carta costa i potenziatori che ti dà un suo doppione (10 comune, 12 rara, 24 epica, 60 leggendaria):
   // è come dare via un doppione. La carta resta nel tuo album.
   const costo = id => POT_DOPPIONE[PER_ID[id].rarita];
   const mieOfferte = id => (lista || []).filter(x => x.da === Archivio.uid && x.offro === id && (x.stato === "aperto" || (x.stato === "accettato" && !x.ritirato))).length;
@@ -241,7 +241,7 @@ const Scambi = (() => {
     const pronte = (lista || []).filter(daRitirare);
     const vecchie = (lista || []).filter(x => x.stato !== "aperto" && !daRitirare(x)).slice(0, 8);
     return `
-    <div class="titolo-riga"><h2>Scambi</h2><p class="nota">Scambia con gli amici le carte che ti mancano. Dare una copia costa i potenziatori di un doppione di quella carta (10 comune, 12 rara, 30 epica, 100 leggendaria): la carta resta nel tuo album. Solo carte della stessa rarità.</p>
+    <div class="titolo-riga"><h2>Scambi</h2><p class="nota">Scambia con gli amici le carte che ti mancano. Dare una copia costa i potenziatori di un doppione di quella carta (10 comune, 12 rara, 24 epica, 60 leggendaria): la carta resta nel tuo album. Solo carte della stessa rarità.</p>
       <button class="btn primario" data-fx="onda" data-azione="nuovo-scambio" ${S.admin ? "disabled" : ""}>Nuovo scambio</button></div>
     ${errore ? `<p class="errore">${esc(errore)}</p>` : !lista ? `<p class="nota">Carico gli scambi…</p>` : `
     ${pronte.length ? `<h3 class="scambi-titolo">Accettati: ritira la carta <span class="badge-in">${pronte.length}</span></h3><ul class="scambi">${pronte.map(htmlRiga).join("")}</ul>` : ""}

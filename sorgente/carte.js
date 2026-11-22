@@ -409,7 +409,7 @@ const fattoreLivello = (liv = 1, lode = false) => (1 + 0.02 * (liv - 1)) * (lode
 // (di più se è rara, perché i suoi doppioni escono meno). Per ogni livello servono potenziatori + monete.
 // Esempio: Lv1→2 costa 3 potenziatori e 10 monete; Lv10→11: 8 e 35; Lv29→30: 17 e 220.
 // In tutto, dal 1 al 30: 297 potenziatori e 2410 monete (circa 30 doppioni di una comune).
-const POT_DOPPIONE = { comune: 10, rara: 12, epica: 30, leggendaria: 100 };
+const POT_DOPPIONE = { comune: 10, rara: 12, epica: 24, leggendaria: 60 };   // nov 2026: epica 30→24, leggendaria 100→60 (un doppione fortunato non porta più una carta al 16 in un colpo)
 const MONETE_DOPPIONE_30 = { comune: 15, rara: 20, epica: 40, leggendaria: 100 };   // doppione di una carta già al 30
 const potPerLivello = L => 3 + Math.floor(L / 2);
 const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 5);
