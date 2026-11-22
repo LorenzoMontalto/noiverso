@@ -150,9 +150,10 @@ revoke all on public.sfide_amici from anon;
 
 -- ---------------- Sfide dal vivo ----------------
 -- I due telefoni giocano la stessa battaglia e alla fine ognuno dice chi ha vinto.
--- Se dicono la stessa cosa la partita vale (+3 al vincitore, al massimo 5 vittorie al giorno contro lo stesso amico).
+-- Se dicono la stessa cosa la partita vale +3 al vincitore (chi perde prende 0). È l'unico modo di fare punti in classifica.
 -- Chi ammette di aver perso conferma subito; chi dice di aver vinto aspetta che l'altro confermi.
--- Se l'altro è sparito (abbandono) vale +1, una volta al giorno per coppia. Se non sono d'accordo: niente punti.
+-- Se l'altro è sparito (abbandono) vale +3 anche quella, ma una sola volta al giorno per coppia di amici
+-- (un abbandono non si può verificare, così nessuno si inventa vittorie). Se non sono d'accordo: niente punti.
 create table if not exists public.partite_vivo (
   id         uuid primary key,
   a          uuid not null references auth.users (id) on delete cascade,   -- chi ha sfidato
@@ -214,13 +215,11 @@ begin
   end if;
 
   if st = 'ok' then
-    select count(*) into n from public.partite_vivo where id <> partita and stato = 'ok' and vincitore = v and creata >= inizio
-      and ((a = p.a and b = p.b) or (a = p.b and b = p.a));
-    pt := case when n < 5 then 3 else 0 end;
+    pt := 3;
   elsif st = 'abbandono' then
     select count(*) into n from public.partite_vivo where id <> partita and stato = 'abbandono' and creata >= inizio
       and ((a = p.a and b = p.b) or (a = p.b and b = p.a));
-    pt := case when n < 1 then 1 else 0 end;
+    pt := case when n < 1 then 3 else 0 end;
   end if;
   update public.partite_vivo set stato = st, vincitore = case when st in ('ok', 'abbandono') then v end, punti = pt where id = partita;
   -- la classifica si ricalcola subito per i due giocatori
@@ -585,7 +584,8 @@ declare s jsonb;
 begin
   -- i numeri in classifica arrivano dal salvataggio, non da quello che manda il dispositivo
   select dati into s from public.salvataggi where user_id = new.user_id and slot = 'partita';
-  new.punti := greatest(0, coalesce((s->'stats'->>'punti')::int, 0) + public.punti_amici(new.user_id));
+  -- i punti in classifica vengono solo dalle sfide dal vivo: +3 per ogni vittoria, 0 per le sconfitte
+  new.punti := coalesce((select sum(punti) from public.partite_vivo where vincitore = new.user_id and stato in ('ok', 'abbandono')), 0);
   -- il titolo si vede solo se il trofeo risulta davvero conquistato (altrimenti finisce nel registro)
   if new.dati ? 'titolo_id' and coalesce(new.dati->>'titolo_id', '') <> '' and not public.titolo_valido(new.user_id, new.dati->>'titolo_id', s)
      and coalesce((select dati->>'titolo_id' from public.classifica where user_id = new.user_id), '') <> new.dati->>'titolo_id' then

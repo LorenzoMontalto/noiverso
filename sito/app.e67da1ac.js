@@ -560,7 +560,7 @@ function vistaStrada() {
     <div class="riquadro"><span>Album</span><b>${mie}<small>/${tot}</small></b><div class="barra"><i style="--p:${Math.round(mie / tot * 100)}%"></i></div></div>
     <div class="riquadro"><span>Vittorie</span><b>${S.stats.vittorie}<small> su ${giocate}</small></b></div>
     <div class="riquadro"><span>Pass</span><b>Lv ${livelloPass()}<small>/${PASS.livelli}</small></b><div class="barra oro"><i style="--p:${(S.pass.xp % PASS.xpLivello) / PASS.xpLivello * 100}%"></i></div></div>
-    <div class="riquadro"><span>Punti classifica</span><b>${(() => { const io = classificaDati && classificaDati.find(r => r.id === Archivio.uid); return io ? Number(io.punti) || 0 : S.stats.punti; })()}</b></div>
+    <div class="riquadro"><span>Punti classifica</span><b>${(() => { const io = classificaDati && classificaDati.find(r => r.id === Archivio.uid); return io ? Number(io.punti) || 0 : 0; })()}</b></div>
   </section>
   <section class="regole">
     <div class="titolo-riga"><h2>Come si gioca</h2><button class="btn piccolo" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button></div>
@@ -570,6 +570,7 @@ function vistaStrada() {
       <li><b>30 e lode.</b> Una carta al 30 fa esperienza in battaglia: dopo ${XP_LODE} XP prende la lode, che la potenzia di un altro 5%. I doppioni di una carta al 30 danno monete.</li>
       <li><b>Squadre.</b> Prepari fino a ${NUM_SQUADRE} squadre da ${CARTE_SQUADRA}, nell'ordine che vuoi: la prima entra in campo per prima.</li>
       <li><b>Battaglia.</b> Cinque contro cinque. Ogni turno scegli una mossa, <i>Carica</i> (+2 energia e ti proteggi) o un cambio. Ogni carta fa una sola mossa per turno: la più veloce attacca per prima (a pari velocità si alterna). L'energia è della squadra: si parte da 3 e si guadagnano 2 punti a turno.</li>
+      <li><b>Classifica.</b> Si fanno punti solo con le sfide dal vivo contro gli amici online: +3 per ogni vittoria, 0 per le sconfitte.</li>
       <li><b>Stili.</b> <span class="s-FOR stile">FOR</span> batte <span class="s-VEL stile">VEL</span>, che batte <span class="s-MEN stile">MEN</span>, che batte <span class="s-FOR stile">FOR</span>. Il vantaggio vale ×1,3, lo svantaggio ×0,8.</li>
       <li><b>Pass.</b> Ogni sfida e ogni bustina danno punti esperienza. Ogni livello del pass sblocca un premio.</li>
     </ol>
@@ -1041,7 +1042,7 @@ function vistaSfida() {
           <span class="livello-num">${i + 1}</span>
           <b>${L.nome}</b>
           <span>${L.desc}</span>
-          <small>${(() => { const pr = premiSfida(L); return `Vittoria: +${pr.monete} monete · +${pr.punti} ${pr.punti === 1 ? "punto" : "punti"} · +${pr.xp} XP`; })()}</small>
+          <small>${(() => { const pr = premiSfida(L); return `Vittoria: +${pr.monete} monete · +${pr.xp} XP`; })()}</small>
         </button>`).join("")}
     </div>
   </section>`;
@@ -1251,18 +1252,19 @@ function vistaClassifica() {
   if (Archivio.modo !== "cloud") return `
     <section class="vuoto"><h2>Classifica del gruppo</h2>
     <p>La classifica funziona quando giochi dalla pagina condivisa con il tuo account. In questo momento i progressi sono salvati solo su questo dispositivo.</p>
-    <p class="nota">I tuoi numeri: ${S.stats.punti} punti, ${S.stats.vittorie} vittorie, ${possedute().length} carte, pass livello ${livelloPass()}.</p></section>`;
+    <p class="nota">I tuoi numeri: ${S.stats.vinteVivo || 0} vittorie dal vivo, ${possedute().length} carte, pass livello ${livelloPass()}.</p></section>`;
   if (classificaErrore) return `<section class="vuoto"><h2>Classifica del gruppo</h2><p>Non riesco a leggere la classifica in questo momento. Riprova più tardi.</p></section>`;
   if (!classificaDati) return `<section class="vuoto"><h2>Classifica del gruppo</h2><p>Carico la classifica…</p></section>`;
-  if (!classificaDati.length) return `<section class="vuoto"><h2>Classifica del gruppo</h2><p>Nessuno in classifica per ora. Vinci una sfida per entrare per primo.</p></section>`;
+  if (!classificaDati.length) return `<section class="vuoto"><h2>Classifica del gruppo</h2><p>Nessuno in classifica per ora. Vinci una sfida dal vivo contro un amico per entrare per primo.</p></section>`;
   return `
   <section>
     <div class="titolo-riga"><h2>Classifica del gruppo</h2></div>
+    <p class="nota">Contano solo le sfide dal vivo: +3 punti per ogni vittoria, 0 per le sconfitte.</p>
     <table class="classifica">
-      <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vittorie</th><th>Carte</th><th>Pass</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
+      <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vinte dal vivo</th><th>Carte</th><th>Pass</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
       <tbody>${classificaDati.map((r, i) => `
         <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${r.id !== Archivio.uid && Online.eOnline(r.id) ? `<span class="pallino-online" title="Online adesso"></span>` : ""}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
-        <td>${Number(r.punti) || 0}</td><td>${Number(r.vittorie) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>Lv ${Number(r.pass) || 0}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<span class="sfida-celle"><button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>${Online.eOnline(r.id) ? `<button class="btn piccolo primario" data-fx="spinta" data-sfida-vivo="${esc(r.id)}">Dal vivo</button>` : ""}</span>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
+        <td>${Number(r.punti) || 0}</td><td>${Number(r.vinte_vivo) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>Lv ${Number(r.pass) || 0}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<span class="sfida-celle"><button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>${Online.eOnline(r.id) ? `<button class="btn piccolo primario" data-fx="spinta" data-sfida-vivo="${esc(r.id)}">Dal vivo</button>` : ""}</span>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
     </table>
   </section>`;
 }
@@ -2254,7 +2256,7 @@ function htmlAzioni() {
     const vinto = B.vincitore === 0;
     return `<div class="fine ${vinto ? "vinto" : "perso"}">
       <b>${vinto ? "Vittoria!" : "Sconfitta"}</b>
-      <span>${(() => { const pr = premiSfida(livelloAttuale); return vinto ? `+${pr.monete} monete · +${pr.punti} ${pr.punti === 1 ? "punto" : "punti"} · +${pr.xp} XP` : `+10 monete · +${XP_SCONFITTA} XP`; })()}</span>
+      <span>${(() => { const pr = premiSfida(livelloAttuale); return vinto ? `+${pr.monete} monete · +${pr.xp} XP` : `+10 monete · +${XP_SCONFITTA} XP`; })()}</span>
       ${htmlEspCarte()}
       <div class="azioni centro"><button class="btn primario" data-fx="onda" data-azione="rivincita">Rivincita</button><button class="btn" data-fx="salto" data-azione="esci-battaglia">Torna alle sfide</button></div>
     </div>`;

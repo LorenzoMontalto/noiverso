@@ -39,7 +39,7 @@ const Tutorial = (() => {
       { vista: "sfida", bersaglio: ".livelli .livello", titolo: "Le sfide", saltaSe: () => !squadraPiena() || !!B,
         aspetta: () => !!B,
         compito: "Facciamo la tua prima battaglia: tocca <b>Recluta</b>, l'avversario più facile.",
-        testo: "Qui sfidi il computer. Più è difficile l'avversario, più monete, punti classifica e XP del pass vinci." },
+        testo: "Qui sfidi il computer. Più è difficile l'avversario, più monete e XP del pass vinci. I punti in classifica invece si fanno solo con le sfide dal vivo contro gli amici." },
       // ---- dentro la battaglia ----
       { battaglia: true, bersaglio: "#neon-turno", titolo: "A chi tocca", testo: "Qui in alto vedi sempre di chi è il turno. La tua squadra è in basso a sinistra, quella avversaria in alto a destra." },
       { battaglia: true, bersaglio: ".mana-riga", bolla: "alto", titolo: "L'energia", testo: `L'energia è di tutta la squadra: si parte da ${ENERGIA_INIZIALE} e ogni turno ne arrivano 2. Le mosse più forti costano di più: i rombi sopra ogni mossa dicono quanto.` },

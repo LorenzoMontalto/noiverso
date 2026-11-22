@@ -77,7 +77,7 @@ const Amici = (() => {
     const L = livelloAttuale, a = L.amico, e = L.esito || {};
     const punti = e.stato === "prova" ? `<small class="nota">Prova da admin: non conta in classifica.</small>`
       : e.stato === "invio" ? `<small class="nota">Registro il risultato…</small>`
-      : e.stato === "ok" ? (e.vinto ? `<span class="punti-amico">+2 punti classifica · ${esc(a.nome)} −1</span>` : `<span class="punti-amico perso">${esc(a.nome)} si è difeso: +1 punto per lui</span>`)
+      : e.stato === "ok" ? (e.vinto ? `<span class="punti-amico">Vittoria registrata: ${esc(a.nome)} lo vedrà tra le sfide ricevute</span>` : `<span class="punti-amico perso">${esc(a.nome)} si è difeso</span>`)
       : `<small class="errore">${esc(e.stato)}</small>`;
     return `<div class="fine ${e.vinto ? "vinto" : "perso"}">
       <b>${e.vinto ? "Vittoria!" : "Sconfitta"}</b>
@@ -97,12 +97,12 @@ const Amici = (() => {
     if (!altri.length) return `<p class="nota">Non c'è ancora nessun amico in classifica. Appena qualcuno vince una battaglia compare qui.</p>`;
     return `<ul class="amici-lista">${altri.map(r => `<li>
       ${htmlAvatar(String(r.avatar || ""), "mini")}
-      <div class="amico-info"><b>${esc(String(r.nome || "Giocatore"))}</b><small>${Number(r.punti) || 0} punti · ${Number(r.vinte_amici) || 0} vinte contro amici</small></div>
+      <div class="amico-info"><b>${esc(String(r.nome || "Giocatore"))}</b><small>${Number(r.punti) || 0} punti · ${Number(r.vinte_vivo) || 0} vinte dal vivo</small></div>
       <button class="btn primario piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button></li>`).join("")}</ul>`;
   }
   function apriElenco() {
     apriModale(`<div class="amici-modale"><h2>Sfida un amico</h2>
-      <p class="nota">Combatti contro la squadra che l'amico ha in campo adesso, guidata dal computer. Se vinci: <b>+2 punti</b> per te e <b>−1</b> per lui. Se perdi, lui prende +1. Massimo 3 sfide al giorno contro lo stesso amico.</p>
+      <p class="nota">Combatti contro la squadra che l'amico ha in campo adesso, guidata dal computer. Vinci monete ed esperienza, ma niente punti classifica: quelli si fanno solo con le sfide dal vivo. Massimo 3 sfide al giorno contro lo stesso amico.</p>
       <div id="amici-elenco">${htmlElenco()}</div></div>`);
   }
   function aggiornaElenco() { const el = $("#amici-elenco"); if (el) el.innerHTML = htmlElenco(); }
@@ -117,13 +117,12 @@ const Amici = (() => {
       const ids = [...new Set(righe.map(r => r.sfidante))];
       const { data: cl } = await sbSociale().from("classifica").select("user_id,dati").in("user_id", ids);
       const nomi = {}; for (const c of cl || []) nomi[c.user_id] = c.dati || {};
-      const delta = righe.reduce((s, r) => s + (r.vinto ? -1 : 1), 0);
       const mostra = () => {
         if (B || Tutorial.attivo || !$("#accesso").hidden || !$("#modale").hidden) { setTimeout(mostra, 2500); return; }
         apriModale(`<div class="amici-modale"><h2>Mentre non c'eri…</h2>
-          <p class="nota">Alcuni amici hanno sfidato la tua squadra. In tutto: <b>${delta >= 0 ? "+" : ""}${delta} ${Math.abs(delta) === 1 ? "punto" : "punti"}</b>.</p>
+          <p class="nota">Alcuni amici hanno sfidato la tua squadra (guidata dal computer): ${righe.filter(r => !r.vinto).length} volte ti sei difeso, ${righe.filter(r => r.vinto).length} hai perso.</p>
           <ul class="amici-lista">${righe.slice(0, 12).map(r => { const n = nomi[r.sfidante] || {};
-            return `<li>${htmlAvatar(String(n.avatar || ""), "mini")}<div class="amico-info"><b>${esc(String(n.nome || "Un amico"))}</b><small>${r.vinto ? "ti ha battuto (−1 punto)" : "ha perso contro di te (+1 punto)"}</small></div>
+            return `<li>${htmlAvatar(String(n.avatar || ""), "mini")}<div class="amico-info"><b>${esc(String(n.nome || "Un amico"))}</b><small>${r.vinto ? "ti ha battuto" : "ha perso contro di te"}</small></div>
               ${r.vinto ? `<button class="btn primario piccolo" data-fx="spinta" data-sfida-amico="${esc(r.sfidante)}">Rivincita</button>` : `<span class="vinto-tag">Difesa!</span>`}</li>`; }).join("")}</ul>
           <div class="azioni centro"><button class="btn" data-azione="chiudi">Ok</button></div></div>`);
       };

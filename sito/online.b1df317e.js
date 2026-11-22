@@ -389,7 +389,7 @@ const Online = (() => {
     P.registrata = true;
     try {
       const r = await rpcSociale("chiudi_partita_vivo", { partita: P.id, avversario: P.avv.id, sono_a: P.host, chi_vince: vincitore, firma: P.canon ? firma() : "", motivo });
-      P.esitoServer = r && r.stato;
+      P.esitoServer = r && r.stato; P.puntiServer = r ? Number(r.punti) || 0 : 0;
     } catch (e) { P.esitoServer = "errore"; P.erroreServer = e.message; }
     if (B && B.vincitore >= 0) aggiornaBattaglia();
   }
@@ -417,7 +417,7 @@ const Online = (() => {
     const motivo = P && P.motivo === "abbandono" ? `${esc(nome)} ha abbandonato la partita.` : P && P.motivo === "resa" ? (e.vinto ? `${esc(nome)} si è arreso.` : "Ti sei arreso.") : "";
     const srv = !P ? "" : P.esitoServer === "ok" ? (e.vinto ? `<span class="punti-amico">+3 punti classifica</span>` : `<span class="nota">Risultato registrato.</span>`)
       : P.esitoServer === "attesa" ? `<small class="nota">Aspetto che anche ${esc(nome)} confermi il risultato…</small>`
-      : P.esitoServer === "abbandono" ? `<span class="punti-amico">+1 punto classifica (vittoria per abbandono)</span>`
+      : P.esitoServer === "abbandono" ? (P.puntiServer ? `<span class="punti-amico">+3 punti classifica (vittoria per abbandono)</span>` : `<small class="nota">Vittoria per abbandono: oggi contro ${esc(nome)} l'hai già avuta, questa non dà punti.</small>`)
       : P.esitoServer === "contestata" ? `<small class="errore">Risultato contestato: nessun punto.</small>`
       : P.esitoServer === "errore" ? `<small class="errore">${esc(P.erroreServer || "Non riesco a registrare il risultato.")}</small>` : `<small class="nota">Registro il risultato…</small>`;
     return `<div class="fine ${e.vinto ? "vinto" : "perso"}">
@@ -433,7 +433,7 @@ const Online = (() => {
   // ascolta le conferme del server mentre si guarda il risultato (l'altro può confermare dopo)
   async function aggiornaEsito() {
     if (!P || P.esitoServer !== "attesa") return;
-    try { const { data } = await sb().from("partite_vivo").select("stato").eq("id", P.id); const st = data && data[0] && data[0].stato; if (st && st !== "in-corso") { P.esitoServer = st; aggiornaBattaglia(); } } catch (e) {}
+    try { const { data } = await sb().from("partite_vivo").select("stato,punti").eq("id", P.id); const st = data && data[0] && data[0].stato; if (st && st !== "attesa") { P.esitoServer = st; P.puntiServer = Number(data[0].punti) || 0; aggiornaBattaglia(); } } catch (e) {}
   }
   setInterval(aggiornaEsito, 3000);
   function esci() {
