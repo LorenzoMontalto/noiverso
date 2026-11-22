@@ -12,7 +12,7 @@ shutil.rmtree(OUT, ignore_errors=True)
 os.makedirs(OUT)
 for cartella in ["icone"]:   # le immagini delle carte stanno nello spazio privato di Supabase
     shutil.copytree(os.path.join(SRC, cartella), os.path.join(OUT, cartella))
-for f in ["config.js", "manifest.webmanifest", "installa.html"]:
+for f in ["config.js", "manifest.webmanifest", "installa.html", "emoji-it.json"]:
     shutil.copy(os.path.join(SRC, f), os.path.join(OUT, f))
 html = open(os.path.join(SRC, "index.html"), encoding="utf-8").read()
 nomi = []

@@ -60,8 +60,8 @@ const Graffiti = (() => {
   const cache = {};
   function rng(seme) { let h = 2166136261; for (const ch of seme) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; }; }
   function chiaro(hex, k) { const n = parseInt(hex.slice(1), 16); const c = [n >> 16, (n >> 8) & 255, n & 255].map(x => Math.round(x + (255 - x) * k)); return `rgb(${c.join(",")})`; }
-  function tela(id, W = 512, H = 256) {
-    const g = info(id), chiave = `${id}|${W}|${g.nome}|${g.scritta}|${g.colore}|${g.simbolo}`;
+  function tela(id, W = 512, H = 256, sovr) {
+    const g = sovr ? Object.assign({ id }, BASE[id], sovr) : info(id), chiave = `${id}|${W}|${g.nome}|${g.scritta}|${g.colore}|${g.simbolo}`;
     if (cache[chiave]) return cache[chiave];
     const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
     const x = cv.getContext("2d"), r = rng(chiave), col = /^#[0-9a-f]{6}$/i.test(g.colore) ? g.colore : "#ff2e46";
@@ -109,9 +109,49 @@ const Graffiti = (() => {
     return (cache[chiave] = cv);
   }
   const urlCache = {};
-  function url(id) {
-    const g = info(id), k = `${id}|${g.nome}|${g.scritta}|${g.colore}|${g.simbolo}`;
-    return urlCache[k] || (urlCache[k] = tela(id).toDataURL());
+  // immagine del graffito: quella caricata dall'admin (se c'è) oppure il disegno a bomboletta
+  function url(id, sovr) {
+    const g = sovr ? Object.assign({ id }, BASE[id], sovr) : info(id);
+    if (g.immagine && firmate[g.immagine]) return firmate[g.immagine];
+    const k = `${id}|${g.nome}|${g.scritta}|${g.colore}|${g.simbolo}`;
+    return urlCache[k] || (urlCache[k] = tela(id, 512, 256, sovr).toDataURL());
+  }
+  // per il pavimento 3D serve un canvas: se c'è un'immagine la carico (servono i permessi CORS dello spazio privato)
+  function telaPer(id) {
+    const g = info(id);
+    if (!g.immagine || !firmate[g.immagine]) return Promise.resolve(tela(id));
+    return new Promise(ok => {
+      const im = new Image(); im.crossOrigin = "anonymous";
+      im.onload = () => { const W = 512, H = 256, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+        const x = cv.getContext("2d"), r = Math.min(W / im.width, H / im.height), w = im.width * r, h = im.height * r;
+        x.drawImage(im, (W - w) / 2, (H - h) / 2, w, h); ok(cv); };
+      im.onerror = () => ok(tela(id));
+      im.src = firmate[g.immagine];
+    });
+  }
+
+  // ---------------- immagini nello spazio privato (bucket "carte", cartella graffiti/) ----------------
+  const firmate = {};
+  const sb = () => window.NOIVERSO_SUPABASE && window.NoiversoAccesso && window.NoiversoAccesso.sb;
+  async function firma(percorsi) {
+    const da = [...new Set(percorsi.filter(p => p && !firmate[p]))];
+    if (!da.length || !sb()) return;
+    try {
+      const { data } = await sb().storage.from("carte").createSignedUrls(da, 7 * 24 * 3600);
+      for (const x of data || []) if (x.signedUrl) firmate[x.path] = x.signedUrl;
+    } catch (e) { /* resta il disegno */ }
+  }
+  async function caricaImmagine(id, file) {
+    const bmp = await createImageBitmap(file);
+    const r = Math.min(1, 640 / Math.max(bmp.width, bmp.height)), cv = document.createElement("canvas");
+    cv.width = Math.round(bmp.width * r); cv.height = Math.round(bmp.height * r);
+    cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
+    const blob = await new Promise(ok => cv.toBlob(ok, "image/webp", .88));
+    const percorso = `graffiti/${id}-${Date.now()}.webp`;
+    const { error } = await sb().storage.from("carte").upload(percorso, blob, { contentType: "image/webp", cacheControl: "604800" });
+    if (error) throw error;
+    await firma([percorso]);
+    return percorso;
   }
 
   // ---------------- ottenere graffiti ----------------
@@ -194,8 +234,8 @@ const Graffiti = (() => {
       if (b) aggiungiRegistro({ testo: `${Bt.lati[1].nome} ha spruzzato «${info(b.id).nome}» (Lv ${b.liv}): ${descriviNemico(b.id, b.liv)}`, avviso: true });
     }
     if (arena && arena.mettiGraffito) {
-      const g = Bt.graffitiAnnullati || [a, b];
-      g.forEach((x, l) => { if (x) arena.mettiGraffito(l, tela(x.id, 512, 256), !!Bt.graffitiAnnullati); });
+      const g = Bt.graffitiAnnullati || [a, b], ar = arena;
+      g.forEach((x, l) => { if (x) telaPer(x.id).then(t => { if (arena === ar && ar.mettiGraffito) ar.mettiGraffito(l, t, !!Bt.graffitiAnnullati); }); });
     }
   }
 
@@ -239,45 +279,139 @@ const Graffiti = (() => {
       </div></div>`;
   }
 
-  // ---------------- admin: nomi, scritte, colori e simboli ----------------
+  // ---------------- admin: nomi, scritte, colori, simboli e immagini ----------------
+  // Le modifiche restano una BOZZA nel salvataggio admin (le vedi solo tu) finché non premi «Pubblica per tutti».
   async function carica() {
     if (Archivio.modo !== "cloud" || !Archivio.db) return;
     try { const snap = await Archivio.db.doc("config/graffiti").get(); personali = snap && snap.exists ? copiaLibera(snap.data()) || {} : {}; } catch (e) { personali = {}; }
+    await firma(Object.values(personali).map(x => x && x.immagine));
   }
+  const CAMPI = ["nome", "scritta", "colore", "simbolo", "immagine"];
+  const pubblicato = id => Object.assign({}, BASE[id], personali[id] || {});
+  const bozza = () => S.graffitiBozza || null;
+  const inBozza = id => Object.assign({}, pubblicato(id), (bozza() || {})[id] || {});
+  const diverso = id => CAMPI.some(k => (inBozza(id)[k] || "") !== (pubblicato(id)[k] || ""));
+  let timerBozza = null;
   function htmlAdmin() {
+    const modifiche = ORDINE.filter(diverso).length;
+    firma(ORDINE.map(id => inBozza(id).immagine)).then(() => { for (const id of ORDINE) { const im = document.querySelector(`.graffito-admin[data-id="${id}"] .graffito-anteprima`); if (im) im.src = url(id, inBozza(id)); } });
     return `<h3>Graffiti</h3>
-      <p class="nota">Qui decidi nome, scritta, colore e simbolo di ogni graffito: mettici le vostre battute! L'effetto in battaglia resta quello scritto sotto, così il gioco rimane bilanciato. I cambiamenti li vedono tutti.</p>
-      <form id="form-graffiti" class="form-graffiti">${ORDINE.map(id => { const g = info(id);
-        return `<fieldset class="graffito-admin" data-id="${id}">
-          <img src="${url(id)}" alt="" class="graffito-anteprima">
+      <p class="nota">Qui decidi nome, scritta, colore e simbolo di ogni graffito, oppure un'immagine al posto del disegno: mettici le vostre battute! L'effetto in battaglia resta quello scritto sotto, così il gioco rimane bilanciato.</p>
+      <p class="stato-bozza ${modifiche ? "attiva" : ""}" id="stato-bozza">${modifiche ? `<b>Bozza:</b> ${modifiche} ${modifiche === 1 ? "graffito modificato" : "graffiti modificati"}. La vedi solo tu finché non pubblichi.` : "Nessuna modifica in sospeso: tutti vedono quello che vedi qui."}</p>
+      <form id="form-graffiti" class="form-graffiti" autocomplete="off">${ORDINE.map(id => { const g = inBozza(id);
+        return `<fieldset class="graffito-admin ${diverso(id) ? "modificato" : ""}" data-id="${id}">
+          <div class="graffito-anteprima-box"><img src="${url(id, g)}" alt="" class="graffito-anteprima">${diverso(id) ? `<span class="chip">bozza</span>` : ""}</div>
           <div class="campi-graffito">
             <label>Nome <input name="${id}.nome" maxlength="24" value="${esc(g.nome)}"></label>
-            <label>Scritta sul muro <input name="${id}.scritta" maxlength="20" value="${esc(g.scritta)}"></label>
-            <div class="campi-2"><label>Colore <input type="color" name="${id}.colore" value="${esc(g.colore)}"></label><label>Simbolo <input name="${id}.simbolo" maxlength="4" value="${esc(g.simbolo)}"></label></div>
+            <label>Scritta sul muro <input name="${id}.scritta" maxlength="20" value="${esc(g.scritta)}" ${g.immagine ? "disabled" : ""}></label>
+            <div class="campi-2">
+              <label>Colore <input type="color" name="${id}.colore" value="${esc(g.colore)}"></label>
+              <label>Simbolo <span class="emoji-campo"><input type="hidden" name="${id}.simbolo" value="${esc(g.simbolo)}"><button type="button" class="btn emoji-btn" data-emoji-per="${id}" ${g.immagine ? "disabled" : ""}><span>${esc(g.simbolo)}</span> Scegli</button></span></label>
+            </div>
+            <input type="hidden" name="${id}.immagine" value="${esc(g.immagine || "")}">
+            <div class="graffito-img-azioni">${window.NOIVERSO_SUPABASE ? `<label class="btn piccolo">${g.immagine ? "Cambia immagine…" : "Usa un'immagine al posto del disegno…"}<input type="file" accept="image/*" data-immagine-per="${id}" hidden></label>${g.immagine ? `<button type="button" class="btn piccolo" data-admin="graffito-disegno:${id}">Torna al disegno</button>` : ""}` : ""}</div>
             <small class="nota">${RARITA[g.rarita] ? RARITA[g.rarita].nome : g.rarita} · ${esc(descrivi(id, 1))}</small>
           </div></fieldset>`; }).join("")}
-        <div class="azioni"><button class="btn primario" type="submit">Salva i graffiti</button><button class="btn" type="button" data-admin="graffiti-reset">Torna ai nomi di partenza</button></div>
+        <div class="azioni">
+          <button class="btn primario" type="submit" ${modifiche ? "" : "disabled"}>Pubblica per tutti</button>
+          ${modifiche ? `<button class="btn" type="button" data-admin="graffiti-scarta">Scarta la bozza</button>` : ""}
+          <button class="btn" type="button" data-admin="graffiti-reset">Torna ai nomi di partenza</button>
+        </div>
       </form>`;
   }
-  function anteprimaAdmin(input) {
-    const fs = input.closest(".graffito-admin"); if (!fs) return;
-    const id = fs.dataset.id, f = new FormData($("#form-graffiti")), vecchi = personali[id];
-    personali[id] = { nome: f.get(`${id}.nome`), scritta: f.get(`${id}.scritta`), colore: f.get(`${id}.colore`), simbolo: f.get(`${id}.simbolo`) };
-    fs.querySelector(".graffito-anteprima").src = tela(id).toDataURL();
-    personali[id] = vecchi;
-    if (vecchi === undefined) delete personali[id];
+  function leggiForm() {
+    const f = new FormData($("#form-graffiti")), b = {};
+    for (const id of ORDINE) { const v = {}; for (const k of CAMPI) v[k] = String(f.get(`${id}.${k}`) ?? inBozza(id)[k] ?? "").slice(0, k === "nome" ? 24 : k === "scritta" ? 20 : 200); b[id] = v; }
+    return b;
   }
-  async function salvaAdmin(form, reset) {
-    const f = new FormData(form), nuovi = {};
-    if (!reset) for (const id of ORDINE) {
-      const v = { nome: String(f.get(`${id}.nome`) || "").trim().slice(0, 24), scritta: String(f.get(`${id}.scritta`) || "").trim().slice(0, 20), colore: String(f.get(`${id}.colore`) || ""), simbolo: String(f.get(`${id}.simbolo`) || "").trim().slice(0, 4) };
-      const d = {}; for (const k of Object.keys(v)) if (v[k] && v[k] !== BASE[id][k]) d[k] = v[k];
-      if (Object.keys(d).length) nuovi[id] = d;
-    }
-    try { await Archivio.db.doc("config/graffiti").set(nuovi); personali = nuovi; mostraAvviso(reset ? "Graffiti riportati ai nomi di partenza." : "Graffiti salvati: li vedono tutti."); }
-    catch (e) { mostraAvviso("Non sono riuscito a salvare i graffiti."); }
-    const box = $("#admin-graffiti"); if (box) box.innerHTML = htmlAdmin();
+  function salvaBozza(b) {
+    S.graffitiBozza = b;
+    clearTimeout(timerBozza); timerBozza = setTimeout(() => salva(), 500);
+    const n = ORDINE.filter(diverso).length, st = $("#stato-bozza");
+    if (st) { st.className = `stato-bozza ${n ? "attiva" : ""}`; st.innerHTML = n ? `<b>Bozza:</b> ${n} ${n === 1 ? "graffito modificato" : "graffiti modificati"}. La vedi solo tu finché non pubblichi.` : "Nessuna modifica in sospeso."; }
+    const pub = $('#form-graffiti button[type=submit]'); if (pub) pub.disabled = !n;
+  }
+  function anteprimaAdmin(input) {
+    const fs = input.closest(".graffito-admin"); if (!fs || !$("#form-graffiti")) return;
+    const b = leggiForm(); salvaBozza(b);
+    const id = fs.dataset.id;
+    fs.querySelector(".graffito-anteprima").src = url(id, b[id]);
+    fs.classList.toggle("modificato", diverso(id));
+    const box = fs.querySelector(".graffito-anteprima-box"), chip = box && box.querySelector(".chip");
+    if (box && diverso(id) && !chip) box.insertAdjacentHTML("beforeend", `<span class="chip">bozza</span>`);
+    if (chip && !diverso(id)) chip.remove();
+  }
+  function ridisegnaAdmin() { const box = $("#admin-graffiti"); if (box) box.innerHTML = htmlAdmin(); }
+  async function pubblica() {
+    const nuovi = {};
+    for (const id of ORDINE) { const v = inBozza(id), d = {}; for (const k of CAMPI) if (v[k] && v[k] !== BASE[id][k]) d[k] = v[k]; if (Object.keys(d).length) nuovi[id] = d; }
+    try { await Archivio.db.doc("config/graffiti").set(nuovi); personali = nuovi; delete S.graffitiBozza; salva(); mostraAvviso("Graffiti pubblicati: ora li vedono tutti."); }
+    catch (e) { mostraAvviso("Non sono riuscito a pubblicare i graffiti."); }
+    ridisegnaAdmin();
+  }
+  function azioneAdmin(cosa, el) {
+    const [az, id] = cosa.split(":");
+    if (az === "graffiti-scarta") { delete S.graffitiBozza; salva(); ridisegnaAdmin(); mostraAvviso("Bozza scartata."); }
+    if (az === "graffiti-reset") { if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
+      S.graffitiBozza = Object.fromEntries(ORDINE.map(i => [i, Object.assign({}, BASE[i], { immagine: "" })])); salva(); ridisegnaAdmin(); mostraAvviso("Nomi di partenza messi nella bozza: pubblica per renderli effettivi."); }
+    if (az === "graffito-disegno") { const b = Object.assign({}, bozza() || leggiForm()); b[id] = Object.assign({}, inBozza(id), { immagine: "" }); salvaBozza(b); ridisegnaAdmin(); }
+  }
+  async function immagineScelta(input) {
+    const id = input.dataset.immaginePer, file = input.files && input.files[0]; if (!file) return;
+    const fs = input.closest(".graffito-admin"); if (fs) fs.classList.add("carico");
+    try {
+      const percorso = await caricaImmagine(id, file);
+      const b = Object.assign({}, leggiForm()); b[id] = Object.assign({}, b[id], { immagine: percorso });
+      salvaBozza(b); ridisegnaAdmin(); mostraAvviso("Immagine caricata nella bozza.");
+    } catch (e) { mostraAvviso("Non sono riuscito a caricare l'immagine."); if (fs) fs.classList.remove("carico"); }
   }
 
-  return { pesca, info, liv, copie, posseduti, scelto, descrivi, url, tela, mio, nemico, aCaso, htmlChip, annunciaInBattaglia, htmlPannello, apriCollezione, scegli, compra, apriBombolette, forseInBustina, regaloIniziale, htmlNegozio, carica, htmlAdmin, anteprimaAdmin, salvaAdmin, dai, ORDINE };
+  // ---------------- scelta dell'emoji: centinaia, per categoria, con la ricerca in italiano ----------------
+  let emojiDati = null, emojiPer = null, emojiGruppo = 0;
+  const RECENTI = "noiverso-emoji-recenti";
+  const recenti = () => { try { return JSON.parse(localStorage.getItem(RECENTI)) || []; } catch (e) { return []; } };
+  async function apriEmoji(id) {
+    emojiPer = id;
+    apriModale(`<div class="emoji-scelta"><h2>Scegli il simbolo</h2><p class="nota">Carico le emoji…</p></div>`);
+    if (!emojiDati) { try { emojiDati = await (await fetch("emoji-it.json")).json(); } catch (e) { $("#modale-corpo").innerHTML = `<div class="emoji-scelta"><h2>Scegli il simbolo</h2><p class="errore">Non riesco a caricare le emoji.</p></div>`; return; } }
+    disegnaEmoji("");
+  }
+  function disegnaEmoji(cerca) {
+    const corpo = $("#modale-corpo"); if (!corpo || !emojiDati) return;
+    const q = cerca.trim().toLowerCase();
+    let lista;
+    if (q) { lista = []; for (const g of emojiDati.gruppi) for (const [e, n] of g.e) if (n.includes(q)) { lista.push([e, n]); if (lista.length >= 300) break; } }
+    else lista = emojiDati.gruppi[emojiGruppo].e;
+    const rec = recenti();
+    const primaVolta = !corpo.querySelector(".emoji-scelta");
+    if (primaVolta || !corpo.querySelector("#emoji-cerca") || corpo.querySelector(".emoji-scelta").dataset.pronto !== "1") {
+      corpo.innerHTML = `<div class="emoji-scelta" data-pronto="1">
+        <h2>Scegli il simbolo</h2>
+        <input id="emoji-cerca" class="emoji-cerca" placeholder="Cerca: pizza, fuoco, corona, gatto…" autocomplete="off" value="${esc(cerca)}">
+        <div class="emoji-schede"></div>
+        <div class="emoji-griglia"></div>
+        <p class="nota piccola">${emojiDati.gruppi.reduce((s, g) => s + g.e.length, 0)} emoji · nomi e categorie da ${esc(emojiDati.fonte)}</p>
+      </div>`;
+      corpo.querySelector("#emoji-cerca").addEventListener("input", ev => disegnaEmoji(ev.target.value));
+      corpo.querySelector(".emoji-scelta").addEventListener("click", ev => {
+        const b = ev.target.closest("[data-emoji]"), t = ev.target.closest("[data-emoji-gruppo]");
+        if (t) { emojiGruppo = +t.dataset.emojiGruppo; corpo.querySelector("#emoji-cerca").value = ""; disegnaEmoji(""); }
+        if (b) sceltaEmoji(b.dataset.emoji);
+      });
+    }
+    corpo.querySelector(".emoji-schede").innerHTML = (rec.length ? `<span class="emoji-recenti">${rec.map(e => `<button type="button" data-emoji="${e}" title="Usata di recente">${e}</button>`).join("")}</span>` : "")
+      + emojiDati.gruppi.map((g, i) => `<button type="button" class="emoji-scheda ${!q && i === emojiGruppo ? "sel" : ""}" data-emoji-gruppo="${i}" title="${esc(g.nome)}">${g.icona}</button>`).join("");
+    corpo.querySelector(".emoji-griglia").innerHTML = lista.length ? lista.map(([e, n]) => `<button type="button" data-emoji="${e}" title="${esc(n.split(" ").slice(0, 4).join(" "))}">${e}</button>`).join("") : `<p class="nota">Nessuna emoji trovata. Prova con un'altra parola.</p>`;
+  }
+  function sceltaEmoji(e) {
+    const id = emojiPer, campo = document.querySelector(`#form-graffiti [name="${id}.simbolo"]`);
+    try { localStorage.setItem(RECENTI, JSON.stringify([e, ...recenti().filter(x => x !== e)].slice(0, 16))); } catch (er) {}
+    chiudiModale();
+    if (!campo) return;
+    campo.value = e;
+    const bt = document.querySelector(`[data-emoji-per="${id}"] span`); if (bt) bt.textContent = e;
+    anteprimaAdmin(campo);
+  }
+
+  return { pesca, info, liv, copie, posseduti, scelto, descrivi, url, tela, mio, nemico, aCaso, htmlChip, annunciaInBattaglia, htmlPannello, apriCollezione, scegli, compra, apriBombolette, forseInBustina, regaloIniziale, htmlNegozio, carica, htmlAdmin, anteprimaAdmin, pubblica, azioneAdmin, immagineScelta, apriEmoji, dai, ORDINE };
 })();

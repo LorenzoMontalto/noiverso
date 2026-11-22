@@ -1756,7 +1756,7 @@ async function azioneAdmin(cosa, el) {
   if (cosa === "img-trasferisci") { trasferisciImmagini(); return; }
   if (cosa.startsWith("cod-")) { azioneCodici(cosa, el); return; }
   if (cosa.startsWith("ctl-")) { azioneControlli(cosa, el); return; }
-  if (cosa === "graffiti-reset") { if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; } Graffiti.salvaAdmin($("#form-graffiti"), true); return; }
+  if (cosa.startsWith("graffit")) { Graffiti.azioneAdmin(cosa, el); return; }
   if (cosa === "ed-annulla") { bozza = nuovaBozza(); aggiornaEditor(true); return; }
   if (cosa === "ed-originali") { bozza = Object.fromEntries(CARTE.map(c => [c.id, { ...CARTE_ORIGINALI[c.id] }])); aggiornaEditor(true); mostraAvviso("Valori di partenza caricati: premi Salva per applicarli a tutti."); return; }
   const metti = (L, lx = 0) => CARTE.forEach(c => { S.carte[c.id] = Math.max(1, S.carte[c.id] || 0); S.liv[c.id] = L; S.lodeXp[c.id] = lx; });
@@ -2389,10 +2389,11 @@ function esciBattaglia() {
 //  EVENTI
 // ============================================================
 document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#form-graffiti")) Graffiti.anteprimaAdmin(e.target); });
+document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.immaginePer) Graffiti.immagineScelta(e.target); });
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
+  const t = e.target.closest("[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -2436,6 +2437,7 @@ document.addEventListener("click", e => {
   if (t.dataset.togli !== undefined) { squadraAttiva().carte.splice(+t.dataset.togli, 1); salva(); setTimeout(disegna, ridotto ? 0 : 200); return; }
   if (t.dataset.apri) { usaBustina(t.dataset.apri, false); return; }
   if (t.dataset.compra) { compraBustina(t.dataset.compra, t); return; }
+  if (t.dataset.emojiPer) { Graffiti.apriEmoji(t.dataset.emojiPer); return; }
   if (t.dataset.bomboletta) { Graffiti.compra(+t.dataset.bomboletta, t); return; }
   if (t.dataset.scegliGraffito !== undefined) { Graffiti.scegli(t.dataset.scegliGraffito); return; }
   if (t.dataset.schedaAlbum) { albumScheda = t.dataset.schedaAlbum; if (albumScheda === "scambi") Scambi.carica(); disegna(); return; }
@@ -2517,7 +2519,7 @@ document.addEventListener("submit", e => {
   if (e.target.id === "form-profilo") inviaProfilo(e.target);
   if (e.target.id === "form-codice-promo") usaCodice();
   if (e.target.id === "form-codice") salvaCodiceAdmin(e.target);
-  if (e.target.id === "form-graffiti") Graffiti.salvaAdmin(e.target);
+  if (e.target.id === "form-graffiti") Graffiti.pubblica();
   if (e.target.id === "form-modifica") {
     const nome = $("#nome-modifica").value.trim().slice(0, 20);
     if (nome) S.profilo.nome = nome;
