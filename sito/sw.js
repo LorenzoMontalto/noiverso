@@ -21,8 +21,10 @@ self.addEventListener("fetch", e => {
   if (url.origin !== location.origin && !font) return;
   const pagina = r.mode === "navigate" || url.pathname.endsWith("/") || url.pathname.endsWith(".html") || url.pathname.endsWith("config.js") || url.pathname.endsWith(".webmanifest");
   if (pagina) {
-    // prima la rete, la copia in memoria solo se sei offline
-    e.respondWith(fetch(r).then(res => { const c = res.clone(); caches.open(CACHE).then(k => k.put(r, c)); return res; }).catch(() => caches.match(r).then(m => m || caches.match("./"))));
+    // prima la rete (saltando anche la memoria del browser, che GitHub Pages farebbe durare 10 minuti),
+    // la copia in memoria solo se sei offline
+    const daRete = r.mode === "navigate" ? fetch(r.url, { cache: "no-store", credentials: "same-origin" }) : fetch(r, { cache: "no-store" });
+    e.respondWith(daRete.then(res => { const c = res.clone(); caches.open(CACHE).then(k => k.put(r, c)); return res; }).catch(() => caches.match(r).then(m => m || caches.match("./"))));
     return;
   }
   const deposito = url.pathname.includes("/img/") ? "noiverso-immagini" : CACHE;
