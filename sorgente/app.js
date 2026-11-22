@@ -482,7 +482,7 @@ function apriDettaglio(id) {
           </div>`; })() : ""}
           ${haOlo(c.id) ? `<p class="olo-nota">✦ <b>Olografica</b>: +5% di PV e di danni in battaglia. Ne esce una ogni 50 carte circa.</p>` : ""}
           ${c.ultra ? (haUltra(c.id) ? `<p class="ultra-nota">◆ <b>Versione Ultra</b>: cornice nera e oro e +10% di PV e di danni in battaglia.</p>` : `<p class="nota">Questa carta ha anche una <b>versione Ultra</b> da trovare (+10% in battaglia): esce raramente quando la trovi in una bustina, sempre nella Bustina Ultra.</p>`) : ""}
-          <p class="nota piccola">${lode ? "Ha la lode: è al massimo. I suoi doppioni ora danno monete." : liv < LIVELLO_MAX ? `Ogni doppione di questa carta dà ${POT_DOPPIONE[c.rarita]} potenziatori.${!inf.pronta ? ` Te ne mancano ${inf.servePot - inf.pot}.` : !inf.puoi ? ` Ti mancano ${inf.serveMon - S.monete} monete.` : ""}` : "È al 30: continua a giocarci in battaglia per prendere la lode. I suoi doppioni ora danno monete."} · ${copie} ${copie === 1 ? "copia" : "copie"}</p>
+          <p class="nota piccola">${lode ? "Ha la lode: è al massimo. I suoi doppioni ora danno monete." : liv < LIVELLO_MAX ? `Ogni doppione di questa carta dà ${POT_DOPPIONE[c.rarita]} potenziatori, e ogni battaglia vinta in cui scende in campo da 1 a 5.${!inf.pronta ? ` Te ne mancano ${inf.servePot - inf.pot}.` : !inf.puoi ? ` Ti mancano ${inf.serveMon - S.monete} monete.` : ""}` : "È al 30: continua a giocarci in battaglia per prendere la lode. I suoi doppioni ora danno monete."} · ${copie} ${copie === 1 ? "copia" : "copie"}</p>
         </div>
       </div>
     </div>`);
@@ -2826,25 +2826,34 @@ async function sostituisciGiocatore(i) {
 }
 
 // Dopo una battaglia: le carte al 30 fanno esperienza verso la lode, le altre mostrano i potenziatori
+// Dopo ogni battaglia: le carte al 30 prendono punti lode; se hai VINTO, le carte che sono scese in campo
+// prendono anche potenziatori (1 contro la Recluta, fino a 5 nelle sfide e nelle tappe più difficili).
+// I doppioni restano il modo principale per averne tanti.
+const potVittoria = mult => Math.max(1, Math.min(5, Math.round(mult)));
 function premiaCarte(mult, vinto) {
   const xp = Math.round((vinto ? 50 : 20) * mult * (carteBattaglia() === 3 ? .6 : 1));
+  const potV = vinto ? potVittoria(mult) : 0;
   return B.lati[0].squadra.map(x => {
     if (!S.carte[x.id]) return null;
     const prima = infoCarta(x.id), verso = prima.liv >= LIVELLO_MAX && !prima.lode;
     if (verso) S.lodeXp[x.id] = (S.lodeXp[x.id] || 0) + xp;
+    const pot = potV && x.usata && prima.liv < LIVELLO_MAX ? potV : 0;
+    if (pot) S.pot = Object.assign({}, S.pot, { [x.id]: ((S.pot || {})[x.id] || 0) + pot });
     const dopo = infoCarta(x.id);
-    return { id: x.id, xp: verso ? xp : 0, liv: dopo.liv, lode: dopo.lode, lodeNuova: !prima.lode && dopo.lode };
+    return { id: x.id, xp: verso ? xp : 0, pot, prontaNuova: !prima.pronta && dopo.pronta, liv: dopo.liv, lode: dopo.lode, lodeNuova: !prima.lode && dopo.lode };
   }).filter(Boolean);
 }
 function htmlEspCarte() {
   const lista = livelloAttuale && livelloAttuale.espCarte;
   if (!lista || !lista.length) return "";
-  return `<div class="esp-carte">${lista.map((r, j) => {
+  const totPot = lista.reduce((n, r) => n + (r.pot || 0), 0);
+  return `${totPot ? `<p class="esp-pot-nota">Le carte scese in campo hanno guadagnato <b>potenziatori</b> ▲${lista.some(r => r.prontaNuova) ? " — qualcuna ora si può potenziare!" : ""}</p>` : ""}<div class="esp-carte">${lista.map((r, j) => {
     const ora = infoCarta(r.id), pct = ora.lode ? 100 : Math.round(ora.dentro / ora.serve * 100);
     return `<div class="esp-carta ${ora.puoi ? "su" : ""} ${r.lodeNuova ? "lode" : ""}" style="--i:${j}">
     <img src="${imgCarta(r.id)}" alt="${esc(PER_ID[r.id].nome)}">
     <span class="esp-liv">${ora.lode ? "30L" : "Lv " + ora.liv}</span>
     <span class="esp-barra ${ora.liv < LIVELLO_MAX ? "pot" : ""}"><i style="--p:${pct}%"></i></span>
+    ${r.pot ? `<span class="esp-pot">+${r.pot} ▲</span>` : ""}
     <small>${r.lodeNuova ? "LODE!" : r.xp ? `+${r.xp} lode` : ora.lode ? "Lode" : ora.puoi ? "Potenzia!" : `${ora.pot}/${ora.servePot}`}</small>
   </div>`; }).join("")}</div>`;
 }

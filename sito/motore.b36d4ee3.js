@@ -115,7 +115,7 @@ class Battaglia {
     this.vincitore = -1;
     this.ev = [];
     this.graffitiAnnullati = null;
-    this.lati.forEach(L => this._sinergie(L));
+    this.lati.forEach(L => { this._sinergie(L); if (L.squadra[0]) L.squadra[0].usata = true; });   // "usata": è scesa in campo (per i premi)
   }
   // applica le sinergie di una squadra ai suoi combattenti
   _sinergie(L) {
@@ -287,6 +287,7 @@ class Battaglia {
     fuori.stordito = false; fuori.carica = false; fuori.nebbia = false;
     L.attivo = i;
     const dentro = this.attivo(l);
+    dentro.usata = true;
     this._log(`${L.nome} manda in campo ${dentro.c.nome}.`, { lato: l, entra: l });
     if (dentro.c.ruolo === "difensore") { dentro.scudo = Math.max(dentro.scudo, 30); this._log(`${dentro.c.nome} alza la guardia: scudo 30%.`, { lato: l, anim: "scudo", su: l }); }
   }
