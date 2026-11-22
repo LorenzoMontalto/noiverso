@@ -323,10 +323,14 @@ const Graffiti = (() => {
 
   // ---------------- admin: nomi, scritte, colori, simboli e immagini ----------------
   // Le modifiche restano una BOZZA nel salvataggio admin (le vedi solo tu) finché non premi «Pubblica per tutti».
+  // caricato: ho letto davvero quelli pubblicati (finché non lo so, l'editor non si apre e non si pubblica niente)
+  let caricato = false, erroreCarica = false;
   async function carica() {
-    if (Archivio.modo !== "cloud" || !Archivio.db) return;
-    try { const snap = await Archivio.db.doc("config/graffiti").get(); personali = snap && snap.exists ? copiaLibera(snap.data()) || {} : {}; } catch (e) { personali = {}; }
+    if (Archivio.modo !== "cloud" || !Archivio.db) { caricato = true; return; }
+    try { const snap = await Archivio.db.doc("config/graffiti").get(); personali = snap && snap.exists ? copiaLibera(snap.data()) || {} : {}; caricato = true; erroreCarica = false; }
+    catch (e) { erroreCarica = true; }
     await firma(Object.values(personali).map(x => x && x.immagine));
+    if (vista === "admin" && $("#admin-graffiti")) ridisegnaAdmin();
   }
   const CAMPI = ["nome", "scritta", "colore", "simbolo", "immagine"];
   const pubblicato = id => Object.assign({}, BASE[id], personali[id] || {});
@@ -335,6 +339,7 @@ const Graffiti = (() => {
   const diverso = id => CAMPI.some(k => (inBozza(id)[k] || "") !== (pubblicato(id)[k] || ""));
   let timerBozza = null;
   function htmlAdmin() {
+    if (!caricato) { setTimeout(() => carica(), 0); return `<h3>Graffiti</h3><p class="nota">${erroreCarica ? "Non riesco a leggere i graffiti pubblicati: riprovo…" : "Carico i graffiti pubblicati…"}</p>`; }
     const modifiche = ORDINE.filter(diverso).length;
     firma(ORDINE.map(id => inBozza(id).immagine)).then(() => { for (const id of ORDINE) { const im = document.querySelector(`.graffito-admin[data-id="${id}"] .graffito-anteprima`); if (im) im.src = url(id, inBozza(id)); } });
     return `<h3>Graffiti</h3>
@@ -366,7 +371,9 @@ const Graffiti = (() => {
     for (const id of ORDINE) { const v = {}; for (const k of CAMPI) v[k] = String(f.get(`${id}.${k}`) ?? inBozza(id)[k] ?? "").slice(0, k === "nome" ? 24 : k === "scritta" ? 20 : 200); b[id] = v; }
     return b;
   }
-  function salvaBozza(b) {
+  function salvaBozza(tutti) {
+    const b = {};
+    for (const id of ORDINE) { const v = tutti[id] || {}, p = pubblicato(id); if (CAMPI.some(k => (v[k] || "") !== (p[k] || ""))) b[id] = v; }
     S.graffitiBozza = b;
     clearTimeout(timerBozza); timerBozza = setTimeout(() => salva(), 500);
     const n = ORDINE.filter(diverso).length, st = $("#stato-bozza");
@@ -385,6 +392,7 @@ const Graffiti = (() => {
   }
   function ridisegnaAdmin() { const box = $("#admin-graffiti"); if (box) box.innerHTML = htmlAdmin(); }
   async function pubblica() {
+    if (!caricato) { mostraAvviso("Aspetta un attimo: sto ancora caricando i graffiti pubblicati."); return; }
     const nuovi = {};
     for (const id of ORDINE) { const v = inBozza(id), d = {}; for (const k of CAMPI) if (v[k] && v[k] !== BASE[id][k]) d[k] = v[k]; if (Object.keys(d).length) nuovi[id] = d; }
     try { await Archivio.db.doc("config/graffiti").set(nuovi); personali = nuovi; delete S.graffitiBozza; salva(); mostraAvviso("Graffiti pubblicati: ora li vedono tutti."); }
@@ -396,7 +404,7 @@ const Graffiti = (() => {
     if (az === "graffiti-scarta") { delete S.graffitiBozza; salva(); ridisegnaAdmin(); mostraAvviso("Bozza scartata."); }
     if (az === "graffiti-reset") { if (el.dataset.conferma !== "1") { el.dataset.conferma = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
       S.graffitiBozza = Object.fromEntries(ORDINE.map(i => [i, Object.assign({}, BASE[i], { immagine: "" })])); salva(); ridisegnaAdmin(); mostraAvviso("Nomi di partenza messi nella bozza: pubblica per renderli effettivi."); }
-    if (az === "graffito-disegno") { const b = Object.assign({}, bozza() || leggiForm()); b[id] = Object.assign({}, inBozza(id), { immagine: "" }); salvaBozza(b); ridisegnaAdmin(); }
+    if (az === "graffito-disegno") { const b = leggiForm(); b[id] = Object.assign({}, b[id], { immagine: "" }); salvaBozza(b); ridisegnaAdmin(); }
   }
   async function immagineScelta(input) {
     const id = input.dataset.immaginePer, file = input.files && input.files[0]; if (!file) return;
