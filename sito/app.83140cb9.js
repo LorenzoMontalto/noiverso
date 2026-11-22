@@ -853,6 +853,19 @@ function apriBustina(tipo) {
   return esiti;
 }
 
+// Prima di aprire una bustina controllo di avere l'ultima versione del gioco: i premi (potenziatori dei
+// doppioni, probabilità) li calcola il gioco, e con una pagina vecchia aperta da ore si userebbero i numeri vecchi.
+let aperturaInCorso = false;
+async function apriBustinaAggiornata(tipo) {
+  if (aperturaInCorso) return;
+  aperturaInCorso = true;
+  try {
+    if (Date.now() - (controllaAggiornamento.ultimo || 0) > 60000) await Promise.race([controllaAggiornamento(), attesa(2500)]);
+    let provato = false; try { provato = sessionStorage.getItem("ln-ricarica") === versioneNuova; } catch (e) {}
+    if (versioneNuova && !provato) { applicaAggiornamento(); return; }   // ricarica la pagina: la bustina resta lì da aprire
+    usaBustina(tipo, false);
+  } finally { aperturaInCorso = false; }
+}
 function usaBustina(tipo, pagando) {
   if (pagando) {
     if (S.monete < PREZZO_BUSTINA) return;
@@ -953,6 +966,7 @@ function chiudiApertura() {
   if (apertura) { apertura.distruggi(); apertura = null; }
   const ov = $("#apertura"); ov.hidden = true; ov.innerHTML = "";
   disegna();
+  if (versioneNuova) setTimeout(applicaAggiornamento, 600);
 }
 let esitiAperti = [];
 function mostraApertura2D(esiti, graffito) {
@@ -2958,7 +2972,7 @@ document.addEventListener("click", e => {
     salva(); disegnaQuieto(); return;
   }
   if (t.dataset.togli !== undefined) { squadraAttiva().carte.splice(+t.dataset.togli, 1); salva(); setTimeout(disegnaQuieto, ridotto ? 0 : 150); return; }
-  if (t.dataset.apri) { usaBustina(t.dataset.apri, false); return; }
+  if (t.dataset.apri) { apriBustinaAggiornata(t.dataset.apri); return; }
   if (t.dataset.compra) { compraBustina(t.dataset.compra, t); return; }
   if (t.dataset.compraOggetto) { const [id, n] = t.dataset.compraOggetto.split(":"); Zaino.compra(id, +n || 1, t); return; }
   if (t.dataset.zainoPosto !== undefined) { Zaino.apriPosto(+t.dataset.zainoPosto); return; }
@@ -3246,6 +3260,7 @@ const VERSIONE = (() => { const el = document.querySelector('script[src*="app."]
 let versioneNuova = null;
 async function controllaAggiornamento() {
   if (VERSIONE === "sviluppo" || !window.fetch) return null;
+  controllaAggiornamento.ultimo = Date.now();
   try {
     const r = await fetch(location.href.split("#")[0], { cache: "no-store", credentials: "same-origin" });
     if (!r.ok) return null;
