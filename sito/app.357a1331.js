@@ -2756,7 +2756,15 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
       arena = new Scena3D.Arena($("#scena3d"), { schermo: $("#fx-livello"), onTocco: (l, i) => toccoPanchina(i) });
       // sul telefono i comandi coprono la parte bassa del campo: le carte si spostano nella parte libera
       const lm = $(".lato-mio"), pc = $("#palco");
-      const copri = () => { if (!arena || !lm || !pc) return; const larghi = lm.offsetWidth > pc.clientWidth * .9; $("#arena").style.setProperty("--basso", (larghi ? lm.offsetHeight : 0) + "px"); arena.impostaCopertura(larghi ? lm.offsetHeight / Math.max(1, pc.clientHeight) : 0); };
+      const copri = () => {
+        if (!arena || !lm || !pc) return;
+        const larghi = lm.offsetWidth > pc.clientWidth * .9;
+        $("#arena").style.setProperty("--basso", (larghi ? lm.offsetHeight : 0) + "px");
+        arena.impostaCopertura(larghi ? lm.offsetHeight / Math.max(1, pc.clientHeight) : 0);
+        // sul computer i comandi sono una colonna a destra sopra il campo: quanta larghezza coprono
+        const rp = pc.getBoundingClientRect(), rl = lm.getBoundingClientRect();
+        arena.impostaCoperturaLato(larghi ? 0 : Math.max(0, Math.min(.6, (rp.right - rl.left) / Math.max(1, rp.width))));
+      };
       if (window.ResizeObserver && lm) { const ro = new ResizeObserver(copri); ro.observe(lm); ro.observe(pc); arena._roCopertura = ro; }
       copri();
       await arena.sincronizza(B);
@@ -2877,7 +2885,7 @@ function htmlPanchina(perSostituire) {
     const ko = x.pv <= 0, e = consigliAttivi() ? multStile(x.c.stile, d.c.stile) : 1, pct = Math.max(0, x.pv / x.pvMax * 100);
     return `<button class="riserva-btn ${ko ? "ko" : ""} ${e > 1 ? "vantaggio" : e < 1 ? "svantaggio" : ""}" data-fx="salto" ${ko ? "disabled" : `data-${perSostituire ? "sostituisci" : "cambia"}="${i}"`} ${animazione ? "disabled" : ""}>
       <img src="${imgCarta(x.c.id)}" alt="">
-      <span class="riserva-testo"><b>${esc(x.c.nome)}</b><span class="stile s-${x.c.stile}">${x.c.stile}</span>${ko ? "<small>KO</small>" : e > 1 ? "<small class=\"su\">▲ batte il nemico</small>" : e < 1 ? "<small class=\"giu\">▼ in svantaggio</small>" : ""}${ko ? "" : htmlStatBattaglia(x, true)}</span>
+      <span class="riserva-testo"><b>${esc(x.c.nome)}</b><span class="stile s-${x.c.stile}">${x.c.stile}${!ko && e > 1 ? `<i class="tipo-bollino su" title="Batte il nemico in campo">▲</i>` : !ko && e < 1 ? `<i class="tipo-bollino giu" title="In svantaggio contro il nemico in campo">▼</i>` : ""}</span>${ko ? "<small>KO</small>" : ""}${ko ? "" : htmlStatBattaglia(x, true)}</span>
       <span class="mini-pv"><i style="width:${pct}%"></i></span>
     </button>`;
   }).join("");
