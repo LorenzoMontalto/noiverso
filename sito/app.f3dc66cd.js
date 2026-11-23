@@ -2556,8 +2556,7 @@ function centraMappa(modo = "smooth") {
 let scriviTimer = null;
 function apriTappa(k, i) {
   const cap = STORIA[k], t = cap.tappe[i], chi = PER_ID[t.parla], st = stelleTappa(k, i);
-  const n = carteBattaglia(), sq = squadraAttiva();
-  const pronta = sq.carte.length >= n;
+  const n = carteBattaglia();
   const premio = st ? `Rigiocando: ${Math.round(t.monete * .25)} monete · 20 XP` :
     `Prima vittoria: ${t.monete} monete · ${Math.round(t.monete * .8)} XP${t.bustina ? ` · ${t.bustine > 1 ? t.bustine + " × " : ""}${TIPI_BUSTINA[t.bustina].nome}` : ""}`;
   apriModale(`
@@ -2572,8 +2571,7 @@ function apriTappa(k, i) {
       <div class="tappa-nemici">${t.nemici.slice(0, n).map(id => htmlCarta(PER_ID[id], { piccola: true, liv: t.liv[1], lode: false })).join("")}</div>
       <p class="tappa-premio">${premio}</p>
       <p class="nota piccola">★ vinci · ★★ vinci con almeno ${Math.ceil(n * .6)} personaggi in piedi · ★★★ vinci senza KO${st ? ` · Il tuo record: ${htmlStelle(st)}` : ""}</p>
-      ${pronta ? `<button class="btn primario grande" data-fx="spinta" data-tappa-via="${k}:${i}">Combatti con ${esc(sq.nome)}</button>`
-        : `<p class="consiglio forte">Ti serve una squadra da ${n} per combattere.</p><button class="btn primario" data-azione="vai-squadra">Prepara la squadra</button>`}
+      <div class="tappa-scelta" id="tappa-scelta" data-luogo="${k}:${i}">${htmlSceltaTappa(k, i, -1)}</div>
     </div>`);
   const el = $("#fumetto-testo"), testo = el.dataset.testo;
   clearInterval(scriviTimer);
@@ -2582,10 +2580,20 @@ function apriTappa(k, i) {
   scriviTimer = setInterval(() => { j += 2; el.textContent = testo.slice(0, j); if (j >= testo.length || !el.isConnected) clearInterval(scriviTimer); }, 28);
 }
 
+// In fondo alla tappa: prima scegli la squadra, poi compare "Combatti con …"
+function htmlSceltaTappa(k, i, scelta) {
+  const n = carteBattaglia(), pronte = (S.squadre || []).some(q => q.carte.length >= n);
+  if (!pronte) return `<p class="consiglio forte">Ti serve una squadra da ${n} per combattere.</p><button class="btn primario" data-azione="vai-squadra">Prepara la squadra</button>`;
+  const q = S.squadre[scelta];
+  return `<p class="tappa-scegli-titolo">${q ? "Squadra scelta:" : "Scegli con quale squadra combattere:"}</p>
+    ${htmlListaSquadre("data-tappa-squadra", scelta)}
+    ${q ? `<button class="btn primario grande" data-fx="spinta" data-tappa-via="${k}:${i}">Combatti con ${esc(q.nome || `Squadra ${scelta + 1}`)}</button>` : ""}`;
+}
 function avviaStoria(k, i) {
   const cap = STORIA[k], t = cap.tappe[i];
   chiudiModale();
-  avviaSfida({ id: "storia", nome: t.titolo, abilita: t.abilita, liv: t.liv, premio: 0, punti: 0, xp: 0, storia: { k, i }, campo: STORIA[k].campo, graffitoNemico: t.boss ? Graffiti.aCaso(k + 1) : null }, null, t.nemici)
+  // la squadra l'hai già scelta nella tappa: niente seconda finestra
+  avviaSfida({ id: "storia", nome: t.titolo, abilita: t.abilita, liv: t.liv, premio: 0, punti: 0, xp: 0, storia: { k, i }, campo: STORIA[k].campo, graffitoNemico: t.boss ? Graffiti.aCaso(k + 1) : null }, null, t.nemici, true)
     .then(() => { if (B) aggiungiRegistro({ testo: `${PER_ID[t.parla].nome}: «${t.frase}»`, avviso: true }); });
 }
 
@@ -2668,17 +2676,20 @@ function schermoIntero(entra) {
 }
 
 // Prima di ogni battaglia scegli quale delle tue squadre usare (e la squadra deve rispettare i punti)
-function scegliSquadra(poi, titolo = "Con quale squadra combatti?") {
-  const sq = S.squadre || [];
-  if (B && $("#azioni")) return;
-  apriModale(`<div class="scelta-squadra"><h3>${esc(titolo)}</h3>
-    <div class="ss-lista">${sq.map((q, i) => {
+// Le 3 squadre come bottoni: attr è l'attributo del click, scelta la squadra evidenziata (-1 = nessuna)
+function htmlListaSquadre(attr, scelta) {
+  return `<div class="ss-lista">${(S.squadre || []).map((q, i) => {
       const ok = q.carte.length >= Math.min(CARTE_SQUADRA, carteBattaglia());
       const sin = sinergieDi(q.carte), icone = [...sin.serie.filter(s => s.liv).map(s => `<span class="sin-mini" style="--c:${SERIE[s.serie].colore}">${SERIE[s.serie].simbolo}${s.n}</span>`), ...sin.multiverso.map(m => `<span class="sin-mini multiverso">∞${m.n}</span>`)].join("");
-      return `<button class="ss-squadra ${i === (S.attiva || 0) ? "attiva" : ""}" data-scegli-squadra="${i}" ${ok ? "" : "disabled"}>
+      return `<button class="ss-squadra ${i === scelta ? "attiva" : ""}" ${attr}="${i}" ${ok ? "" : "disabled"}>
         <div class="ss-testa"><b>${esc(q.nome || `Squadra ${i + 1}`)}</b><span class="ss-icone">${icone}</span></div>
         <div class="ss-carte">${q.carte.length ? q.carte.map(id => `<img src="${imgCarta(id)}" alt="${esc(PER_ID[id] ? PER_ID[id].nome : "")}" title="${esc(PER_ID[id] ? PER_ID[id].nome : "")} · Lv ${livello(id) || 1}">`).join("") : `<span class="nota">vuota</span>`}</div>
-        ${ok ? "" : `<small class="ss-no">${q.carte.length < CARTE_SQUADRA ? "Squadra incompleta" : ""}</small>`}</button>`; }).join("")}</div>
+        ${ok ? "" : `<small class="ss-no">${q.carte.length < CARTE_SQUADRA ? "Squadra incompleta" : ""}</small>`}</button>`; }).join("")}</div>`;
+}
+function scegliSquadra(poi, titolo = "Con quale squadra combatti?") {
+  if (B && $("#azioni")) return;
+  apriModale(`<div class="scelta-squadra"><h3>${esc(titolo)}</h3>
+    ${htmlListaSquadre("data-scegli-squadra", S.attiva || 0)}
     <div class="azioni"><button class="btn" data-azione="vai-squadre">Modifica le squadre</button></div></div>`);
   scegliSquadra.poi = poi;
 }
@@ -3146,7 +3157,7 @@ document.addEventListener("change", e => { if (e.target.id === "img-file" && e.t
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3166,6 +3177,13 @@ document.addEventListener("click", e => {
   if (t.dataset.admin) { azioneAdmin(t.dataset.admin, t); return; }
   if (t.dataset.capitolo !== undefined) { capStoria = +t.dataset.capitolo; disegna(); return; }
   if (t.dataset.tappa) { const [k, i] = t.dataset.tappa.split(":").map(Number); apriTappa(k, i); return; }
+  if (t.dataset.tappaSquadra !== undefined) {
+    const q = +t.dataset.tappaSquadra, box = $("#tappa-scelta");
+    S.attiva = q; salva();
+    const [k, i] = (box && box.dataset.luogo || "").split(":").map(Number);
+    if (box) { box.innerHTML = htmlSceltaTappa(k, i, q); const b = box.querySelector("[data-tappa-via]"); if (b) { FX.riavvia(b, "entra"); b.scrollIntoView({ block: "nearest", behavior: ridotto ? "auto" : "smooth" }); } }
+    return;
+  }
   if (t.dataset.tappaVia) { const [k, i] = t.dataset.tappaVia.split(":").map(Number); schermoIntero(true); setTimeout(() => avviaStoria(k, i), ridotto ? 0 : 200); return; }
   if (t.dataset.scrigno) { const [k, id] = t.dataset.scrigno.split(":"); riscuotiScrigno(+k, id, t); return; }
   if (t.dataset.edFiltro) { edFiltro = t.dataset.edFiltro; aggiornaEditor(true); return; }

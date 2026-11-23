@@ -1787,6 +1787,8 @@ body.in-accesso { overflow: hidden; }
 /* scelta della squadra */
 .scelta-squadra h3 { margin-top: 0; }
 .ss-lista { display: grid; gap: 8px; }
+.tappa-scelta { margin-top: 12px; display: grid; gap: 8px; } .tappa-scegli-titolo { margin: 0; font-weight: 700; font-size: .92rem; } .tappa-scelta .ss-lista { grid-template-columns: repeat(3, minmax(0, 1fr)); } .tappa-scelta .ss-squadra { padding: 8px 10px; } .tappa-scelta .ss-carte { flex-wrap: wrap; gap: 3px; } .tappa-scelta .ss-carte img { width: 30px; }
+@media (max-width: 640px) { .tappa-scelta .ss-lista { grid-template-columns: 1fr; } } .tappa-scelta .btn.grande { justify-self: center; }
 .ss-squadra { display: grid; gap: 6px; text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--linea); background: rgba(255, 255, 255, .03); color: inherit; font: inherit; cursor: pointer; }
 .ss-squadra.attiva { border-color: var(--neon, #ff2e46); box-shadow: 0 0 14px rgba(255, 46, 70, .3); }
 .ss-squadra[disabled] { opacity: .5; cursor: default; }
@@ -1851,7 +1853,7 @@ body.in-accesso { overflow: hidden; }
 <script src="online.48770847.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
 <script src="eventi.aad81376.js"></script>
-<script src="app.a4ab2f7b.js"></script>
+<script src="app.f3dc66cd.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
