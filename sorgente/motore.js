@@ -35,33 +35,47 @@ function nuovoCombattente(id, liv, lode, olo, ultra) {
     buff: {}, stati: {}, scudo: 0, nebbia: false, stordito: false, carica: false, koAnnunciato: false };
 }
 
+// ---------------- Punti squadra ----------------
+// Ogni carta "costa" punti secondo la rarità e una squadra non può superare il tetto: così non si possono
+// mettere 5 leggendarie e conviene mischiare. Il tetto si cambia dal pannello admin (config "sinergie", campo tetto).
+const PUNTI_RARITA = { comune: 1, rara: 2, epica: 3, leggendaria: 4 };
+const REGOLE = { tetto: 14 };
+const puntiCarta = id => (_PER_ID[id] && PUNTI_RARITA[_PER_ID[id].rarita]) || 0;
+const puntiSquadra = ids => ids.reduce((n, id) => n + puntiCarta(id), 0);
+
 // ---------------- Sinergie ----------------
 // Serie: 3 carte della stessa serie in squadra danno un bonus alle carte di quella serie, 5 carte un bonus più grande.
 // Multiverso: 2 o più versioni della stessa persona (es. Lollifer + Lollinista) danno +5% / +10% a tutte le statistiche di quelle carte.
 // I valori si possono cambiare dal pannello admin (config "sinergie"): li legge applicaSinergie.
 const _il = v => (v === 1 || v === 11 || String(v)[0] === "8") ? `l'${v}%` : `il ${v}%`;
+// Tre livelli: 2 carte della stessa serie (bonus piccolo), 3 (medio), 5 (grande). liv = 1, 2, 3.
+const SOGLIE_SINERGIA = [2, 3, 5];
 const SINERGIE_BASE = {
-  eroi:     { tipo: "dif",      v3: 8,  v5: 15, testo: v => `+${v}% difesa` },
-  db:       { tipo: "att",      v3: 6,  v5: 15, testo: v => `+${v}% attacco` },
-  dei:      { tipo: "rigenera", v3: 2,  v5: 3,  testo: v => `in campo recuperano ${_il(v)} dei PV ogni turno` },
-  nueve:    { tipo: "energia",  v3: 2,  v5: 4,  testo: v => `la squadra parte con +${v} energia` },
-  maghi:    { tipo: "effetti",  v3: 1,  v5: 80, testo: (v, cinque) => cinque ? `i loro effetti durano 1 turno in più e sono più forti del ${v}%` : `i loro effetti (brucia, indebolisci) durano 1 turno in più` },
-  demoni:   { tipo: "vampiro",  v3: 5,  v5: 11, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
-  mestieri: { tipo: "vel",      v3: 8,  v5: 15, testo: (v, cinque) => `+${v}% velocità${cinque ? " e la squadra parte con +1 energia" : ""}` },
+  eroi:     { tipo: "dif",      v2: 7, v3: 14, v5: 25, testo: v => `+${v}% difesa` },
+  db:       { tipo: "att",      v2: 4, v3: 12, v5: 26, testo: v => `+${v}% attacco` },
+  dei:      { tipo: "rigenera", v2: 1, v3: 3,  v5: 5,  testo: v => `in campo recuperano ${_il(v)} dei PV ogni turno` },
+  nueve:    { tipo: "energia",  v2: 1, v3: 3,  v5: 5,  testo: v => `la squadra parte con +${v} energia` },
+  maghi:    { tipo: "effetti",  v2: 40, v3: 70, v5: 200, testo: (v, liv) => liv >= 3 ? `i loro effetti durano 1 turno in più e sono più forti del ${v}%` : liv === 2 ? `i loro effetti (brucia, indebolisci, stordisci) durano 1 turno in più e sono più forti del ${v}%` : `i loro effetti sono più forti del ${v}%` },
+  demoni:   { tipo: "vampiro",  v2: 3, v3: 11, v5: 20, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
+  mestieri: { tipo: "vel",      v2: 7, v3: 16, v5: 26, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
 for (const k in SINERGIE) SINERGIE[k].testo = SINERGIE_BASE[k].testo;
-const MULTIVERSO = { v2: 5, v3: 10 };
+const MULTIVERSO = { v2: 8, v3: 14 };
+const valSinergia = (s, liv) => liv >= 3 ? s.v5 : liv === 2 ? s.v3 : liv === 1 ? s.v2 : 0;
 function applicaSinergie(cfg) {
   const c = cfg && typeof cfg === "object" ? cfg : {};
   const num = (x, b, max) => Number.isFinite(+x) ? Math.max(0, Math.min(max, Math.round(+x))) : b;
+  // i valori salvati con le vecchie regole (solo 3 e 5 carte) non valgono più: si riparte dai nuovi
+  const nuove = c.versione === 2;
   for (const k in SINERGIE_BASE) {
-    const b = SINERGIE_BASE[k], m = c[k] || {}, max = b.tipo === "energia" ? 5 : b.tipo === "effetti" ? 150 : 50;
-    SINERGIE[k].v3 = b.tipo === "effetti" ? 1 : num(m.v3, b.v3, max);
-    SINERGIE[k].v5 = num(m.v5, b.v5, max);
+    const b = SINERGIE_BASE[k], m = (nuove && c[k]) || {}, max = b.tipo === "energia" ? 5 : b.tipo === "effetti" ? 200 : 60;
+    for (const v of ["v2", "v3", "v5"]) SINERGIE[k][v] = num(m[v], b[v], max);
   }
-  MULTIVERSO.v2 = num((c.multiverso || {}).v2, 5, 30);
-  MULTIVERSO.v3 = num((c.multiverso || {}).v3, 10, 40);
+  REGOLE.tetto = num(c.tetto, 14, 20) || 14;
+  const mv = (nuove && c.multiverso) || {};
+  MULTIVERSO.v2 = num(mv.v2, 8, 30);
+  MULTIVERSO.v3 = num(mv.v3, 14, 40);
 }
 // Quali sinergie ha una squadra (array di id carte). Usata dal motore e dalla schermata Squadre.
 function sinergieDi(ids) {
@@ -69,8 +83,8 @@ function sinergieDi(ids) {
   const perSerie = {}, perPersona = {};
   for (const c of carte) { (perSerie[c.serie] = perSerie[c.serie] || []).push(c.id); if (c.persona) (perPersona[c.persona] = perPersona[c.persona] || []).push(c.id); }
   const serie = Object.entries(perSerie).filter(([k]) => SINERGIE[k]).map(([k, lista]) => {
-    const n = lista.length, liv = n >= 5 ? 2 : n >= 3 ? 1 : 0, s = SINERGIE[k];
-    return { serie: k, n, liv, ids: lista, tipo: s.tipo, val: liv === 2 ? s.v5 : liv === 1 ? s.v3 : 0 };
+    const n = lista.length, liv = n >= 5 ? 3 : n >= 3 ? 2 : n >= 2 ? 1 : 0, s = SINERGIE[k];
+    return { serie: k, n, liv, ids: lista, tipo: s.tipo, val: valSinergia(s, liv) };
   }).sort((a, b) => b.n - a.n);
   const multiverso = Object.entries(perPersona).filter(([, l]) => l.length >= 2)
     .map(([persona, lista]) => ({ persona, ids: lista, n: lista.length, val: lista.length >= 3 ? MULTIVERSO.v3 : MULTIVERSO.v2 }));
@@ -147,10 +161,10 @@ class Battaglia {
         else if (s.tipo === "vel") x.vel = Math.round(x.vel * (1 + s.val / 100));
         else if (s.tipo === "rigenera") x.sin.rigenera = s.val;
         else if (s.tipo === "vampiro") x.sin.vampiro = s.val;
-        else if (s.tipo === "effetti") { x.sin.effetti = 1; if (s.liv === 2) x.sin.forzaEff = s.val; }
+        else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; if (s.liv >= 2) x.sin.effetti = 1; }
       }
       if (s.tipo === "energia") L.energia = Math.min(ENERGIA_MAX, L.energia + s.val);
-      if (s.tipo === "vel" && s.liv === 2) L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
+      if (s.tipo === "vel" && s.liv >= 3) L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
     }
     for (const m of sin.multiverso) {
       const k = 1 + m.val / 100;
@@ -535,4 +549,4 @@ class Battaglia {
   }
 }
 
-if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE, OGGETTI_EFFETTI, sinergieDi, SINERGIE, applicaSinergie, MULTIVERSO, CAMPI, ORDINE_CAMPI };
+if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE, OGGETTI_EFFETTI, sinergieDi, SINERGIE, applicaSinergie, MULTIVERSO, SOGLIE_SINERGIA, valSinergia, CAMPI, ORDINE_CAMPI, PUNTI_RARITA, REGOLE, puntiCarta, puntiSquadra };

@@ -1492,7 +1492,8 @@ body.in-accesso { overflow: hidden; }
 .zaino-admin input[type=color] { height: 38px; padding: 2px; }
 .campi-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; }
 .campo-emoji { font-size: 1.3rem; text-align: center; }
-@media (max-width: 520px) { .campi-3 { grid-template-columns: 1fr 1fr; } }
+.campi-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; align-items: end; }
+@media (max-width: 520px) { .campi-3, .campi-4 { grid-template-columns: 1fr 1fr; } }
 
 /* ---------- reazioni in battaglia ---------- */
 .reazioni { position: absolute; z-index: 6; right: 10px; top: calc(max(8px, env(safe-area-inset-top)) + 46px); display: grid; justify-items: end; gap: 8px; }
@@ -1746,6 +1747,30 @@ body.in-accesso { overflow: hidden; }
 .tr-gioc { display: flex; gap: 6px; align-items: center; font-size: .82rem; } .tr-gioc.vince { font-weight: 800; color: #6fe3a0; } .tr-gioc.perde { opacity: .5; text-decoration: line-through; }
 .tr-admin { display: grid; gap: 6px; } .tr-admin > div { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .campi-torneo fieldset { border: 1px solid var(--linea); border-radius: 12px; margin: 6px 0; padding: 6px 10px; }
+
+.filtro-ruolo { display: flex; align-items: center; gap: 6px; }
+.filtro-ruolo select { flex: 1; min-width: 0; max-width: 340px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--linea); background: var(--muro); color: inherit; font: inherit; font-size: .85rem; }
+
+/* punti squadra */
+.punti-squadra { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; margin: 10px 0; padding: 10px 12px; border-radius: 14px; background: var(--muro); border: 1px solid var(--linea); }
+.punti-squadra > span { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--spento); font-weight: 800; }
+.punti-squadra .barra i { background: #6fe3a0; } .punti-squadra.pieno .barra i { background: #f2c14e; } .punti-squadra.oltre .barra i { background: #ff3344; }
+.punti-squadra b { font-size: 1.05rem; } .punti-squadra.oltre b { color: #ff6a7a; }
+.punti-squadra small { grid-column: 1 / -1; color: var(--spento); font-size: .74rem; } .punti-squadra.oltre small { color: #ff8a8a; }
+.scegli.cella { position: relative; }
+.pt-carta { position: absolute; bottom: 6px; right: 6px; z-index: 3; padding: 1px 6px; border-radius: 8px; background: #0b0a10d0; border: 1px solid var(--linea); font-size: .64rem; font-weight: 900; }
+.scegli.troppo-costosa .carta { filter: grayscale(.7) brightness(.6); } .scegli.troppo-costosa .pt-carta { color: #ff8a8a; border-color: #ff8a8a; }
+
+/* scelta della squadra */
+.scelta-squadra h3 { margin-top: 0; }
+.ss-lista { display: grid; gap: 8px; }
+.ss-squadra { display: grid; gap: 6px; text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--linea); background: rgba(255, 255, 255, .03); color: inherit; font: inherit; cursor: pointer; }
+.ss-squadra.attiva { border-color: var(--neon, #ff2e46); box-shadow: 0 0 14px rgba(255, 46, 70, .3); }
+.ss-squadra[disabled] { opacity: .5; cursor: default; }
+.ss-testa { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; } .ss-testa b { flex: 1; }
+.ss-punti { font-size: .75rem; font-weight: 800; padding: 1px 8px; border-radius: 9px; background: #6fe3a022; color: #6fe3a0; } .ss-punti.oltre { background: #ff334422; color: #ff8a8a; }
+.ss-carte { display: flex; gap: 4px; } .ss-carte img { width: 46px; aspect-ratio: 5 / 7; object-fit: cover; border-radius: 6px; border: 1px solid var(--linea); }
+.ss-no { color: #ff8a8a; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>

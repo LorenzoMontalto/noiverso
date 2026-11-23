@@ -462,9 +462,7 @@ begin
   if not public.possiede(me, offro) then raise exception 'Non hai questa carta'; end if;
   liberi := public.pot_liberi(me, offro);
   if liberi < costo then raise exception 'Per offrire questa carta servono % potenziatori suoi: ne hai % liberi', costo, greatest(liberi, 0); end if;
-  if public.possiede(me, chiedo) then raise exception 'Questa carta ce l''hai già'; end if;
   if not public.possiede(amico, chiedo) or public.pot_liberi(amico, chiedo) < costo then raise exception 'Il tuo amico non ha abbastanza potenziatori di questa carta per scambiarla'; end if;
-  if public.possiede(amico, offro) then raise exception 'Il tuo amico ha già la carta che offri'; end if;
   if (select count(*) from public.scambi where da = me and stato = 'aperto') >= 5 then raise exception 'Hai già 5 proposte aperte: aspetta che ti rispondano o annullane una'; end if;
   if exists (select 1 from public.scambi s where s.da = me and s.a = amico and s.chiedo = proponi_scambio.chiedo and s.stato = 'aperto') then raise exception 'Hai già chiesto questa carta a questo amico'; end if;
   insert into public.scambi (da, a, offro, chiedo) values (me, amico, offro, chiedo) returning id into nuovo;
@@ -487,7 +485,6 @@ begin
     return jsonb_build_object('stato', 'rifiutato');
   end if;
   costo := public.costo_scambio(x.chiedo);
-  if public.possiede(x.a, x.offro) then raise exception 'La carta che ti offre ce l''hai già: puoi solo rifiutare'; end if;
   if public.pot_liberi(x.a, x.chiedo, x.id) < costo then raise exception 'Per dare questa carta servono % potenziatori suoi e non li hai più', costo; end if;
   if public.pot_liberi(x.da, x.offro, x.id) < public.costo_scambio(x.offro) then
     update public.scambi set stato = 'annullato', chiuso = now() where id = scambio;
@@ -495,7 +492,8 @@ begin
   end if;
   update public.scambi set stato = 'accettato', chiuso = now() where id = scambio;
   -- chi accetta riceve subito: il gioco toglie i potenziatori di "chiedo" e aggiunge la carta "offro"
-  return jsonb_build_object('stato', 'accettato', 'dai', x.chiedo, 'ricevi', x.offro, 'costo', costo);
+  -- se la carta ce l'ha già, il gioco gli dà i potenziatori di un doppione (come prima, ma per tutte le carte)
+  return jsonb_build_object('stato', 'accettato', 'dai', x.chiedo, 'ricevi', x.offro, 'costo', costo, 'ce_lha', public.possiede(x.a, x.offro));
 end $$;
 
 create or replace function public.annulla_scambio(scambio bigint) returns void
@@ -535,8 +533,7 @@ update public.scambi x set stato = 'annullato', chiuso = now()
 where x.stato = 'aperto' and (
   public.rarita_carta(x.offro) is distinct from public.rarita_carta(x.chiedo)
   or public.pot_liberi(x.da, x.offro, x.id) < coalesce(public.costo_scambio(x.offro), 0)
-  or public.pot_liberi(x.a, x.chiedo, x.id) < coalesce(public.costo_scambio(x.chiedo), 0)
-  or public.possiede(x.a, x.offro));
+  or public.pot_liberi(x.a, x.chiedo, x.id) < coalesce(public.costo_scambio(x.chiedo), 0));
 
 -- ---------------- Boss del gruppo ----------------
 -- Ogni settimana (da lunedì a domenica) un boss con tanti PV che tutti colpiscono insieme.

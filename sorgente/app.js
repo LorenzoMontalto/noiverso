@@ -513,7 +513,11 @@ function apriModale(html, opz = {}) {
   $("#modale-chiudi").hidden = !!opz.bloccata;
   FX.riavvia($(".modale-scatola"), "entra");
 }
-function chiudiModale() { $("#modale").hidden = true; $("#modale-corpo").innerHTML = ""; }
+function chiudiModale() {
+  $("#modale").hidden = true; $("#modale-corpo").innerHTML = "";
+  // chiusa la scelta della squadra senza scegliere: niente battaglia, si esce dallo schermo intero
+  if (typeof scegliSquadra === "function" && scegliSquadra.poi) { scegliSquadra.poi = null; if (!B) schermoIntero(false); }
+}
 
 function mostraAvviso(testo) {
   const el = $("#avviso");
@@ -531,10 +535,11 @@ const VISTE = ["strada", "storia", "bustine", "negozio", "album", "squadra", "sf
 let vista = "strada";
 let filtroAlbum = "tutte", filtroSquadra = "tutte", albumScheda = "carte";
 // Ricerca per tipo, serie e nome (album e squadre)
-const filtri = { album: { tipo: "", cerca: "" }, squadra: { tipo: "", serie: "", cerca: "", pot: false } };
+const filtri = { album: { tipo: "", ruolo: "", cerca: "" }, squadra: { tipo: "", ruolo: "", serie: "", cerca: "", pot: false } };
 const normCerca = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 function passaFiltri(c, f) {
   if (f.tipo && c.stile !== f.tipo) return false;
+  if (f.ruolo && c.ruolo !== f.ruolo) return false;
   if (f.serie && c.serie !== f.serie) return false;
   if (f.pot && !infoCarta(c.id).pronta) return false;
   const q = normCerca(f.cerca);
@@ -544,11 +549,14 @@ function htmlBarraFiltri(dove, extra = "") {
   const f = filtri[dove];
   const chipTipo = ["", "FOR", "DIF", "VEL"].map(t => `<button class="chip ${t ? "s-" + t : ""}" data-fx="gelatina" data-filtra="${dove}:tipo:${t}" aria-pressed="${f.tipo === t}">${t ? `${STILI[t].icona} ${STILI[t].nome}` : "Tutti i tipi"}</button>`).join("");
   const chipSerie = "serie" in f ? `<div class="filtri filtri-riga"><span class="filtri-etichetta">Serie</span>${["", ...ORDINE_SERIE].map(s => `<button class="chip" data-fx="gelatina" data-filtra="${dove}:serie:${s}" aria-pressed="${f.serie === s}">${s ? SERIE[s].simbolo + " " + esc(SERIE[s].nome) : "Tutte"}</button>`).join("")}</div>` : "";
-  const attivi = f.tipo || f.cerca || f.serie || f.pot;
+  const attivi = f.tipo || f.ruolo || f.cerca || f.serie || f.pot;
+  const sceltaRuolo = `<label class="filtro-ruolo"><span class="filtri-etichetta">Ruolo</span><select data-filtra-ruolo="${dove}" aria-label="Filtra per ruolo">
+      <option value="">Tutti i ruoli</option>${Object.entries(RUOLI).sort((a, b) => a[1].nome.localeCompare(b[1].nome)).map(([k, r]) => `<option value="${k}" ${f.ruolo === k ? "selected" : ""}>${esc(r.nome)} · ${esc(r.cosa)}</option>`).join("")}</select></label>`;
   return `<div class="barra-filtri">
     <div class="cerca-riga"><input type="search" class="cerca" data-cerca="${dove}" value="${esc(f.cerca)}" placeholder="Cerca per nome o persona…" autocomplete="off" aria-label="Cerca una carta">
       ${attivi ? `<button class="btn piccolo" data-filtra="${dove}:azzera:">Togli filtri</button>` : ""}</div>
     <div class="filtri filtri-riga"><span class="filtri-etichetta">Tipo</span>${extra}${chipTipo}</div>
+    ${sceltaRuolo}
     ${chipSerie}
   </div>`;
 }
@@ -1004,7 +1012,7 @@ function statSerie(id) {
 }
 function htmlSezioneSerie(id, conTitolo) {
   const se = SERIE[id], st = statSerie(id);
-  const fa = filtri.album, filtrando = !!(fa.tipo || fa.cerca);
+  const fa = filtri.album, filtrando = !!(fa.tipo || fa.ruolo || fa.cerca);
   // con un filtro attivo si vedono solo le carte già trovate (le altre restano una sorpresa)
   const elenco = [...st.carte].filter(c => !filtrando || (S.carte[c.id] && passaFiltri(c, fa))).sort((a, b) => ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita) || a.nome.localeCompare(b.nome));
   if (filtrando && !elenco.length) return conTitolo ? "" : `<section class="serie-sezione" style="--c:${se.colore}"><p class="nota">Nessuna carta trovata di questa serie con questi filtri.</p></section>`;
@@ -1068,7 +1076,7 @@ function vistaAlbum() {
   <section>
     ${htmlSchedeAlbum()}
     <div class="titolo-riga"><h2>Album</h2><p class="nota">${tot}/${CARTE.length} carte trovate in ${ORDINE_SERIE.length} serie${olo ? ` · <span class="olo-testo">✦ ${olo} olografiche</span>` : ""}.</p></div>
-    ${htmlBarraFiltri("album")}${filtri.album.tipo || filtri.album.cerca ? `<p class="nota">Con un filtro attivo vedi solo le carte che hai già trovato.${filtroAlbum === "pot" ? "" : " Tocca una serie qui sotto per cercare solo lì."}</p>` : ""}
+    ${htmlBarraFiltri("album")}${filtri.album.tipo || filtri.album.ruolo || filtri.album.cerca ? `<p class="nota">Con un filtro attivo vedi solo le carte che hai già trovato.${filtroAlbum === "pot" ? "" : " Tocca una serie qui sotto per cercare solo lì."}</p>` : ""}
     <div class="serie-copertine">
       ${htmlCopertinaPot()}
       ${ORDINE_SERIE.map((id, k) => {
@@ -1128,6 +1136,7 @@ function vistaSquadra() {
     <div class="slot5">${slot.join("")}</div>
     ${Graffiti.htmlSquadra()}
     ${Sinergie.htmlSquadra(sq.carte)}
+    ${htmlPuntiSquadra(sq.carte)}
     <div class="riepilogo">
       <div><span>Stili</span>${Object.entries(stili).map(([k, n]) => `<b class="stile s-${k}">${k} ${n}</b>`).join(" ")}</div>
       <div><span>Ruoli</span>${ruoli.length ? ruoli.map(r => `<b class="ruolo-pill">${esc(r)}</b>`).join(" ") : "—"}</div>
@@ -1140,7 +1149,8 @@ function vistaSquadra() {
     </div>
     ${elenco.length ? "" : `<p class="nota vuoto-filtri">Nessuna carta con questi filtri.</p>`}
     <div class="griglia">
-      ${elenco.map((c, i) => `<div class="scegli cella ${sq.carte.includes(c.id) ? "scelta" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" role="button" tabindex="0" aria-pressed="${sq.carte.includes(c.id)}">${htmlCarta(c)}</div>`).join("")}
+      ${elenco.map((c, i) => { const dentro = sq.carte.includes(c.id), troppo = !dentro && sq.carte.length < CARTE_SQUADRA && puntiSquadra(sq.carte) + puntiCarta(c.id) > REGOLE.tetto;
+        return `<div class="scegli cella ${dentro ? "scelta" : ""} ${troppo ? "troppo-costosa" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" role="button" tabindex="0" aria-pressed="${dentro}">${htmlCarta(c)}<span class="pt-carta" title="Punti squadra">${puntiCarta(c.id)} pt</span></div>`; }).join("")}
     </div>
   </section>
   ${htmlAzioniCarta()}`;
@@ -1155,36 +1165,42 @@ const Sinergie = (() => {
     try { const snap = await Archivio.db.doc("config/sinergie").get(); applicaSinergie(snap && snap.exists ? snap.data() : {}); caricato = true; } catch (e) { return; }
     if (!B && ["admin", "squadra"].includes(vista) && $("#modale").hidden) disegnaQuieto();
   }
-  const testoSerie = (k, liv) => { const s = SINERGIE[k]; return s.testo(liv === 2 ? s.v5 : s.v3, liv === 2); };
+  // liv: 1 = 2 carte, 2 = 3 carte, 3 = 5 carte
+  const testoSerie = (k, liv) => { const s = SINERGIE[k]; return s.testo(valSinergia(s, liv), liv); };
+  const prossima = n => SOGLIE_SINERGIA.find(x => x > n);
   // riquadro nella pagina Squadre: sinergie attive e quelle a cui manca poco
   function htmlSquadra(ids) {
     const sin = sinergieDi(ids);
-    const righe = [];
+    const righe = []; let suggerimenti = 0;
     for (const s of sin.serie) {
       const se = SERIE[s.serie];
-      if (s.liv) righe.push(`<li class="sin-attiva" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} ${s.n}/${s.liv === 2 ? 5 : 3}</b> · carte ${esc(se.nome)}: ${testoSerie(s.serie, s.liv)}.${s.liv === 1 ? ` <small>Con 5 carte: ${testoSerie(s.serie, 2)}.</small>` : ""}</span></li>`);
-      else if (s.n === 2) righe.push(`<li class="sin-quasi" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} 2/3</b> · ne manca una: carte ${esc(se.nome)}, ${testoSerie(s.serie, 1)}.</span></li>`);
+      const p = prossima(s.n), pl = p ? SOGLIE_SINERGIA.indexOf(p) + 1 : 0;
+      const dopo = p ? ` <small>${p - s.n === 1 ? "Con un'altra" : `Con ${p} carte`}: ${testoSerie(s.serie, pl)}.</small>` : "";
+      if (s.liv) righe.push(`<li class="sin-attiva" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} ${s.n}${p ? `/${p}` : ""}</b> · carte ${esc(se.nome)}: ${testoSerie(s.serie, s.liv)}.${dopo}</span></li>`);
+      else if (suggerimenti++ < 2) righe.push(`<li class="sin-quasi" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} 1/2</b> · aggiungine un'altra: carte ${esc(se.nome)}, ${testoSerie(s.serie, 1)}.</span></li>`);
     }
     for (const m of sin.multiverso) righe.push(`<li class="sin-attiva multiverso"><span class="sin-ico">∞</span><span><b>Multiverso: ${esc(m.persona)} ×${m.n}</b> +${m.val}% a tutte le statistiche di ${m.ids.map(id => esc(PER_ID[id].nome)).join(", ")}.${m.n === 2 ? ` <small>Con 3 versioni: +${MULTIVERSO.v3}%.</small>` : ""}</span></li>`);
-    return `<div class="sinergie-box"><div class="sin-testa"><span>Sinergie</span><small>3 carte della stessa serie danno un bonus a quelle carte, 5 un bonus più grande. 2 o più versioni della stessa persona: Multiverso.</small></div>
-      ${righe.length ? `<ul class="sin-lista">${righe.join("")}</ul>` : `<p class="nota">Nessuna sinergia: prova a mettere 3 carte della stessa serie, o due versioni dello stesso amico.</p>`}</div>`;
+    return `<div class="sinergie-box"><div class="sin-testa"><span>Sinergie</span><small>2, 3 o 5 carte della stessa serie danno a quelle carte un bonus sempre più grande. 2 o più versioni della stessa persona: Multiverso.</small></div>
+      ${righe.length ? `<ul class="sin-lista">${righe.join("")}</ul>` : `<p class="nota">Nessuna sinergia: prova a mettere 2 carte della stessa serie, o due versioni dello stesso amico.</p>`}</div>`;
   }
   // icone piccole accanto al nome in battaglia
   function htmlBattaglia(L) {
     const sin = L && L.sinergie; if (!sin) return "";
-    const ico = [...sin.serie.filter(s => s.liv).map(s => `<span class="sin-mini" style="--c:${SERIE[s.serie].colore}" title="Sinergia ${esc(SERIE[s.serie].nome)} ${s.n}: ${esc(testoSerie(s.serie, s.liv))}">${SERIE[s.serie].simbolo}${s.liv === 2 ? "5" : "3"}</span>`),
+    const ico = [...sin.serie.filter(s => s.liv).map(s => `<span class="sin-mini" style="--c:${SERIE[s.serie].colore}" title="Sinergia ${esc(SERIE[s.serie].nome)} ${s.n}: ${esc(testoSerie(s.serie, s.liv))}">${SERIE[s.serie].simbolo}${s.n}</span>`),
       ...sin.multiverso.map(m => `<span class="sin-mini multiverso" title="Multiverso ${esc(m.persona)} ×${m.n}: +${m.val}% a quelle carte">∞${m.n}</span>`)];
     return ico.length ? `<span class="sin-icone">${ico.join("")}</span>` : "";
   }
   function htmlAdmin() {
     if (!caricato) { setTimeout(carica, 0); return `<h3>Sinergie</h3><p class="nota">Carico i valori…</p>`; }
     return `<h3>Sinergie</h3>
-      <p class="nota">Quanto valgono le sinergie con 3 e con 5 carte della stessa serie, e il Multiverso (stessa persona in più versioni). Valgono per tutti, anche dal vivo e contro il computer.</p>
+      <p class="nota">Quanto valgono le sinergie con 2, 3 e 5 carte della stessa serie, e il Multiverso (stessa persona in più versioni). Valgono per tutti, anche dal vivo e contro il computer.</p>
       <form id="form-sinergie" class="sin-admin" autocomplete="off">
         ${ORDINE_SERIE.filter(k => SINERGIE[k]).map(k => { const s = SINERGIE[k], se = SERIE[k]; return `<fieldset style="--c:${se.colore}"><legend>${se.simbolo} ${esc(se.nome)}</legend>
-          <div class="campi-3">${s.tipo === "effetti" ? `<label>Con 3 <input value="effetti +1 turno" disabled></label>` : `<label>Con 3 (${s.tipo === "energia" ? "energia" : "%"}) <input name="${k}.v3" type="number" min="0" max="50" value="${s.v3}"></label>`}
-          <label>Con 5 (${s.tipo === "energia" ? "energia" : "%"}) <input name="${k}.v5" type="number" min="0" max="150" value="${s.v5}"></label>
-          <label>Cosa fa <input value="${esc(testoSerie(k, 2))}" disabled></label></div></fieldset>`; }).join("")}
+          <div class="campi-4">${[["v2", 2], ["v3", 3], ["v5", 5]].map(([v, n]) => `<label>Con ${n} (${s.tipo === "energia" ? "energia" : s.tipo === "effetti" ? "forza %" : "%"}) <input name="${k}.${v}" type="number" min="0" max="${s.tipo === "effetti" ? 200 : 60}" value="${s[v]}"></label>`).join("")}
+          <label>Con 5 fa <input value="${esc(testoSerie(k, 3))}" disabled></label></div></fieldset>`; }).join("")}
+        <fieldset><legend>Punti squadra</legend><div class="campi-3">
+          <label>Tetto per squadra <input name="tetto" type="number" min="5" max="20" value="${REGOLE.tetto}"></label>
+          <label>Costo carte <input value="comune 1 · rara 2 · epica 3 · leggendaria 4" disabled></label></div></fieldset>
         <fieldset><legend>∞ Multiverso</legend><div class="campi-3">
           <label>2 versioni (%) <input name="multiverso.v2" type="number" min="0" max="30" value="${MULTIVERSO.v2}"></label>
           <label>3 o più (%) <input name="multiverso.v3" type="number" min="0" max="40" value="${MULTIVERSO.v3}"></label></div></fieldset>
@@ -1192,11 +1208,12 @@ const Sinergie = (() => {
       </form>`;
   }
   async function salvaAdmin(form, base) {
-    const nuovi = {};
+    const nuovi = { versione: 2 };
     if (!base) {
       const f = new FormData(form);
-      for (const k of Object.keys(SINERGIE)) { const d = {}; for (const v of ["v3", "v5"]) { const x = f.get(`${k}.${v}`); if (x !== null && x !== "") d[v] = +x; } if (Object.keys(d).length) nuovi[k] = d; }
+      for (const k of Object.keys(SINERGIE)) { const d = {}; for (const v of ["v2", "v3", "v5"]) { const x = f.get(`${k}.${v}`); if (x !== null && x !== "") d[v] = +x; } if (Object.keys(d).length) nuovi[k] = d; }
       nuovi.multiverso = { v2: +f.get("multiverso.v2"), v3: +f.get("multiverso.v3") };
+      nuovi.tetto = Math.max(5, Math.min(20, +f.get("tetto") || 14));
     }
     try { await Archivio.db.doc("config/sinergie").set(nuovi); applicaSinergie(nuovi); mostraAvviso(base ? "Sinergie tornate ai valori di partenza." : "Sinergie salvate: ora valgono per tutti."); }
     catch (e) { mostraAvviso("Non sono riuscito a salvare. Serve la pagina online con il tuo account admin."); }
@@ -1205,7 +1222,7 @@ const Sinergie = (() => {
   // Album: cosa fa la sinergia di una serie (sotto il titolo della serie)
   function htmlSerieAlbum(k) {
     if (!SINERGIE[k]) return "";
-    return `<p class="sin-album"><b>Sinergia</b> <span>3 carte: ${testoSerie(k, 1)}</span><span>5 carte: ${testoSerie(k, 2)}</span></p>`;
+    return `<p class="sin-album"><b>Sinergia</b> <span>2 carte: ${testoSerie(k, 1)}</span><span>3 carte: ${testoSerie(k, 2)}</span><span>5 carte: ${testoSerie(k, 3)}</span></p>`;
   }
   // Album: il Multiverso, persona per persona (le versioni che non hai trovato restano un "?")
   function htmlMultiversoAlbum() {
@@ -1287,6 +1304,15 @@ function disegnaQuieto() {
   main.classList.add("quieta");
   morfaFigli(main, t);
 }
+// ---------- punti squadra ----------
+const puntiOk = ids => puntiSquadra(ids) <= REGOLE.tetto;
+function avvisoPunti(ids) { mostraAvviso(`Troppi punti: ${puntiSquadra(ids)}/${REGOLE.tetto}. Togli o cambia una carta più rara (comune 1, rara 2, epica 3, leggendaria 4).`); FX.riavvia($(".punti-squadra"), "fx-scuoti"); }
+function htmlPuntiSquadra(ids) {
+  const p = puntiSquadra(ids), t = REGOLE.tetto, pct = Math.min(100, p / t * 100);
+  return `<div class="punti-squadra ${p > t ? "oltre" : p === t ? "pieno" : ""}" title="comune 1 · rara 2 · epica 3 · leggendaria 4">
+    <span>Punti squadra</span><div class="barra"><i style="--p:${pct}%"></i></div><b>${p}/${t}</b>
+    <small>${p > t ? "Troppi! Questa squadra non può combattere finché non togli una carta più rara." : `comune 1 · rara 2 · epica 3 · leggendaria 4${ids.length < CARTE_SQUADRA ? ` · ti restano ${t - p} punti` : ""}`}</small></div>`;
+}
 // tocco su una carta (della collezione o della squadra) mentre sta scegliendo
 function toccoCartaSquadra(id) {
   const sq = squadraAttiva();
@@ -1294,7 +1320,7 @@ function toccoCartaSquadra(id) {
   if (selSq && selSq.modo === "carta" && id !== selSq.id) {
     const i = sq.carte.indexOf(selSq.id);
     if (sq.carte.includes(id)) { const j = sq.carte.indexOf(id); [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]]; mostraAvviso("Ordine scambiato."); }
-    else { sq.carte[i] = id; mostraAvviso(`${PER_ID[selSq.id].nome} esce, entra ${PER_ID[id].nome}.`); }
+    else { const prova = sq.carte.map(x => x === selSq.id ? id : x); if (!puntiOk(prova)) { avvisoPunti(prova); return; } sq.carte[i] = id; mostraAvviso(`${PER_ID[selSq.id].nome} esce, entra ${PER_ID[id].nome}.`); }
     selSq = null; salva(); ridisegnaSquadra(); return;
   }
   if (selSq && selSq.modo === "slot") {
@@ -1302,7 +1328,7 @@ function toccoCartaSquadra(id) {
     if (j < 0 || id === selSq.id) return;
     const i = sq.carte.indexOf(selSq.id);
     if (i >= 0) [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]];
-    else { mostraAvviso(`${PER_ID[id].nome} esce, entra ${PER_ID[selSq.id].nome}.`); sq.carte[j] = selSq.id; }
+    else { const prova = sq.carte.map((x, k) => k === j ? selSq.id : x); if (!puntiOk(prova)) { avvisoPunti(prova); return; } mostraAvviso(`${PER_ID[id].nome} esce, entra ${PER_ID[selSq.id].nome}.`); sq.carte[j] = selSq.id; }
     selSq = null; salva(); ridisegnaSquadra(); return;
   }
   selSq = selSq && selSq.id === id && !selSq.modo ? null : { id };
@@ -1313,7 +1339,13 @@ function azioneCartaSquadra(az) {
   const sq = squadraAttiva(), id = selSq.id;
   if (az === "chiudi") selSq = null;
   else if (az === "annulla") selSq = { id };
-  else if (az === "aggiungi") { if (sq.carte.length < CARTE_SQUADRA && !sq.carte.includes(id)) sq.carte.push(id); selSq = null; salva(); }
+  else if (az === "aggiungi") {
+    if (sq.carte.length < CARTE_SQUADRA && !sq.carte.includes(id)) {
+      if (!puntiOk(sq.carte.concat(id))) { avvisoPunti(sq.carte.concat(id)); return; }
+      sq.carte.push(id);
+    }
+    selSq = null; salva();
+  }
   else if (az === "togli") { sq.carte = sq.carte.filter(x => x !== id); selSq = null; salva(); }
   else if (az === "scambia") selSq = { id, modo: sq.carte.includes(id) ? "carta" : "slot" };
   else if (az === "confronta") selSq = { id, modo: "confronta" };
@@ -2528,8 +2560,27 @@ function schermoIntero(entra) {
   } catch (e) { /* il riquadro può rifiutare lo schermo intero: resta comunque a tutta pagina */ }
 }
 
-async function avviaSfida(idLivello, carteForzate, nemiciForzati) {
-  livelloAttuale = typeof idLivello === "object" ? idLivello : LIVELLI_SFIDA.find(l => l.id === idLivello);
+// Prima di ogni battaglia scegli quale delle tue squadre usare (e la squadra deve rispettare i punti)
+function scegliSquadra(poi, titolo = "Con quale squadra combatti?") {
+  const sq = S.squadre || [];
+  if (B && $("#azioni")) return;
+  apriModale(`<div class="scelta-squadra"><h3>${esc(titolo)}</h3>
+    <div class="ss-lista">${sq.map((q, i) => {
+      const p = puntiSquadra(q.carte), ok = q.carte.length >= Math.min(CARTE_SQUADRA, carteBattaglia()) && p <= REGOLE.tetto;
+      const sin = sinergieDi(q.carte), icone = [...sin.serie.filter(s => s.liv).map(s => `<span class="sin-mini" style="--c:${SERIE[s.serie].colore}">${SERIE[s.serie].simbolo}${s.n}</span>`), ...sin.multiverso.map(m => `<span class="sin-mini multiverso">∞${m.n}</span>`)].join("");
+      return `<button class="ss-squadra ${i === (S.attiva || 0) ? "attiva" : ""}" data-scegli-squadra="${i}" ${ok ? "" : "disabled"}>
+        <div class="ss-testa"><b>${esc(q.nome || `Squadra ${i + 1}`)}</b><span class="ss-punti ${p > REGOLE.tetto ? "oltre" : ""}">${p}/${REGOLE.tetto} pt</span>${icone}</div>
+        <div class="ss-carte">${q.carte.length ? q.carte.map(id => `<img src="${imgCarta(id)}" alt="${esc(PER_ID[id] ? PER_ID[id].nome : "")}" title="${esc(PER_ID[id] ? PER_ID[id].nome : "")} · Lv ${livello(id) || 1}">`).join("") : `<span class="nota">vuota</span>`}</div>
+        ${ok ? "" : `<small class="ss-no">${q.carte.length < CARTE_SQUADRA ? "Squadra incompleta" : "Troppi punti: sistemala in Squadre"}</small>`}</button>`; }).join("")}</div>
+    <div class="azioni"><button class="btn" data-azione="vai-squadre">Modifica le squadre</button></div></div>`);
+  scegliSquadra.poi = poi;
+}
+async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
+  const Lp = typeof idLivello === "object" ? idLivello : LIVELLI_SFIDA.find(l => l.id === idLivello);
+  // prima: scegli la squadra (non serve se guardi, se sei dal vivo, o se le carte sono già decise)
+  if (!giaScelta && !carteForzate && Lp && !Lp.spettatore && !Lp.vivo) { scegliSquadra(() => avviaSfida(idLivello, carteForzate, nemiciForzati, true)); return; }
+  if (!carteForzate && Lp && !Lp.spettatore && !Lp.vivo && !puntiOk(squadraAttiva().carte.slice(0, CARTE_SQUADRA))) { avvisoPunti(squadraAttiva().carte); schermoIntero(false); return; }
+  livelloAttuale = Lp;
   const n = carteForzate ? CARTE_SQUADRA : carteBattaglia();
   const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
@@ -2965,6 +3016,11 @@ function esciBattaglia() {
 //  EVENTI
 // ============================================================
 document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#form-graffiti")) Graffiti.anteprimaAdmin(e.target); });
+document.addEventListener("change", e => {
+  const d = e.target.dataset && e.target.dataset.filtraRuolo;
+  if (!d || !filtri[d]) return;
+  filtri[d].ruolo = e.target.value; disegnaQuieto();
+});
 document.addEventListener("input", e => {
   const d = e.target.dataset && e.target.dataset.cerca;
   if (!d || !filtri[d]) return;
@@ -2976,7 +3032,7 @@ document.addEventListener("change", e => { if (e.target.id === "img-file" && e.t
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo]");
+  const t = e.target.closest("[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3004,7 +3060,7 @@ document.addEventListener("click", e => {
   if (t.dataset.filtroSq) { filtroSquadra = t.dataset.filtroSq; disegna(); return; }
   if (t.dataset.filtra) {
     const [dove, campo, val] = t.dataset.filtra.split(":"), f = filtri[dove];
-    if (campo === "azzera") Object.assign(f, { tipo: "", cerca: "" }, "serie" in f ? { serie: "", pot: false } : {});
+    if (campo === "azzera") Object.assign(f, { tipo: "", ruolo: "", cerca: "" }, "serie" in f ? { serie: "", pot: false } : {});
     else if (campo === "pot") f.pot = !f.pot;
     else f[campo] = f[campo] === val ? "" : val;
     disegnaQuieto(); return;
@@ -3061,7 +3117,8 @@ document.addEventListener("click", e => {
   if (t.dataset.mossa !== undefined) { turnoGiocatore({ tipo: "mossa", i: +t.dataset.mossa }); return; }
   if (t.dataset.cambia !== undefined) { turnoGiocatore({ tipo: "cambio", i: +t.dataset.cambia }); return; }
   if (t.dataset.sostituisci !== undefined) { sostituisciGiocatore(+t.dataset.sostituisci); return; }
-  if (t.dataset.sfidaVivo !== undefined) { const id = t.dataset.sfidaVivo; if (B) { Online.esci(); esciBattaglia(); } Online.sfida(id); return; }
+  if (t.dataset.sfidaVivo !== undefined) { const id = t.dataset.sfidaVivo; if (B) { Online.esci(); esciBattaglia(); } scegliSquadra(() => Online.sfida(id), "Con quale squadra sfidi il tuo amico?"); return; }
+  if (t.dataset.scegliSquadra !== undefined) { S.attiva = +t.dataset.scegliSquadra; salva(); const f = scegliSquadra.poi; scegliSquadra.poi = null; chiudiModale(); if (f) f(); return; }
   if (t.classList.contains("gira")) { if (t.classList.contains("girata")) apriSchedaCarta(esitiAperti[+t.dataset.i]); else t.classList.add("girata"); return; }
   if (t.matches(".carta[role=button]")) { apriDettaglio(t.dataset.id); return; }
   if (t.dataset.dettaglio) { apriDettaglio(t.dataset.dettaglio); return; }
@@ -3106,7 +3163,8 @@ document.addEventListener("click", e => {
     case "esci-vivo": chiudiModale(); Online.esci(); if (B) esciBattaglia(); break;
     case "esci-guarda": chiudiModale(); Online.esciGuarda(); if (B) esciBattaglia(); break;
     case "annulla-invito": Online.annullaInvito(); break;
-    case "accetta-invito": Online.rispondi(true); break;
+    case "accetta-invito": scegliSquadra(() => Online.rispondi(true), "Con quale squadra accetti la sfida?"); break;
+    case "vai-squadre": { const c = scegliSquadra.poi; scegliSquadra.poi = null; chiudiModale(); if (c && Online.rifiutaSeInvito) Online.rifiutaSeInvito(); if (!B) schermoIntero(false); vai("squadra"); break; }
     case "rifiuta-invito": Online.rispondi(false); break;
     case "rivincita": chiudiArena(); if (livelloAttuale.storia) avviaStoria(livelloAttuale.storia.k, livelloAttuale.storia.i); else if (livelloAttuale.rifai) livelloAttuale.rifai(); else avviaSfida(livelloAttuale.id); break;
     case "boss-giorno": BossGiorno.avvia(); break;

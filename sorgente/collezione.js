@@ -148,7 +148,7 @@ const Scambi = (() => {
       const x = righe[0], altri = righe.length - 1;
       const mostra = () => { if (!manuale && (B || Tutorial.attivo || !$("#modale").hidden || !$("#accesso").hidden)) { setTimeout(mostra, 2500); return; }
         const sc = (lista || []).find(s => s.id === x.f.id);
-        mostraRicevuta(`Hai ricevuto ${PER_ID[x.f.ricevi].nome}`, `${(t => t.charAt(0).toUpperCase() + t.slice(1))(sc ? esc(nome(sc.a)) : "un amico")} ha accettato il tuo scambio: gli hai dato una copia di ${esc(PER_ID[x.f.dai].nome)} (${x.f.costo || costo(x.f.dai)} suoi potenziatori; la carta resta nel tuo album).${altri ? ` E altri ${altri} scambi sono andati a buon fine.` : ""}`, x.f.ricevi, x.cosa); };
+        mostraRicevuta(x.cosa.startsWith("Doppione") ? `Potenziatori per ${PER_ID[x.f.ricevi].nome}` : `Hai ricevuto ${PER_ID[x.f.ricevi].nome}`, `${(t => t.charAt(0).toUpperCase() + t.slice(1))(sc ? esc(nome(sc.a)) : "un amico")} ha accettato il tuo scambio: gli hai dato una copia di ${esc(PER_ID[x.f.dai].nome)} (${x.f.costo || costo(x.f.dai)} suoi potenziatori; la carta resta nel tuo album).${altri ? ` E altri ${altri} scambi sono andati a buon fine.` : ""}`, x.f.ricevi, x.cosa); };
       if (x) setTimeout(mostra, manuale ? 0 : 800);
       carica();
     } catch (e) { if (manuale) { mostraAvviso(e.message); if (el) el.disabled = false; } }
@@ -161,7 +161,7 @@ const Scambi = (() => {
         dai(r.dai, r.costo); const cosa = ricevi(r.ricevi); S.stats.scambi = (S.stats.scambi || 0) + 1;
         salva(); aggiornaTesta();
         const sc = (lista || []).find(s => s.id === +id);
-        mostraRicevuta(`Hai ricevuto ${PER_ID[r.ricevi].nome}`, `Hai dato una copia di ${esc(PER_ID[r.dai].nome)} a ${sc ? esc(nome(sc.da)) : "un amico"}: ti è costata ${r.costo || costo(r.dai)} suoi potenziatori, la carta resta nel tuo album.`, r.ricevi, cosa);
+        mostraRicevuta(cosa.startsWith("Doppione") ? `Potenziatori per ${PER_ID[r.ricevi].nome}` : `Hai ricevuto ${PER_ID[r.ricevi].nome}`, `Hai dato una copia di ${esc(PER_ID[r.dai].nome)} a ${sc ? esc(nome(sc.da)) : "un amico"}: ti è costata ${r.costo || costo(r.dai)} suoi potenziatori, la carta resta nel tuo album.`, r.ricevi, cosa);
       } else mostraAvviso("Proposta rifiutata.");
     } catch (e) { mostraAvviso(e.message); }
     carica();
@@ -180,20 +180,21 @@ const Scambi = (() => {
   async function sceltoAmico(id) {
     nuovo = { amico: id, nome: nome(id) };
     $("#modale-corpo").innerHTML = `<div class="amici-modale"><h2>Scambio con ${esc(nuovo.nome)}</h2><p class="nota">Guardo le sue carte…</p></div>`;
-    try { nuovo.doppioni = (await rpcSociale("doppioni_amico", { amico: id })).filter(c => PER_ID[c] && !S.carte[c]); }
+    try { nuovo.doppioni = (await rpcSociale("doppioni_amico", { amico: id })).filter(c => PER_ID[c]); }
     catch (e) { mostraAvviso(e.message); chiudiModale(); return; }
     passo();
   }
   function griglia(carte, attr) {
-    return `<div class="scambio-griglia">${carte.map(c => `<button type="button" class="scambio-carta" ${attr}="${c.id}">${htmlCarta(c, { piccola: true })}<small>${RARITA[c.rarita].nome}${attr === "data-scambio-offro" ? ` · costa ${costo(c.id)} pot. (ne hai ${potLiberi(c.id)})` : ""}</small></button>`).join("")}</div>`;
+    return `<div class="scambio-griglia">${carte.map(c => `<button type="button" class="scambio-carta" ${attr}="${c.id}">${htmlCarta(c, { piccola: true })}<small>${RARITA[c.rarita].nome}${attr === "data-scambio-offro" ? ` · costa ${costo(c.id)} pot. (ne hai ${potLiberi(c.id)})` : S.carte[c.id] ? ` · ce l'hai: +${costo(c.id)} pot.` : " · ti manca"}</small></button>`).join("")}</div>`;
   }
   function passo() {
     const corpo = $("#modale-corpo"); if (!corpo || !nuovo) return;
-    const ordina = l => l.map(id => PER_ID[id]).sort((a, b) => ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita));
+    // prima le carte che ti mancano, poi quelle che hai già (da quelle ricevi potenziatori)
+    const ordina = l => l.map(id => PER_ID[id]).sort((a, b) => (S.carte[a.id] ? 1 : 0) - (S.carte[b.id] ? 1 : 0) || ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita));
     if (!nuovo.chiedo) {
       corpo.innerHTML = `<div class="amici-modale"><h2>Cosa vuoi da ${esc(nuovo.nome)}?</h2>
-        ${nuovo.doppioni.length ? `<p class="nota">Carte che ti mancano e che ${esc(nuovo.nome)} può scambiare (ha abbastanza potenziatori di quella carta). Si scambia solo con una carta della stessa rarità.</p>${griglia(ordina(nuovo.doppioni), "data-scambio-chiedo")}`
-          : `<p class="nota">${esc(nuovo.nome)} non ha carte che ti mancano con abbastanza potenziatori per scambiarle. Riprova con un altro amico.</p><div class="azioni centro"><button class="btn" data-azione="nuovo-scambio">Scegli un altro amico</button></div>`}</div>`;
+        ${nuovo.doppioni.length ? `<p class="nota">Carte che ${esc(nuovo.nome)} può scambiare (ha abbastanza potenziatori di quella carta). Se la carta ti manca la ricevi; se ce l'hai già ricevi i suoi <b>potenziatori</b>, come un doppione: così vi aiutate a potenziare. Solo carte della stessa rarità.</p>${griglia(ordina(nuovo.doppioni), "data-scambio-chiedo")}`
+          : `<p class="nota">${esc(nuovo.nome)} non ha carte con abbastanza potenziatori per scambiarle. Riprova con un altro amico.</p><div class="azioni centro"><button class="btn" data-azione="nuovo-scambio">Scegli un altro amico</button></div>`}</div>`;
     } else if (!nuovo.offro) {
       const r = PER_ID[nuovo.chiedo].rarita, miei = offribili(r);
       corpo.innerHTML = `<div class="amici-modale"><h2>Cosa offri in cambio?</h2>
@@ -203,7 +204,7 @@ const Scambi = (() => {
     } else {
       const a = PER_ID[nuovo.offro], b = PER_ID[nuovo.chiedo];
       corpo.innerHTML = `<div class="amici-modale"><h2>Confermi?</h2>
-        <div class="scambio-riepilogo"><div><small>Dai una copia (−${costo(a.id)} pot.)</small>${htmlCarta(a, { piccola: true })}</div><span class="scambio-freccia">⇄</span><div><small>Ricevi</small>${htmlCarta(b, { piccola: true })}</div></div>
+        <div class="scambio-riepilogo"><div><small>Dai una copia (−${costo(a.id)} pot.)</small>${htmlCarta(a, { piccola: true })}</div><span class="scambio-freccia">⇄</span><div><small>${S.carte[b.id] ? `Ricevi +${costo(b.id)} potenziatori` : "Ricevi la carta"}</small>${htmlCarta(b, { piccola: true })}</div></div>
         <p class="nota">${esc(nuovo.nome)} vedrà la proposta e potrà accettarla o rifiutarla. Dura 7 giorni. Intanto quei ${costo(a.id)} potenziatori restano messi da parte; se rifiuta o annulli, tornano liberi.</p>
         <div class="azioni centro"><button class="btn" data-scambio-indietro="offro">Indietro</button><button class="btn primario" data-fx="onda" data-azione="proponi-scambio">Proponi lo scambio</button></div></div>`;
     }
@@ -227,7 +228,7 @@ const Scambi = (() => {
       <div class="scambio-chi"><b>${chi}</b><small>${ricevuta ? "ti offre ⇄ ti chiede" : "gli offri ⇄ gli chiedi"}</small></div>
       <div class="scambio-coppia">${htmlCarta(a, { mini: true })}<span>⇄</span>${htmlCarta(b, { mini: true })}</div>
       <div class="scambio-nomi"><span>${esc(a.nome)}</span><span>${esc(b.nome)}${ricevuta ? ` <small>(costa ${costo(b.id)} pot., ne hai ${potLiberi(b.id)})</small>` : ""}</span></div>
-      <div class="scambio-azioni">${daRitirare(x) ? `<button class="btn primario piccolo" data-fx="stelle" data-scambio-ritira="${x.id}">Ricevi carta</button>` : x.stato === "aperto" ? (ricevuta
+      <div class="scambio-azioni">${daRitirare(x) ? `<button class="btn primario piccolo" data-fx="stelle" data-scambio-ritira="${x.id}">${S.carte[x.chiedo] ? "Ricevi potenziatori" : "Ricevi carta"}</button>` : x.stato === "aperto" ? (ricevuta
         ? `<button class="btn primario piccolo" data-fx="onda" data-scambio-accetta="${x.id}">Accetta</button><button class="btn piccolo" data-scambio-rifiuta="${x.id}">Rifiuta</button>`
         : `<button class="btn piccolo" data-scambio-annulla="${x.id}">Annulla</button>`) : `<span class="scambio-stato">${stato}</span>`}</div>
     </li>`;
@@ -241,7 +242,7 @@ const Scambi = (() => {
     const pronte = (lista || []).filter(daRitirare);
     const vecchie = (lista || []).filter(x => x.stato !== "aperto" && !daRitirare(x)).slice(0, 8);
     return `
-    <div class="titolo-riga"><h2>Scambi</h2><p class="nota">Scambia con gli amici le carte che ti mancano. Dare una copia costa i potenziatori di un doppione di quella carta (10 comune, 12 rara, 24 epica, 60 leggendaria): la carta resta nel tuo album. Solo carte della stessa rarità.</p>
+    <div class="titolo-riga"><h2>Scambi</h2><p class="nota">Scambia con gli amici qualsiasi carta della stessa rarità. Dare una copia costa i potenziatori di un doppione di quella carta (10 comune, 12 rara, 24 epica, 60 leggendaria) e la carta resta nel tuo album. Chi riceve una carta che non ha la trova nell'album; se ce l'ha già riceve quei potenziatori: così vi aiutate a potenziare.</p>
       <button class="btn primario" data-fx="onda" data-azione="nuovo-scambio" ${S.admin ? "disabled" : ""}>Nuovo scambio</button></div>
     ${errore ? `<p class="errore">${esc(errore)}</p>` : !lista ? `<p class="nota">Carico gli scambi…</p>` : `
     ${pronte.length ? `<h3 class="scambi-titolo">Accettati: ritira la carta <span class="badge-in">${pronte.length}</span></h3><ul class="scambi">${pronte.map(htmlRiga).join("")}</ul>` : ""}

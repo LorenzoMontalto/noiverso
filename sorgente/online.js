@@ -190,16 +190,19 @@ const Online = (() => {
     apriModale(`<div class="invito-vivo arrivo"><span class="codice-tag">Sfida dal vivo</span>
       ${htmlAvatar(String(p.avatar || ""), "grande")}
       <h2>${esc(p.nome)} ti sfida!</h2>
-      <p class="nota">Mossa contro mossa, in tempo reale. Giochi con ${esc(squadraAttiva().nome)}${Graffiti.scelto() ? ` e il graffito «${esc(Graffiti.info(Graffiti.scelto()).nome)}»` : ""}.</p>
+      <p class="nota">Mossa contro mossa, in tempo reale. Quando accetti scegli con quale squadra giocare${Graffiti.scelto() ? ` (graffito «${esc(Graffiti.info(Graffiti.scelto()).nome)}»)` : ""}.</p>
       <div class="invito-anello piccolo"><b id="invito-secondi">${Math.ceil((p.scade - Date.now()) / 1000)}</b><small>secondi</small></div>
       <div class="azioni centro"><button class="btn primario" data-fx="onda" data-azione="accetta-invito">Accetta</button><button class="btn" data-azione="rifiuta-invito">Rifiuta</button></div></div>`, { bloccata: true });
     setTimeout(aggiorna, 500);
     if (navigator.vibrate) try { navigator.vibrate([120, 60, 120]); } catch (e) {}
   }
+  // se dalla scelta della squadra vai a modificarle, l'invito si rifiuta (l'amico non resta ad aspettare)
+  function rifiutaSeInvito() { if (invitoDentro) rispondi(false); }
   function rispondi(ok) {
     const p = invitoDentro; if (!p) return;
     invitoDentro = null; chiudiModale();
     if (ok && mieCarte().length < CARTE_SQUADRA) { ok = false; mostraAvviso("Ti serve una squadra completa per accettare."); }
+    if (ok && puntiSquadra(mieCarte()) > REGOLE.tetto) { ok = false; mostraAvviso(`La squadra supera i punti (${puntiSquadra(mieCarte())}/${REGOLE.tetto}): sistemala prima.`); }
     risposte[p.id] = { id: p.id, a: p.da, ok, nome: mioNome(), motivo: ok ? "" : "rifiuta" };
     canale.send({ type: "broadcast", event: "risposta", payload: risposte[p.id] });
     if (ok) entraPartita({ id: p.id, seme: p.seme, avv: { id: p.da, nome: p.nome, avatar: p.avatar }, host: false });
@@ -297,6 +300,9 @@ const Online = (() => {
     const pulisci = q => ((q && q.squadra) || []).filter(x => PER_ID[x.id]).slice(0, CARTE_SQUADRA);
     const sqMia = pulisci(mia), sqSua = pulisci(sua);
     if (sqMia.length < CARTE_SQUADRA || sqSua.length < CARTE_SQUADRA) { mostraAvviso("Una delle due squadre non è completa: la sfida non può partire."); esci(); chiudiModale(); return; }
+    // punti squadra: tutti e due controllano anche la squadra dell'altro (letta dal server)
+    const troppo = [[sqMia, mioNome()], [sqSua, P.avv.nome]].find(([q]) => puntiSquadra(q.map(x => x.id)) > REGOLE.tetto);
+    if (troppo) { mostraAvviso(`La squadra di ${troppo[1]} supera i punti (${puntiSquadra(troppo[0].map(x => x.id))}/${REGOLE.tetto}): la sfida non può partire.`); esci(); chiudiModale(); return; }
     const g = x => x && x.graffito && GRAFFITI_COPPIE[x.graffito.id] ? x.graffito : null;
     P.iniziata = true;
     P.log = [];
@@ -670,6 +676,6 @@ const Online = (() => {
     annuncia();
   }
 
-  return { htmlStrada, iniziaDiretta, loggaDiretta, fineDiretta, chiudiDiretta, htmlDiretta, get inDiretta() { return !!D; }, guarda, creaGuarda, rigioca, htmlGuarda, chiudiGuarda, htmlFineGuarda, esciGuarda, get inGuarda() { return !!G; }, mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
+  return { htmlStrada, iniziaDiretta, loggaDiretta, fineDiretta, chiudiDiretta, htmlDiretta, get inDiretta() { return !!D; }, guarda, creaGuarda, rigioca, htmlGuarda, chiudiGuarda, htmlFineGuarda, esciGuarda, get inGuarda() { return !!G; }, mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, rifiutaSeInvito, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
     get inPartita() { return !!P; } };
 })();
