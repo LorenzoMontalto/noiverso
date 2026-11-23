@@ -21,6 +21,9 @@ const MappeStoria = (() => {
     [[250, 1060], [570, 900], [920, 990], [1230, 790], [1010, 560], [900, 250]],    // vulcano
     [[200, 1050], [520, 860], [880, 990], [1250, 830], [1420, 480], [900, 240]],    // Inferi
     [[230, 1000], [520, 760], [880, 950], [1190, 690], [1480, 890], [1560, 330]],   // città dei mestieri
+    [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
+    [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
+    [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
     [[190, 600], [470, 370], [790, 570], [1070, 340], [1350, 570], [1620, 600]],    // finale
   ];
 
@@ -54,6 +57,12 @@ const MappeStoria = (() => {
     [[90, 1130, "☀", "Villaggio Vacanze"], [330, 600, "✎", "Scuola"], [520, 1130, "🍸", "Bar Centrale"], [1000, 1120, "⚽", "Stadio"],
      [1320, 560, "$", "Borsa"], [1660, 1030, "🎬", "Set del Film"], [1700, 200, "♫", "Teatro dell'Opera"], [720, 420, "⚗", "Laboratorio"],
      [1080, 270, "🎧", "Studio di Registrazione"], [230, 200, "▲", "Vetta del Monte"], [1680, 650, "☘", "Giungla"]],
+    [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
+     [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
+    [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
+     [1390, 1010, "◐", "Galleria"], [1680, 400, "♨", "Locomotiva"], [900, 200, "☁", "Temporale"], [1500, 160, "⛰", "Montagne"]],
+    [[640, 1120, "⌂", "Portone"], [1500, 960, "◷", "Sala degli Orologi"], [300, 860, "↗", "Scala Infinita"], [1520, 520, "❀", "Giardino Sospeso"],
+     [330, 380, "◇", "Stanza degli Specchi"], [1220, 150, "⌛", "Cima della Torre"], [1650, 1130, "⚙", "Ingranaggi"]],
     [[100, 760, "✦", "Varco"], [360, 220, "☄", "Cometa"], [760, 760, "◉", "Nucleo"], [1000, 180, "✧", "Costellazione"],
      [1260, 760, "⚛", "Frattura"], [1700, 720, "♾", "Sala dei Nove"], [560, 980, "☾", "Luna Spezzata"], [1450, 250, "✺", "Stella Morente"]],
   ];
@@ -381,7 +390,62 @@ const MappeStoria = (() => {
     for (let k = 0; k < 18; k++) { const v = r() < .5, x = v ? Math.floor(r() * 10) * 180 + 6 : r() * W, y = v ? r() * H : Math.floor(r() * 8) * 160 + 6; s += `<rect x="${f(x)}" y="${f(y)}" width="${v ? 14 : 26}" height="${v ? 26 : 14}" rx="4" fill="${["#ff3344", "#3f7fe0", "#f2c14e", "#f4f4f4"][k % 4]}"/>`; }
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, dimensione];
+
+  function specchi(r) {
+    let s = `<defs><radialGradient id="fondoSpecchi" cx=".5" cy=".25" r=".9"><stop offset="0" stop-color="#3a1a5a"/><stop offset=".6" stop-color="#160a26"/><stop offset="1" stop-color="#08040e"/></radialGradient></defs><rect width="${W}" height="${H}" fill="url(#fondoSpecchi)"/>`;
+    // frammenti di altri mondi: schegge colorate con dentro i colori delle serie
+    const colori = ["#4c95ff", "#ff9a1f", "#f2c14e", "#ff2e46", "#43d39e", "#d4145a", "#a6e22e"];
+    for (let k = 0; k < 34; k++) {
+      const cx = r() * W, cy = r() * H, R = 60 + r() * 110, n = 3 + Math.floor(r() * 3), a0 = r() * 6.28;
+      let d = ""; for (let i = 0; i < n; i++) { const a = a0 + i / n * 6.28 + (r() - .5) * .6, rr = R * (.6 + r() * .5); d += `${i ? "L" : "M"}${f(cx + Math.cos(a) * rr)},${f(cy + Math.sin(a) * rr * .7)} `; }
+      const c = colori[k % colori.length];
+      s += `<path d="${d}Z" fill="${c}" opacity=".13" stroke="#e8d8ff" stroke-width="2" stroke-opacity=".35"/>`;
+    }
+    // crepe dello specchio che partono dal centro in alto
+    for (let k = 0; k < 18; k++) { let x = 900, y = 260, d = `M${x},${y}`; const a = r() * 6.28; for (let i = 0; i < 6; i++) { x += Math.cos(a + (r() - .5) * .8) * 90; y += Math.sin(a + (r() - .5) * .8) * 70; d += ` L${f(x)},${f(y)}`; } s += `<path d="${d}" stroke="#e8d8ff" stroke-width="${f(1 + r() * 2)}" fill="none" opacity=".45"/>`; }
+    // il cuore del multiverso: anelli
+    for (let k = 0; k < 6; k++) s += `<ellipse cx="900" cy="240" rx="${150 - k * 20}" ry="${80 - k * 10}" fill="none" stroke="${colori[k]}" stroke-width="5" opacity=".55" filter="url(#bagliore)"/>`;
+    s += `<circle cx="900" cy="240" r="26" fill="#fff" opacity=".9" filter="url(#bagliore)"/>`;
+    // lo specchio da cui entri
+    s += `<rect x="60" y="1010" width="120" height="170" rx="60" fill="#c8b8ff" opacity=".35" stroke="#f2c14e" stroke-width="8"/><rect x="80" y="1030" width="80" height="130" rx="40" fill="#fff" opacity=".25"/>`;
+    for (let k = 0; k < 90; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * H)}" r="${f(1 + r() * 3)}" fill="#e8d8ff" opacity="${(.3 + r() * .6).toFixed(2)}"/>`;
+    return s;
+  }
+  function treno(r) {
+    // fasce di mondi diversi uno dopo l'altro (città, deserto, bosco, neve, mare, inferi), con la ferrovia che li attraversa
+    const mondi = [["#2a3240", "#3a4456"], ["#c9a86a", "#b08f52"], ["#1f5a34", "#2a6a40"], ["#d8e4ee", "#bfd0de"], ["#1a4a7a", "#235a90"], ["#3a0c10", "#521418"]];
+    let s = "";
+    mondi.forEach(([a, b], i) => { const x0 = i * W / mondi.length; s += `<rect x="${f(x0)}" y="0" width="${f(W / mondi.length + 2)}" height="${H}" fill="${a}"/>`;
+      for (let k = 0; k < 12; k++) s += `<path d="${blob(x0 + r() * W / mondi.length, r() * H, 40 + r() * 60, 25 + r() * 40, r)}" fill="${b}" opacity=".8"/>`; });
+    // sfumature tra un mondo e l'altro (i portali)
+    for (let i = 1; i < mondi.length; i++) { const x = i * W / mondi.length; s += `<rect x="${f(x - 30)}" y="0" width="60" height="${H}" fill="#fff" opacity=".1"/><line x1="${f(x)}" y1="0" x2="${f(x)}" y2="${H}" stroke="#c38bff" stroke-width="4" stroke-dasharray="10 14" opacity=".6"/>`; }
+    // pioggia
+    for (let k = 0; k < 160; k++) { const x = r() * W, y = r() * H; s += `<line x1="${f(x)}" y1="${f(y)}" x2="${f(x - 8)}" y2="${f(y + 26)}" stroke="#bfe0ff" stroke-width="1.5" opacity=".35"/>`; }
+    // ferrovia (traversine + binari) lungo il percorso
+    const via = curva([[-40, 950], [150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560], [1860, 520]]);
+    s += `<path d="${via}" stroke="#5a4030" stroke-width="44" fill="none" stroke-dasharray="8 16"/><path d="${via}" stroke="#c0c0c8" stroke-width="22" fill="none"/><path d="${via}" stroke="#4a4a52" stroke-width="14" fill="none"/>`;
+    // il treno in cima a destra
+    for (let k = 0; k < 4; k++) s += `<rect x="${1560 + k * 56}" y="${470 - k * 6}" width="50" height="34" rx="6" fill="${k ? "#c0392b" : "#2a2a30"}" stroke="#111" stroke-width="3"/>`;
+    s += `<rect x="1556" y="440" width="18" height="26" fill="#2a2a30"/><circle cx="1565" cy="420" r="16" fill="#ddd" opacity=".6"/><circle cx="1550" cy="395" r="22" fill="#ddd" opacity=".4"/>`;
+    return s;
+  }
+  function torre(r) {
+    let s = `<defs><radialGradient id="fondoTorre" cx=".5" cy=".55" r=".8"><stop offset="0" stop-color="#3a2a10"/><stop offset=".7" stop-color="#1a1206"/><stop offset="1" stop-color="#0a0703"/></radialGradient></defs><rect width="${W}" height="${H}" fill="url(#fondoTorre)"/>`;
+    // la torre vista dall'alto: piani concentrici che salgono verso il centro
+    for (let k = 0; k < 7; k++) s += `<ellipse cx="900" cy="640" rx="${780 - k * 105}" ry="${520 - k * 70}" fill="${k % 2 ? "#3a2c14" : "#2c2210"}" stroke="#c9a13a" stroke-width="3" opacity=".95"/>`;
+    // quadrante d'orologio al centro
+    s += `<circle cx="900" cy="640" r="120" fill="#efe3c0" stroke="#c9a13a" stroke-width="10"/>`;
+    for (let k = 0; k < 12; k++) { const a = k / 12 * 6.28; s += `<line x1="${f(900 + Math.cos(a) * 95)}" y1="${f(640 + Math.sin(a) * 95)}" x2="${f(900 + Math.cos(a) * 112)}" y2="${f(640 + Math.sin(a) * 112)}" stroke="#3a2c14" stroke-width="${k % 3 ? 3 : 7}"/>`; }
+    s += `<line x1="900" y1="640" x2="900" y2="560" stroke="#3a2c14" stroke-width="9" stroke-linecap="round"/><line x1="900" y1="640" x2="960" y2="660" stroke="#3a2c14" stroke-width="6" stroke-linecap="round"/><circle cx="900" cy="640" r="10" fill="#c9a13a"/>`;
+    // ingranaggi
+    const ingr = (cx, cy, R, n) => { let d = ""; for (let i = 0; i < n * 2; i++) { const a = i / (n * 2) * 6.28, rr = i % 2 ? R : R * .82; d += `${i ? "L" : "M"}${f(cx + Math.cos(a) * rr)},${f(cy + Math.sin(a) * rr)} `; } return `<path d="${d}Z" fill="#6a5020" stroke="#c9a13a" stroke-width="3"/><circle cx="${cx}" cy="${cy}" r="${f(R * .3)}" fill="#1a1206"/>`; };
+    s += ingr(1650, 1080, 90, 12) + ingr(1530, 1150, 50, 9) + ingr(130, 140, 70, 10) + ingr(230, 230, 40, 8);
+    // giardino sospeso (verde) e sabbia del tempo
+    for (let k = 0; k < 20; k++) s += `<circle cx="${f(1450 + r() * 160)}" cy="${f(460 + r() * 120)}" r="${f(12 + r() * 16)}" fill="${["#3f8f4a", "#2f7a3a", "#7dffb0"][k % 3]}" opacity=".85"/>`;
+    for (let k = 0; k < 80; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * H)}" r="${f(1 + r() * 2.5)}" fill="#f2c14e" opacity="${(.2 + r() * .5).toFixed(2)}"/>`;
+    return s;
+  }
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -408,7 +472,7 @@ const MappeStoria = (() => {
     const r = rng(500 + k * 31);
     // colore di base e colore delle nuvole per ogni capitolo
     const [base, nuv] = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
-      ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"], ["#24123c", "214,170,255"]][k];
+      ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"], ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]][k];
     g.fillStyle = base; g.fillRect(0, 0, W, H);
     for (let i = 0; i < 220; i++) {
       const x = r() * W, y = r() * H, rr = 70 + r() * 170, a = .10 + r() * .16;

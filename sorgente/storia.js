@@ -200,7 +200,61 @@ const STORIA = [
       { titolo: "Il set del film", nemici: ["tiziegista", "simonducer", "alispia", "maurialpinista", "pipciatore"], liv: [1, 1], abilita: 0.95, monete: 290,
         parla: "tiziegista", frase: "Scena della battaglia, prima ripresa. Tu fai quello che perde. Azione!" },
       { titolo: "Il grande concerto", boss: true, nemici: ["lollinista", "ludhacker", "alispia", "tiziegista", "senebroker"], liv: [1, 1], abilita: 0.97, monete: 500, bustina: "leggendaria",
-        parla: "lollinista", frase: "Il teatro è pieno e il pianoforte è pronto. L'ultima nota la suono io.", vittoria: "Applausi in piedi: la città intera ha visto la tua vittoria. Ora resta un'ultima porta, quella che porta da Los Nueve." }
+        parla: "lollinista", frase: "Il teatro è pieno e il pianoforte è pronto. L'ultima nota la suono io.", vittoria: "Applausi in piedi: la città intera ha visto la tua vittoria. Ma dietro il sipario del teatro c'è uno specchio che riflette… mondi diversi." }
+    ],
+  },
+  {
+    id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
+    intro: "Dietro il sipario del teatro c'è uno specchio enorme. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti (+10% a testa).",
+    tappe: [
+      { titolo: "Il riflesso di Giulia", nemici: ["giulmai", "nikulia", "giulifleur", "giulimaah", "giudella"], liv: [1, 1], abilita: 0.9, monete: 290,
+        parla: "giudella", frase: "Cinque Giulie e una sola passerella. Indovina quale è quella vera… mentre ti battiamo." },
+      { titolo: "Le mille Viky", nemici: ["panky", "demviky", "vikatrix", "vikamashtu", "vikyventura"], liv: [1, 1], abilita: 0.91, monete: 300,
+        parla: "vikatrix", frase: "In un mondo sono una strega, in un altro un demone. In tutti ti batto." },
+      { titolo: "Il labirinto di Aurora", nemici: ["c18ora", "aurera", "auroruna", "aurorrigan", "auroressa"], liv: [1, 1], abilita: 0.92, monete: 310, bustina: "epica",
+        parla: "aurorrigan", frase: "Ogni corridoio del labirinto porta a un'altra me. E nessuno porta all'uscita." },
+      { titolo: "Lo specchio di Senè", nemici: ["bulsene", "persene", "seneverr", "senecate", "senebroker"], liv: [1, 1], abilita: 0.93, monete: 320,
+        parla: "senebroker", frase: "Abbiamo fatto i conti: cinque contro uno. L'investimento è sicuro." },
+      { titolo: "Il doppio di Tiziano", nemici: ["criliziano", "zeutiz", "tizievil", "tiziazel", "tiziegista"], liv: [1, 1], abilita: 0.95, monete: 330,
+        parla: "tiziegista", frase: "Scena madre: tutti i Tiziano del Multiverso contro di te. Motore… azione!" },
+      { titolo: "Tutti i Lorenzo", boss: true, nemici: ["gohanlollo", "aresorenzo", "lollon", "lollinista", "lollifer"], liv: [1, 1], abilita: 0.97, monete: 520, bustina: "leggendaria",
+        parla: "lollifer", frase: "Cinque mondi, cinque Lorenzo. E di te ce n'è uno solo.", vittoria: "Gli specchi si incrinano e cadono in mille pezzi. In lontananza fischia un treno: è l'unico modo per tornare a casa." }
+    ],
+  },
+  {
+    id: "c14", campo: "pioggia", titolo: "Il treno tra i mondi", sottotitolo: "Multiverso", colore: "#4fc3f7", simbolo: "⇶",
+    intro: "Un treno corre sotto la pioggia attraversando un mondo dopo l'altro. In ogni carrozza viaggiano versioni diverse degli amici, mischiate tra loro: occhio alle coppie dello stesso amico, che si danno forza.",
+    tappe: [
+      { titolo: "La stazione", nemici: ["ritadora", "ritacubus", "cypips", "pipmon", "chichice"], liv: [1, 1], abilita: 0.92, monete: 300,
+        parla: "ritadora", frase: "Biglietto, prego. Non ce l'hai? Allora si paga in battaglia." },
+      { titolo: "La carrozza ristorante", nemici: ["diegarman", "diegial", "pipciatore", "pipverus", "giudella"], liv: [1, 1], abilita: 0.93, monete: 310,
+        parla: "diegarman", frase: "Il menù di oggi: un cocktail flambé e una sconfitta. Offre la casa." },
+      { titolo: "La carrozza letto", nemici: ["alessmione", "alissith", "ludraco", "ludhacker", "auroruna"], liv: [1, 1], abilita: 0.94, monete: 320, bustina: "epica",
+        parla: "alessmione", frase: "Qui si dorme. Tu invece, tra un attimo, sognerai di aver vinto." },
+      { titolo: "Il ponte sospeso", nemici: ["mauriziente", "maurialpinista", "adelrizio", "samulett", "samutografo"], liv: [1, 1], abilita: 0.95, monete: 330,
+        parla: "maurialpinista", frase: "Il ponte è stretto e sotto c'è il vuoto. Io sono abituato all'altezza, tu?" },
+      { titolo: "La galleria buia", nemici: ["ludomodeus", "freezovico", "simothan", "simonducer", "alistaroth"], liv: [1, 1], abilita: 0.96, monete: 340,
+        parla: "simothan", frase: "In galleria si spengono le luci. È lì che ci divertiamo di più." },
+      { titolo: "La locomotiva", boss: true, nemici: ["samuzebub", "gokiele", "efesamuele", "poseludovico", "zeutiz"], liv: [1, 1], abilita: 0.98, monete: 540, bustina: "leggendaria",
+        parla: "gokiele", frase: "Il treno lo guido io, e non si ferma finché non cadi. Tutto vapore!", vittoria: "Freni il treno appena in tempo. Davanti a te si alza una torre altissima, con un orologio fermo in cima." }
+    ],
+  },
+  {
+    id: "c15", campo: "tempio", titolo: "La torre del tempo", sottotitolo: "Multiverso", colore: "#f2c14e", simbolo: "⌛",
+    intro: "Nella torre del tempo il passato e il futuro si incontrano: ogni piano è più alto e più difficile. In cima ti aspettano i più forti di tutti i mondi.",
+    tappe: [
+      { titolo: "Il portone", nemici: ["tizievil", "ginice", "lollon", "giulifleur", "ritadora"], liv: [1, 1], abilita: 0.94, monete: 320,
+        parla: "ginice", frase: "Il portone si apre solo a chi vince. Gli altri restano fuori… per sempre." },
+      { titolo: "La sala degli orologi", nemici: ["aphroalessia", "atharita", "dionpips", "persene", "aresorenzo"], liv: [1, 1], abilita: 0.95, monete: 330,
+        parla: "aphroalessia", frase: "Ogni ticchettio è un secondo in meno per te. Gli dei non hanno fretta." },
+      { titolo: "La scala infinita", nemici: ["diego17", "herdiego", "diegirius", "nikulia", "panky"], liv: [1, 1], abilita: 0.96, monete: 340, bustina: "epica",
+        parla: "herdiego", frase: "Tre Diego su questa scala. Per salire devi passare da tutti." },
+      { titolo: "Il giardino sospeso", nemici: ["vegerizio", "brolymone", "mauriziente", "simoldemort", "mauriphomet"], liv: [1, 1], abilita: 0.97, monete: 350,
+        parla: "vegerizio", frase: "Da quassù il mondo sembra piccolo. E anche tu." },
+      { titolo: "La stanza degli specchi", nemici: ["wandessia", "vidalessia", "alispia", "artalice", "alistaroth"], liv: [1, 1], abilita: 0.98, monete: 360,
+        parla: "alispia", frase: "Due sorelle, cinque riflessi. Non saprai mai da dove arriva il colpo." },
+      { titolo: "In cima alla torre", boss: true, nemici: ["lollinista", "alissith", "gokiele", "zeutiz", "lollifer"], liv: [1, 1], abilita: 1, monete: 600, bustina: "leggendaria",
+        parla: "zeutiz", frase: "Il tempo qui si è fermato per aspettarti. Adesso riparte, e non a tuo favore.", vittoria: "L'orologio in cima alla torre riprende a girare. Da lassù vedi l'ultima porta, quella che porta da Los Nueve." }
     ],
   },
   {
@@ -243,7 +297,10 @@ STORIA.forEach((cap, k) => cap.tappe.forEach((t, i) => {
   // i nemici con una sinergia di serie sono più forti: per compensare hanno qualche livello in meno
   // (5 della stessa serie: −3 livelli, 3 o 4: −1)
   const perSerie = {}; for (const id of t.nemici) { const c = (typeof PER_ID !== "undefined" ? PER_ID : require("./carte.js").PER_ID)[id]; if (c) perSerie[c.serie] = (perSerie[c.serie] || 0) + 1; }
-  const max = Math.max(0, ...Object.values(perSerie)), meno = max >= 5 ? 3 : max >= 3 ? 1 : 0;
+  // anche il Multiverso (più versioni della stessa persona) li rende più forti: 3 o più versioni −2, 2 versioni −1
+  const perPers = {}; for (const id of t.nemici) { const c = (typeof PER_ID !== "undefined" ? PER_ID : require("./carte.js").PER_ID)[id]; if (c && c.persona) perPers[c.persona] = (perPers[c.persona] || 0) + 1; }
+  const maxP = Math.max(0, ...Object.values(perPers));
+  const max = Math.max(0, ...Object.values(perSerie)), meno = (max >= 5 ? 3 : max >= 3 ? 1 : 0) + (maxP >= 3 ? 2 : maxP >= 2 ? 1 : 0);
   const bb = Math.max(1, b - meno);
   t.liv = t.boss ? [Math.min(30, bb + 1), Math.min(30, bb + 2)] : [Math.max(1, bb), Math.min(30, bb + 2)];
 }));
