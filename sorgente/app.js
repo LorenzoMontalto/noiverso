@@ -602,6 +602,7 @@ function ascendiCarta(id, conferma, el) {
   if (!S.admin && S.monete < costo) { mostraAvviso(`Servono ${costo} monete.`); return; }
   if (!S.admin) S.monete -= costo;
   S.asc = Object.assign({}, S.asc, { [id]: passi });
+  S.rarNov26 = true;   // questa Ascesa parte già dalle rarità nuove: non va mai "sistemata"
   S.liv[id] = 1; if (S.lodeXp) S.lodeXp[id] = 0;
   S.stats.ascese = (S.stats.ascese || 0) + 1;
   salva(); aggiornaTesta();
@@ -3393,6 +3394,8 @@ function ascoltaAltriDispositivi() {
 function applicaSalvataggio(salvato) {
   const n = statoNuovo();
   S = n;
+  // un account nuovo nasce già con le rarità di adesso: la sistemazione dell'Ascesa (sotto) non deve mai toccarlo
+  if (!salvato) S.rarNov26 = true;
   if (salvato) {
     S = Object.assign(n, salvato, {
       stats: Object.assign(n.stats, salvato.stats || {}),
@@ -3407,6 +3410,8 @@ function applicaSalvataggio(salvato) {
     S.carte = Object.assign({}, S.carte || {});
     // nov 2026, rarità ribilanciate: chi aveva già fatto l'Ascesa di una carta cambiata tiene la rarità che si era pagato.
     // Se la carta adesso parte già da lì (o più in alto), l'Ascesa si azzera e le monete spese tornano indietro.
+    // Vale solo per i salvataggi di PRIMA del cambio: chi ha fatto un'Ascesa dopo ha già il segno rarNov26
+    // (errore corretto: gli account creati dopo il cambio non avevano il segno, e la sistemazione gonfiava le loro Ascese).
     if (!S.rarNov26) {
       const asc = Object.assign({}, S.asc || {});
       for (const [id, passi] of Object.entries(asc)) {
