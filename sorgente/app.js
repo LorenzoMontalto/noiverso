@@ -3378,6 +3378,18 @@ function applicaSalvataggio(salvato) {
       tutorial: Object.assign({}, salvato.tutorial || (salvato.stats && salvato.stats.bustine > 0 ? { fatto: true, nuovoPerTe: true } : { fatto: false })),
     });
     S.carte = Object.assign({}, S.carte || {});
+    // nov 2026, rarità ribilanciate: chi aveva già fatto l'Ascesa di una carta cambiata tiene la rarità che si era pagato.
+    // Se la carta adesso parte già da lì (o più in alto), l'Ascesa si azzera e le monete spese tornano indietro.
+    if (!S.rarNov26) {
+      const asc = Object.assign({}, S.asc || {});
+      for (const [id, passi] of Object.entries(asc)) {
+        const prima = RARITA_PRIMA_NOV26[id]; if (!prima || !PER_ID[id] || !passi) continue;
+        const ora = PER_ID[id].rarita, iPrima = ORDINE_RARITA.indexOf(prima), eff = Math.min(3, iPrima + passi), iOra = ORDINE_RARITA.indexOf(ora);
+        if (eff > iOra) asc[id] = eff - iOra;
+        else { delete asc[id]; for (let k = iPrima; k < eff; k++) S.monete += ASCESA_MONETE[ORDINE_RARITA[k]] || 0; }
+      }
+      S.asc = asc; S.rarNov26 = true;
+    }
     // recupero: una carta con un livello è stata trovata in una bustina, anche se la collezione non l'ha registrata
     for (const id of Object.keys(S.liv || {})) if (PER_ID[id] && !(S.carte[id] > 0)) S.carte[id] = 1;
     // l'avatar deve essere una carta che hai trovato (chi l'aveva scelto prima della regola lo riscegli dal profilo)
