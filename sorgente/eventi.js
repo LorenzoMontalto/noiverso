@@ -134,7 +134,7 @@ const Settimana = (() => {
 
 const BossGiorno = (() => {
   // il boss di ogni serie: una sua leggendaria, ingigantita
-  const BOSS = { eroi: "ironlus", db: "gokiele", dei: "zeutiz", nueve: "reina", maghi: "simoldemort", demoni: "lollifer", mestieri: "lollinista" };
+  const BOSS = { eroi: "ironlus", db: "gokiele", dei: "zeutiz", nueve: "reina", maghi: "simoldemort", demoni: "lollifer", mestieri: "lollinista", simpson: "tizomer" };
   const CORAZZE = {
     corazza:  { nome: "Corazza", desc: t => `Subisce il 40% di danni in meno dalle carte che non battono il suo tipo (${STILI[t].nome}).` },
     rigenera: { nome: "Rigenerazione", desc: () => "Ogni turno recupera il 6% dei PV, a meno che non stia bruciando." },
@@ -143,7 +143,7 @@ const BossGiorno = (() => {
   };
   const DEBOLEZZE = {
     serie:      { nome: "Teme una serie", desc: x => `Le carte ${SERIE[x].nome} gli fanno il 50% di danni in più.` },
-    sinergia:   { nome: "Teme le sinergie", desc: () => "Se la tua squadra ha una sinergia di serie (3 carte o più), parte con il 30% di PV in meno." },
+    sinergia:   { nome: "Teme le sinergie", desc: () => "Se la tua squadra ha una sinergia di serie (2 carte o più), parte con il 30% di PV in meno." },
     multiverso: { nome: "Teme il Multiverso", desc: () => "Le tue carte con il Multiverso attivo gli fanno il 45% di danni in più." },
     fuoco:      { nome: "Teme il fuoco", desc: () => "Le bruciature gli fanno il triplo dei danni." },
     tipo:       { nome: "Teme un tipo", desc: t => `Le carte ${STILI[t].nome} gli fanno il 40% di danni in più (oltre al vantaggio di tipo).` },

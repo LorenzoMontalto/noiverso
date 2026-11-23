@@ -200,12 +200,30 @@ const STORIA = [
       { titolo: "Il set del film", nemici: ["tiziegista", "simonducer", "alispia", "maurialpinista", "pipciatore"], liv: [1, 1], abilita: 0.95, monete: 290,
         parla: "tiziegista", frase: "Scena della battaglia, prima ripresa. Tu fai quello che perde. Azione!" },
       { titolo: "Il grande concerto", boss: true, nemici: ["lollinista", "ludhacker", "alispia", "tiziegista", "senebroker"], liv: [1, 1], abilita: 0.97, monete: 500, bustina: "leggendaria",
-        parla: "lollinista", frase: "Il teatro è pieno e il pianoforte è pronto. L'ultima nota la suono io.", vittoria: "Applausi in piedi: la città intera ha visto la tua vittoria. Ma dietro il sipario del teatro c'è uno specchio che riflette… mondi diversi." }
+        parla: "lollinista", frase: "Il teatro è pieno e il pianoforte è pronto. L'ultima nota la suono io.", vittoria: "Applausi in piedi: la città intera ha visto la tua vittoria. Fuori dal teatro ti aspetta un pullman giallo: destinazione Springfield." }
+    ],
+  },
+  {
+    id: "c16", campo: "stadio", titolo: "Benvenuti a Springfield", serie: "simpson", colore: "#ffd90f", simbolo: "◎",
+    intro: "Il pullman giallo ti lascia davanti alla scuola elementare. Nuvole a forma di nuvola, una centrale nucleare all'orizzonte e un profumo di ciambelle ovunque: a Springfield i tuoi amici sono diventati gialli, e vogliono sfidarti.",
+    tappe: [
+      { titolo: "La scuola elementare", nemici: ["alledna", "ludohouse", "riessica", "aurrerri", "vaggie"], liv: [1, 1], abilita: 0.88, monete: 250,
+        parla: "alledna", frase: "Ah-ha! Arrivi in ritardo. Siediti: oggi l'interrogazione la fai combattendo." },
+      { titolo: "La Taverna di Moe", nemici: ["pimoe", "simarney", "giupatty", "selmene", "dieggum"], liv: [1, 1], abilita: 0.9, monete: 260,
+        parla: "pimoe", frase: "Qui si entra solo se si paga da bere. Tu non hai pagato. Quindi si combatte." },
+      { titolo: "La prima chiesa di Springfield", nemici: ["maurilanders", "riessica", "aurrerri", "giupatty", "ludohouse"], liv: [1, 1], abilita: 0.92, monete: 270, bustina: "epica",
+        parla: "maurilanders", frase: "Salve salvino, forestierino! Un'ultima preghierina e poi ti sistemo per benino." },
+      { titolo: "Lo studio di Krusty", nemici: ["samusty", "simarney", "selmene", "vaggie", "alledna"], liv: [1, 1], abilita: 0.94, monete: 280,
+        parla: "samusty", frase: "Ehi ehi, ragazzi! Oggi nello show c'è un ospite speciale: il perdente!" },
+      { titolo: "La stazione di polizia", nemici: ["dieggum", "maurilanders", "pimoe", "alisa", "giupatty"], liv: [1, 1], abilita: 0.95, monete: 290,
+        parla: "dieggum", frase: "Sei in arresto per… per… beh, ci penso dopo. Prima combattiamo." },
+      { titolo: "742 di Evergreen Terrace", boss: true, nemici: ["tizomer", "lollart", "alisa", "vaggie", "samusty"], liv: [1, 1], abilita: 0.97, monete: 500, bustina: "leggendaria",
+        parla: "tizomer", frase: "D'oh! Hai finito tutte le ciambelle? Allora è guerra.", vittoria: "Springfield ti saluta con una ciambella gigante. Ma in cantina, dietro la lavatrice dei Simpson, c'è uno specchio che riflette… mondi diversi." }
     ],
   },
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
-    intro: "Dietro il sipario del teatro c'è uno specchio enorme. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti (+10% a testa).",
+    intro: "Dietro la lavatrice dei Simpson c'è uno specchio enorme. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
     tappe: [
       { titolo: "Il riflesso di Giulia", nemici: ["giulmai", "nikulia", "giulifleur", "giulimaah", "giudella"], liv: [1, 1], abilita: 0.9, monete: 290,
         parla: "giudella", frase: "Cinque Giulie e una sola passerella. Indovina quale è quella vera… mentre ti battiamo." },

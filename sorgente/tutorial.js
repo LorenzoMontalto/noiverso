@@ -8,7 +8,7 @@
 // ============================================================
 const Tutorial = (() => {
   const PREMIO = 150;
-  const VERSIONE = 6;   // quando il tutorial cambia molto, chi l'aveva già fatto riceve un avviso (una volta)
+  const VERSIONE = 7;   // quando il tutorial cambia molto, chi l'aveva già fatto riceve un avviso (una volta)
   let passi = [], i = 0, attivo = false, timer = null, radice = null, entrato = 0;
 
   const vis = el => { if (!el) return null; const r = el.getBoundingClientRect(); return r.width > 2 && r.height > 2 ? r : null; };
@@ -40,7 +40,7 @@ const Tutorial = (() => {
         testo: `La squadra è di ${CARTE_SQUADRA} carte: la prima entra in campo per prima e con le frecce cambi l'ordine. Tocca una carta per i suoi pulsanti: <b>Aggiungi in squadra</b>, <b>Scambia</b> (per mettere un'altra carta al suo posto) e <b>Confronta</b> (per vedere due carte una accanto all'altra). Puoi preparare fino a ${NUM_SQUADRE} squadre diverse.`,
         bersaglioInfo: ".slot5", bollaInfo: null },
       { vista: "squadra", bersaglio: ".riepilogo", titolo: "I tipi", testo: `Ogni carta ha un tipo che potenzia una sua statistica: <span class="s-FOR stile">FOR</span> Forza (+25% attacco), <span class="s-DIF stile">DIF</span> Difesa (+5% difesa), <span class="s-VEL stile">VEL</span> Velocità (+5 velocità: a parità di livello attacca sempre per prima, e +15% attacco). Potenziando salgono tutte le statistiche, quella del tipo di più. Forza batte Difesa, Difesa batte Velocità, Velocità batte Forza: chi è in vantaggio fa il 30% di danni in più, chi è in svantaggio il 20% in meno. Meglio una squadra con tipi misti.` },
-      { vista: "squadra", bersaglio: ".sinergie-box", titolo: "Le sinergie", testo: "Bastano <b>2 carte della stessa serie</b> in squadra per un primo bonus a quelle carte; con <b>3</b> diventa più forte e con <b>5</b> molto di più. Ogni serie ha il suo: i Supereroi difendono di più, i Demoni si curano colpendo, i Mafiosi partono con più energia… Se metti <b>due o più versioni dello stesso amico</b> (per esempio Lollifer e Lollinista) scatta il <b>Multiverso</b>: +8% a tutte le loro statistiche (+14% con tre versioni). Qui vedi le sinergie attive e cosa ottieni aggiungendo un'altra carta." },
+      { vista: "squadra", bersaglio: ".sinergie-box", titolo: "Le sinergie", testo: "Bastano <b>2 carte della stessa serie</b> in squadra per un primo bonus a quelle carte; con <b>3</b> diventa più forte e con <b>5</b> molto di più. Ogni serie ha il suo: i Supereroi difendono di più, i Demoni si curano colpendo, i Mafiosi prendono più energia, i Simpson fanno più colpi critici… Sono tutte diverse ma valgono più o meno uguale: scegli quella che ti piace. Se metti <b>due o più versioni dello stesso amico</b> (per esempio Lollifer e Lollinista) scatta il <b>Multiverso</b>: un piccolo bonus a tutte le loro statistiche. Qui vedi le sinergie attive e cosa ottieni aggiungendo un'altra carta." },
       { vista: "sfida", bersaglio: ".prima-partita", titolo: "Zaino e graffito", saltaSe: () => !!B,
         testo: `Prima di combattere puoi riempire lo <b>zaino</b> con ${Zaino.POSTI} oggetti (cure, energia e altro): in battaglia ne usi uno per turno, e ognuno vale una volta sola. Il <b>graffito</b> della squadra è un piccolo bonus che sblocchi con le bombolette trovate nelle bustine.` },
       { vista: "sfida", bersaglio: ".livelli .livello", titolo: "Le sfide", saltaSe: () => !squadraPiena() || !!B,
@@ -58,7 +58,7 @@ const Tutorial = (() => {
       { battaglia: true, bersaglio: ".panchina", bolla: "alto", titolo: "La panchina", testo: "Qui ci sono le altre carte della squadra. Puoi cambiare quella in campo (usa il turno): conviene quando sei in svantaggio di stile. Quando una carta va KO scegli tu chi entra." },
       { battaglia: true, nascosto: true, aspetta: fuoriBattaglia, titolo: "", testo: "" },
       // ---- il resto ----
-      { vista: "storia", bersaglio: '.nav [data-vista="storia"]', titolo: "La storia", testo: () => `${STORIA.length} capitoli su mappe da esplorare, dalla città agli Inferi fino alla città dei mestieri, con dialoghi, tappe e un boss alla fine di ognuno. Ogni tappa vale fino a 3 stelle: con le stelle apri gli scrigni del capitolo.` },
+      { vista: "storia", bersaglio: '.nav [data-vista="storia"]', titolo: "La storia", testo: () => `${STORIA.length} capitoli su mappe da esplorare, dalla città agli Inferi fino a Springfield, con dialoghi, tappe e un boss alla fine di ognuno. Ogni tappa vale fino a 3 stelle: con le stelle apri gli scrigni del capitolo.` },
       { vista: "pass", bersaglio: '.nav [data-vista="pass"]', titolo: "Il pass", testo: `Ogni battaglia e ogni bustina danno XP. Il pass ha ${PASS.livelli} livelli con un premio ciascuno, e ogni 10 scegli tu tra due premi. Finito il pass continui a trovare scrigni a sorpresa.` },
       { vista: "classifica", bersaglio: '.nav [data-vista="classifica"]', titolo: "La classifica", testo: "La classifica del gruppo: ogni vittoria nelle sfide <b>dal vivo</b> vale <b>3 punti</b>, le sconfitte 0. Ogni mese la classifica riparte da zero e i <b>primi 3</b> ricevono dei premi." },
       { vista: "strada", bersaglio: "#profilo-btn", titolo: "Il tuo profilo", testo: "Qui cambi nome e scegli il tuo <b>avatar</b>, che puoi prendere solo tra le carte che hai trovato: più carte trovi, più scelta hai. Qui trovi anche le impostazioni (se il telefono scalda o va a scatti prova la grafica leggera) e puoi <b>rifare questo tutorial</b>." },
@@ -202,7 +202,7 @@ const Tutorial = (() => {
       setTimeout(() => mostraAvviso("Novità: c'è un tutorial! Lo trovi nel tuo profilo, in alto a destra."), 1600);
     } else if ((S.tutorial.versione || 1) < VERSIONE) {
       S.tutorial = Object.assign({}, S.tutorial, { versione: VERSIONE }); salva();
-      setTimeout(() => mostraAvviso("Il tutorial è aggiornato con le novità (Ascesa delle carte, leggendaria garantita, scelta della squadra, nuove sinergie, scambi per potenziare, campi di battaglia…). Lo rifai dal tuo profilo, in alto a destra."), 1600);
+      setTimeout(() => mostraAvviso("Il tutorial è aggiornato con le novità (serie Simpson, sinergie ribilanciate, Ascesa delle carte, leggendaria garantita, scambi per potenziare, campi di battaglia…). Lo rifai dal tuo profilo, in alto a destra."), 1600);
     }
   }
 

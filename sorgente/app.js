@@ -1315,7 +1315,7 @@ const Sinergie = (() => {
       <p class="nota">Quanto valgono le sinergie con 2, 3 e 5 carte della stessa serie, e il Multiverso (stessa persona in più versioni). Valgono per tutti, anche dal vivo e contro il computer.</p>
       <form id="form-sinergie" class="sin-admin" autocomplete="off">
         ${ORDINE_SERIE.filter(k => SINERGIE[k]).map(k => { const s = SINERGIE[k], se = SERIE[k]; return `<fieldset style="--c:${se.colore}"><legend>${se.simbolo} ${esc(se.nome)}</legend>
-          <div class="campi-4">${[["v2", 2], ["v3", 3], ["v5", 5]].map(([v, n]) => `<label>Con ${n} (${s.tipo === "energia" ? "energia" : s.tipo === "effetti" ? "forza %" : "%"}) <input name="${k}.${v}" type="number" min="0" max="${s.tipo === "effetti" ? 200 : 60}" value="${s[v]}"></label>`).join("")}
+          <div class="campi-4">${[["v2", 2], ["v3", 3], ["v5", 5]].map(([v, n]) => `<label>Con ${n} (${s.tipo === "energia" ? "energia" : s.tipo === "effetti" ? "forza %" : "%"}) <input name="${k}.${v}" type="number" min="0" step="0.5" max="${s.tipo === "effetti" ? 400 : s.tipo === "energia" ? 5 : 60}" value="${s[v]}"></label>`).join("")}
           <label>Con 5 fa <input value="${esc(testoSerie(k, 3))}" disabled></label></div></fieldset>`; }).join("")}
         <fieldset><legend>∞ Multiverso</legend><div class="campi-3">
           <label>2 versioni (%) <input name="multiverso.v2" type="number" min="0" max="30" value="${MULTIVERSO.v2}"></label>
@@ -1324,7 +1324,7 @@ const Sinergie = (() => {
       </form>`;
   }
   async function salvaAdmin(form, base) {
-    const nuovi = { versione: 3 };
+    const nuovi = { versione: 4 };
     if (!base) {
       const f = new FormData(form);
       for (const k of Object.keys(SINERGIE)) { const d = {}; for (const v of ["v2", "v3", "v5"]) { const x = f.get(`${k}.${v}`); if (x !== null && x !== "") d[v] = +x; } if (Object.keys(d).length) nuovi[k] = d; }

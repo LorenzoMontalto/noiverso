@@ -5,7 +5,7 @@
 // ---------------- TROFEI E TITOLI ----------------
 // Ogni trofeo dà monete (una volta) e sblocca un titolo da mostrare sotto il nome in classifica.
 const Trofei = (() => {
-  const TITOLI_SERIE = { eroi: "Supereroe", db: "Guerriero leggendario", dei: "Divinità", nueve: "Boss della mala", maghi: "Arcimago", demoni: "Signore degli Inferi", mestieri: "Stacanovista" };
+  const TITOLI_SERIE = { eroi: "Supereroe", db: "Guerriero leggendario", dei: "Divinità", nueve: "Boss della mala", maghi: "Arcimago", demoni: "Signore degli Inferi", mestieri: "Stacanovista", simpson: "Re di Springfield" };
   const stelleTot = () => Object.values((S.storia || {}).stelle || {}).reduce((a, n) => a + n, 0);
   const lodi = () => possedute().filter(c => haLode(c.id)).length;
   const oloTot = () => Object.keys(S.olo || {}).filter(id => S.olo[id] && PER_ID[id]).length;

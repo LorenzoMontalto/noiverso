@@ -42,37 +42,41 @@ function nuovoCombattente(id, liv, lode, olo, ultra, asc) {
 
 // ---------------- Sinergie ----------------
 // Serie: 2, 3 o 5 carte della stessa serie in squadra danno un bonus (sempre più grande) alle carte di quella serie.
-// Multiverso: 2 o più versioni della stessa persona (es. Lollifer + Lollinista) danno +5% / +10% a tutte le statistiche di quelle carte.
+// Multiverso: 2 o più versioni della stessa persona (es. Lollifer + Lollinista) danno +2% / +4% a tutte le statistiche di quelle carte.
 // I valori si possono cambiare dal pannello admin (config "sinergie"): li legge applicaSinergie.
 const _il = v => (v === 1 || v === 11 || String(v)[0] === "8") ? `l'${v}%` : `il ${v}%`;
 // Tre livelli: 2 carte della stessa serie (bonus piccolo), 3 (medio), 5 (grande). liv = 1, 2, 3.
 const SOGLIE_SINERGIA = [2, 3, 5];
 const SINERGIE_BASE = {
-  eroi:     { tipo: "dif",      v2: 7, v3: 14, v5: 25, testo: v => `+${v}% difesa` },
-  db:       { tipo: "att",      v2: 4, v3: 12, v5: 26, testo: v => `+${v}% attacco` },
-  dei:      { tipo: "rigenera", v2: 1, v3: 3,  v5: 5,  testo: v => `in campo recuperano ${_il(v)} dei PV ogni turno` },
-  // con 5 Mafiosi: +3 all'inizio (non più +5, che portava a 8 e dava la mossa finale al primo turno) e +1 nei primi 3 turni
-  nueve:    { tipo: "energia",  v2: 1, v3: 2,  v5: 3,  testo: (v, liv) => `la squadra parte con +${v} energia${liv >= 3 ? " e ne prende +1 in più nei primi 3 turni" : ""}` },
-  maghi:    { tipo: "effetti",  v2: 40, v3: 70, v5: 200, testo: (v, liv) => liv >= 3 ? `i loro effetti durano 1 turno in più e sono più forti del ${v}%` : liv === 2 ? `i loro effetti (brucia, indebolisci, stordisci) durano 1 turno in più e sono più forti del ${v}%` : `i loro effetti sono più forti del ${v}%` },
-  demoni:   { tipo: "vampiro",  v2: 3, v3: 11, v5: 20, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
-  mestieri: { tipo: "vel",      v2: 7, v3: 16, v5: 26, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
+  eroi:     { tipo: "dif",      v2: 10, v3: 20, v5: 23, testo: v => `+${v}% difesa` },
+  db:       { tipo: "att",      v2: 8, v3: 16, v5: 22, testo: v => `+${v}% attacco` },
+  dei:      { tipo: "rigenera", v2: 1.5, v3: 3, v5: 4.5, testo: v => `in campo recuperano ${_il(v)} dei PV ogni turno` },
+  // Mafiosi: v = energia in più in tutto, a rate: +1 all'inizio e +1 a fine turno per i turni dopo.
+  // Così non si arriva mai alla mossa finale (5) al primo turno: si parte al massimo da 4.
+  nueve:    { tipo: "energia",  v2: 1, v3: 4,  v5: 10,  testo: v => v <= 1 ? `la squadra parte con +${v} energia` : `+1 energia all'inizio e +1 in più a fine turno per i primi ${v - 1} turni` },
+  // Maghi: effetti più forti (e da 3 carte durano 1 turno in più); in più le loro mosse con un effetto fanno +15/25/45% di danni
+  maghi:    { tipo: "effetti",  v2: 100, v3: 180, v5: 300, testo: (v, liv) => `i loro effetti (brucia, indebolisci, stordisci) sono più forti del ${v}%${liv >= 2 ? " e durano 1 turno in più" : ""}, e le mosse con un effetto fanno +${[0, 15, 25, 45][liv] || 15}% di danni` },
+  demoni:   { tipo: "vampiro",  v2: 6, v3: 12, v5: 25, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
+  // Simpson: colpi critici più frequenti e, da 3 carte, più forti (×1,75; con 5 ×2 invece di ×1,5)
+  simpson:  { tipo: "critico",  v2: 15, v3: 25, v5: 35, testo: (v, liv) => `+${v}% di probabilità di colpo critico${liv >= 2 ? `, e i loro critici fanno ×${liv >= 3 ? "2" : "1,75"} invece di ×1,5` : ""}` },
+  mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
 for (const k in SINERGIE) SINERGIE[k].testo = SINERGIE_BASE[k].testo;
-const MULTIVERSO = { v2: 8, v3: 14 };
+const MULTIVERSO = { v2: 2, v3: 4 };   // nov 2026: era 8 / 14, ma toccando tutte le statistiche valeva tre volte una sinergia di serie
 const valSinergia = (s, liv) => liv >= 3 ? s.v5 : liv === 2 ? s.v3 : liv === 1 ? s.v2 : 0;
 function applicaSinergie(cfg) {
   const c = cfg && typeof cfg === "object" ? cfg : {};
-  const num = (x, b, max) => Number.isFinite(+x) ? Math.max(0, Math.min(max, Math.round(+x))) : b;
+  const num = (x, b, max) => x !== undefined && x !== null && x !== "" && Number.isFinite(+x) ? Math.max(0, Math.min(max, Math.round(+x * 10) / 10)) : b;
   // i valori salvati con le vecchie regole (solo 3 e 5 carte) non valgono più: si riparte dai nuovi
-  const nuove = c.versione === 3;   // nov 2026: versione 3 (Mafiosi rivisti); i valori salvati prima non valgono più
+  const nuove = c.versione === 4;   // nov 2026: versione 3 (Mafiosi rivisti); i valori salvati prima non valgono più
   for (const k in SINERGIE_BASE) {
-    const b = SINERGIE_BASE[k], m = (nuove && c[k]) || {}, max = b.tipo === "energia" ? 5 : b.tipo === "effetti" ? 200 : 60;
+    const b = SINERGIE_BASE[k], m = (nuove && c[k]) || {}, max = b.tipo === "energia" ? 5 : b.tipo === "effetti" ? 400 : 60;
     for (const v of ["v2", "v3", "v5"]) SINERGIE[k][v] = num(m[v], b[v], max);
   }
   const mv = (nuove && c.multiverso) || {};
-  MULTIVERSO.v2 = num(mv.v2, 8, 30);
-  MULTIVERSO.v3 = num(mv.v3, 14, 40);
+  MULTIVERSO.v2 = num(mv.v2, 2, 30);
+  MULTIVERSO.v3 = num(mv.v3, 4, 40);
 }
 // Quali sinergie ha una squadra (array di id carte). Usata dal motore e dalla schermata Squadre.
 function sinergieDi(ids) {
@@ -158,9 +162,10 @@ class Battaglia {
         else if (s.tipo === "vel") x.vel = Math.round(x.vel * (1 + s.val / 100));
         else if (s.tipo === "rigenera") x.sin.rigenera = s.val;
         else if (s.tipo === "vampiro") x.sin.vampiro = s.val;
-        else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; if (s.liv >= 2) x.sin.effetti = 1; }
+        else if (s.tipo === "critico") { x.sin.crit = s.val; x.sin.critX = s.liv >= 3 ? 2 : s.liv === 2 ? 1.75 : 1.5; }
+        else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; x.sin.dannoEff = [0, 15, 25, 45][s.liv] || 0; if (s.liv >= 2) x.sin.effetti = 1; }
       }
-      if (s.tipo === "energia") { L.energia = Math.min(ENERGIA_MAX, L.energia + s.val); if (s.liv >= 3) L.spintaEnergia = 3; }
+      if (s.tipo === "energia") { const v = Math.round(s.val); L.energia = Math.min(ENERGIA_MAX, L.energia + Math.min(1, v)); L.spintaEnergia = Math.max(0, v - 1); }
       if (s.tipo === "vel" && s.liv >= 3) L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
     }
     for (const m of sin.multiverso) {
@@ -265,15 +270,17 @@ class Battaglia {
     let varia = 1, crit = false;
     if (casuale) {
       varia = a.c.ruolo === "imprevedibile" ? 0.6 + this.rng() * 0.9 : 0.9 + this.rng() * 0.2;
-      crit = this.rng() < Math.min(0.35, (a.c.ruolo === "assassino" ? 0.2 : PROB_CRITICO) + this.gv(l, "fortuna") / 100 + (this.campo === "notte" ? 0.06 : 0));
+      const sc = (a.sin && a.sin.crit) || 0;   // sinergia Simpson: tetto più alto (60% invece di 35%)
+      crit = this.rng() < Math.min(sc ? 0.6 : 0.35, (a.c.ruolo === "assassino" ? 0.2 : PROB_CRITICO) + sc / 100 + this.gv(l, "fortuna") / 100 + (this.campo === "notte" ? 0.06 : 0));
     }
     // chi è in svantaggio di tipo non fa colpi critici: il tipo deve contare davvero
     if (stile < 1) crit = false;
     const parato = crit && this.gv(1 - l, "specchio") > 0;   // lo specchio trasforma i critici in colpi normali
     if (parato) crit = false;
-    let dmg = m.pot * rapporto * stile * varia * (crit ? 1.5 : 1) * K_DANNO * (a.f || 1);
+    let dmg = m.pot * rapporto * stile * varia * (crit ? ((a.sin && a.sin.critX) || 1.5) : 1) * K_DANNO * (a.f || 1);
     dmg *= (1 + this.gv(l, "fiamma") / 100) * (1 - this.gv(1 - l, "muro") / 100);
     if (a.c.ruolo === "tiratore" && m.costo >= 2) dmg *= 1.1;
+    if (m.eff && a.sin && a.sin.dannoEff) dmg *= 1 + a.sin.dannoEff / 100;   // sinergia Maghi
     // boss del giorno: corazze e punti deboli (funzioni messe da BossGiorno.prepara)
     if (d.dannoDa) dmg *= d.dannoDa(a);
     if (a.furia && a.pv < a.pvMax * .5) dmg *= 1 + a.furia / 100;
@@ -491,7 +498,7 @@ class Battaglia {
       // Fulmine dà +1 energia anche a inizio turno 4, Blackout ne toglie 1 al nemico
       const g4 = this.turno === 3 && L.graffito;
       const piu = g4 && L.graffito.id === "fulmine" ? 1 : 0, meno = this.turno === 3 && this.lati[1 - l].graffito && this.lati[1 - l].graffito.id === "blackout" ? 1 : 0;
-      const spinta = L.spintaEnergia > 0 ? (L.spintaEnergia--, 1) : 0;   // 5 Mafiosi: +1 nei primi 3 turni
+      const spinta = L.spintaEnergia > 0 ? (L.spintaEnergia--, 1) : 0;   // sinergia Mafiosi: +1 a fine turno nei primi turni
       L.energia = Math.max(0, Math.min(ENERGIA_MAX, L.energia + ENERGIA_TURNO + extra + piu - meno + spinta));
     }
     this._controllaKO();

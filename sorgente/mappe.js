@@ -21,6 +21,7 @@ const MappeStoria = (() => {
     [[250, 1060], [570, 900], [920, 990], [1230, 790], [1010, 560], [900, 250]],    // vulcano
     [[200, 1050], [520, 860], [880, 990], [1250, 830], [1420, 480], [900, 240]],    // Inferi
     [[230, 1000], [520, 760], [880, 950], [1190, 690], [1480, 890], [1560, 330]],   // città dei mestieri
+    [[220, 1000], [540, 820], [880, 980], [1180, 720], [1470, 900], [1560, 360]],   // Springfield
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -57,6 +58,9 @@ const MappeStoria = (() => {
     [[90, 1130, "☀", "Villaggio Vacanze"], [330, 600, "✎", "Scuola"], [520, 1130, "🍸", "Bar Centrale"], [1000, 1120, "⚽", "Stadio"],
      [1320, 560, "$", "Borsa"], [1660, 1030, "🎬", "Set del Film"], [1700, 200, "♫", "Teatro dell'Opera"], [720, 420, "⚗", "Laboratorio"],
      [1080, 270, "🎧", "Studio di Registrazione"], [230, 200, "▲", "Vetta del Monte"], [1680, 650, "☘", "Giungla"]],
+    [[110, 1120, "✎", "Scuola Elementare"], [400, 940, "🍺", "Taverna di Moe"], [730, 1130, "✝", "Prima Chiesa"], [1070, 590, "★", "Studio di Krusty"],
+     [1640, 1020, "⚑", "Stazione di Polizia"], [1720, 250, "⌂", "Evergreen Terrace"], [260, 300, "☢", "Centrale Nucleare"], [820, 250, "◎", "Kwik-E-Mart"],
+     [1260, 260, "▲", "Monte Springfield"], [600, 560, "🍩", "Lard Lad Donuts"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -445,7 +449,51 @@ const MappeStoria = (() => {
     for (let k = 0; k < 80; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * H)}" r="${f(1 + r() * 2.5)}" fill="#f2c14e" opacity="${(.2 + r() * .5).toFixed(2)}"/>`;
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, specchi, treno, torre, dimensione];
+  function springfield(r) {
+    let s = `<rect width="${W}" height="${H}" fill="#9bd36a"/>`;
+    // cielo azzurro con nuvole in alto (la collina con la scritta Springfield)
+    s += `<path d="M0,0 H${W} V150 Q1300,210 900,170 T0,190Z" fill="#8fd3ff"/>`;
+    for (let k = 0; k < 7; k++) { const x = 100 + k * 250 + r() * 60, y = 40 + r() * 50; s += `<g fill="#ffffff" opacity=".95"><ellipse cx="${f(x)}" cy="${f(y)}" rx="60" ry="22"/><ellipse cx="${f(x + 40)}" cy="${f(y - 14)}" rx="40" ry="22"/><ellipse cx="${f(x - 35)}" cy="${f(y - 8)}" rx="34" ry="18"/></g>`; }
+    s += `<path d="M1050,330 Q1260,150 1480,330Z" fill="#6fb24a"/><text x="1265" y="300" text-anchor="middle" font-size="40" font-weight="900" fill="#ffffff" stroke="#2a5a1a" stroke-width="2" font-family="Arial Black, sans-serif" transform="rotate(-6 1265 300)">SPRINGFIELD</text>`;
+    // fiume e laghetto
+    s += `<path d="M0,700 C200,640 300,760 480,720 S760,640 900,700" stroke="#4fb6ff" stroke-width="40" fill="none" opacity=".85"/>`;
+    // strade
+    const strada = d => `<path d="${d}" stroke="#7b7f86" stroke-width="44" fill="none" stroke-linecap="round"/><path d="${d}" stroke="#f4e27a" stroke-width="3" stroke-dasharray="18 18" fill="none"/>`;
+    s += strada("M0,1060 H1800") + strada("M0,860 C400,830 800,900 1800,840") + strada("M460,1200 V430") + strada("M1000,1200 V420 H1800") + strada("M1350,1200 V420");
+    // casette di Springfield con tetti colorati (lontane dai luoghi speciali)
+    const libero = (x, y) => ![[0, 960, 300, 1200], [300, 860, 560, 1050], [620, 1050, 880, 1200], [950, 480, 1200, 720], [1500, 900, 1800, 1200], [1580, 120, 1800, 420], [100, 180, 460, 460], [700, 170, 960, 340], [480, 470, 720, 660], [1040, 150, 1500, 350]].some(([a, b, c, d]) => x > a && x < c && y > b && y < d);
+    for (let k = 0; k < 70; k++) {
+      const x = 60 + r() * 1680, y = 380 + r() * 760; if (!libero(x, y)) continue;
+      const tetto = ["#e05a5a", "#5a8ae0", "#e0a35a", "#9a6ae0", "#5ab08a", "#e05aa0"][Math.floor(r() * 6)];
+      s += `<rect x="${f(x)}" y="${f(y)}" width="44" height="34" fill="#fff1c0" stroke="#7a6a40" stroke-width="2"/><path d="M${f(x - 6)},${f(y)} L${f(x + 22)},${f(y - 22)} L${f(x + 50)},${f(y)}Z" fill="${tetto}" stroke="#6a4a3a" stroke-width="2"/><rect x="${f(x + 17)}" y="${f(y + 16)}" width="10" height="18" fill="#8a5a3a"/>`;
+    }
+    // alberi
+    for (let k = 0; k < 45; k++) { const x = r() * W, y = 360 + r() * 840; if (!libero(x, y)) continue; s += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(12 + r() * 10)}" fill="${["#4a9a3a", "#3a8a30", "#5aaa40"][k % 3]}" stroke="#2a6a20" stroke-width="2"/>`; }
+    // centrale nucleare: due torri di raffreddamento con il fumo
+    for (const x of [200, 330]) s += `<path d="M${x - 50},440 Q${x - 30},350 ${x - 40},250 H${x + 40} Q${x + 30},350 ${x + 50},440Z" fill="#c8cdd2" stroke="#7a8088" stroke-width="4"/><ellipse cx="${x}" cy="250" rx="40" ry="10" fill="#9aa0a8"/>${[0, 1, 2].map(i => `<circle cx="${x + i * 14 - 10}" cy="${215 - i * 30}" r="${22 + i * 8}" fill="#eef2f4" opacity="${.75 - i * .2}"/>`).join("")}`;
+    s += `<rect x="130" y="400" width="300" height="50" fill="#a8aeb4" stroke="#6a7078" stroke-width="3"/><circle cx="280" cy="425" r="16" fill="#ffd90f" stroke="#2a2a2a" stroke-width="3"/><path d="M280,425 l0,-14 a14,14 0 0 1 12,7Z M280,425 l12,7 a14,14 0 0 1 -24,0Z" fill="#2a2a2a"/>`;
+    // barile verde fosforescente nel fiume
+    s += `<ellipse cx="600" cy="690" rx="16" ry="10" fill="#7dff3a" stroke="#3a8a10" stroke-width="3"/>`;
+    // scuola elementare
+    s += `<rect x="20" y="1000" width="250" height="110" fill="#e8a060" stroke="#7a4a20" stroke-width="4"/>${[0, 1, 2, 3, 4].map(i => `<rect x="${38 + i * 46}" y="1020" width="30" height="26" fill="#bfe8ff" stroke="#7a4a20" stroke-width="2"/>`).join("")}<rect x="130" y="1070" width="30" height="40" fill="#7a4a20"/><line x1="250" y1="1000" x2="250" y2="940" stroke="#5a5a5a" stroke-width="4"/><path d="M250,940 h30 v18 h-30Z" fill="#e04a4a"/>`;
+    // taverna di Moe
+    s += `<rect x="330" y="880" width="170" height="110" fill="#5a4030" stroke="#2a1a10" stroke-width="4"/><rect x="345" y="860" width="140" height="30" rx="4" fill="#1a1a1a"/><text x="415" y="882" text-anchor="middle" font-size="22" font-weight="900" fill="#ff5a5a" font-family="Arial Black, sans-serif">MOE'S</text>${[0, 1, 2].map(i => `<path d="M${352 + i * 46},910 l15,-15 l15,15 l-15,15Z" fill="${["#3aa04a", "#e04a4a", "#3a6ae0"][i]}"/>`).join("")}<rect x="400" y="945" width="30" height="45" fill="#2a1a10"/>`;
+    // chiesa
+    s += `<rect x="640" y="1080" width="180" height="100" fill="#f4ece0" stroke="#8a7a6a" stroke-width="4"/><path d="M630,1080 L730,1010 L830,1080Z" fill="#c05a3a" stroke="#6a3020" stroke-width="3"/><rect x="710" y="950" width="40" height="70" fill="#f4ece0" stroke="#8a7a6a" stroke-width="3"/><path d="M705,950 L730,910 L755,950Z" fill="#c05a3a"/><path d="M730,880 v26 M720,890 h20" stroke="#5a4a3a" stroke-width="5"/>`;
+    // studio di Krusty: tendone con la faccia del clown
+    s += `<path d="M960,690 Q1075,520 1190,690Z" fill="#e04a8a" stroke="#7a1a4a" stroke-width="4"/>${[0, 1, 2, 3].map(i => `<path d="M${985 + i * 50},690 Q${1010 + i * 50},610 ${1035 + i * 50},690" fill="${i % 2 ? "#ffd90f" : "#3ac0e0"}" opacity=".85"/>`).join("")}<circle cx="1075" cy="620" r="26" fill="#fff1c0" stroke="#2a2a2a" stroke-width="2"/><circle cx="1075" cy="626" r="7" fill="#e02a2a"/><path d="M1050,610 q-14,-10 -6,-22 M1100,610 q14,-10 6,-22" stroke="#3ac06a" stroke-width="9" fill="none"/>`;
+    // stazione di polizia
+    s += `<rect x="1530" y="960" width="230" height="120" fill="#5a7ab0" stroke="#2a3a60" stroke-width="4"/><rect x="1575" y="935" width="140" height="30" fill="#2a3a60"/><text x="1645" y="957" text-anchor="middle" font-size="18" font-weight="900" fill="#ffffff" font-family="Arial Black, sans-serif">POLICE</text><rect x="1630" y="1030" width="30" height="50" fill="#2a3a60"/><rect x="1560" y="1110" width="70" height="30" rx="8" fill="#ffffff" stroke="#2a2a2a" stroke-width="2"/><rect x="1580" y="1104" width="30" height="8" fill="#e02a2a"/>`;
+    // casa dei Simpson: rosa con il tetto marrone, garage e prato
+    s += `<rect x="1600" y="230" width="190" height="120" fill="#f4a6c0" stroke="#8a4a6a" stroke-width="4"/><path d="M1590,230 L1695,160 L1800,230Z" fill="#8a5a3a" stroke="#4a2a1a" stroke-width="3"/><rect x="1640" y="260" width="34" height="30" fill="#bfe8ff" stroke="#8a4a6a" stroke-width="2"/><rect x="1720" y="260" width="34" height="30" fill="#bfe8ff" stroke="#8a4a6a" stroke-width="2"/><rect x="1680" y="300" width="30" height="50" fill="#8a5a3a"/><rect x="1580" y="300" width="20" height="50" fill="#e8d8b0"/>`;
+    // Kwik-E-Mart e il ciambellone gigante di Lard Lad
+    s += `<rect x="730" y="190" width="200" height="90" fill="#e8f0e0" stroke="#3a7a5a" stroke-width="4"/><rect x="730" y="190" width="200" height="22" fill="#3a9a6a"/><path d="M730,212 h200" stroke="#e04a4a" stroke-width="6"/>`;
+    s += `<rect x="540" y="560" width="130" height="80" fill="#f4e0c0" stroke="#8a6a40" stroke-width="3"/><circle cx="605" cy="520" r="44" fill="#e8a060" stroke="#8a5a20" stroke-width="4"/><circle cx="605" cy="520" r="30" fill="#ff8ad0"/><circle cx="605" cy="520" r="14" fill="#9bd36a" stroke="#8a5a20" stroke-width="3"/>${[0, 1, 2, 3, 4, 5, 6, 7].map(i => `<rect x="${f(605 + Math.cos(i) * 20)}" y="${f(520 + Math.sin(i * 1.7) * 20)}" width="7" height="3" fill="${["#ffd90f", "#3ac0e0", "#ffffff", "#e04a4a"][i % 4]}" transform="rotate(${i * 40} ${f(605 + Math.cos(i) * 20)} ${f(520 + Math.sin(i * 1.7) * 20)})"/>`).join("")}`;
+    // ciambelle sparse
+    for (let k = 0; k < 10; k++) { const x = 80 + r() * 1640, y = 400 + r() * 760; if (!libero(x, y)) continue; s += `<circle cx="${f(x)}" cy="${f(y)}" r="9" fill="#ff8ad0" stroke="#c08040" stroke-width="4"/><circle cx="${f(x)}" cy="${f(y)}" r="3" fill="#9bd36a"/>`; }
+    return s;
+  }
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {

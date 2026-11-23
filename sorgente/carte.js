@@ -13,6 +13,7 @@ const SERIE = {
   maghi: { nome: "Maghi",       colore: "#43d39e", simbolo: "☾", desc: "Bacchette, pozioni e una scuola di magia piena di guai." },
   demoni: { nome: "Demoni",     colore: "#d4145a", simbolo: "♆", desc: "Corna, troni e patti col diavolo: gli Inferi hanno aperto le porte." },
   mestieri: { nome: "Mestieri", colore: "#a6e22e", simbolo: "⚒", desc: "Hacker, spie, calciatori e pianisti: ognuno con il suo lavoro, tutti pronti a combattere." },
+  simpson:  { nome: "Simpson", colore: "#ffd90f", simbolo: "◎", desc: "Ciambelle, Duff e la centrale nucleare: a Springfield tutti sono pronti a combattere." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -319,6 +320,37 @@ const CARTE = [
     mosse: [m("Ballo di Gruppo", 0, 28), m("Pausa Acqua", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Baby Dance", 5, 76, { drena: 40 })] },
   { id: "giudella", nome: "Giudella", serie: "mestieri", rarita: "comune", stile: "VEL", ruolo: "capo", frase: "Passerella, sguardo, pausa. Tutti gli occhi su di lei.",
     mosse: [m("Colpo di Tacco", 0, 28), m("Tutti gli Occhi su di Me", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Sfilata Finale", 5, 80)] },
+  // ---------------- Simpson ----------------
+  { id: "tizomer", nome: "Tizomer", serie: "simpson", rarita: "leggendaria", stile: "DIF", ruolo: "tank", frase: "D'oh! Ma una ciambella risolve tutto.",
+    mosse: [m("Ciambellata", 0, 32), m("Mmm… Ciambelle", 2, 0, { eff: { tipo: "cura", val: 35 } }), m("Incidente alla Centrale", 5, 94, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  { id: "lollart", nome: "Lollart", serie: "simpson", rarita: "leggendaria", stile: "VEL", ruolo: "imprevedibile", frase: "Ciucciati il calzino! E poi scappa sullo skate.",
+    mosse: [m("Fionda", 0, 32), m("Scherzo Telefonico", 2, 26, { eff: { tipo: "stordisci", val: 50 } }), m("Skate Kamikaze", 5, 96, { penetra: 25 })] },
+  { id: "alisa", nome: "Alisa", serie: "simpson", rarita: "leggendaria", stile: "VEL", ruolo: "stratega", frase: "La più brillante di Springfield, sassofono compreso.",
+    mosse: [m("Nota Stonata", 0, 30), m("Primo della Classe", 2, 30, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Blues di Springfield", 5, 92, { eff: { tipo: "energia", val: 2 } })] },
+  { id: "simarney", nome: "Simarney", serie: "simpson", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Un boccale, un rutto e via: si combatte.",
+    mosse: [m("Rutto Sonoro", 0, 32), m("Boccale di Duff", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 2 } }), m("Spazzaneve Re", 5, 92)] },
+  { id: "maurilanders", nome: "Maurilanders", serie: "simpson", rarita: "epica", stile: "DIF", ruolo: "guaritore", frase: "Salve salvino, vicinino! Ti curo, poi ti batto.",
+    mosse: [m("Okely Dokely", 0, 30), m("Preghiera del Vicinato", 2, 0, { eff: { tipo: "cura", val: 35 } }), m("Furia del Mancino", 5, 86)] },
+  { id: "samusty", nome: "Samusty", serie: "simpson", rarita: "epica", stile: "FOR", ruolo: "imprevedibile", frase: "Ehi ehi ragazzi! Lo spettacolo è appena iniziato.",
+    mosse: [m("Torta in Faccia", 0, 32), m("Risata Registrata", 2, 30, { eff: { tipo: "stordisci", val: 40 } }), m("Show del Pagliaccio", 5, 24, { colpi: 4 })] },
+  { id: "dieggum", nome: "Dieggum", serie: "simpson", rarita: "epica", stile: "DIF", ruolo: "tank", frase: "Fermo, polizia! Appena finisco la ciambella.",
+    mosse: [m("Manganello", 0, 30), m("Ciambella di Servizio", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Sirene Spiegate", 5, 92)] },
+  { id: "pimoe", nome: "Pimoe", serie: "simpson", rarita: "rara", stile: "FOR", ruolo: "ladro", frase: "Taverna di Moe, chi parla? Ancora voi!",
+    mosse: [m("Straccio del Bancone", 0, 28), m("Conto Salato", 2, 24, { eff: { tipo: "ruba", val: 2 } }), m("Fiammeggiante di Moe", 5, 82, { eff: { tipo: "brucia", val: 5, turni: 2 } })] },
+  { id: "ludohouse", nome: "Ludohouse", serie: "simpson", rarita: "rara", stile: "VEL", ruolo: "schivatore", frase: "Mia mamma dice che sono forte. Ci credo anch'io.",
+    mosse: [m("Spintone", 0, 28), m("Mi Gira la Testa", 2, 0, { eff: { tipo: "nebbia" } }), m("Vendetta di Fallout Boy", 5, 84)] },
+  { id: "alledna", nome: "Alledna", serie: "simpson", rarita: "rara", stile: "DIF", ruolo: "stregone", frase: "Ah-ha! Seduto e zitto: c'è un compito a sorpresa.",
+    mosse: [m("Gessetto Lanciato", 0, 28), m("Compito Extra", 2, 28, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Bocciatura", 5, 84, { penetra: 25 })] },
+  { id: "vaggie", nome: "Vaggie", serie: "simpson", rarita: "rara", stile: "VEL", ruolo: "assassino", frase: "Non parla mai. Non ne ha bisogno.",
+    mosse: [m("Ciuccio", 0, 30), m("Biberon Volante", 2, 40, { penetra: 20 }), m("Chi ha Sparato a Mr. Burns?", 5, 84, { penetra: 30 })] },
+  { id: "giupatty", nome: "Giupatty", serie: "simpson", rarita: "comune", stile: "DIF", ruolo: "difensore", frase: "Allo sportello della Motorizzazione non si passa.",
+    mosse: [m("Timbro", 0, 26), m("Sguardo Disgustato", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Numero Sbagliato", 5, 80)] },
+  { id: "selmene", nome: "Selmene", serie: "simpson", rarita: "comune", stile: "FOR", ruolo: "incendiario", frase: "Sigaretta, iguana e zero pazienza.",
+    mosse: [m("Sigaretta Accesa", 0, 26), m("Nube di Fumo", 2, 22, { eff: { tipo: "brucia", val: 5, turni: 3 } }), m("Jub-Jub all'Attacco", 5, 78)] },
+  { id: "riessica", nome: "Riessica", serie: "simpson", rarita: "comune", stile: "VEL", ruolo: "ladro", frase: "La figlia del reverendo. Occhio al portafoglio.",
+    mosse: [m("Sorriso Angelico", 0, 26), m("Colletta Rubata", 2, 20, { eff: { tipo: "ruba", val: 2 } }), m("Figlia del Reverendo", 5, 78)] },
+  { id: "aurrerri", nome: "Aurrerri", serie: "simpson", rarita: "comune", stile: "FOR", ruolo: "imprevedibile", frase: "Quando ride lei, sembra che ridano in due.",
+    mosse: [m("Doppio Sghignazzo", 0, 14, { colpi: 2 }), m("Pettegolezzo", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Gemelle all'Attacco", 5, 38, { colpi: 2 })] },
 ];
 
 
@@ -353,6 +385,9 @@ const PERSONE = {
   ludhacker: "Ludovico", lollinista: "Lorenzo", tiziegista: "Tiziano", alispia: "Alice", senebroker: "Senè", maurialpinista: "Maurizio",
   pipciatore: "Pips", simonducer: "Simone", diegarman: "Diego", samutografo: "Samuele", alessiologa: "Alessia", vikyventura: "Viky",
   auroressa: "Aurora", ritanimatrice: "Rita", giudella: "Giulia",
+  // Simpson
+  tizomer: "Tiziano", lollart: "Lorenzo", alisa: "Alice", simarney: "Simone", maurilanders: "Maurizio", samusty: "Samuele", dieggum: "Diego",
+  pimoe: "Pips", ludohouse: "Ludovico", alledna: "Alessia", vaggie: "Viky", giupatty: "Giulia", selmene: "Senè", riessica: "Rita", aurrerri: "Aurora",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
