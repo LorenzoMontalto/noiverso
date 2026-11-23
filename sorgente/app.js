@@ -2761,9 +2761,6 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
         const larghi = lm.offsetWidth > pc.clientWidth * .9;
         $("#arena").style.setProperty("--basso", (larghi ? lm.offsetHeight : 0) + "px");
         arena.impostaCopertura(larghi ? lm.offsetHeight / Math.max(1, pc.clientHeight) : 0);
-        // sul computer i comandi sono una colonna a destra sopra il campo: quanta larghezza coprono
-        const rp = pc.getBoundingClientRect(), rl = lm.getBoundingClientRect();
-        arena.impostaCoperturaLato(larghi ? 0 : Math.max(0, Math.min(.6, (rp.right - rl.left) / Math.max(1, rp.width))));
       };
       if (window.ResizeObserver && lm) { const ro = new ResizeObserver(copri); ro.observe(lm); ro.observe(pc); arena._roCopertura = ro; }
       copri();
@@ -2819,7 +2816,7 @@ function consiglio() {
   if (ko !== undefined) return { mossa: ko, testo: `Puoi mandare KO ${d.c.nome} con <b>${esc(nome(ko))}</b>!` };
   if (tipi && multStile(d.c.stile, a.c.stile) > 1 && a.pv / a.pvMax < 0.55) {
     const r = L.squadra.findIndex((x, k) => k !== L.attivo && x.pv > 0 && multStile(x.c.stile, d.c.stile) > 1);
-    if (r >= 0) return { cambio: r, testo: `${esc(d.c.nome)} (${d.c.stile}) è forte contro di te: cambia con <b>${esc(L.squadra[r].c.nome)}</b> (${L.squadra[r].c.stile}), che lo batte.` };
+    if (r >= 0) return { cambio: r, testo: `${esc(d.c.nome)} ti batte: cambia con <b>${esc(L.squadra[r].c.nome)}</b> <span class="tipo-nota su">▲ ${L.squadra[r].c.stile}</span>` };
   }
   if (d.nebbia) return { carica: true, testo: `${esc(d.c.nome)} è invisibile: il prossimo attacco va a vuoto. Meglio <b>Carica</b> o una mossa di supporto.` };
   let meglio = usabili[0], punti = -1;
@@ -2829,7 +2826,7 @@ function consiglio() {
     return { carica: true, testo: `Usa <b>Carica</b>: al prossimo turno avrai ${Math.min(ENERGIA_MAX, L.energia + 2 + BONUS_CARICA_UI)} energia per <b>${esc(nome(fin))}</b>.` };
   }
   const s = stimaMossa(meglio), e = s.eff;
-  const nota = !tipi ? "" : e > 1 ? " Il tuo stile batte il suo (×1,3)." : e < 1 ? " Attento: il suo stile batte il tuo (×0,8)." : "";
+  const nota = !tipi ? "" : e > 1 ? ` <span class="tipo-nota su" title="Il tuo stile batte il suo: +30% di danni">▲ ×1,3</span>` : e < 1 ? ` <span class="tipo-nota giu" title="Il suo stile batte il tuo: −20% di danni">▼ ×0,8</span>` : "";
   return { mossa: meglio, testo: `<b>${esc(nome(meglio))}</b>${s.danno ? ` fa circa ${s.danno} danni` : " è la mossa più utile adesso"}.${nota}` };
 }
 const BONUS_CARICA_UI = 2;
@@ -2942,7 +2939,7 @@ function htmlAzioni() {
     ${a.c.mosse.map((mo, i) => {
       const puo = B.puoUsare(0, i), s = stimaMossa(i), manca = mo.costo - L.energia;
       const tag = !puo ? `<span class="mossa-tag manca">Mancano ${manca} ◆</span>` : consOn && s.ko ? `<span class="mossa-tag ko">KO!</span>` : cons && cons.mossa === i ? `<span class="mossa-tag cons">Consigliata</span>` : "";
-      const stima = mo.pot ? (s.vuoto ? "Andrà a vuoto" : `≈ ${s.danno} danni${!aiuti ? "" : s.eff > 1 ? ' · <em class="su">efficace</em>' : s.eff < 1 ? ' · <em class="giu">poco efficace</em>' : ""}`) : esc(descrMossa(mo));
+      const stima = mo.pot ? (s.vuoto ? "Andrà a vuoto" : `≈ ${s.danno} danni${!aiuti ? "" : s.eff > 1 ? ' <i class="tipo-bollino su" title="Efficace: il tuo stile batte il suo">▲</i>' : s.eff < 1 ? ' <i class="tipo-bollino giu" title="Poco efficace: il suo stile batte il tuo">▼</i>' : ""}`) : esc(descrMossa(mo));
       return `<button class="mossa${mo.costo >= 5 ? " finale" : ""}${cons && cons.mossa === i ? " consigliata" : ""}" data-fx="scintille" data-stile="${a.c.stile}" data-mossa="${i}" data-costo="${mo.costo}" ${puo && !animazione ? "" : "disabled"}>
         <span class="mossa-costo">${mo.costo ? "◆".repeat(mo.costo) : "Gratis"}</span>
         <b>${esc(mo.nome)}</b>

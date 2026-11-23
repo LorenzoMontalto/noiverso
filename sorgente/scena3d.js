@@ -529,14 +529,8 @@ const Scena3D = (() => {
         ? { att: [libero([-.42, .69]), libero([.5, .42])], pan: [[[-.86, .415], [-.63, .415], [-.4, .415], [-.17, .415]].map(libero), [[.2, .16], [.39, .16], [.58, .16], [.77, .16]].map(libero)],
             scalaAtt: [1, 1.08], scalaPan: .42, dist: 9.6 * Math.max(.8, Math.min(1.15, (1 - cop) / .62)), elev: .72 }
         : pieno
-        ? (() => {
-            // i comandi a destra coprono una parte del campo: la squadra nemica (in alto) si sposta a sinistra quanto serve
-            const bordo = 1 - 2 * Math.max(0, Math.min(.6, this.coperturaLato || 0)) - .1;   // fin dove si vede, da −1 a 1
-            const spAtt = Math.max(0, .25 + .2 - bordo), spPan = Math.max(0, .88 + .08 - bordo);
-            const pan = [.46, .6, .74, .88].map(x => Math.max(-.62, x - spPan));
-            return { att: [[-.24, -.33], [Math.max(-.2, .25 - spAtt), .48]], pan: [[[-.88, -.46], [-.74, -.46], [-.6, -.46], [-.46, -.46]], pan.map(x => [x, .67])],
-              scalaAtt: [1, 1.12], scalaPan: .55, dist: 9.4, elev: .62 };
-          })()
+        ? { att: [[-.24, -.33], [.25, .48]], pan: [[[-.88, -.46], [-.74, -.46], [-.6, -.46], [-.46, -.46]], [[.46, .67], [.6, .67], [.74, .67], [.88, .67]]],
+            scalaAtt: [1, 1.12], scalaPan: .55, dist: 9.4, elev: .62 }
         : a >= 1.25
         ? { att: [[-.55, -.22], [.55, .32]], pan: [[[-.25, -.55], [-.08, -.55], [.09, -.55], [.26, -.55]], [[-.26, .62], [-.09, .62], [.08, .62], [.25, .62]]],
             scalaAtt: [1, 1.1], scalaPan: .5, dist: 8.4, elev: .66 }
@@ -559,7 +553,6 @@ const Scena3D = (() => {
       this.P = { att: this.L.att.map((q, l) => punto(q, this.hAtt[l])), pan: this.L.pan.map(r => r.map(q => punto(q, this.hPan))) };
       if (this.pedane) this.pedane.forEach((p, l) => { p.position.set(this.P.att[l].x, .025, this.P.att[l].z); const k = this.L.scalaAtt[l]; p.scale.set(k, 1, k); });
     }
-    impostaCoperturaLato(fr) { if (Math.abs((this.coperturaLato || 0) - fr) < .02) return; this.coperturaLato = fr; this.adattaCamera(); this.cam.updateProjectionMatrix(); }
     impostaCopertura(fr) { if (Math.abs((this.copertura || 0) - fr) < .02) return; this.copertura = fr; this.adattaCamera(); this.cam.updateProjectionMatrix(); }
     posAttiva(l) { return this.P.att[l].clone(); }
     posPanchina(l, i) {
