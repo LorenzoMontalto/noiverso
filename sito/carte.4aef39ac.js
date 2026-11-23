@@ -16,6 +16,7 @@ const SERIE = {
   simpson:  { nome: "Simpson", colore: "#ffd90f", simbolo: "◎", desc: "Ciambelle, Duff e la centrale nucleare: a Springfield tutti sono pronti a combattere." },
   barbapapa: { nome: "Barbapapà", colore: "#ff8fc8", simbolo: "✿", desc: "Barbatrucco! Una famiglia che cambia forma come vuole: spade, ombrelli, chitarre." },
   starwars: { nome: "Star Wars", colore: "#4fc3ff", simbolo: "☄", desc: "Jedi, Sith, ribelli e cacciatori di taglie, in una galassia lontana lontana." },
+  elementi: { nome: "Elementi", colore: "#3fe0c0", simbolo: "❖", desc: "Fuoco, acqua, ghiaccio, fulmini, luce e ombra: i tuoi amici sono diventati i signori degli elementi." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -414,7 +415,37 @@ const CARTE = [
   { id: "senendulla", nome: "Senendulla", serie: "starwars", rarita: "comune", stile: "VEL", ruolo: "stratega", frase: "La pilota migliore della flotta: qualsiasi astronave, qualsiasi manovra.",
     mosse: [m("Cannoniera", 0, 28), m("Manovra Spericolata", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Ghost all'Attacco", 5, 84)] },
   { id: "vikyerso", nome: "Viky Erso", serie: "starwars", rarita: "comune", stile: "FOR", ruolo: "assassino", frase: "Ribelle per scelta: ruba i piani e scappa prima che se ne accorgano.",
-    mosse: [m("Colpo alle Spalle", 0, 28), m("I Piani Rubati", 2, 24, { eff: { tipo: "stordisci", val: 40 } }), m("Rogue One", 5, 80)] },
+    mosse: [m("Colpo alle Spalle", 0, 28), m("I Piani Rubati", 2, 24, { eff: { tipo: "stordisci", val: 40 } }), m("Rogue One", 5, 80)] },  // ---------------- Elementi ----------------
+  { id: "auraria", nome: "Auraria", serie: "elementi", rarita: "leggendaria", stile: "VEL", ruolo: "capo", frase: "Dove passa lei il cielo si apre e il vento cambia direzione. Sempre a suo favore.",
+    mosse: [m("Brezza Dorata", 0, 34), m("Vento a Favore", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Uragano d'Oro", 5, 96, { penetra: 20 })] },
+  { id: "senesuono", nome: "Senesuono", serie: "elementi", rarita: "leggendaria", stile: "DIF", ruolo: "stregone", frase: "Alza il volume e il mondo trema: ogni nota è un colpo, ogni ritornello un terremoto.",
+    mosse: [m("Nota Acuta", 0, 32), m("Onda Sonora", 2, 30, { eff: { tipo: "stordisci", val: 40 } }), m("Sinfonia Assordante", 5, 90, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "vikytal", nome: "Vikytal", serie: "elementi", rarita: "leggendaria", stile: "FOR", ruolo: "difensore", frase: "Viene dal Nord con le rune incise sull'ascia. Non ha mai perso una battaglia, e non vuole iniziare oggi.",
+    mosse: [m("Ascia Runica", 0, 34), m("Runa dello Scudo", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Furia del Nord", 5, 98)] },
+  { id: "alessieno", nome: "Alessieno", serie: "elementi", rarita: "epica", stile: "VEL", ruolo: "incendiario", frase: "Occhiali, un serpente come amico e un sorriso velenoso: basta un sorso e sei fuori.",
+    mosse: [m("Morso di Serpe", 0, 28, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Nube Tossica", 2, 26, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Veleno Mortale", 5, 84, { eff: { tipo: "brucia", val: 7, turni: 3 } })] },
+  { id: "diegaqua", nome: "Diegaqua", serie: "elementi", rarita: "epica", stile: "DIF", ruolo: "imprevedibile", frase: "Comanda le onde come gli pare: oggi mare calmo, domani maremoto.",
+    mosse: [m("Getto d'Acqua", 0, 32), m("Vortice Marino", 2, 30, { eff: { tipo: "stordisci", val: 40 } }), m("Maremoto", 5, 90)] },
+  { id: "pipgelo", nome: "Pipgelo", serie: "elementi", rarita: "epica", stile: "DIF", ruolo: "stregone", frase: "Ha i baffi ghiacciati e il cuore pure: quando ti guarda da dietro gli occhiali, ti congeli.",
+    mosse: [m("Scheggia di Ghiaccio", 0, 30), m("Brina", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Era Glaciale", 5, 86, { eff: { tipo: "stordisci", val: 40 } })] },
+  { id: "ritacrys", nome: "Ritacrys", serie: "elementi", rarita: "epica", stile: "FOR", ruolo: "tiratore", frase: "Regina dei cristalli: ti sorride e intanto ti punta addosso mille schegge.",
+    mosse: [m("Scheggia di Cristallo", 0, 32), m("Pioggia di Cristalli", 2, 14, { colpi: 3 }), m("Prisma Accecante", 5, 23, { colpi: 4 })] },
+  { id: "alisombra", nome: "Alisombra", serie: "elementi", rarita: "rara", stile: "VEL", ruolo: "assassino", frase: "Vive nell'ombra e ci torna dopo ogni colpo. Non l'hai vista arrivare, non la vedrai andare via.",
+    mosse: [m("Lama d'Ombra", 0, 30, { penetra: 20 }), m("Passo nell'Ombra", 2, 0, { eff: { tipo: "nebbia" } }), m("Eclissi", 5, 84)] },
+  { id: "giuliflora", nome: "Giuliflora", serie: "elementi", rarita: "rara", stile: "DIF", ruolo: "guaritore", frase: "Dove cammina nascono fiori. Dove si arrabbia nascono rovi.",
+    mosse: [m("Frusta di Rovi", 0, 26), m("Fioritura", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Abbraccio della Foresta", 5, 76, { drena: 40 })] },
+  { id: "simoluce", nome: "Simoluce", serie: "elementi", rarita: "rara", stile: "FOR", ruolo: "stratega", frase: "Splende così tanto che la notte, prima di arrivare, gli chiede il permesso.",
+    mosse: [m("Raggio di Luce", 0, 28), m("Alba", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Sole Nascente", 5, 84)] },
+  { id: "tiziamma", nome: "Tiziamma", serie: "elementi", rarita: "rara", stile: "FOR", ruolo: "incendiario", frase: "Ha il fuoco nelle vene e nell'armatura: meglio non farlo arrabbiare, anzi meglio non farlo neanche sudare.",
+    mosse: [m("Pugno di Fuoco", 0, 30), m("Fiammata", 2, 28, { eff: { tipo: "brucia", val: 7, turni: 3 } }), m("Inferno di Fiamme", 5, 84)] },
+  { id: "lollonova", nome: "Lollonova", serie: "elementi", rarita: "comune", stile: "VEL", ruolo: "schivatore", frase: "Tiene una galassia in mano come fosse una palla da giocoliere. Se gli cade, sono guai per tutti.",
+    mosse: [m("Polvere di Stelle", 0, 28), m("Gravità", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Supernova", 5, 80)] },
+  { id: "ludomagma", nome: "Ludomagma", serie: "elementi", rarita: "comune", stile: "FOR", ruolo: "picchiatore", frase: "Sorride sempre, anche quando il vulcano dietro di lui erutta. Soprattutto allora.",
+    mosse: [m("Pugno di Lava", 0, 28), m("Eruzione", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Colata di Magma", 5, 80)] },
+  { id: "mauricore", nome: "Mauricore", serie: "elementi", rarita: "comune", stile: "DIF", ruolo: "tank", frase: "Fatto di roccia e radici: per spostarlo ci vuole un terremoto. Che di solito fa lui.",
+    mosse: [m("Pugno di Roccia", 0, 26), m("Pelle di Pietra", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Terremoto", 5, 78)] },
+  { id: "samulmine", nome: "Samulmine", serie: "elementi", rarita: "comune", stile: "VEL", ruolo: "ladro", frase: "Carico a mille volt: dove passa lui saltano le luci, e pure la tua energia.",
+    mosse: [m("Scarica", 0, 28, { eff: { tipo: "ruba", val: 1 } }), m("Saetta", 2, 36), m("Tempesta di Fulmini", 5, 20, { colpi: 4 })] },
 ];
 
 
@@ -458,6 +489,9 @@ const PERSONE = {
   // Star Wars
   ludowalker: "Ludovico", giueia: "Giulia", mauribecca: "Maurizio", lollakin: "Lorenzo", tizvader: "Tiziano", simalpatine: "Simone", samuwan: "Samuele",
   aleadme: "Alessia", alihsoka: "Alice", pipsobafett: "Pips", ritey: "Rita", aurothma: "Aurora", diegoren: "Diego", senendulla: "Senè", vikyerso: "Viky",
+  // Elementi
+  auraria: "Aurora", senesuono: "Senè", vikytal: "Viky", alessieno: "Alessia", diegaqua: "Diego", pipgelo: "Pips", ritacrys: "Rita",
+  alisombra: "Alice", giuliflora: "Giulia", simoluce: "Simone", tiziamma: "Tiziano", lollonova: "Lorenzo", ludomagma: "Ludovico", mauricore: "Maurizio", samulmine: "Samuele",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -471,7 +505,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // Una sola versione Ultra per serie, e mai due allo stesso amico.
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {

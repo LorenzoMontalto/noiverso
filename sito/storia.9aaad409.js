@@ -254,12 +254,30 @@ const STORIA = [
       { titolo: "Il duello su Mustafar", nemici: ["lollakin", "samuwan", "ludowalker", "alihsoka", "diegoren"], liv: [1, 1], abilita: 0.95, monete: 310,
         parla: "samuwan", frase: "Hello there! Attento alla lava: qui chi ha l'altura vince." },
       { titolo: "La Morte Nera", boss: true, nemici: ["tizvader", "simalpatine", "diegoren", "pipsobafett", "lollakin"], liv: [1, 1], abilita: 0.97, monete: 540, bustina: "leggendaria",
-        parla: "tizvader", frase: "Non sottovalutare il potere del lato oscuro. Io… sono il tuo boss.", vittoria: "La Morte Nera esplode in mille stelle. Nel lampo si apre uno squarcio nello spazio: uno specchio che riflette… mondi diversi." }
+        parla: "tizvader", frase: "Non sottovalutare il potere del lato oscuro. Io… sono il tuo boss.", vittoria: "La Morte Nera esplode in mille stelle. Nel lampo si apre uno squarcio nello spazio: dentro girano fuoco, acqua, terra e vento." }
+    ],
+  },
+  {
+    id: "c19", campo: "tempio", titolo: "Il regno degli elementi", serie: "elementi", colore: "#3fe0c0", simbolo: "❖",
+    intro: "Dallo squarcio cadi in un mondo dove ogni cosa è un elemento: foreste che fioriscono in un attimo, laghi in tempesta, vette di ghiaccio e vulcani. I tuoi amici ne sono diventati i signori, e non hanno nessuna voglia di dividerlo con te.",
+    tappe: [
+      { titolo: "La foresta in fiore", nemici: ["giuliflora", "mauricore", "samulmine", "lollonova", "ludomagma"], liv: [1, 1], abilita: 0.9, monete: 280,
+        parla: "giuliflora", frase: "Cammina piano: ogni fiore che calpesti diventa una spina." },
+      { titolo: "Il lago in tempesta", nemici: ["diegaqua", "samulmine", "alisombra", "mauricore", "simoluce"], liv: [1, 1], abilita: 0.91, monete: 290,
+        parla: "diegaqua", frase: "Il lago adesso è calmo. Tra un minuto no." },
+      { titolo: "Le vette di ghiaccio", nemici: ["pipgelo", "ritacrys", "lollonova", "giuliflora", "tiziamma"], liv: [1, 1], abilita: 0.93, monete: 300, bustina: "epica",
+        parla: "pipgelo", frase: "Quassù si gela. E quello che fa gelare tutto sono io." },
+      { titolo: "La palude del veleno", nemici: ["alessieno", "alisombra", "samulmine", "ludomagma", "ritacrys"], liv: [1, 1], abilita: 0.94, monete: 310,
+        parla: "alessieno", frase: "Non bere l'acqua della palude. Anzi no, bevila pure." },
+      { titolo: "La forgia di magma", nemici: ["tiziamma", "ludomagma", "vikytal", "diegaqua", "simoluce"], liv: [1, 1], abilita: 0.95, monete: 320,
+        parla: "tiziamma", frase: "Qui dentro si forgiano le armi degli elementi. Oggi si forgia la tua sconfitta." },
+      { titolo: "Il trono degli elementi", boss: true, nemici: ["auraria", "senesuono", "vikytal", "pipgelo", "alessieno"], liv: [1, 1], abilita: 0.97, monete: 560, bustina: "leggendaria",
+        parla: "auraria", frase: "Fuoco, acqua, terra e cielo rispondono a me. Tu a chi rispondi?", vittoria: "Gli elementi si placano e il trono si spegne. Al centro resta un cristallo enorme che non riflette te… ma mondi diversi." }
     ],
   },
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
-    intro: "Dallo squarcio lasciato dalla Morte Nera entri in uno specchio enorme. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
+    intro: "Tocchi il cristallo del trono degli elementi e diventa uno specchio enorme. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
     tappe: [
       { titolo: "Il riflesso di Giulia", nemici: ["giulmai", "nikulia", "giulifleur", "giulimaah", "giudella"], liv: [1, 1], abilita: 0.9, monete: 290,
         parla: "giudella", frase: "Cinque Giulie e una sola passerella. Indovina quale è quella vera… mentre ti battiamo." },

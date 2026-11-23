@@ -24,6 +24,7 @@ const MappeStoria = (() => {
     [[220, 1000], [540, 820], [880, 980], [1180, 720], [1470, 900], [1560, 360]],   // Springfield
     [[200, 980], [520, 780], [860, 960], [1160, 700], [1480, 860], [1300, 340]],   // casa dei Barbapapà
     [[220, 980], [560, 840], [900, 1000], [1200, 760], [1520, 900], [1380, 330]],   // galassia lontana lontana
+    [[260, 1000], [620, 860], [360, 560], [960, 820], [1420, 880], [1380, 360]],    // regno degli elementi
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -69,6 +70,9 @@ const MappeStoria = (() => {
     [[110, 1110, "☀", "Tatooine"], [440, 960, "🍸", "Cantina di Mos Eisley"], [780, 1130, "⚖", "Senato Galattico"], [1080, 620, "✦", "Base Ribelle"],
      [1660, 1020, "♨", "Mustafar"], [1380, 180, "◉", "Morte Nera"], [300, 300, "❄", "Pianeta Ghiacciato"], [820, 300, "☄", "Campo di Asteroidi"],
      [1680, 560, "⛭", "Flotta Imperiale"], [520, 600, "✧", "Tempio Jedi"]],
+    [[110, 1120, "✿", "Foresta in Fiore"], [720, 1130, "≈", "Lago in Tempesta"], [200, 280, "❄", "Vette di Ghiaccio"], [1010, 1110, "☠", "Palude del Veleno"],
+     [1660, 1100, "♨", "Forgia di Magma"], [1380, 130, "❖", "Trono degli Elementi"], [1000, 420, "♪", "Grotta dell'Eco"], [1560, 360, "⚡", "Picco dei Fulmini"],
+     [560, 520, "◆", "Miniera di Cristalli"], [1210, 470, "☾", "Bosco delle Ombre"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -570,7 +574,50 @@ const MappeStoria = (() => {
     s += `<g transform="translate(1180 300)"><circle r="9" fill="#5a606a"/><rect x="-22" y="-20" width="6" height="40" fill="#3a404a"/><rect x="16" y="-20" width="6" height="40" fill="#3a404a"/><line x1="-16" y1="0" x2="16" y2="0" stroke="#5a606a" stroke-width="4"/></g>`;
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, specchi, treno, torre, dimensione];
+  function elementi(r) {
+    // un mondo diviso tra gli elementi: foresta, lago, ghiacci, palude, vulcano e il trono sospeso in cielo
+    let s = `<defs><linearGradient id="cieloEl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2a4a"/><stop offset=".45" stop-color="#2a4a5a"/><stop offset="1" stop-color="#1c3a2a"/></linearGradient></defs>
+      <rect width="${W}" height="${H}" fill="url(#cieloEl)"/>`;
+    // aurora in cielo
+    for (const [y, c] of [[120, "#3fe0c0"], [170, "#7d5aff"], [220, "#3fd8ff"]]) s += `<path d="M0,${y} q450,-90 900,0 t900,0" stroke="${c}" stroke-width="40" fill="none" opacity=".18" filter="url(#sfoca)"/>`;
+    for (let k = 0; k < 140; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * 420)}" r="${(r() * 1.6 + .3).toFixed(1)}" fill="#ffffff" opacity="${(.2 + r() * .6).toFixed(2)}"/>`;
+    // vette di ghiaccio (in alto a sinistra)
+    s += `<path d="M0,640 L120,330 L210,470 L320,200 L440,450 L540,300 L700,640Z" fill="#b8d8ec"/><path d="M120,330 L160,420 L140,430 Z M320,200 L370,330 L300,320Z M540,300 L580,380 L520,370Z" fill="#ffffff"/>`;
+    s += `<path d="M0,640 L700,640 L700,700 L0,700Z" fill="#dff0fa"/>`;
+    for (let k = 0; k < 40; k++) { const x = r() * 680, y = 560 + r() * 120, h = 14 + r() * 30; s += `<path d="M${f(x)},${f(y)} l${f(6 + r() * 6)},${f(-h)} l${f(6 + r() * 6)},${f(h)}Z" fill="#9fd8ff" opacity=".8"/>`; }
+    // miniera di cristalli
+    for (let k = 0; k < 16; k++) { const x = 480 + r() * 160, y = 600 + r() * 60, h = 30 + r() * 50; s += `<path d="M${f(x)},${f(y)} l${f(9 + r() * 8)},${f(-h)} l${f(9 + r() * 8)},${f(h)}Z" fill="${["#ff8fd8", "#9fe8ff", "#c38bff"][k % 3]}" opacity=".85"/>`; }
+    // prato e foresta in fiore (in basso a sinistra)
+    s += `<path d="M0,700 L760,700 L820,1200 L0,1200Z" fill="#2f6a34"/>`;
+    for (let k = 0; k < 70; k++) { const x = r() * 640, y = 760 + r() * 420, rr = 18 + r() * 26; s += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(rr)}" fill="${["#245a2a", "#3a7a3a", "#2a6a30"][k % 3]}"/>`; }
+    for (let k = 0; k < 90; k++) s += `<circle cx="${f(r() * 680)}" cy="${f(740 + r() * 450)}" r="${f(3 + r() * 4)}" fill="${["#ff8fd8", "#ffd04a", "#ffffff"][k % 3]}"/>`;
+    // lago in tempesta (in basso al centro)
+    s += `<path d="${blob(660, 1080, 190, 110, r, 18, .15)}" fill="#1a5a9a"/>`;
+    for (let k = 0; k < 10; k++) s += `<path d="M${f(520 + r() * 260)},${f(1020 + r() * 120)} q20,-14 40,0 t40,0" stroke="#9fd8ff" stroke-width="4" fill="none" opacity=".7"/>`;
+    // palude del veleno (al centro)
+    s += `<path d="M760,700 L1180,700 L1240,1200 L820,1200Z" fill="#26341e"/>`;
+    for (let k = 0; k < 14; k++) s += `<path d="${blob(820 + r() * 360, 800 + r() * 360, 30 + r() * 40, 16 + r() * 18, r, 12, .3)}" fill="#4a7a1a" opacity=".75"/>`;
+    for (let k = 0; k < 30; k++) s += `<circle cx="${f(820 + r() * 380)}" cy="${f(760 + r() * 420)}" r="${f(3 + r() * 6)}" fill="#7dff4a" opacity=".5" filter="url(#bagliore)"/>`;
+    // bosco delle ombre
+    for (let k = 0; k < 26; k++) { const x = 1080 + r() * 260, y = 520 + r() * 150; s += `<path d="M${f(x)},${f(y)} l14,-60 l14,60Z" fill="#2a1a3a"/>`; }
+    s += `<circle cx="1210" cy="540" r="90" fill="#8a3aff" opacity=".18" filter="url(#sfoca)"/>`;
+    // picco dei fulmini (dietro il vulcano)
+    s += `<path d="M1560,700 L1700,430 L1800,560 L1800,700Z" fill="#3a4a6a"/><path d="M1700,430 L1730,490 L1690,500Z" fill="#dfe8ff"/>`;
+    for (const [x, y] of [[1690, 400], [1760, 450]]) s += `<path d="M${x},${y - 120} l-18,50 h16 l-22,60 l44,-70 h-18 l14,-40Z" fill="#fff6a0"/>`;
+    // vulcano e forgia di magma (in basso a destra)
+    s += `<path d="M1180,700 L1800,700 L1800,1200 L1240,1200Z" fill="#2a1410"/><path d="M1380,1000 L1560,640 L1660,640 L1800,960 L1800,1000Z" fill="#3a1e16"/>`;
+    s += `<ellipse cx="1610" cy="645" rx="60" ry="14" fill="#ff5a1f"/><circle cx="1610" cy="620" r="120" fill="#ff5a1f" opacity=".12" filter="url(#sfoca)"/>`;
+    s += `<path d="${curva([[1600, 650], [1540, 820], [1600, 1000], [1560, 1200]])}" stroke="#ff5a1f" stroke-width="16" fill="none" opacity=".85"/>`;
+    for (let k = 0; k < 30; k++) s += `<circle cx="${f(1260 + r() * 540)}" cy="${f(720 + r() * 460)}" r="${f(2 + r() * 4)}" fill="#ff9a1f" opacity=".6" filter="url(#bagliore)"/>`;
+    // il trono degli elementi: isola sospesa con un cristallo
+    s += `<path d="${blob(1380, 300, 230, 70, r, 18, .15)}" fill="#5a6a7a"/><path d="M1180,310 L1380,470 L1580,310Z" fill="#3a4a5a"/>`;
+    s += `<path d="M1380,140 L1430,250 L1380,320 L1330,250Z" fill="#3fe0c0" opacity=".9"/><circle cx="1380" cy="240" r="140" fill="#3fe0c0" opacity=".16" filter="url(#sfoca)"/>`;
+    for (const [a, c] of [[0, "#ff5a1f"], [1.57, "#3fd8ff"], [3.14, "#7dff4a"], [4.71, "#fff1bd"]]) s += `<circle cx="${f(1380 + Math.cos(a) * 170)}" cy="${f(270 + Math.sin(a) * 50)}" r="16" fill="${c}" filter="url(#bagliore)"/>`;
+    // grotta dell'eco: onde sonore
+    for (let k = 1; k <= 4; k++) s += `<circle cx="1000" cy="420" r="${k * 26}" stroke="#c38bff" stroke-width="3" fill="none" opacity="${(.7 - k * .14).toFixed(2)}"/>`;
+    return s;
+  }
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -596,8 +643,11 @@ const MappeStoria = (() => {
     g.setTransform(.5, 0, 0, .5, 0, 0);
     const r = rng(500 + k * 31);
     // colore di base e colore delle nuvole per ogni capitolo
-    const [base, nuv] = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
-      ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"], ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]][k];
+    const NEBBIE = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
+      ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"],
+      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"],
+      ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]];
+    const [base, nuv] = NEBBIE[k] || NEBBIE[0];
     g.fillStyle = base; g.fillRect(0, 0, W, H);
     for (let i = 0; i < 220; i++) {
       const x = r() * W, y = r() * H, rr = 70 + r() * 170, a = .10 + r() * .16;

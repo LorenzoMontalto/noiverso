@@ -63,6 +63,8 @@ const SINERGIE_BASE = {
   barbapapa: { tipo: "forma",   v2: 40, v3: 80, v5: 95, testo: (v, liv) => v >= 100 ? `non soffrono più lo svantaggio di tipo, né in attacco né in difesa` : `lo svantaggio di tipo pesa ${_il(v)} in meno su di loro, in attacco e in difesa` },
   // Star Wars: con i riflessi della Forza a volte parano un colpo intero (come una schivata)
   starwars: { tipo: "para",     v2: 5, v3: 8, v5: 11, testo: v => `${v}% di probabilità di parare un attacco con la Forza (non subiscono danni né effetti)` },
+  // Elementi: si caricano restando in campo. Ogni fine turno in campo +v% attacco, fino a 5 volte; uscendo si scaricano.
+  elementi: { tipo: "accumulo", v2: 5, v3: 9, v5: 13, testo: v => `restando in campo si caricano: +${v}% di attacco a ogni fine turno, fino a 5 volte (massimo +${Math.round(v * 50) / 10}%); se escono si scaricano` },
   mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -167,6 +169,7 @@ class Battaglia {
         else if (s.tipo === "rigenera") x.sin.rigenera = s.val;
         else if (s.tipo === "vampiro") x.sin.vampiro = s.val;
         else if (s.tipo === "para") x.sin.para = s.val;
+        else if (s.tipo === "accumulo") x.sin.accumulo = s.val;
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
         else if (s.tipo === "critico") { x.sin.crit = s.val; x.sin.critX = s.liv >= 3 ? 2 : s.liv === 2 ? 1.75 : 1.5; }
         else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; x.sin.dannoEff = [0, 15, 25, 45][s.liv] || 0; if (s.liv >= 2) x.sin.effetti = 1; }
@@ -260,6 +263,7 @@ class Battaglia {
     // Esempio: Capo 1,1 × Ordine Reale 1,35 × 5 Dragon Ball 1,26 = 1,87 → conta 1,60.
     let bonus = x.sinAtt || 1;
     if (x.buff.att) bonus *= 1 + x.buff.att.val / 100;
+    if (x.carica_el && x.sin && x.sin.accumulo) bonus *= 1 + x.carica_el * x.sin.accumulo / 100;
     if (this.lati[l].squadra.some(y => y.pv > 0 && y.c.ruolo === "capo")) bonus *= 1.1;
     let a = x.att / (x.sinAtt || 1) * Math.min(TETTO_ATTACCO, bonus);
     if (x.buff.debole) a *= 1 - x.buff.debole.val / 100;
@@ -348,7 +352,7 @@ class Battaglia {
   _cambia(l, i) {
     const L = this.lati[l], fuori = this.attivo(l);
     if (i === L.attivo || !L.squadra[i] || L.squadra[i].pv <= 0) return;
-    fuori.stordito = false; fuori.carica = false; fuori.nebbia = false;
+    fuori.stordito = false; fuori.carica = false; fuori.nebbia = false; fuori.carica_el = 0;
     L.attivo = i;
     const dentro = this.attivo(l);
     dentro.usata = true;
@@ -482,6 +486,7 @@ class Battaglia {
         }
         if (a.rigenera && a.pv > 0 && a.pv < a.pvMax && !a.stati.brucia) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * a.rigenera / 100)));
         if (a.sin && a.sin.rigenera && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * a.sin.rigenera / 100)));
+        if (a.sin && a.sin.accumulo && a.pv > 0 && (a.carica_el || 0) < 5) { a.carica_el = (a.carica_el || 0) + 1; this._log(`${a.c.nome} si carica di energia elementale: +${String(Math.round(a.carica_el * a.sin.accumulo * 10) / 10).replace(".", ",")}% attacco.`, { lato: l, anim: "potenzia", su: l }); }
         const cuore = this.gv(l, "cuore");
         if (cuore && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * cuore / 100)));
         if (a.pv > 0 && a.c.ruolo === "guaritore") {

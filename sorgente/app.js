@@ -2842,6 +2842,7 @@ function htmlHud(l) {
   if (a.scudo) stato.push(`<span class="tag">Scudo ${a.scudo}%</span>`);
   if (a.nebbia) stato.push(`<span class="tag">Invisibile</span>`);
   if (a.buff.att) stato.push(`<span class="tag su">Att +${a.buff.att.val}%</span>`);
+  if (a.carica_el && a.sin && a.sin.accumulo) stato.push(`<span class="tag su" title="Carica elementale: cresce a ogni fine turno in campo, si perde uscendo">❖ +${String(Math.round(a.carica_el * a.sin.accumulo * 10) / 10).replace(".", ",")}%</span>`);
   if (a.buff.debole) stato.push(`<span class="tag giu">Att −${a.buff.debole.val}%</span>`);
   const vivi = L.squadra.filter(x => x.pv > 0).length;
   return `
@@ -2858,7 +2859,8 @@ function htmlHud(l) {
 
 // Attacco (con livello e potenziamenti), difesa e velocità di un personaggio in battaglia
 function statBattaglia(x) {
-  const su = x.buff.att ? x.buff.att.val : 0, giu = x.buff.debole ? x.buff.debole.val : 0;
+  const el = x.carica_el && x.sin && x.sin.accumulo ? x.carica_el * x.sin.accumulo : 0;
+  const su = (x.buff.att ? x.buff.att.val : 0) + el, giu = x.buff.debole ? x.buff.debole.val : 0;
   return { att: Math.round(x.att * (x.f || 1) * (1 + su / 100) * (1 - giu / 100) * 10) / 10, dif: Math.round(x.dif * 10) / 10, vel: x.vel, mod: su - giu };
 }
 function htmlStatBattaglia(x, corto) {
