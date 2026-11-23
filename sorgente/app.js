@@ -2058,7 +2058,7 @@ function htmlAdminImmagini() {
 async function aggiornaStatoImmagini() {
   const el = $("#stato-immagini"); if (!el) return;
   try {
-    const ci = new Set(await ImmaginiCarte.elenco()), mancano = CARTE.filter(c => !ci.has(c.id));
+    const ci = new Set(await ImmaginiCarte.elenco()), mancano = CARTE.filter(c => !ci.has(ImmaginiCarte.file(c.id)));
     el.innerHTML = mancano.length ? `<b class="errore">Ne mancano ${mancano.length} su ${CARTE.length}:</b> ${mancano.slice(0, 20).map(c => esc(c.nome)).join(", ")}${mancano.length > 20 ? "…" : ""}` : `<b>Tutte le ${CARTE.length} immagini sono nello spazio privato.</b>`;
   } catch (e) { el.innerHTML = `<b class="errore">Non riesco a leggere lo spazio delle immagini.</b> Hai eseguito di nuovo schema.sql su Supabase?`; }
 }
@@ -2084,7 +2084,7 @@ async function caricaFileImmagini(files) {
     const id = perNome[normNome(f.name.replace(/\.[^.]+$/, ""))];
     if (!id) { ko.push(f.name); continue; }
     if (el) el.textContent = `Carico ${i + 1}/${files.length}: ${PER_ID[id].nome}…`;
-    try { await ImmaginiCarte.carica(id, f, /\.webp$/i.test(f.name) && f.name.toLowerCase() === id + ".webp"); ok++; } catch (e) { ko.push(f.name); }
+    try { await ImmaginiCarte.carica(id, f, /\.webp$/i.test(f.name) && f.name.toLowerCase() === ImmaginiCarte.file(id) + ".webp"); ok++; } catch (e) { ko.push(f.name); }
   }
   await dopoImmagini(ok, ko, "Caricamento");
 }

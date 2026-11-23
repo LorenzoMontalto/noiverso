@@ -12,13 +12,16 @@ const ImmaginiCarte = (() => {
   let mappa = {};
   const supa = () => window.NOIVERSO_SUPABASE && window.NoiversoAccesso && window.NoiversoAccesso.sb;
 
+  // nome del file di una carta: di solito è il suo codice, ma una carta può averne uno suo (campo img) quando cambia foto
+  const file = id => (typeof PER_ID !== "undefined" && PER_ID[id] && PER_ID[id].img) || id;
   function url(id) {
-    if (!window.NOIVERSO_SUPABASE) return `img/${id}.webp`;
-    return mappa[id] || VUOTA;
+    if (!window.NOIVERSO_SUPABASE) return `img/${file(id)}.webp`;
+    return mappa[file(id)] || VUOTA;
   }
 
   // Prepara i link firmati (dopo l'accesso). Riusa quelli salvati finché mancano più di 2 giorni alla scadenza.
   async function prepara(ids, forza) {
+    ids = [...new Set(ids.map(file))];
     const sb = supa();
     if (!sb || !(await window.NoiversoAccesso.sessione())) return;
     let salvate = null;
@@ -53,12 +56,12 @@ const ImmaginiCarte = (() => {
   }
   async function carica(id, blob, giaPronta) {
     const sb = supa();
-    const file = giaPronta ? blob : await inFormatoCarta(blob);
-    const { error } = await sb.storage.from(BUCKET).upload(`${id}.webp`, file, { upsert: true, contentType: "image/webp", cacheControl: String(DURATA) });
+    const dati = giaPronta ? blob : await inFormatoCarta(blob);
+    const { error } = await sb.storage.from(BUCKET).upload(`${file(id)}.webp`, dati, { upsert: true, contentType: "image/webp", cacheControl: String(DURATA) });
     if (error) throw error;
   }
   function dimentica() { try { localStorage.removeItem(CHIAVE); } catch (e) {} }
 
-  return { url, prepara, elenco, carica, dimentica, VUOTA };
+  return { url, file, prepara, elenco, carica, dimentica, VUOTA };
 })();
 function imgCarta(id) { return ImmaginiCarte.url(id); }

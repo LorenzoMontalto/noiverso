@@ -177,8 +177,10 @@ const CARTE = [
     mosse: [m("Calcio della Giustizia", 0, 28), m("Grido di Squadra", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Volo Giustiziere", 5, 80)] },
   { id: "panky", nome: "Panky", serie: "db", rarita: "comune", stile: "VEL", ruolo: "imprevedibile", frase: "Piccola peste, grande potenza.",
     mosse: [m("Pugnetto", 0, 28), m("Capriccio", 2, 26, { eff: { tipo: "stordisci", val: 50 } }), m("Raffica della Nipote", 5, 18, { colpi: 5 })] },
-  { id: "giulmai", nome: "Giulmai", serie: "db", rarita: "comune", stile: "FOR", ruolo: "tiratore", frase: "Braccio destro di Pilaf: niente aure, solo mira e pistole.",
-    mosse: [m("Colpo di Pistola", 0, 30), m("Raffica", 2, 24, { colpi: 2 }), m("Bazooka di Pilaf", 5, 86)] },
+  // nov 2026: prima era "Giulmai". Il codice resta "giulmai" (così chi l'aveva la tiene, con livelli e squadre);
+  // la foto nuova sta nel file "giuvv21" (img), così nessuno vede più la vecchia rimasta in memoria.
+  { id: "giulmai", img: "giuvv21", nome: "Giuvv-21", serie: "db", rarita: "comune", stile: "FOR", ruolo: "stregone", frase: "La scienziata del Red Ribbon con le cellule Majin: ha sempre fame, e tu sembri un dolcetto.",
+    mosse: [m("Raggio Caramella", 0, 30), m("Dolcetto Majin", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Assorbimento", 5, 80, { drena: 40 })] },
 
   // ---------------- DEI ----------------
   { id: "zeutiz", nome: "Zeu Tiz", serie: "dei", rarita: "leggendaria", stile: "DIF", ruolo: "capo", frase: "Sovrano degli dei. Fulmini compresi.",
