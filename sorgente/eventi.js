@@ -139,7 +139,7 @@ const Settimana = (() => {
 
 const BossGiorno = (() => {
   // il boss di ogni serie: una sua leggendaria, ingigantita
-  const BOSS = { eroi: "ironlus", db: "gokiele", dei: "zeutiz", nueve: "reina", maghi: "simoldemort", demoni: "lollifer", mestieri: "ludhacker", simpson: "lollart", barbapapa: "ritamma", starwars: "giueia", elementi: "auraria", creature: "vikyeletro" };
+  const BOSS = { eroi: "ironlus", db: "gokiele", dei: "zeutiz", nueve: "reina", maghi: "simoldemort", demoni: "lollifer", mestieri: "ludhacker", simpson: "lollart", barbapapa: "ritamma", starwars: "giueia", elementi: "auraria", creature: "vikyeletro", cyborg: "alessiai" };
   const CORAZZE = {
     corazza:  { nome: "Corazza", desc: t => `Subisce il 40% di danni in meno dalle carte che non battono il suo tipo (${STILI[t].nome}).` },
     rigenera: { nome: "Rigenerazione", desc: () => "Ogni turno recupera il 6% dei PV, a meno che non stia bruciando." },

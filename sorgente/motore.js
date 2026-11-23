@@ -67,6 +67,8 @@ const SINERGIE_BASE = {
   elementi: { tipo: "accumulo", v2: 5, v3: 9, v5: 13, testo: v => `restando in campo si caricano: +${v}% di attacco a ogni fine turno, fino a 5 volte (massimo +${Math.round(v * 50) / 10}%); se escono si scaricano` },
   // Creature mistiche: non muoiono davvero. La prima volta che vanno KO hanno v% di probabilità di rialzarsi con il 20% dei PV (una volta a carta).
   creature: { tipo: "rinascita", v2: 12, v3: 20, v5: 30, testo: v => `la prima volta che vanno KO hanno ${_il(v)} di probabilità di rialzarsi con il 20% dei PV (una volta per carta)` },
+  // Cyborg: sistemi schermati. Hanno v% di probabilità di respingere gli effetti nemici (brucia, stordisci, indebolisci, ruba energia).
+  cyborg: { tipo: "schermo", v2: 50, v3: 85, v5: 100, testo: (v, liv) => `${v}% di probabilità di respingere gli effetti nemici (bruciatura, stordimento, indebolimento, furto di energia)${liv >= 3 ? ", e l'effetto respinto torna indietro su chi l'ha lanciato" : ""}` },
   mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -173,6 +175,7 @@ class Battaglia {
         else if (s.tipo === "para") x.sin.para = s.val;
         else if (s.tipo === "accumulo") x.sin.accumulo = s.val;
         else if (s.tipo === "rinascita") x.sin.rinascita = s.val;
+        else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
         else if (s.tipo === "critico") { x.sin.crit = s.val; x.sin.critX = s.liv >= 3 ? 2 : s.liv === 2 ? 1.75 : 1.5; }
         else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; x.sin.dannoEff = [0, 15, 25, 45][s.liv] || 0; if (s.liv >= 2) x.sin.effetti = 1; }
@@ -410,8 +413,14 @@ class Battaglia {
     else this._effettoSe(l, a, e);
   }
 
-  _effettoBersaglio(l, a, d, e) {
+  _effettoBersaglio(l, a, d, e, rimbalzo = false) {
     const L = this.lati[l], O = this.lati[1 - l];
+    if (!rimbalzo && d.sin && d.sin.schermo && this.rng() < d.sin.schermo / 100) {
+      this._log(`${d.c.nome}: sistemi schermati, l'effetto non passa.`, { lato: 1 - l, anim: "scudo", su: 1 - l });
+      // con 5 Cyborg l'effetto respinto torna indietro su chi l'ha lanciato (una volta sola, niente ping-pong)
+      if (d.sin.rimbalza && a.pv > 0) { this._log(`L'effetto rimbalza su ${a.c.nome}!`, { lato: 1 - l }); this._effettoBersaglio(1 - l, d, a, e, true); }
+      return;
+    }
     if (e.tipo === "brucia") {
       if (d.c.ruolo === "incendiario") { this._log(`${d.c.nome} non brucia.`, { lato: 1 - l }); return; }
       const turni = Math.max(1, e.turni + (a.c.ruolo === "incendiario" ? 1 : 0) + (a.sin && a.sin.effetti ? 1 : 0) - (this.campo === "pioggia" ? 1 : 0));

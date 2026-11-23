@@ -26,6 +26,7 @@ const MappeStoria = (() => {
     [[220, 980], [560, 840], [900, 1000], [1200, 760], [1520, 900], [1380, 330]],   // galassia lontana lontana
     [[260, 1000], [620, 860], [360, 560], [960, 820], [1420, 880], [1380, 360]],    // regno degli elementi
     [[240, 1010], [620, 920], [1020, 1040], [1300, 820], [640, 620], [1500, 480]],   // notte delle creature
+    [[220, 1030], [580, 880], [960, 1020], [1210, 760], [820, 520], [1500, 330]],    // città del futuro
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -77,6 +78,9 @@ const MappeStoria = (() => {
     [[110, 1110, "✝", "Cimitero"], [760, 1130, "≈", "Laguna Nera"], [1150, 1120, "⚗", "Laboratorio del Dottore"], [1520, 1000, "▲", "Piramide Maledetta"],
      [420, 720, "☾", "Bosco della Luna Piena"], [1700, 150, "♜", "Castello del Conte"], [235, 120, "★", "Torre della Strega"], [820, 360, "◯", "Luna Piena"],
      [1650, 700, "⌂", "Cripta"], [1700, 1100, "✳", "Tana del Ragno"]],
+    [[110, 1100, "✦", "Quartiere dei Neon"], [700, 1100, "⚙", "Mercato dei Ricambi"], [1180, 1100, "⚒", "Fabbrica dei Robot"], [1260, 600, "◈", "Dentro la Rete"],
+     [700, 380, "▮", "Grattacielo della Corporazione"], [1500, 120, "◉", "Cervello Centrale"], [260, 420, "✈", "Stazione delle Auto Volanti"],
+     [1700, 980, "♻", "Discarica Elettronica"], [1720, 560, "✚", "Clinica Cibernetica"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -659,7 +663,34 @@ const MappeStoria = (() => {
     for (let k = 0; k < 18; k++) s += `<ellipse cx="${f(r() * W)}" cy="${f(800 + r() * 380)}" rx="${f(120 + r() * 120)}" ry="${f(20 + r() * 20)}" fill="#cfd8e8" opacity=".035"/>`;
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, specchi, treno, torre, dimensione];
+  function futuro(r) {
+    // la città del futuro: grattacieli, insegne al neon, auto volanti e pioggia
+    let s = `<defs><linearGradient id="cieloFuturo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#05060f"/><stop offset=".55" stop-color="#140a2a"/><stop offset="1" stop-color="#0a0a14"/></linearGradient></defs>
+      <rect width="${W}" height="${H}" fill="url(#cieloFuturo)"/>`;
+    s += `<circle cx="1000" cy="110" r="60" fill="#d8d8f0" opacity=".45"/><circle cx="1000" cy="110" r="150" fill="#8a7bff" opacity=".1" filter="url(#sfoca)"/>`;
+    // tre file di grattacieli, dalla più lontana alla più vicina
+    for (const [base, alt, col, n] of [[760, 420, "#120c22", 34], [900, 380, "#0e0a1a", 26], [1200, 300, "#08070f", 18]]) {
+      for (let k = 0; k < n; k++) {
+        const w = 40 + r() * 70, x = r() * (W - w), h = alt * (.4 + r() * .8);
+        s += `<rect x="${f(x)}" y="${f(base - h)}" width="${f(w)}" height="${f(h + 400)}" fill="${col}"/>`;
+        for (let j = 0; j < 6; j++) s += `<rect x="${f(x + 4 + r() * (w - 12))}" y="${f(base - h + 10 + r() * h)}" width="5" height="3" fill="${["#38e0ff", "#ff4fd8", "#ffd04a", "#9d7bff"][(k + j) % 4]}" opacity="${(.4 + r() * .5).toFixed(2)}"/>`;
+      }
+    }
+    // insegne al neon
+    for (let k = 0; k < 14; k++) { const x = r() * (W - 80), y = 500 + r() * 600, c = ["#38e0ff", "#ff4fd8", "#7dff4a", "#ffd04a"][k % 4]; s += `<rect x="${f(x)}" y="${f(y)}" width="${f(40 + r() * 50)}" height="${f(12 + r() * 14)}" rx="4" fill="none" stroke="${c}" stroke-width="3" filter="url(#bagliore)"/><rect x="${f(x)}" y="${f(y)}" width="${f(40 + r() * 50)}" height="${f(12 + r() * 14)}" rx="4" fill="none" stroke="${c}" stroke-width="2"/>`; }
+    // il cervello centrale: torre con una sfera luminosa in cima
+    s += `<path d="M1430,1200 L1460,300 L1540,300 L1570,1200Z" fill="#1a1830" stroke="#38e0ff" stroke-width="2" stroke-opacity=".5"/><circle cx="1500" cy="270" r="46" fill="#38e0ff" opacity=".9"/><circle cx="1500" cy="270" r="130" fill="#38e0ff" opacity=".18" filter="url(#sfoca)"/>`;
+    for (let k = 0; k < 6; k++) s += `<path d="M1500,270 q${f(-200 + r() * 400)},${f(-60 + r() * 120)} ${f(-500 + r() * 1000)},${f(200 + r() * 500)}" stroke="#38e0ff" stroke-width="1.5" fill="none" opacity=".35"/>`;
+    // auto volanti con le scie
+    for (let k = 0; k < 12; k++) { const x = r() * W, y = 150 + r() * 500, v = r() > .5 ? 1 : -1; s += `<path d="M${f(x)},${f(y)} h${f(-v * (60 + r() * 80))}" stroke="${v > 0 ? "#ff4fd8" : "#38e0ff"}" stroke-width="2" opacity=".6"/><rect x="${f(x - 9)}" y="${f(y - 4)}" width="18" height="8" rx="3" fill="#c8d0e0"/>`; }
+    // strada bagnata con i riflessi
+    s += `<rect x="0" y="1120" width="${W}" height="80" fill="#0a0a12"/>`;
+    for (let k = 0; k < 30; k++) s += `<rect x="${f(r() * W)}" y="${f(1125 + r() * 70)}" width="${f(20 + r() * 60)}" height="3" fill="${["#38e0ff", "#ff4fd8", "#ffd04a"][k % 3]}" opacity=".35"/>`;
+    // pioggia
+    for (let k = 0; k < 260; k++) { const x = r() * W, y = r() * H; s += `<path d="M${f(x)},${f(y)} l-6,22" stroke="#9fb8ff" stroke-width="1.2" opacity=".25"/>`; }
+    return s;
+  }
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -687,7 +718,7 @@ const MappeStoria = (() => {
     // colore di base e colore delle nuvole per ogni capitolo
     const NEBBIE = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
       ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"],
-      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"],
+      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"],
       ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]];
     const [base, nuv] = NEBBIE[k] || NEBBIE[0];
     g.fillStyle = base; g.fillRect(0, 0, W, H);

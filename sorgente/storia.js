@@ -290,12 +290,30 @@ const STORIA = [
       { titolo: "Il bosco della luna piena", nemici: ["samulupo", "lollendigo", "giulistrega", "alessiaracne", "senelagoon"], liv: [1, 1], abilita: 0.95, monete: 330,
         parla: "samulupo", frase: "Auuuuuu! Stanotte la luna è piena, e io ho una fame da lupo." },
       { titolo: "Il castello del conte", boss: true, nemici: ["vikyeletro", "lollendigo", "senelagoon", "tizidrac", "samulupo"], liv: [1, 1], abilita: 0.97, monete: 580, bustina: "leggendaria",
-        parla: "tizidrac", frase: "Benvenuto nel mio castello. Entra pure: è uscire che è un po' più difficile.", vittoria: "All'alba le creature tornano nelle loro tombe. Nella cripta del castello resta uno specchio antico che non riflette te… ma mondi diversi." }
+        parla: "tizidrac", frase: "Benvenuto nel mio castello. Entra pure: è uscire che è un po' più difficile.", vittoria: "All'alba le creature tornano nelle loro tombe. In fondo alla cripta trovi una porta di metallo piena di luci al neon: dall'altra parte c'è il futuro." }
+    ],
+  },
+  {
+    id: "c21", campo: "pioggia", titolo: "La città del futuro", serie: "cyborg", colore: "#38e0ff", simbolo: "⌬",
+    intro: "Oltre la porta piove su una città di grattacieli, insegne al neon e auto volanti. I tuoi amici sono diventati cyborg, collegati a un cervello centrale che controlla tutto. Tutto tranne te.",
+    tappe: [
+      { titolo: "Il quartiere dei neon", nemici: ["alicircuit", "simonex", "mauriborg", "auroroide", "ludovolt"], liv: [1, 1], abilita: 0.9, monete: 300,
+        parla: "alicircuit", frase: "Benvenuto nel futuro. Qui chi non è collegato resta indietro." },
+      { titolo: "Il mercato dei ricambi", nemici: ["auroroide", "giulibyte", "samulex", "simonex", "mauriborg"], liv: [1, 1], abilita: 0.92, monete: 310,
+        parla: "auroroide", frase: "Ti manca un braccio? Te lo vendo io. Dopo che hai perso, però." },
+      { titolo: "La fabbrica dei robot", nemici: ["mauriborg", "piptron", "tizitron", "lolloborg", "alicircuit"], liv: [1, 1], abilita: 0.93, monete: 320, bustina: "epica",
+        parla: "piptron", frase: "Qui si montano cyborg dalla mattina alla sera. Tu sei il prossimo pezzo da smontare." },
+      { titolo: "Dentro la rete", nemici: ["senetron", "vikybyte", "lolloborg", "ludovolt", "giulibyte"], liv: [1, 1], abilita: 0.94, monete: 330,
+        parla: "senetron", frase: "Sei entrato nella rete. Peccato che la rete sia mia." },
+      { titolo: "Il grattacielo della corporazione", nemici: ["ritron", "tizitron", "samulex", "vikybyte", "piptron"], liv: [1, 1], abilita: 0.95, monete: 340,
+        parla: "ritron", frase: "Centesimo piano, vista sulla città e un cannone al plasma carico. Sorridi!" },
+      { titolo: "Il cervello centrale", boss: true, nemici: ["alessiai", "diegobot", "ritron", "senetron", "tizitron"], liv: [1, 1], abilita: 0.97, monete: 600, bustina: "leggendaria",
+        parla: "alessiai", frase: "Ho simulato questa battaglia un milione di volte. Hai vinto zero volte.", vittoria: "Il cervello centrale si spegne e la città va al buio. Solo lo schermo più grande resta acceso, e non mostra te… ma mondi diversi." }
     ],
   },
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
-    intro: "Tocchi lo specchio antico nella cripta del castello e la superficie si muove come acqua. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
+    intro: "Tocchi lo schermo gigante del cervello centrale e la superficie si muove come acqua. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
     tappe: [
       { titolo: "Il riflesso di Giulia", nemici: ["giulmai", "nikulia", "giulifleur", "giulimaah", "giudella"], liv: [1, 1], abilita: 0.9, monete: 290,
         parla: "giudella", frase: "Cinque Giulie e una sola passerella. Indovina quale è quella vera… mentre ti battiamo." },

@@ -16,6 +16,7 @@ const SERIE = {
   simpson:  { nome: "Simpson", colore: "#ffd90f", simbolo: "◎", desc: "Ciambelle, Duff e la centrale nucleare: a Springfield tutti sono pronti a combattere." },
   barbapapa: { nome: "Barbapapà", colore: "#ff8fc8", simbolo: "✿", desc: "Barbatrucco! Una famiglia che cambia forma come vuole: spade, ombrelli, chitarre." },
   starwars: { nome: "Star Wars", colore: "#4fc3ff", simbolo: "☄", desc: "Jedi, Sith, ribelli e cacciatori di taglie, in una galassia lontana lontana." },
+  cyborg: { nome: "Cyborg", colore: "#38e0ff", simbolo: "⌬", desc: "Metà persone e metà macchine, tra grattacieli al neon e auto volanti: il futuro è arrivato e picchia forte." },
   creature: { nome: "Creature Mistiche", colore: "#9d7bff", simbolo: "☠", desc: "Vampiri, lupi mannari, mummie e sirene: quando sorge la luna piena escono tutti allo scoperto." },
   elementi: { nome: "Elementi", colore: "#3fe0c0", simbolo: "❖", desc: "Fuoco, acqua, ghiaccio, fulmini, luce e ombra: i tuoi amici sono diventati i signori degli elementi." },
 };
@@ -478,6 +479,37 @@ const CARTE = [
     mosse: [m("Colpo di Coda", 0, 26), m("Canto della Sirena", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Richiamo degli Abissi", 5, 76, { drena: 40 })] },
   { id: "tizidrac", nome: "Tizidrac", serie: "creature", rarita: "comune", stile: "FOR", ruolo: "assassino", frase: "Mantello rosso, canini lucidi e un castello in collina. Ti invita a cena: il menù sei tu.",
     mosse: [m("Morso del Vampiro", 0, 26, { drena: 40 }), m("Nuvola di Pipistrelli", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Sete di Sangue", 5, 80, { drena: 40 })] },
+  // ---------------- Cyborg ----------------
+  { id: "alessiai", nome: "Alessi.AI", serie: "cyborg", rarita: "leggendaria", stile: "VEL", ruolo: "stratega", frase: "Un'intelligenza artificiale con gli occhiali: ha già calcolato come finisce la partita. Spoiler: vince lei.",
+    mosse: [m("Analisi del Bersaglio", 0, 32, { penetra: 20 }), m("Algoritmo", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Singolarità", 5, 94, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "diegobot", nome: "Diegobot", serie: "cyborg", rarita: "leggendaria", stile: "DIF", ruolo: "tank", frase: "Due tonnellate di metallo e un reattore nel petto. Il sorrisetto, invece, è rimasto quello di prima.",
+    mosse: [m("Pugno Idraulico", 0, 34), m("Campo di Forza", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Reattore al Massimo", 5, 98)] },
+  { id: "ritron", nome: "Ritron", serie: "cyborg", rarita: "leggendaria", stile: "FOR", ruolo: "tiratore", frase: "Ride sempre, anche mentre carica il cannone al plasma. Soprattutto mentre lo carica.",
+    mosse: [m("Laser al Plasma", 0, 34), m("Raffica", 2, 15, { colpi: 3 }), m("Cannone Fotonico", 5, 96, { penetra: 25 })] },
+  { id: "piptron", nome: "Piptron", serie: "cyborg", rarita: "epica", stile: "DIF", ruolo: "difensore", frase: "Baffi, occhiali e un'armatura che si chiude da sola. Dentro c'è un nucleo che scalda come un piccolo sole.",
+    mosse: [m("Pugno Corazzato", 0, 30), m("Scudo Energetico", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Nucleo Solare", 5, 86, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  { id: "senetron", nome: "Senetron", serie: "cyborg", rarita: "epica", stile: "VEL", ruolo: "ladro", frase: "Hacker con i ricci: entra nei tuoi sistemi prima che tu finisca di dire «password».",
+    mosse: [m("Virus", 0, 30, { eff: { tipo: "ruba", val: 1 } }), m("Hackeraggio", 2, 28, { eff: { tipo: "stordisci", val: 40 } }), m("Download Completo", 5, 86, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "tizitron", nome: "Tizitron", serie: "cyborg", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Più lo ammacchi, più si arrabbia: a ogni colpo gli si accende un'altra spia rossa.",
+    mosse: [m("Pugno a Razzo", 0, 32), m("Sovraccarico", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Missili a Ricerca", 5, 22, { colpi: 4 })] },
+  { id: "vikybyte", nome: "Vikybyte", serie: "cyborg", rarita: "epica", stile: "VEL", ruolo: "schivatore", frase: "Si muove come un glitch: c'è, non c'è, ti ha già colpito.",
+    mosse: [m("Glitch", 0, 32), m("Ologramma", 2, 0, { eff: { tipo: "nebbia" } }), m("Codice Sorgente", 5, 90, { penetra: 25 })] },
+  { id: "giulibyte", nome: "GiuliByte", serie: "cyborg", rarita: "rara", stile: "DIF", ruolo: "guaritore", frase: "Metà robot e metà giardino: ripara i circuiti con le foglie e i graffi con un sorriso.",
+    mosse: [m("Impulso Verde", 0, 26), m("Riparazione", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Bio-Reattore", 5, 76, { drena: 40 })] },
+  { id: "lolloborg", nome: "Lolloborg", serie: "cyborg", rarita: "rara", stile: "FOR", ruolo: "stregone", frase: "Ti guarda con l'occhio viola e dice sempre la stessa cosa: «Sarai assimilato».",
+    mosse: [m("Raggio Viola", 0, 28), m("Assimilazione", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("La Resistenza è Inutile", 5, 84)] },
+  { id: "ludovolt", nome: "Ludovolt", serie: "cyborg", rarita: "rara", stile: "VEL", ruolo: "incendiario", frase: "Carico a mille volt e sempre sorridente: se gli dai la mano, prendi la scossa.",
+    mosse: [m("Scossa", 0, 30), m("Cortocircuito", 2, 28, { eff: { tipo: "brucia", val: 7, turni: 3 } }), m("Alta Tensione", 5, 84)] },
+  { id: "samulex", nome: "Samulex", serie: "cyborg", rarita: "rara", stile: "DIF", ruolo: "capo", frase: "Il capo della squadra cyborg: quando lui si carica di fulmini blu, si caricano tutti.",
+    mosse: [m("Scarica Blu", 0, 28), m("Protocollo di Squadra", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Tempesta Elettrica", 5, 84)] },
+  { id: "alicircuit", nome: "Alicircuit", serie: "cyborg", rarita: "comune", stile: "VEL", ruolo: "assassino", frase: "Circuiti viola sul viso e un fucile sulla spalla: non sbaglia un colpo, e non sorride mai mentre mira.",
+    mosse: [m("Lama al Plasma", 0, 28, { penetra: 20 }), m("Mira Laser", 2, 36), m("Colpo di Precisione", 5, 80)] },
+  { id: "auroroide", nome: "Auroroid", serie: "cyborg", rarita: "comune", stile: "DIF", ruolo: "stratega", frase: "Androide dorato con la mano di metallo: si sistema i capelli e intanto ricarica tutta la squadra.",
+    mosse: [m("Colpo Dorato", 0, 26), m("Ricarica", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Raggio d'Oro", 5, 80)] },
+  { id: "mauriborg", nome: "Mauriborg", serie: "cyborg", rarita: "comune", stile: "FOR", ruolo: "tank", frase: "Un carro armato con i baffi: lento a partire, impossibile da fermare.",
+    mosse: [m("Pressa Idraulica", 0, 26), m("Corazza Rinforzata", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Schiacciasassi", 5, 78)] },
+  { id: "simonex", nome: "Simonex", serie: "cyborg", rarita: "comune", stile: "FOR", ruolo: "imprevedibile", frase: "Le luci rosse lampeggiano sempre: nessuno sa se è un errore di sistema o se è proprio fatto così.",
+    mosse: [m("Raggio Rosso", 0, 28), m("Errore di Sistema", 2, 24, { eff: { tipo: "stordisci", val: 40 } }), m("Autodistruzione", 5, 82)] },
 ];
 
 
@@ -527,6 +559,9 @@ const PERSONE = {
   // Creature Mistiche
   lollendigo: "Lorenzo", senelagoon: "Senè", vikyeletro: "Viky", aligorgona: "Alice", giulistrega: "Giulia", samulupo: "Samuele", simospirit: "Simone",
   auranshee: "Aurora", diegombie: "Diego", ludogargo: "Ludovico", maurimmia: "Maurizio", alessiaracne: "Alessia", pipkenstein: "Pips", ritarena: "Rita", tizidrac: "Tiziano",
+  // Cyborg
+  alessiai: "Alessia", diegobot: "Diego", ritron: "Rita", piptron: "Pips", senetron: "Senè", tizitron: "Tiziano", vikybyte: "Viky",
+  giulibyte: "Giulia", lolloborg: "Lorenzo", ludovolt: "Ludovico", samulex: "Samuele", alicircuit: "Alice", auroroide: "Aurora", mauriborg: "Maurizio", simonex: "Simone",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -540,7 +575,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // Una sola versione Ultra per serie, e mai due allo stesso amico.
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {
