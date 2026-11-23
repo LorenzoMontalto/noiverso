@@ -946,7 +946,7 @@ begin
   gia := exists (select 1 from public.codici_usati where user_id = auth.uid() and codice = k.codice);
   if gia then
     if coalesce((k.premio->>'ripetibile')::boolean, false) then
-      return (k.premio - 'monete' - 'bustine' - 'bombolette' - 'oggetti') || jsonb_build_object('codice', k.codice, 'gia', true);
+      return (k.premio - 'monete' - 'bustine' - 'bombolette' - 'oggetti' - 'carte') || jsonb_build_object('codice', k.codice, 'gia', true);
     end if;
     raise exception 'Hai già usato questo codice';
   end if;

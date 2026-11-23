@@ -885,6 +885,15 @@ function applicaCodice(p) {
     for (let k = 0; k < Math.min(20, +p.bombolette || 0); k++) { const g = Graffiti.dai(Graffiti.pesca()); parti.push(`graffito «${Graffiti.info(g.id).nome}»`); }
     for (const [id, n] of Object.entries(p.oggetti || {})) { const o = Zaino.info(id), q = Math.min(20, Math.max(0, +n || 0)); if (!o.nome || !q) continue;
       if (!S.zaino) S.zaino = { oggetti: {}, porta: [] }; S.zaino.oggetti[id] = (S.zaino.oggetti[id] || 0) + q; parti.push(`${q > 1 ? q + " × " : ""}${o.icona} ${o.nome}`); }
+    // carte precise: come se le trovassi in una bustina (se ce l'hai già diventa un doppione: potenziatori, o monete se è al 30)
+    for (const id of (Array.isArray(p.carte) ? p.carte : []).slice(0, 40)) {
+      const c = PER_ID[id]; if (!c) continue;
+      const prima = S.carte[id] || 0, inf = infoCarta(id);
+      S.carte[id] = prima + 1;
+      if (!prima) { S.liv[id] = S.liv[id] || 1; parti.push(c.nome); }
+      else if (inf.liv >= LIVELLO_MAX) { S.monete += MONETE_DOPPIONE_30[c.rarita]; parti.push(`${c.nome} (doppione: +${MONETE_DOPPIONE_30[c.rarita]} monete)`); }
+      else { S.pot[id] = (S.pot[id] || 0) + POT_DOPPIONE[c.rarita]; parti.push(`${c.nome} (doppione: +${POT_DOPPIONE[c.rarita]} potenziatori)`); }
+    }
   }
   if (p.ripetibile && p.titolo && !p.prova) {   // le sorprese ripetibili si possono riaprire dal negozio
     const lista = (S.codici || []).filter(x => x.codice !== p.codice);
