@@ -13,7 +13,8 @@
 
 const ENERGIA_INIZIALE = 3, ENERGIA_TURNO = 2, ENERGIA_MAX = 8, BONUS_CARICA = 2;
 const K_DANNO = 0.78, SMUSSO = 6, PROB_CRITICO = 0.06;
-const TURNO_SIRENE = 30; // da questo turno le cure si dimezzano e chi è in campo perde PV ogni turno
+const TURNO_SIRENE = 30;
+const TETTO_ATTACCO = 1.6;   // i bonus all'attacco sommati arrivano al massimo a +60% // da questo turno le cure si dimezzano e chi è in campo perde PV ogni turno
 
 const _carte = (typeof module !== "undefined") ? require("./carte.js") : null;
 const _PER_ID = _carte ? _carte.PER_ID : PER_ID;
@@ -50,7 +51,8 @@ const SINERGIE_BASE = {
   eroi:     { tipo: "dif",      v2: 7, v3: 14, v5: 25, testo: v => `+${v}% difesa` },
   db:       { tipo: "att",      v2: 4, v3: 12, v5: 26, testo: v => `+${v}% attacco` },
   dei:      { tipo: "rigenera", v2: 1, v3: 3,  v5: 5,  testo: v => `in campo recuperano ${_il(v)} dei PV ogni turno` },
-  nueve:    { tipo: "energia",  v2: 1, v3: 3,  v5: 5,  testo: v => `la squadra parte con +${v} energia` },
+  // con 5 Mafiosi: +3 all'inizio (non più +5, che portava a 8 e dava la mossa finale al primo turno) e +1 nei primi 3 turni
+  nueve:    { tipo: "energia",  v2: 1, v3: 2,  v5: 3,  testo: (v, liv) => `la squadra parte con +${v} energia${liv >= 3 ? " e ne prende +1 in più nei primi 3 turni" : ""}` },
   maghi:    { tipo: "effetti",  v2: 40, v3: 70, v5: 200, testo: (v, liv) => liv >= 3 ? `i loro effetti durano 1 turno in più e sono più forti del ${v}%` : liv === 2 ? `i loro effetti (brucia, indebolisci, stordisci) durano 1 turno in più e sono più forti del ${v}%` : `i loro effetti sono più forti del ${v}%` },
   demoni:   { tipo: "vampiro",  v2: 3, v3: 11, v5: 20, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
   mestieri: { tipo: "vel",      v2: 7, v3: 16, v5: 26, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
@@ -63,7 +65,7 @@ function applicaSinergie(cfg) {
   const c = cfg && typeof cfg === "object" ? cfg : {};
   const num = (x, b, max) => Number.isFinite(+x) ? Math.max(0, Math.min(max, Math.round(+x))) : b;
   // i valori salvati con le vecchie regole (solo 3 e 5 carte) non valgono più: si riparte dai nuovi
-  const nuove = c.versione === 2;
+  const nuove = c.versione === 3;   // nov 2026: versione 3 (Mafiosi rivisti); i valori salvati prima non valgono più
   for (const k in SINERGIE_BASE) {
     const b = SINERGIE_BASE[k], m = (nuove && c[k]) || {}, max = b.tipo === "energia" ? 5 : b.tipo === "effetti" ? 200 : 60;
     for (const v of ["v2", "v3", "v5"]) SINERGIE[k][v] = num(m[v], b[v], max);
@@ -151,14 +153,14 @@ class Battaglia {
       for (const x of L.squadra) {
         if (x.c.serie !== s.serie) continue;
         x.sin = x.sin || {};
-        if (s.tipo === "att") x.att *= 1 + s.val / 100;
+        if (s.tipo === "att") { x.att *= 1 + s.val / 100; x.sinAtt = 1 + s.val / 100; }
         else if (s.tipo === "dif") x.dif *= 1 + s.val / 100;
         else if (s.tipo === "vel") x.vel = Math.round(x.vel * (1 + s.val / 100));
         else if (s.tipo === "rigenera") x.sin.rigenera = s.val;
         else if (s.tipo === "vampiro") x.sin.vampiro = s.val;
         else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; if (s.liv >= 2) x.sin.effetti = 1; }
       }
-      if (s.tipo === "energia") L.energia = Math.min(ENERGIA_MAX, L.energia + s.val);
+      if (s.tipo === "energia") { L.energia = Math.min(ENERGIA_MAX, L.energia + s.val); if (s.liv >= 3) L.spintaEnergia = 3; }
       if (s.tipo === "vel" && s.liv >= 3) L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
     }
     for (const m of sin.multiverso) {
@@ -243,10 +245,13 @@ class Battaglia {
   _log(testo, extra = {}) { this.ev.push({ testo, ...extra, foto: this._foto() }); }
 
   attaccoEffettivo(l, x) {
-    let a = x.att;
-    if (x.buff.att) a *= 1 + x.buff.att.val / 100;
+    // I bonus all'attacco (mosse e Occhiali che potenziano, Capo, sinergia Dragon Ball) insieme non superano +60%.
+    // Esempio: Capo 1,1 × Ordine Reale 1,35 × 5 Dragon Ball 1,26 = 1,87 → conta 1,60.
+    let bonus = x.sinAtt || 1;
+    if (x.buff.att) bonus *= 1 + x.buff.att.val / 100;
+    if (this.lati[l].squadra.some(y => y.pv > 0 && y.c.ruolo === "capo")) bonus *= 1.1;
+    let a = x.att / (x.sinAtt || 1) * Math.min(TETTO_ATTACCO, bonus);
     if (x.buff.debole) a *= 1 - x.buff.debole.val / 100;
-    if (this.lati[l].squadra.some(y => y.pv > 0 && y.c.ruolo === "capo")) a *= 1.1;
     if (x.c.ruolo === "picchiatore") a *= 1 + 0.5 * (1 - x.pv / x.pvMax);
     return a;
   }
@@ -311,7 +316,7 @@ class Battaglia {
       this._mosso[l] = true;
       const a = this.attivo(l);
       if (a.pv <= 0) continue;
-      if (a.stordito) { a.stordito = false; this._log(`${a.c.nome} è stordito e salta il turno.`, { lato: l }); continue; }
+      if (a.stordito) { a.stordito = false; a.immuneFino = this.turno + 1; this._log(`${a.c.nome} è stordito e salta il turno.`, { lato: l }); continue; }
       const m = a.c.mosse[az[l].i];
       // se nel frattempo ha perso energia (gliel'hanno rubata), usa la mossa gratis invece di saltare il turno
       const mm = this.lati[l].energia < m.costo ? (a.c.mosse.find(x => x.costo === 0) || a.c.mosse[0]) : m;
@@ -366,8 +371,9 @@ class Battaglia {
         const spina = this.gv(1 - l, "spina");
         if (spina && a.pv > 0) { const rif = Math.max(1, Math.round(dmg * spina / 100)); a.pv = Math.max(0, a.pv - rif); this._log(`Graffito Spina: ${a.c.nome} si punge e perde ${rif} PV.`, { lato: 1 - l, colpo: l, danno: rif, graffito: "spina" }); }
       }
-      if (m.drena && totale > 0) this._cura(l, a, Math.round(totale * m.drena / 100));
-      if (a.sin && a.sin.vampiro && totale > 0 && a.pv > 0) this._cura(l, a, Math.max(1, Math.round(totale * a.sin.vampiro / 100)));
+      // mossa che drena e sinergia Demoni non si sommano: vale la più alta (prima si arrivava al 60% dei danni)
+      const drena = Math.max(m.drena || 0, (a.sin && a.sin.vampiro) || 0);
+      if (drena && totale > 0 && a.pv > 0) this._cura(l, a, Math.max(1, Math.round(totale * drena / 100)));
       if (a.c.ruolo === "ladro" && O.energia > 0 && this.rng() < 0.2) {
         O.energia--; L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
         this._log(`${a.c.nome} ruba 1 energia.`, { lato: l });
@@ -387,6 +393,9 @@ class Battaglia {
       this._log(`${d.c.nome} brucia per ${turni} turni.`, { lato: l, anim: "brucia", su: 1 - l });
     } else if (d.immuneEffetti && (e.tipo === "stordisci" || e.tipo === "indebolisci")) {
       this._log(`${d.c.nome} è protetto da uno scudo magico: l'effetto non lo tocca.`, { lato: 1 - l });
+    } else if (e.tipo === "stordisci" && (d.stordito || d.immuneFino >= this.turno)) {
+      // appena ripreso da uno stordimento: per un turno non si può stordire di nuovo (niente stordimenti a catena)
+      this._log(`${d.c.nome} si è appena ripreso: resiste allo stordimento.`, { lato: 1 - l });
     } else if (e.tipo === "stordisci") {
       if (this.rng() < e.val * (1 + ((a.sin && a.sin.forzaEff) || 0) / 100) / 100) { d.stordito = true; this._log(`${d.c.nome} è stordito!`, { lato: l, anim: "stordito", su: 1 - l }); }
       else this._log(`${d.c.nome} resiste allo stordimento.`, { lato: 1 - l });
@@ -482,12 +491,14 @@ class Battaglia {
       // Fulmine dà +1 energia anche a inizio turno 4, Blackout ne toglie 1 al nemico
       const g4 = this.turno === 3 && L.graffito;
       const piu = g4 && L.graffito.id === "fulmine" ? 1 : 0, meno = this.turno === 3 && this.lati[1 - l].graffito && this.lati[1 - l].graffito.id === "blackout" ? 1 : 0;
-      L.energia = Math.max(0, Math.min(ENERGIA_MAX, L.energia + ENERGIA_TURNO + extra + piu - meno));
+      const spinta = L.spintaEnergia > 0 ? (L.spintaEnergia--, 1) : 0;   // 5 Mafiosi: +1 nei primi 3 turni
+      L.energia = Math.max(0, Math.min(ENERGIA_MAX, L.energia + ENERGIA_TURNO + extra + piu - meno + spinta));
     }
     this._controllaKO();
     this.turno++;
     if (this.vincitore < 0) {
       this._log(`— Turno ${this.turno} —`, { separatore: true });
+      if (this.turno === TURNO_SIRENE - 5) this._log("Tra 5 turni arrivano le sirene: da lì le cure valgono la metà e ogni turno si perdono PV. Conviene chiudere!", { avviso: true });
       if (this.turno === TURNO_SIRENE) this._log("Arrivano le sirene! Da ora le cure valgono la metà e ogni turno si perdono PV.", { avviso: true });
     }
   }
@@ -501,10 +512,17 @@ class Battaglia {
       if ((this.rngIA || this.rng)() < 0.15) return { tipo: "carica" };
       return { tipo: "mossa", i: usabili[Math.floor((this.rngIA || this.rng)() * usabili.length)] };
     }
-    // Cambio se è in svantaggio di stile e messo male
-    if (a.pv / a.pvMax < 0.35 && multStile(d.c.stile, a.c.stile) > 1 && (this.rngIA || this.rng)() < abilita * 0.5) {
-      const i = L.squadra.findIndex((x, k) => k !== L.attivo && x.pv > 0 && multStile(d.c.stile, x.c.stile) <= 1);
-      if (i >= 0) return { tipo: "cambio", i };
+    // Cambio se è in svantaggio di tipo: dalla difficoltà media in su (abilità ≥ 0,6) già sotto metà PV, come farebbe un giocatore.
+    // Sceglie chi ha il vantaggio sul nemico (o almeno non è in svantaggio) e più PV; non cambia due turni di fila.
+    const soglia = abilita >= 0.6 ? 0.5 : 0.35;
+    if (a.pv / a.pvMax < soglia && multStile(d.c.stile, a.c.stile) > 1 && L.ultimoCambio !== this.turno - 1 && (this.rngIA || this.rng)() < (abilita >= 0.6 ? abilita * 0.85 : abilita * 0.5)) {
+      let i = -1, top = -Infinity;
+      L.squadra.forEach((x, k) => {
+        if (k === L.attivo || x.pv <= 0 || multStile(d.c.stile, x.c.stile) > 1) return;
+        const p = multStile(x.c.stile, d.c.stile) * 100 + x.pv / x.pvMax * 50;
+        if (p > top) { top = p; i = k; }
+      });
+      if (i >= 0) { L.ultimoCambio = this.turno; return { tipo: "cambio", i }; }
     }
     let meglio = usabili[0], punti = -1;
     for (const i of usabili) {
@@ -530,7 +548,7 @@ class Battaglia {
       if (e.tipo === "potenzia") p += a.buff.att ? 0 : 22;
       if (e.tipo === "energia") p += this.lati[l].energia < 4 ? 16 : 4;
       if (e.tipo === "brucia") p += d.stati.brucia ? 0 : d.pvMax * e.val / 100 * e.turni * 0.7;
-      if (e.tipo === "stordisci") p += d.stordito ? 0 : 20 * e.val / 100;
+      if (e.tipo === "stordisci") p += d.stordito || d.immuneFino >= this.turno ? 0 : 20 * e.val / 100;
       if (e.tipo === "indebolisci") p += d.buff.debole ? 0 : 14;
       if (e.tipo === "ruba") p += 7 * e.val;
     }

@@ -51,7 +51,7 @@ class BattagliaSpecchio {
 }
 
 const Online = (() => {
-  const TEMPO_TURNO = 30, TEMPO_RIENTRO = 60, TEMPO_INVITO = 30;
+  const TEMPO_TURNO = 45, TEMPO_RIENTRO = 60, TEMPO_INVITO = 30;
   let canale = null, presenti = {}, attivo = false;
   let invitoFuori = null, invitoDentro = null;
   const risposte = {};   // inviti a cui ho già risposto: se l'invito arriva di nuovo, rimando la stessa risposta
@@ -415,20 +415,26 @@ const Online = (() => {
     if (P.scadenza && !animazione && B.vincitore < 0 && Date.now() > P.scadenza) {
       P.scadenza = 0;
       if (B.serveSostituzione(0)) { const i = B.lati[0].squadra.findIndex(x => x.pv > 0); if (i >= 0) sostituisci(i); }
-      else if (!P.mie[turno()]) { mostraAvviso("Tempo scaduto: parte Carica."); scegli({ tipo: "carica" }); }
+      // tempo scaduto: parte da sola la mossa base (quella da 0 energia), così la partita non si ferma
+      else if (!P.mie[turno()]) { const a = B.attivo(0), i = Math.max(0, a.c.mosse.findIndex(m => m.costo === 0)); mostraAvviso(`Tempo scaduto: parte ${a.c.mosse[i].nome}.`); scegli({ tipo: "mossa", i }); }
     }
     segnaAttesa();
     aggiornaBanner();
+  }
+  // barra che si svuota durante il tuo turno (verde, poi rossa negli ultimi 10 secondi)
+  function barraTempo() {
+    const resto = P.scadenza ? Math.max(0, (P.scadenza - Date.now()) / 1000) : 0;
+    return `<span class="vivo-tempo ${resto <= 10 ? "poco" : ""}"><i style="width:${(resto / TEMPO_TURNO * 100).toFixed(1)}%"></i></span>`;
   }
   function testoBanner() {
     if (!P || !B || B.vincitore >= 0) return "";
     if (P.rientro) return `<b class="vivo-allarme">${esc(P.avv.nome)} si è disconnesso</b> · ha ${Math.max(0, Math.ceil((P.rientro - Date.now()) / 1000))} s per rientrare`;
     if (animazione) return `Turno in corso…`;
     const s = P.scadenza ? Math.max(0, Math.ceil((P.scadenza - Date.now()) / 1000)) : 0;
-    if (B.serveSostituzione(0)) return `Scegli chi mandare in campo · <b>${s}</b> s`;
+    if (B.serveSostituzione(0)) return `Scegli chi mandare in campo · <b>${s}</b> s${barraTempo()}`;
     if (B.serveSostituzione(1)) return `${esc(P.avv.nome)} sceglie chi mandare in campo…`;
     if (P.mie[turno()]) return `Hai scelto. Aspetto la mossa di ${esc(P.avv.nome)}…`;
-    return `Tocca a te · <b class="${s <= 10 ? "vivo-allarme" : ""}">${s}</b> s per scegliere`;
+    return `Tocca a te · <b class="${s <= 10 ? "vivo-allarme" : ""}">${s}</b> s per scegliere${barraTempo()}`;
   }
   // da quando aspetto l'avversario (la mia mossa è partita o tocca a lui sostituire)
   function segnaAttesa() {

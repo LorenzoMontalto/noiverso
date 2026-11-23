@@ -1324,7 +1324,7 @@ const Sinergie = (() => {
       </form>`;
   }
   async function salvaAdmin(form, base) {
-    const nuovi = { versione: 2 };
+    const nuovi = { versione: 3 };
     if (!base) {
       const f = new FormData(form);
       for (const k of Object.keys(SINERGIE)) { const d = {}; for (const v of ["v2", "v3", "v5"]) { const x = f.get(`${k}.${v}`); if (x !== null && x !== "") d[v] = +x; } if (Object.keys(d).length) nuovi[k] = d; }
@@ -2812,6 +2812,7 @@ function htmlHud(l) {
   const stato = [];
   if (a.stati.brucia) stato.push(`<span class="tag brucia">Brucia ${a.stati.brucia.turni}</span>`);
   if (a.stordito) stato.push(`<span class="tag">Stordito</span>`);
+  else if (a.immuneFino >= B.turno) stato.push(`<span class="tag su" title="Si è appena ripreso: per questo turno non si può stordire">🛡 Resiste</span>`);
   if (a.scudo) stato.push(`<span class="tag">Scudo ${a.scudo}%</span>`);
   if (a.nebbia) stato.push(`<span class="tag">Invisibile</span>`);
   if (a.buff.att) stato.push(`<span class="tag su">Att +${a.buff.att.val}%</span>`);
@@ -2935,16 +2936,22 @@ function segnaTurno(lato, testo, sotto) {
   const cls = lato === 0 ? "tu" : lato === 1 ? "nemico" : "fine";
   if (!n.classList.contains(cls) || $("#neon-chi").textContent !== testo) { n.className = "neon-turno " + cls; void n.offsetWidth; n.classList.add("cambia"); }
   $("#neon-chi").textContent = testo;
-  $("#turno").textContent = sotto || `Turno ${B.turno}`;
+  $("#turno").textContent = sotto || testoTurno();
   if (arena) arena.turnoDi = lato === 0 || lato === 1 ? lato : null;
+}
+// "Turno 23 · 🚨 sirene tra 7": dal turno 20 si vede quanto manca alle sirene
+function testoTurno() {
+  if (!B) return "";
+  const mancano = TURNO_SIRENE - B.turno;
+  return `Turno ${B.turno}${mancano > 0 && mancano <= 10 ? ` · 🚨 sirene tra ${mancano}` : mancano <= 0 ? " · 🚨 sirene" : ""}`;
 }
 function segnaTurnoAttesa() {
   if (!B) return;
-  if (livelloAttuale && livelloAttuale.spettatore) return segnaTurno(null, B.vincitore >= 0 ? `Vince ${B.lati[B.vincitore].nome}` : "👀 Dal vivo", `Turno ${B.turno}`);
-  if (B.vincitore >= 0) return segnaTurno(null, B.vincitore === 0 ? "Vittoria!" : "Sconfitta", `Turno ${B.turno}`);
+  if (livelloAttuale && livelloAttuale.spettatore) return segnaTurno(null, B.vincitore >= 0 ? `Vince ${B.lati[B.vincitore].nome}` : "👀 Dal vivo", testoTurno());
+  if (B.vincitore >= 0) return segnaTurno(null, B.vincitore === 0 ? "Vittoria!" : "Sconfitta", testoTurno());
   if (livelloAttuale && livelloAttuale.vivo && (Online.inAttesa() || (B.serveSostituzione(1) && !B.serveSostituzione(0))))
-    return segnaTurno(1, `Tocca a ${livelloAttuale.nome}`, `Turno ${B.turno} · sta scegliendo`);
-  segnaTurno(0, "Tocca a te", B.serveSostituzione(0) ? "Scegli chi mandare in campo" : `Turno ${B.turno} · scegli una mossa`);
+    return segnaTurno(1, `Tocca a ${livelloAttuale.nome}`, `${testoTurno()} · sta scegliendo`);
+  segnaTurno(0, "Tocca a te", B.serveSostituzione(0) ? "Scegli chi mandare in campo" : `${testoTurno()} · scegli una mossa`);
 }
 
 // Il campo di battaglia: riquadro nel pannello e colore dell'arena
