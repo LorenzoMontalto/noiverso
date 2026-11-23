@@ -233,11 +233,11 @@ const Graffiti = (() => {
     const righe = [];
     if (Bt.graffitiAnnullati) {
       const [x, y] = Bt.graffitiAnnullati;
-      righe.push(`<div class="graffito-riga-b annullati">${htmlChip(x, 0)}${htmlChip(y, 1)}<small>Si annullano: nessuno dei due ha effetto.</small></div>`);
+      righe.push(`<div class="graffito-riga-b annullati" title="Si annullano: nessuno dei due ha effetto.">${htmlChip(x, 0)}${htmlChip(y, 1)}<small>Si annullano: nessuno dei due ha effetto.</small></div>`);
     } else {
       const [a, b] = [Bt.lati[0].graffito, Bt.lati[1].graffito];
-      if (a) righe.push(`<div class="graffito-riga-b">${htmlChip(a, 0)}<small>${esc(descrivi(a.id, a.liv))}</small></div>`);
-      if (b) righe.push(`<div class="graffito-riga-b">${htmlChip(b, 1)}<small>Nemico: ${esc(descriviNemico(b.id, b.liv))}</small></div>`);
+      if (a) righe.push(`<div class="graffito-riga-b" title="${esc(descrivi(a.id, a.liv))}">${htmlChip(a, 0)}<small>${esc(descrivi(a.id, a.liv))}</small></div>`);
+      if (b) righe.push(`<div class="graffito-riga-b" title="Nemico: ${esc(descriviNemico(b.id, b.liv))}">${htmlChip(b, 1)}<small>Nemico: ${esc(descriviNemico(b.id, b.liv))}</small></div>`);
     }
     return righe.length ? `<div class="graffiti-riga">${righe.join("")}</div>` : "";
   }

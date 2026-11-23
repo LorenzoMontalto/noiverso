@@ -2805,7 +2805,7 @@ function avvisoFineConsigli() {
 // Promemoria sempre visibile in battaglia: chi batte chi (e cosa vuol dire)
 function htmlLegendaTipi() {
   const t = k => `<span class="lt-tipo s-${k}">${STILI[k].icona} ${STILI[k].nome}</span>`;
-  return `<div class="legenda-tipi" aria-label="Chi batte chi">${t("FOR")}<i>batte</i>${t("DIF")}<i>batte</i>${t("VEL")}<i>batte</i>${t("FOR")}
+  return `<div class="legenda-tipi" aria-label="Chi batte chi" title="La freccia vuol dire «batte»: chi è in vantaggio fa +30% di danni, chi è in svantaggio −20% e niente critici.">${t("FOR")}<i>batte</i>${t("DIF")}<i>batte</i>${t("VEL")}<i>batte</i>${t("FOR")}
     <small>La freccia vuol dire «batte»: chi è in vantaggio fa +30% di danni, chi è in svantaggio −20% e niente critici.</small></div>`;
 }
 function consiglio() {
@@ -2983,7 +2983,7 @@ function segnaTurnoAttesa() {
 // Il campo di battaglia: riquadro nel pannello e colore dell'arena
 function htmlCampo() {
   const c = B && CAMPI[B.campo]; if (!c) return "";
-  return `<p class="campo-banner" style="--c:${c.colore}"><span class="campo-ico">${c.icona}</span><span><b>Campo: ${c.nome}</b><small>${c.desc}</small></span></p>`;
+  return `<p class="campo-banner" style="--c:${c.colore}" title="${c.desc}"><span class="campo-ico">${c.icona}</span><span><b>Campo: ${c.nome}</b><small>${c.desc}</small></span></p>`;
 }
 function aggiornaBattaglia() {
   if (!B || !$("#arena")) return;
