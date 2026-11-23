@@ -3081,7 +3081,10 @@ const potVittoria = mult => Math.max(1, Math.min(5, Math.round(mult)));
 function premiaCarte(mult, vinto, potSempre) {
   if (livelloAttuale && !livelloAttuale.spettatore) StatCarte.registra(vinto, livelloAttuale.vivo ? "vivo" : "pc");
   const xp = Math.round((vinto ? 50 : 20) * mult * (carteBattaglia() === 3 ? .6 : 1));
-  const potV = vinto || potSempre ? potVittoria(mult) : 0;
+  // sconfitta: 1 potenziatore a ogni carta scesa in campo, se la battaglia è durata almeno 3 turni e non ti sei arreso
+  // (così non si possono fare potenziatori arrendendosi subito una battaglia dopo l'altra)
+  const perso = !vinto && !potSempre ? (B.turno >= 3 && !(livelloAttuale && livelloAttuale.resa) ? 1 : 0) : 0;
+  const potV = vinto || potSempre ? potVittoria(mult) : perso;
   return B.lati[0].squadra.map(x => {
     if (!S.carte[x.id]) return null;
     const prima = infoCarta(x.id), verso = prima.liv >= LIVELLO_MAX && !prima.lode;
@@ -3302,7 +3305,7 @@ document.addEventListener("click", e => {
       apriModale(`<div class="conferma"><h2>Abbandonare la sfida?</h2><p>${livelloAttuale.vivo ? `Conta come una sconfitta e ${esc(livelloAttuale.nome)} vince.` : "Conta come una sconfitta."}</p>
         <div class="azioni centro"><button class="btn primario" data-fx="scuoti" data-azione="conferma-abbandono">Abbandona</button><button class="btn" data-fx="onda" data-azione="chiudi">Continua a giocare</button></div></div>`);
       break;
-    case "conferma-abbandono": chiudiModale(); if (livelloAttuale.vivo) Online.resa(); B.vincitore = 1; chiudiSfida(); if (livelloAttuale.vivo) Online.esci(); esciBattaglia(); break;
+    case "conferma-abbandono": chiudiModale(); if (livelloAttuale.vivo) Online.resa(); livelloAttuale.resa = true; B.vincitore = 1; chiudiSfida(); if (livelloAttuale.vivo) Online.esci(); esciBattaglia(); break;
     case "esci-vivo": chiudiModale(); Online.esci(); if (B) esciBattaglia(); break;
     case "esci-guarda": chiudiModale(); Online.esciGuarda(); if (B) esciBattaglia(); break;
     case "annulla-invito": Online.annullaInvito(); break;
