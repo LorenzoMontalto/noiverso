@@ -1876,6 +1876,90 @@ const Scena3D = (() => {
     "aurrerri:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "bla bla", "#ff8ad0", { n: 2, dim: .4, verso: d, durata: 600 }); await ar.attendi(450); ar.lampo(0x9a6ae0, 3, d); },
     "aurrerri:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#ff8ad0"); ar.schermo("specchio", 1400); await ar.cloni(l, { n: 2, colore: 0xff8ad0, dur: 450 }); const d = ar.pos(1 - l);
       for (let k = 0; k < 2; k++) { await ar.scatto(l, { k: .9, andata: 90, ritorno: 90, ruota: k ? .3 : -.3, colore: 0xff8ad0 }); ar.esplosione(d, 0xff8ad0, 30, { velocita: 2.2 }); } ar.scossa = .3; },
+    // ================= Barbapapà =================
+    // ---- Diegopà ----
+    "diegopa:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.vortice(l, { giri: 1, dur: 300, colore: 0xc38bff }); await ar.scatto(l, { k: .85, andata: 120, colore: 0xc38bff }); ar.simboli(d, "✦", "#c38bff", { n: 3, dim: .35 }); },
+    "diegopa:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "⚔", "#ffffff", { n: 1, dim: .6 }); await ar.scatto(l, { k: 1, andata: 110, ruota: .3, colore: 0xffffff }); ar.lampo(0xc38bff, 6, d); ar.esplosione(d, 0xc38bff, 26, { velocita: 2 }); },
+    "diegopa:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#c38bff"); ar.schermo("incanto", 1800); ar.luceScena(0xc38bff, { intensita: .5, dur: 1800 }); const a = ar.pos(l), d = ar.pos(1 - l);
+      for (const f of ["⚔", "⚡", "★"]) { ar.simboli(a, f, "#ffffff", { n: 1, dim: .7 }); await ar.vortice(l, { giri: 1, dur: 260, colore: 0xc38bff }); }
+      await ar.scatto(l, { k: 1, andata: 180, colore: 0xffffff }); ar.esplosione(d, 0xc38bff, 70, { velocita: 3 }); ar.simboli(d, "BARBATRUCCO!", "#ff8fc8", { n: 1, dim: .5 }); ar.lampo(0xffffff, 8, d); ar.scossa = .45; },
+    // ---- Pipsobà ----
+    "pipsoba:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .85, andata: 130, colore: 0xffd90f }); ar.simboli(d, "🐾", "#ffd90f", { n: 3, dim: .35 }); },
+    "pipsoba:1": async (ar, l) => { const a = ar.pos(l), d = ar.pos(1 - l); for (const an of ["🐘", "🦁", "🐒"]) { ar.proiettile(a.clone().add(V(0, .5, 0)), d, { colore: 0xffd90f, simbolo: an, dim: .5, arco: .4, dur: 360 }); await ar.attendi(140); } await ar.attendi(240); ar.esplosione(d, 0xffd90f, 24, { velocita: 1.8 }); },
+    "pipsoba:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#ffd90f"); ar.schermo("terremoto", 1600); const a = ar.pos(l), d = ar.pos(1 - l), zoo = ["🐘", "🦁", "🦒", "🐻", "🐒", "🦓"];
+      for (let k = 0; k < 6; k++) { ar.proiettile(a.clone().add(V((k - 2.5) * .3, .3, 0)), d, { colore: 0xffd90f, simbolo: zoo[k], dim: .55, arco: .2, dur: 420 }); await ar.attendi(80); }
+      await ar.attendi(360); ar.ondaTerra(d, 0xffd90f, 8); ar.esplosione(d, 0xffd90f, 60, { velocita: 2.8 }); ar.scossa = .5; },
+    // ---- Ritamma ----
+    "ritamma:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .8, andata: 140, colore: 0xff8fc8 }); ar.simboli(d, "♡", "#ff8fc8", { n: 3, dim: .35 }); },
+    "ritamma:1": async (ar, l) => { const p = ar.pos(l); ar.simboli(p, "♥", "#ff8fc8", { n: 5, dim: .35, su: 1.3 }); ar.esplosione(p, 0xff8fc8, 30, { velocita: .8, su: 2, gravita: -.3, durata: 1000, dimensione: .1 }); await ar.colonna(p, 0xff8fc8, { alt: 2.6 }); },
+    "ritamma:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#ff8fc8"); ar.schermo("fiori", 1800); ar.luceScena(0xff8fc8, { intensita: .5, dur: 1800 }); const a = ar.pos(l), d = ar.pos(1 - l);
+      await ar.orbita(l, { colore: 0xff8fc8, testo: "⌂", n: 6, dur: 800, raggio: 1 }); await ar.proiettile(a.clone().add(V(0, 1.2, 0)), d, { colore: 0xff8fc8, simbolo: "⌂", dim: 1, arco: .8, dur: 520 });
+      ar.esplosione(d, 0xff8fc8, 60, { velocita: 2.6 }); ar.ondaTerra(d, 0xff8fc8, 6); ar.lampo(0xff8fc8, 7, d); ar.scossa = .4; },
+    // ---- Aliottina ----
+    "aliottina:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.proiettile(ar.pos(l).add(V(0, .6, 0)), d, { colore: 0xc38bff, simbolo: "📖", dim: .45, arco: .5, dur: 360, ruota: 1 }); ar.esplosione(d, 0xc38bff, 16, { velocita: 1.5 }); },
+    "aliottina:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "zzz", "#c38bff", { n: 3, dim: .4, verso: d, durata: 650 }); await ar.attendi(500); ar.lampo(0xc38bff, 3, d); },
+    "aliottina:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#c38bff"); ar.schermo("incanto", 1600); const a = ar.pos(l), d = ar.pos(1 - l);
+      for (let k = 0; k < 6; k++) { ar.proiettile(a.clone().add(V((k - 2.5) * .3, 1.1, 0)), d, { colore: 0xc38bff, simbolo: "📖", dim: .45, arco: (k - 2.5) * .4, dur: 440, ruota: 1 }); await ar.attendi(80); }
+      await ar.attendi(360); ar.esplosione(d, 0xc38bff, 55, { velocita: 2.5 }); ar.scossa = .3; },
+    // ---- Aurobrava ----
+    "aurobrava:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .9, andata: 90, ritorno: 80, colore: 0xffb84a }); ar.esplosione(d, 0xffb84a, 14, { velocita: 1.5 }); },
+    "aurobrava:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(d, "🔍", "#ffb84a", { n: 1, dim: .7 }); await ar.attendi(350); await ar.scatto(l, { k: .9, andata: 120, colore: 0xffb84a }); ar.lampo(0xffffff, 5, d); },
+    "aurobrava:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#ffb84a"); ar.schermo("velocita", 1500); const d = ar.pos(1 - l); await ar.cloni(l, { n: 3, colore: 0xffb84a, dur: 450, carica: true });
+      for (let k = 0; k < 3; k++) await ar.scatto(l, { k: .9, andata: 80, ritorno: 70, ruota: k % 2 ? .3 : -.3, colore: 0xffb84a }); ar.simboli(d, "CASO RISOLTO", "#ffb84a", { n: 1, dim: .5 }); ar.esplosione(d, 0xffb84a, 50, { velocita: 2.5 }); ar.scossa = .3; },
+    // ---- Ludopà ----
+    "ludopa:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.getto(ar.pos(l), d, { colore: 0xff9a3a, dur: 300, densita: 3 }); ar.esplosione(d, 0xff9a3a, 14, { velocita: 1.4 }); },
+    "ludopa:1": async (ar, l) => { const d = ar.pos(1 - l); await ar.proiettile(ar.pos(l).add(V(0, .5, 0)), d, { colore: 0xff9a3a, dim: .5, arco: .7, dur: 420 }); ar.esplosione(d, 0xff9a3a, 30, { velocita: 2.2 }); },
+    "ludopa:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#ff9a3a"); ar.schermo("calore", 1400); const a = ar.pos(l), d = ar.pos(1 - l);
+      for (let k = 0; k < 3; k++) { await ar.proiettile(a.clone().add(V(0, .6 + k * .3, 0)), d, { colore: 0xff9a3a, dim: .6 + k * .15, arco: .8 - k * .2, dur: 360 }); ar.ondaTerra(d, 0xff9a3a, 3 + k); }
+      ar.esplosione(d, 0xff9a3a, 55, { velocita: 2.6 }); ar.scossa = .4; },
+    // ---- Mauribà ----
+    "mauriba:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.proiettile(ar.pos(l).add(V(0, .5, 0)), d, { colore: 0xe04a4a, dim: .45, arco: .3, dur: 320 }); ar.esplosione(d, 0xe04a4a, 16, { velocita: 1.6 }); },
+    "mauriba:1": async (ar, l) => { const p = ar.pos(l); ar.simboli(p, "💪", "#e04a4a", { n: 2, dim: .45 }); await ar.vortice(l, { giri: 2, dur: 450, colore: 0xe04a4a }); ar.ondaTerra(p, 0xe04a4a, 3); },
+    "mauriba:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#e04a4a"); ar.schermo("rosso", 1400); const a = ar.pos(l), d = ar.pos(1 - l);
+      await ar.scatto(l, { k: .6, andata: 120, colore: 0xe04a4a }); await ar.proiettile(a.clone().add(V(0, .4, 0)), d, { colore: 0xffffff, simbolo: "⚽", dim: .6, arco: .3, dur: 360, ruota: 2 });
+      ar.simboli(d, "GOOOL", "#ffd90f", { n: 1, dim: .6 }); ar.esplosione(d, 0xe04a4a, 60, { velocita: 2.8 }); ar.scossa = .45; },
+    // ---- AleBella ----
+    "alebella:0": async (ar, l) => { const d = ar.pos(1 - l); ar.lampo(0xffffff, 4, ar.pos(l)); await ar.proiettile(ar.pos(l).add(V(0, .5, 0)), d, { colore: 0xffffff, simbolo: "✧", dim: .35, arco: .2, dur: 300 }); },
+    "alebella:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "♡", "#ff8fc8", { n: 4, dim: .4, verso: d, durata: 600 }); await ar.attendi(480); ar.simboli(d, "@_@", "#ffffff", { n: 1, dim: .4 }); },
+    "alebella:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#ff8fc8"); ar.schermo("bianco", 900); ar.luceScena(0xffffff, { intensita: .7, dur: 1200 }); const d = ar.pos(1 - l);
+      for (let k = 0; k < 4; k++) { ar.lampo(0xffffff, 6, d); await ar.attendi(100); } ar.esplosione(d, 0xff8fc8, 50, { velocita: 2.4 }); ar.scossa = .3; },
+    // ---- Giulialla ----
+    "giulialla:0": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "♪", "#7dffb0", { n: 3, dim: .35, verso: d, durata: 450 }); await ar.attendi(360); ar.esplosione(d, 0x7dffb0, 12, { velocita: 1.3 }); },
+    "giulialla:1": async (ar, l) => { const p = ar.pos(l); await ar.orbita(l, { colore: 0x7dffb0, testo: "♫", n: 5, dur: 750, raggio: .85 }); ar.simboli(p, "+3", "#7dffb0", { n: 1, dim: .5 }); },
+    "giulialla:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#7dffb0"); ar.schermo("disco", 1600); const a = ar.pos(l), d = ar.pos(1 - l);
+      for (let k = 0; k < 6; k++) { ar.proiettile(a.clone().add(V((k - 2.5) * .25, 1, 0)), d, { colore: 0x7dffb0, simbolo: ["♪", "♫"][k % 2], dim: .45, arco: (k - 2.5) * .3, dur: 420 }); await ar.attendi(90); }
+      await ar.attendi(320); ar.esplosione(d, 0x7dffb0, 50, { velocita: 2.4 }); ar.scossa = .3; },
+    // ---- Seneforte ----
+    "seneforte:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: 1, andata: 150, colore: 0xff8fc8 }); ar.ondaTerra(d, 0xff8fc8, 3); ar.scossa = .15; },
+    "seneforte:1": async (ar, l) => { const p = ar.pos(l); await ar.orbita(l, { colore: 0xff8fc8, testo: "▮", n: 6, dur: 750, raggio: .9 }); ar.ondaTerra(p, 0xff8fc8, 3); },
+    "seneforte:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#ff8fc8"); ar.schermo("terremoto", 1400); const d = ar.pos(1 - l);
+      await ar.colonna(d, 0xff8fc8, { alt: 3 }); ar.ondaTerra(d, 0xff8fc8, 8); ar.esplosione(d, 0xff8fc8, 55, { velocita: 2.4 }); ar.scossa = .5; },
+    // ---- Vikylalla ----
+    "vikylalla:0": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "🎸", "#ff6a2a", { n: 1, dim: .5 }); await ar.scatto(l, { k: .85, andata: 120, colore: 0xff6a2a }); ar.esplosione(d, 0xff6a2a, 14, { velocita: 1.4 }); },
+    "vikylalla:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "♫", "#ff6a2a", { n: 4, dim: .4, verso: d, durata: 550 }); await ar.attendi(450); ar.esplosione(d, 0xff6a2a, 26, { velocita: 1.2, su: 1.4 }); },
+    "vikylalla:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#ff6a2a"); ar.schermo("inferno", 1600); ar.luceScena(0xff6a2a, { intensita: .5, dur: 1600 }); const d = ar.pos(1 - l);
+      await ar.getto(ar.pos(l), d, { colore: 0xff6a2a, dur: 600, densita: 6 }); ar.esplosione(d, 0xff6a2a, 60, { velocita: 2.8, su: 1.5 }); ar.lampo(0xff6a2a, 7, d); ar.scossa = .35; },
+    // ---- Lollapà ----
+    "lollapa:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .85, andata: 130, colore: 0xff8fc8 }); ar.esplosione(d, 0xff8fc8, 14, { velocita: 1.4 }); },
+    "lollapa:1": async (ar, l) => { const p = ar.pos(l); ar.simboli(p, "BARBATRUCCO!", "#ff8fc8", { n: 1, dim: .5 }); await ar.colonna(p, 0xff8fc8, { alt: 2.4 }); ar.ondaTerra(p, 0xff8fc8, 4); },
+    "lollapa:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#ff8fc8"); ar.schermo("fiori", 1600); const a = ar.pos(l), d = ar.pos(1 - l);
+      await ar.vortice(l, { giri: 3, dur: 600, colore: 0xff8fc8 }); await ar.proiettile(a.clone().add(V(0, .8, 0)), d, { colore: 0xff8fc8, simbolo: "✿", dim: .9, arco: .5, dur: 460, ruota: 1 }); ar.esplosione(d, 0xff8fc8, 55, { velocita: 2.5 }); ar.scossa = .3; },
+    // ---- Tizobà ----
+    "tizoba:0": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "♪", "#5ac05a", { n: 2, dim: .35, verso: d, durata: 400 }); await ar.attendi(300); ar.esplosione(d, 0x5ac05a, 12, { velocita: 1.2 }); },
+    "tizoba:1": async (ar, l) => { const p = ar.pos(l); ar.simboli(p, "☂", "#5ac05a", { n: 1, dim: .8 }); await ar.orbita(l, { colore: 0x5ac05a, testo: "☂", n: 4, dur: 700, raggio: .8 }); },
+    "tizoba:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#5ac05a"); ar.schermo("verde", 1400); const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "🎺", "#ffd90f", { n: 1, dim: .6 });
+      await ar.getto(ar.pos(l), d, { colore: 0x5ac05a, dur: 550, densita: 5 }); ar.ondaTerra(d, 0x5ac05a, 6); ar.esplosione(d, 0x5ac05a, 45, { velocita: 2.3 }); ar.scossa = .3; },
+    // ---- Samubà ----
+    "samuba:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.proiettile(ar.pos(l).add(V(0, .5, 0)), d, { colore: 0x4fa8ff, simbolo: "⚗", dim: .4, arco: .5, dur: 360, ruota: 1 }); ar.esplosione(d, 0x4fa8ff, 16, { velocita: 1.5 }); },
+    "samuba:1": async (ar, l) => { const p = ar.pos(l); ar.simboli(p, "+", "#4fa8ff", { n: 4, dim: .4, su: 1.3 }); await ar.colonna(p, 0x4fa8ff, { alt: 2.3 }); },
+    "samuba:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#4fa8ff"); ar.schermo("laser", 1400); const d = ar.pos(1 - l);
+      await ar.proiettile(ar.pos(l).add(V(0, .8, 0)), d, { colore: 0x4fa8ff, simbolo: "⚗", dim: .7, arco: .7, dur: 460, ruota: 1.5 }); ar.esplosione(d, 0x4fa8ff, 60, { velocita: 2.8 }); ar.simboli(d, "BOOM", "#ffffff", { n: 1, dim: .55 }); ar.scossa = .35; },
+    // ---- Simopà ----
+    "simopa:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.getto(ar.pos(l), d, { colore: 0x3a6ae0, dur: 280, densita: 3 }); ar.esplosione(d, 0x3a6ae0, 12, { velocita: 1.3 }); },
+    "simopa:1": async (ar, l) => { const d = ar.pos(1 - l); for (const c of [0xe04a4a, 0xffd90f, 0x3a6ae0]) { ar.esplosione(d, c, 14, { velocita: 1.4 }); await ar.attendi(120); } },
+    "simopa:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#3a6ae0"); ar.schermo("disco", 1400); const a = ar.pos(l), d = ar.pos(1 - l), col = [0xe04a4a, 0xffd90f, 0x3a6ae0, 0x5ac05a, 0xff8fc8];
+      for (let k = 0; k < 5; k++) { ar.proiettile(a.clone().add(V((k - 2) * .3, .9, 0)), d, { colore: col[k], dim: .4, arco: (k - 2) * .4, dur: 400 }); await ar.attendi(90); }
+      await ar.attendi(320); ar.simboli(d, "🖼", "#ffffff", { n: 1, dim: .6 }); ar.esplosione(d, 0xffffff, 45, { velocita: 2.3 }); ar.scossa = .3; },
   };
 
   // ============================================================

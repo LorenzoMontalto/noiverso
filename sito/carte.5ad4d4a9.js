@@ -14,6 +14,7 @@ const SERIE = {
   demoni: { nome: "Demoni",     colore: "#d4145a", simbolo: "♆", desc: "Corna, troni e patti col diavolo: gli Inferi hanno aperto le porte." },
   mestieri: { nome: "Mestieri", colore: "#a6e22e", simbolo: "⚒", desc: "Hacker, spie, calciatori e pianisti: ognuno con il suo lavoro, tutti pronti a combattere." },
   simpson:  { nome: "Simpson", colore: "#ffd90f", simbolo: "◎", desc: "Ciambelle, Duff e la centrale nucleare: a Springfield tutti sono pronti a combattere." },
+  barbapapa: { nome: "Barbapapà", colore: "#ff8fc8", simbolo: "✿", desc: "Barbatrucco! Una famiglia che cambia forma come vuole: spade, ombrelli, chitarre." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -351,6 +352,37 @@ const CARTE = [
     mosse: [m("Sorriso Angelico", 0, 26), m("Colletta Rubata", 2, 20, { eff: { tipo: "ruba", val: 2 } }), m("Figlia del Reverendo", 5, 78)] },
   { id: "aurrerri", nome: "Aurrerri", serie: "simpson", rarita: "comune", stile: "FOR", ruolo: "imprevedibile", frase: "Quando ride lei, sembra che ridano in due.",
     mosse: [m("Doppio Sghignazzo", 0, 14, { colpi: 2 }), m("Pettegolezzo", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Gemelle all'Attacco", 5, 38, { colpi: 2 })] },
+  // ---------------- Barbapapà ----------------
+  { id: "diegopa", nome: "Diegopà", serie: "barbapapa", rarita: "leggendaria", stile: "VEL", ruolo: "assassino", frase: "Diventa una spada, poi un fulmine, poi di nuovo lui. Barbatrucco!",
+    mosse: [m("Barbatrucco", 0, 34), m("Forma di Spada", 2, 44, { penetra: 30 }), m("Resta Barba!", 5, 98, { penetra: 25 })] },
+  { id: "pipsoba", nome: "Pipsobà", serie: "barbapapa", rarita: "leggendaria", stile: "FOR", ruolo: "picchiatore", frase: "Amico di tutti gli animali. E gli animali sono dalla sua parte.",
+    mosse: [m("Zampata", 0, 34), m("Branco Selvaggio", 2, 16, { colpi: 3 }), m("Zoo in Libertà", 5, 98)] },
+  { id: "ritamma", nome: "Ritamma", serie: "barbapapa", rarita: "leggendaria", stile: "DIF", ruolo: "guaritore", frase: "La mamma di tutta la famiglia: abbraccia, cura e, se serve, si arrabbia.",
+    mosse: [m("Abbraccio Rotondo", 0, 30), m("Cure di Mamma", 2, 0, { eff: { tipo: "cura", val: 40 } }), m("Barbacasa", 5, 90, { eff: { tipo: "scudo", val: 40 } })] },
+  { id: "aliottina", nome: "Aliottina", serie: "barbapapa", rarita: "epica", stile: "DIF", ruolo: "stregone", frase: "Ha letto tutti i libri della casa. Ora li lancia.",
+    mosse: [m("Libro in Testa", 0, 30), m("Lezione Noiosa", 2, 30, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Biblioteca Volante", 5, 88)] },
+  { id: "aurobrava", nome: "Aurobrava", serie: "barbapapa", rarita: "epica", stile: "VEL", ruolo: "schivatore", frase: "Sportiva e detective: corre più veloce dei suoi sospettati.",
+    mosse: [m("Scatto Bravo", 0, 32), m("Lente d'Ingrandimento", 2, 44, { penetra: 20 }), m("Caso Risolto", 5, 90)] },
+  { id: "ludopa", nome: "Ludopà", serie: "barbapapa", rarita: "epica", stile: "FOR", ruolo: "tiratore", frase: "Si allunga, si arrotola e ti arriva addosso da lontano.",
+    mosse: [m("Braccio Elastico", 0, 32), m("Fionda Barba", 2, 46), m("Palla di Gomma", 5, 92)] },
+  { id: "mauriba", nome: "Mauribà", serie: "barbapapa", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Rosso di forma e di rabbia: lo sport è la sua vita.",
+    mosse: [m("Palla Medica", 0, 32), m("Riscaldamento", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Barbagol", 5, 92)] },
+  { id: "alebella", nome: "AleBella", serie: "barbapapa", rarita: "rara", stile: "VEL", ruolo: "stregone", frase: "Occhiali, collane e un fascino tutto rotondo.",
+    mosse: [m("Specchietto", 0, 28), m("Fascino Rotondo", 2, 26, { eff: { tipo: "stordisci", val: 45 } }), m("Bellezza Accecante", 5, 84)] },
+  { id: "giulialla", nome: "Giulialla", serie: "barbapapa", rarita: "rara", stile: "VEL", ruolo: "stratega", frase: "Canta sempre, e la squadra va a tempo.",
+    mosse: [m("Nota Rotonda", 0, 28), m("Melodia di Casa", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Concerto Barba", 5, 84)] },
+  { id: "seneforte", nome: "Seneforte", serie: "barbapapa", rarita: "rara", stile: "DIF", ruolo: "tank", frase: "Morbida fuori, fortissima dentro.",
+    mosse: [m("Spallata", 0, 30), m("Pelle di Gomma", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Barbamuro", 5, 86)] },
+  { id: "vikylalla", nome: "Vikylalla", serie: "barbapapa", rarita: "rara", stile: "FOR", ruolo: "incendiario", frase: "Giacca nera e chitarra: la Barba-rockstar di famiglia.",
+    mosse: [m("Chitarra Rock", 0, 28), m("Assolo Infuocato", 2, 28, { eff: { tipo: "brucia", val: 6, turni: 3 } }), m("Barba Rock", 5, 84)] },
+  { id: "lollapa", nome: "Lollapà", serie: "barbapapa", rarita: "comune", stile: "DIF", ruolo: "capo", frase: "Il papà rosa: quando dice Barbatrucco, tutti si trasformano.",
+    mosse: [m("Barbaspinta", 0, 28), m("Tutti in Famiglia", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Grande Barbatrucco", 5, 80)] },
+  { id: "tizoba", nome: "Tizobà", serie: "barbapapa", rarita: "comune", stile: "DIF", ruolo: "difensore", frase: "Verde, barbuto e sempre al riparo: diventa un ombrello quando piove.",
+    mosse: [m("Fischietto", 0, 26), m("Forma a Ombrello", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Barbatromba", 5, 80)] },
+  { id: "samuba", nome: "Samubà", serie: "barbapapa", rarita: "comune", stile: "VEL", ruolo: "guaritore", frase: "Lo scienziato blu: ogni esperimento finisce con un botto.",
+    mosse: [m("Provetta Blu", 0, 26), m("Pozione Barba", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Esperimento Esplosivo", 5, 76, { drena: 40 })] },
+  { id: "simopa", nome: "Simopà", serie: "barbapapa", rarita: "comune", stile: "FOR", ruolo: "imprevedibile", frase: "Giacca e cravatta, ma con il pennello in tasca.",
+    mosse: [m("Pennellata", 0, 28), m("Schizzo di Colore", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Capolavoro", 5, 80)] },
 ];
 
 
@@ -388,6 +420,9 @@ const PERSONE = {
   // Simpson
   tizomer: "Tiziano", lollart: "Lorenzo", alisa: "Alice", simarney: "Simone", maurilanders: "Maurizio", samusty: "Samuele", dieggum: "Diego",
   pimoe: "Pips", ludohouse: "Ludovico", alledna: "Alessia", vaggie: "Viky", giupatty: "Giulia", selmene: "Senè", riessica: "Rita", aurrerri: "Aurora",
+  // Barbapapà
+  lollapa: "Lorenzo", tizoba: "Tiziano", diegopa: "Diego", pipsoba: "Pips", samuba: "Samuele", mauriba: "Maurizio", ludopa: "Ludovico", simopa: "Simone",
+  alebella: "Alessia", aliottina: "Alice", aurobrava: "Aurora", giulialla: "Giulia", ritamma: "Rita", seneforte: "Senè", vikylalla: "Viky",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -398,7 +433,9 @@ CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 // nov 2026: rarità ribilanciate perché ogni amico abbia più o meno lo stesso numero di leggendarie, epiche, rare e comuni.
 // Qui le rarità di PRIMA delle carte cambiate: servono a sistemare l'Ascesa di chi le aveva già fatte salire.
 const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulsene": "rara", "c18ora": "rara", "poseludovico": "leggendaria", "adelrizio": "epica", "aresorenzo": "leggendaria", "atharita": "epica", "dionpips": "rara", "nikulia": "rara", "demviky": "comune", "persene": "comune", "samulett": "leggendaria", "mauriziente": "leggendaria", "pipverus": "epica", "vikatrix": "epica", "lollon": "rara", "giulifleur": "comune", "simothan": "leggendaria", "mauriphomet": "epica", "tiziazel": "epica", "aurorrigan": "epica", "diegial": "rara", "ritacubus": "rara", "giulimaah": "comune", "lollinista": "leggendaria", "senebroker": "epica", "maurialpinista": "epica", "simonducer": "epica", "diegarman": "rara", "samutografo": "rara", "alessiologa": "rara", "vikyventura": "rara", "auroressa": "comune", "tizomer": "leggendaria", "simarney": "epica", "samusty": "epica", "dieggum": "epica", "ludohouse": "rara", "vaggie": "rara", "giupatty": "comune"};
-const ULTRA_DI_PARTENZA = ["reina", "gokiele", "zeutiz", "ironlus", "simoldemort", "lollifer", "ludhacker"];
+// nov 2026: una versione Ultra per ogni amico (prima ce l'avevano solo Samuele, Tiziano, Simone, Lorenzo e Ludovico)
+const ULTRA_DI_PARTENZA = ["reina", "gokiele", "zeutiz", "ironlus", "simoldemort", "lollifer", "ludhacker",
+  "diegopa", "pipsoba", "ritamma", "alissith", "alisa", "vegerizio", "senebroker", "aurorrigan", "vikatrix", "nikulia"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {

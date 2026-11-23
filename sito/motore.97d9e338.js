@@ -59,6 +59,8 @@ const SINERGIE_BASE = {
   demoni:   { tipo: "vampiro",  v2: 6, v3: 12, v5: 25, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
   // Simpson: colpi critici più frequenti e, da 3 carte, più forti (×1,75; con 5 ×2 invece di ×1,5)
   simpson:  { tipo: "critico",  v2: 15, v3: 25, v5: 35, testo: (v, liv) => `+${v}% di probabilità di colpo critico${liv >= 2 ? `, e i loro critici fanno ×${liv >= 3 ? "2" : "1,75"} invece di ×1,5` : ""}` },
+  // Barbapapà: cambiano forma, quindi il tipo conta meno per loro: lo svantaggio di tipo (quando attaccano e quando difendono) si riduce
+  barbapapa: { tipo: "forma",   v2: 40, v3: 80, v5: 95, testo: (v, liv) => v >= 100 ? `non soffrono più lo svantaggio di tipo, né in attacco né in difesa` : `lo svantaggio di tipo pesa ${_il(v)} in meno su di loro, in attacco e in difesa` },
   mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -162,6 +164,7 @@ class Battaglia {
         else if (s.tipo === "vel") x.vel = Math.round(x.vel * (1 + s.val / 100));
         else if (s.tipo === "rigenera") x.sin.rigenera = s.val;
         else if (s.tipo === "vampiro") x.sin.vampiro = s.val;
+        else if (s.tipo === "forma") { x.sin.forma = s.val; }
         else if (s.tipo === "critico") { x.sin.crit = s.val; x.sin.critX = s.liv >= 3 ? 2 : s.liv === 2 ? 1.75 : 1.5; }
         else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; x.sin.dannoEff = [0, 15, 25, 45][s.liv] || 0; if (s.liv >= 2) x.sin.effetti = 1; }
       }
@@ -266,7 +269,10 @@ class Battaglia {
     const att = this.attaccoEffettivo(l, a);
     const dif = d.dif * (1 - (m.penetra || 0) / 100);
     const rapporto = (att * (a.f || 1) + SMUSSO) / (dif + SMUSSO);   // attacco e difesa entrambi col livello
-    const stile = multStile(a.c.stile, d.c.stile);
+    let stile = multStile(a.c.stile, d.c.stile);
+    // sinergia Barbapapà: cambiando forma lo svantaggio di tipo pesa meno (chi attacca in svantaggio, o chi si difende da un vantaggio)
+    if (stile < 1 && a.sin && a.sin.forma) stile += (1 - stile) * Math.min(100, a.sin.forma) / 100;
+    if (stile > 1 && d.sin && d.sin.forma) stile -= (stile - 1) * Math.min(100, d.sin.forma) / 100;
     let varia = 1, crit = false;
     if (casuale) {
       varia = a.c.ruolo === "imprevedibile" ? 0.6 + this.rng() * 0.9 : 0.9 + this.rng() * 0.2;
