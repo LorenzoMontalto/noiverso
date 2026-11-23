@@ -209,7 +209,9 @@ const Boss = (() => {
   async function chiudi() {
     const L = livelloAttuale, b = L.bossGruppo, x = B.lati[1].squadra[0];
     const danni = Math.max(0, Math.round(b.pvInizio - Math.max(0, x.pv)));
-    L.espCarte = premiaCarte(1.5, B.vincitore === 0);
+    // anche quando la squadra cade i danni fatti contano: le carte scese in campo prendono comunque potenziatori
+    L.espCarte = premiaCarte(1.5, B.vincitore === 0, true);
+    if (B.vincitore !== 0) S.stats.sconfitte++;
     const e = { danni, contati: Math.min(danni, 6000), monete: Math.min(150, 30 + Math.round(danni / 40)), xp: 80, stato: b.prova ? "prova" : "invio" };
     S.monete += e.monete;
     const su = aggiungiXP(e.xp);
@@ -226,13 +228,16 @@ const Boss = (() => {
     }
   }
   function htmlFine() {
-    const L = livelloAttuale, e = L.esito || {};
+    const L = livelloAttuale, e = L.esito;
+    // la battaglia è appena finita e i premi non sono ancora calcolati (succede per un attimo): niente schermata a metà
+    if (!e) return `<div class="fine boss-fine"><b>${B.vincitore === 0 ? "Boss abbattuto!" : "Sconfitta"}</b><span class="nota">Conto i danni…</span></div>`;
     const info = e.stato === "prova" ? `<small class="nota">Prova da admin: i danni non contano.</small>`
       : e.stato === "invio" ? `<small class="nota">Registro i danni…</small>`
       : e.stato === "ok" ? (e.sconfittoOra ? `<span class="punti-amico">Colpo finale! Il boss è caduto: tutti quelli che l'hanno colpito ricevono il premio.</span>` : `<span class="nota">Al boss restano ${Number(e.rimasti).toLocaleString("it-IT")} PV.</span>`)
       : `<small class="errore">${esc(e.stato)}</small>`;
-    return `<div class="fine ${B.vincitore === 0 ? "vinto" : "boss-fine"}">
-      <b>${e.danni.toLocaleString("it-IT")} danni</b>
+    return `<div class="fine ${B.vincitore === 0 ? "vinto" : "perso boss-fine"}">
+      <b>${B.vincitore === 0 ? "Boss abbattuto!" : "Sconfitta"}</b>
+      <span class="boss-danni"><b>${e.danni.toLocaleString("it-IT")}</b> danni</span>
       <span>${e.danni > e.contati ? `Ne contano ${e.contati.toLocaleString("it-IT")} (massimo per attacco).` : "Inflitti al boss del gruppo."}</span>
       ${info}
       <span>+${e.monete} monete · +${e.xp} XP</span>

@@ -3077,10 +3077,11 @@ async function sostituisciGiocatore(i) {
 // prendono anche potenziatori (1 contro la Recluta, fino a 5 nelle sfide e nelle tappe più difficili).
 // I doppioni restano il modo principale per averne tanti.
 const potVittoria = mult => Math.max(1, Math.min(5, Math.round(mult)));
-function premiaCarte(mult, vinto) {
+// potSempre: le carte scese in campo prendono potenziatori anche se si perde (attacco al boss del gruppo)
+function premiaCarte(mult, vinto, potSempre) {
   if (livelloAttuale && !livelloAttuale.spettatore) StatCarte.registra(vinto, livelloAttuale.vivo ? "vivo" : "pc");
   const xp = Math.round((vinto ? 50 : 20) * mult * (carteBattaglia() === 3 ? .6 : 1));
-  const potV = vinto ? potVittoria(mult) : 0;
+  const potV = vinto || potSempre ? potVittoria(mult) : 0;
   return B.lati[0].squadra.map(x => {
     if (!S.carte[x.id]) return null;
     const prima = infoCarta(x.id), verso = prima.liv >= LIVELLO_MAX && !prima.lode;
