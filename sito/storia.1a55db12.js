@@ -218,12 +218,30 @@ const STORIA = [
       { titolo: "La stazione di polizia", nemici: ["dieggum", "maurilanders", "pimoe", "alisa", "giupatty"], liv: [1, 1], abilita: 0.95, monete: 290,
         parla: "dieggum", frase: "Sei in arresto per… per… beh, ci penso dopo. Prima combattiamo." },
       { titolo: "742 di Evergreen Terrace", boss: true, nemici: ["tizomer", "lollart", "alisa", "vaggie", "samusty"], liv: [1, 1], abilita: 0.97, monete: 500, bustina: "leggendaria",
-        parla: "tizomer", frase: "D'oh! Hai finito tutte le ciambelle? Allora è guerra.", vittoria: "Springfield ti saluta con una ciambella gigante. Ma in cantina, dietro la lavatrice dei Simpson, c'è uno specchio che riflette… mondi diversi." }
+        parla: "tizomer", frase: "D'oh! Hai finito tutte le ciambelle? Allora è guerra.", vittoria: "Springfield ti saluta con una ciambella gigante. Ma in cantina, dietro la lavatrice dei Simpson, c'è una porticina rosa che prima non c'era…" }
+    ],
+  },
+  {
+    id: "c17", campo: "pioggia", titolo: "La casa dei Barbapapà", serie: "barbapapa", colore: "#ff8fc8", simbolo: "✿",
+    intro: "Dalla cantina dei Simpson spunta un giardino pieno di fiori. In fondo c'è una casa rosa tutta tondeggiante: lì vivono i Barbapapà, che si trasformano in quello che vogliono. Barbatrucco!",
+    tappe: [
+      { titolo: "Il giardino fiorito", nemici: ["tizoba", "samuba", "simopa", "alebella", "giulialla"], liv: [1, 1], abilita: 0.88, monete: 260,
+        parla: "tizoba", frase: "Sta per piovere: io divento un ombrello, tu invece ti bagni. E perdi." },
+      { titolo: "Il laboratorio blu", nemici: ["samuba", "ludopa", "aliottina", "seneforte", "simopa"], liv: [1, 1], abilita: 0.9, monete: 270,
+        parla: "samuba", frase: "Esperimento numero 47: vediamo quanto resisti prima del botto." },
+      { titolo: "La biblioteca", nemici: ["aliottina", "ludopa", "alebella", "vikylalla", "tizoba"], liv: [1, 1], abilita: 0.92, monete: 280, bustina: "epica",
+        parla: "aliottina", frase: "Silenzio in biblioteca! Le regole qui le scrivo io. Nei libri." },
+      { titolo: "Il campo sportivo", nemici: ["mauriba", "aurobrava", "seneforte", "vikylalla", "samuba"], liv: [1, 1], abilita: 0.94, monete: 290,
+        parla: "mauriba", frase: "Riscaldamento finito. Ora si gioca sul serio, e io non perdo mai in casa." },
+      { titolo: "La sala della musica", nemici: ["giulialla", "vikylalla", "aurobrava", "mauriba", "diegopa"], liv: [1, 1], abilita: 0.95, monete: 300,
+        parla: "vikylalla", frase: "Un, due, tre, quattro! Questo assolo te lo suono in faccia." },
+      { titolo: "La casa rosa", boss: true, nemici: ["ritamma", "lollapa", "pipsoba", "diegopa", "aliottina"], liv: [1, 1], abilita: 0.97, monete: 520, bustina: "leggendaria",
+        parla: "ritamma", frase: "In questa casa si entra pulendosi i piedi. Tu non l'hai fatto. Barbatrucco!", vittoria: "La famiglia Barbapapà ti saluta trasformandosi in un arco di fiori. Dietro l'ultimo petalo c'è uno specchio che riflette… mondi diversi." }
     ],
   },
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
-    intro: "Dietro la lavatrice dei Simpson c'è uno specchio enorme. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
+    intro: "Dietro l'ultimo petalo del giardino dei Barbapapà c'è uno specchio enorme. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
     tappe: [
       { titolo: "Il riflesso di Giulia", nemici: ["giulmai", "nikulia", "giulifleur", "giulimaah", "giudella"], liv: [1, 1], abilita: 0.9, monete: 290,
         parla: "giudella", frase: "Cinque Giulie e una sola passerella. Indovina quale è quella vera… mentre ti battiamo." },
