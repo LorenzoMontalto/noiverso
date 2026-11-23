@@ -16,6 +16,7 @@ const SERIE = {
   simpson:  { nome: "Simpson", colore: "#ffd90f", simbolo: "◎", desc: "Ciambelle, Duff e la centrale nucleare: a Springfield tutti sono pronti a combattere." },
   barbapapa: { nome: "Barbapapà", colore: "#ff8fc8", simbolo: "✿", desc: "Barbatrucco! Una famiglia che cambia forma come vuole: spade, ombrelli, chitarre." },
   starwars: { nome: "Star Wars", colore: "#4fc3ff", simbolo: "☄", desc: "Jedi, Sith, ribelli e cacciatori di taglie, in una galassia lontana lontana." },
+  creature: { nome: "Creature Mistiche", colore: "#9d7bff", simbolo: "☠", desc: "Vampiri, lupi mannari, mummie e sirene: quando sorge la luna piena escono tutti allo scoperto." },
   elementi: { nome: "Elementi", colore: "#3fe0c0", simbolo: "❖", desc: "Fuoco, acqua, ghiaccio, fulmini, luce e ombra: i tuoi amici sono diventati i signori degli elementi." },
 };
 
@@ -446,6 +447,37 @@ const CARTE = [
     mosse: [m("Pugno di Roccia", 0, 26), m("Pelle di Pietra", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Terremoto", 5, 78)] },
   { id: "samulmine", nome: "Samulmine", serie: "elementi", rarita: "comune", stile: "VEL", ruolo: "ladro", frase: "Carico a mille volt: dove passa lui saltano le luci, e pure la tua energia.",
     mosse: [m("Scarica", 0, 28, { eff: { tipo: "ruba", val: 1 } }), m("Saetta", 2, 36), m("Tempesta di Fulmini", 5, 20, { colpi: 4 })] },
+  // ---------------- Creature Mistiche ----------------
+  { id: "lollendigo", nome: "Lollendigo", serie: "creature", rarita: "leggendaria", stile: "FOR", ruolo: "imprevedibile", frase: "Corna di cervo, pelle di ghiaccio e una fame che non passa mai. Nel bosco d'inverno non sei tu che cacci.",
+    mosse: [m("Artigli Gelati", 0, 34), m("Urlo nel Bosco", 2, 30, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Fame del Wendigo", 5, 96, { drena: 35 })] },
+  { id: "senelagoon", nome: "Senelagoon", serie: "creature", rarita: "leggendaria", stile: "DIF", ruolo: "guaritore", frase: "Sorride tra le ninfee della laguna. Chi si avvicina troppo non torna più a riva.",
+    mosse: [m("Onda di Palude", 0, 30), m("Acqua di Loto", 2, 0, { eff: { tipo: "cura", val: 35 } }), m("Abisso della Laguna", 5, 90, { eff: { tipo: "stordisci", val: 40 } })] },
+  { id: "vikyeletro", nome: "Vikyeletro", serie: "creature", rarita: "leggendaria", stile: "VEL", ruolo: "capo", frase: "Mezza ragazza e mezza scheletro: con un fulmine viola sveglia un esercito di ossa.",
+    mosse: [m("Tocco d'Ossa", 0, 32), m("Maledizione delle Ossa", 2, 28, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Esercito di Scheletri", 5, 24, { colpi: 4 })] },
+  { id: "aligorgona", nome: "Aligorgona", serie: "creature", rarita: "epica", stile: "DIF", ruolo: "difensore", frase: "Al posto dei capelli ha serpenti, e uno sguardo che ti lascia di sasso. Letteralmente.",
+    mosse: [m("Coda di Serpente", 0, 30), m("Sguardo di Pietra", 2, 26, { eff: { tipo: "stordisci", val: 45 } }), m("Pietrificazione", 5, 86, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "giulistrega", nome: "Giulistrega", serie: "creature", rarita: "epica", stile: "VEL", ruolo: "stregone", frase: "Cappello a punta, sorriso furbo e un calderone sempre sul fuoco. Meglio non chiederle cosa ci bolle dentro.",
+    mosse: [m("Scopa Volante", 0, 30), m("Maleficio", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Calderone Ribollente", 5, 84, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  { id: "samulupo", nome: "Samulupo", serie: "creature", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Di giorno ride sempre. Con la luna piena ride lo stesso, ma con molti più denti.",
+    mosse: [m("Artigliata", 0, 32), m("Ululato alla Luna", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Notte di Luna Piena", 5, 90, { penetra: 20 })] },
+  { id: "simospirit", nome: "Simospirit", serie: "creature", rarita: "epica", stile: "VEL", ruolo: "schivatore", frase: "Un fantasma con la barba: passa attraverso i muri, i colpi e pure le scuse.",
+    mosse: [m("Brivido", 0, 32), m("Diventa Invisibile", 2, 0, { eff: { tipo: "nebbia" } }), m("Possessione", 5, 90, { penetra: 25 })] },
+  { id: "auranshee", nome: "Auranshee", serie: "creature", rarita: "rara", stile: "VEL", ruolo: "tiratore", frase: "Quando canta lei qualcuno sta per perdere. Di solito non è lei.",
+    mosse: [m("Lamento", 0, 30), m("Urlo della Banshee", 2, 28, { eff: { tipo: "stordisci", val: 40 } }), m("Profezia di Sventura", 5, 84)] },
+  { id: "diegombie", nome: "Diegombie", serie: "creature", rarita: "rara", stile: "DIF", ruolo: "tank", frase: "Lento, verde e sempre affamato. Lo butti giù e si rialza, lo ributti giù e si rialza ancora.",
+    mosse: [m("Morso Zombie", 0, 26, { drena: 30 }), m("Non Muore Mai", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Orda di Zombie", 5, 20, { colpi: 4 })] },
+  { id: "ludogargo", nome: "Ludogargo", serie: "creature", rarita: "rara", stile: "DIF", ruolo: "difensore", frase: "Di giorno è una statua sul campanile. Di notte scende a giocare, e gioca duro.",
+    mosse: [m("Artiglio di Pietra", 0, 28), m("Pelle di Granito", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Picchiata dal Campanile", 5, 84)] },
+  { id: "maurimmia", nome: "Maurimmia", serie: "creature", rarita: "rara", stile: "FOR", ruolo: "stregone", frase: "Tremila anni in un sarcofago e ancora con i baffi a posto. Svegliarlo porta sfortuna. Molta.",
+    mosse: [m("Colpo di Bende", 0, 28), m("Maledizione del Faraone", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Tempesta di Sabbia", 5, 84)] },
+  { id: "alessiaracne", nome: "Alessiaracne", serie: "creature", rarita: "comune", stile: "VEL", ruolo: "ladro", frase: "Tesse ragnatele tra gli archi del castello e aspetta. Ha tutta la pazienza del mondo, e otto zampe.",
+    mosse: [m("Morso di Ragno", 0, 26, { eff: { tipo: "ruba", val: 1 } }), m("Ragnatela", 2, 24, { eff: { tipo: "stordisci", val: 40 } }), m("Nido di Ragni", 5, 20, { colpi: 4 })] },
+  { id: "pipkenstein", nome: "Pipkenstein", serie: "creature", rarita: "comune", stile: "FOR", ruolo: "stratega", frase: "Cuciture in faccia, bulloni nel collo e occhiali sul naso: il fulmine giusto e torna come nuovo.",
+    mosse: [m("Pugno Cucito", 0, 28), m("Scossa Vitale", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("È Vivo!", 5, 84)] },
+  { id: "ritarena", nome: "Ritarena", serie: "creature", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "Coda da sirena e risata contagiosa: canta per i marinai, che poi però non tornano a casa.",
+    mosse: [m("Colpo di Coda", 0, 26), m("Canto della Sirena", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Richiamo degli Abissi", 5, 76, { drena: 40 })] },
+  { id: "tizidrac", nome: "Tizidrac", serie: "creature", rarita: "comune", stile: "FOR", ruolo: "assassino", frase: "Mantello rosso, canini lucidi e un castello in collina. Ti invita a cena: il menù sei tu.",
+    mosse: [m("Morso del Vampiro", 0, 26, { drena: 40 }), m("Nuvola di Pipistrelli", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Sete di Sangue", 5, 80, { drena: 40 })] },
 ];
 
 
@@ -492,6 +524,9 @@ const PERSONE = {
   // Elementi
   auraria: "Aurora", senesuono: "Senè", vikytal: "Viky", alessieno: "Alessia", diegaqua: "Diego", pipgelo: "Pips", ritacrys: "Rita",
   alisombra: "Alice", giuliflora: "Giulia", simoluce: "Simone", tiziamma: "Tiziano", lollonova: "Lorenzo", ludomagma: "Ludovico", mauricore: "Maurizio", samulmine: "Samuele",
+  // Creature Mistiche
+  lollendigo: "Lorenzo", senelagoon: "Senè", vikyeletro: "Viky", aligorgona: "Alice", giulistrega: "Giulia", samulupo: "Samuele", simospirit: "Simone",
+  auranshee: "Aurora", diegombie: "Diego", ludogargo: "Ludovico", maurimmia: "Maurizio", alessiaracne: "Alessia", pipkenstein: "Pips", ritarena: "Rita", tizidrac: "Tiziano",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -505,7 +540,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // Una sola versione Ultra per serie, e mai due allo stesso amico.
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {

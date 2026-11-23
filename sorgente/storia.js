@@ -272,12 +272,30 @@ const STORIA = [
       { titolo: "La forgia di magma", nemici: ["tiziamma", "ludomagma", "vikytal", "diegaqua", "simoluce"], liv: [1, 1], abilita: 0.95, monete: 320,
         parla: "tiziamma", frase: "Qui dentro si forgiano le armi degli elementi. Oggi si forgia la tua sconfitta." },
       { titolo: "Il trono degli elementi", boss: true, nemici: ["auraria", "senesuono", "vikytal", "pipgelo", "alessieno"], liv: [1, 1], abilita: 0.97, monete: 560, bustina: "leggendaria",
-        parla: "auraria", frase: "Fuoco, acqua, terra e cielo rispondono a me. Tu a chi rispondi?", vittoria: "Gli elementi si placano e il trono si spegne. Al centro resta un cristallo enorme che non riflette te… ma mondi diversi." }
+        parla: "auraria", frase: "Fuoco, acqua, terra e cielo rispondono a me. Tu a chi rispondi?", vittoria: "Gli elementi si placano e il trono si spegne. Il cielo diventa notte, sorge una luna piena enorme e da lontano si sente un ululato…" }
+    ],
+  },
+  {
+    id: "c20", campo: "notte", titolo: "La notte delle creature", serie: "creature", colore: "#9d7bff", simbolo: "☠",
+    intro: "Sotto la luna piena il mondo cambia: dal cimitero escono gli zombie, nella laguna canta una sirena e sulla collina si accende il castello del conte. I tuoi amici sono diventati creature della notte, e hanno fame.",
+    tappe: [
+      { titolo: "Il cimitero", nemici: ["diegombie", "simospirit", "alessiaracne", "pipkenstein", "ritarena"], liv: [1, 1], abilita: 0.9, monete: 290,
+        parla: "diegombie", frase: "Cervellooo… no, scherzo. Mi basta vincere." },
+      { titolo: "La laguna nera", nemici: ["ritarena", "auranshee", "ludogargo", "alessiaracne", "tizidrac"], liv: [1, 1], abilita: 0.92, monete: 300,
+        parla: "ritarena", frase: "Senti questa canzone? È l'ultima che senti prima di perdere." },
+      { titolo: "Il laboratorio del dottore", nemici: ["pipkenstein", "maurimmia", "diegombie", "auranshee", "simospirit"], liv: [1, 1], abilita: 0.93, monete: 310, bustina: "epica",
+        parla: "pipkenstein", frase: "È vivo! È vivo! E adesso ti picchia." },
+      { titolo: "La piramide maledetta", nemici: ["maurimmia", "aligorgona", "ludogargo", "tizidrac", "giulistrega"], liv: [1, 1], abilita: 0.94, monete: 320,
+        parla: "maurimmia", frase: "Hai svegliato il faraone. Pessima idea, davvero pessima." },
+      { titolo: "Il bosco della luna piena", nemici: ["samulupo", "lollendigo", "giulistrega", "alessiaracne", "senelagoon"], liv: [1, 1], abilita: 0.95, monete: 330,
+        parla: "samulupo", frase: "Auuuuuu! Stanotte la luna è piena, e io ho una fame da lupo." },
+      { titolo: "Il castello del conte", boss: true, nemici: ["vikyeletro", "lollendigo", "senelagoon", "tizidrac", "samulupo"], liv: [1, 1], abilita: 0.97, monete: 580, bustina: "leggendaria",
+        parla: "tizidrac", frase: "Benvenuto nel mio castello. Entra pure: è uscire che è un po' più difficile.", vittoria: "All'alba le creature tornano nelle loro tombe. Nella cripta del castello resta uno specchio antico che non riflette te… ma mondi diversi." }
     ],
   },
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
-    intro: "Tocchi il cristallo del trono degli elementi e diventa uno specchio enorme. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
+    intro: "Tocchi lo specchio antico nella cripta del castello e la superficie si muove come acqua. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
     tappe: [
       { titolo: "Il riflesso di Giulia", nemici: ["giulmai", "nikulia", "giulifleur", "giulimaah", "giudella"], liv: [1, 1], abilita: 0.9, monete: 290,
         parla: "giudella", frase: "Cinque Giulie e una sola passerella. Indovina quale è quella vera… mentre ti battiamo." },

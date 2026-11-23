@@ -25,6 +25,7 @@ const MappeStoria = (() => {
     [[200, 980], [520, 780], [860, 960], [1160, 700], [1480, 860], [1300, 340]],   // casa dei Barbapapà
     [[220, 980], [560, 840], [900, 1000], [1200, 760], [1520, 900], [1380, 330]],   // galassia lontana lontana
     [[260, 1000], [620, 860], [360, 560], [960, 820], [1420, 880], [1380, 360]],    // regno degli elementi
+    [[240, 1010], [620, 920], [1020, 1040], [1300, 820], [640, 620], [1500, 480]],   // notte delle creature
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -73,6 +74,9 @@ const MappeStoria = (() => {
     [[110, 1120, "✿", "Foresta in Fiore"], [720, 1130, "≈", "Lago in Tempesta"], [200, 280, "❄", "Vette di Ghiaccio"], [1010, 1110, "☠", "Palude del Veleno"],
      [1660, 1100, "♨", "Forgia di Magma"], [1380, 130, "❖", "Trono degli Elementi"], [1000, 420, "♪", "Grotta dell'Eco"], [1560, 360, "⚡", "Picco dei Fulmini"],
      [560, 520, "◆", "Miniera di Cristalli"], [1210, 470, "☾", "Bosco delle Ombre"]],
+    [[110, 1110, "✝", "Cimitero"], [760, 1130, "≈", "Laguna Nera"], [1150, 1120, "⚗", "Laboratorio del Dottore"], [1520, 1000, "▲", "Piramide Maledetta"],
+     [420, 720, "☾", "Bosco della Luna Piena"], [1700, 150, "♜", "Castello del Conte"], [235, 120, "★", "Torre della Strega"], [820, 360, "◯", "Luna Piena"],
+     [1650, 700, "⌂", "Cripta"], [1700, 1100, "✳", "Tana del Ragno"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -617,7 +621,45 @@ const MappeStoria = (() => {
     for (let k = 1; k <= 4; k++) s += `<circle cx="1000" cy="420" r="${k * 26}" stroke="#c38bff" stroke-width="3" fill="none" opacity="${(.7 - k * .14).toFixed(2)}"/>`;
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, specchi, treno, torre, dimensione];
+  function notte(r) {
+    // la notte delle creature: luna piena, cimitero, laguna, laboratorio, piramide, bosco e castello sulla collina
+    let s = `<defs><linearGradient id="cieloNotte" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0820"/><stop offset=".5" stop-color="#1a1236"/><stop offset="1" stop-color="#141a1a"/></linearGradient></defs>
+      <rect width="${W}" height="${H}" fill="url(#cieloNotte)"/>`;
+    for (let k = 0; k < 160; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * 520)}" r="${(r() * 1.5 + .3).toFixed(1)}" fill="#ffffff" opacity="${(.2 + r() * .6).toFixed(2)}"/>`;
+    // luna piena
+    s += `<circle cx="820" cy="190" r="220" fill="#e8e4ff" opacity=".12" filter="url(#sfoca)"/><circle cx="820" cy="190" r="110" fill="#f2efe0"/>`;
+    for (const [x, y, rr] of [[790, 160, 18], [850, 220, 12], [860, 150, 9], [780, 230, 10]]) s += `<circle cx="${x}" cy="${y}" r="${rr}" fill="#d8d2c0"/>`;
+    // pipistrelli
+    for (let k = 0; k < 14; k++) { const x = 500 + r() * 900, y = 80 + r() * 300, d = 8 + r() * 8; s += `<path d="M${f(x)},${f(y)} q${f(d)},${f(-d)} ${f(2 * d)},0 q${f(-d * .4)},${f(d * .3)} ${f(-d)},${f(d * .5)} q${f(-d * .6)},${f(-d * .2)} ${f(-d)},${f(-d * .5)}Z" fill="#0a0612"/>`; }
+    // colline
+    s += `<path d="M0,620 q300,-120 600,-40 t600,-60 t600,-80 L1800,1200 L0,1200Z" fill="#161e1c"/>`;
+    s += `<path d="M0,760 q400,-80 900,-10 t900,-40 L1800,1200 L0,1200Z" fill="#1c2622"/>`;
+    // castello del conte sulla collina (in alto a destra)
+    s += `<path d="M1300,420 L1700,420 L1760,560 L1240,560Z" fill="#0e0c16"/>`;
+    for (const [x, w, h] of [[1340, 60, 230], [1430, 90, 300], [1550, 70, 260], [1640, 50, 200]]) s += `<rect x="${x}" y="${420 - h}" width="${w}" height="${h}" fill="#151222"/><path d="M${x - 8},${420 - h} l${w / 2 + 8},-60 l${w / 2 + 8},60Z" fill="#2a1a3a"/>`;
+    for (let k = 0; k < 16; k++) s += `<rect x="${f(1350 + r() * 330)}" y="${f(160 + r() * 240)}" width="8" height="12" fill="#ffcc55" opacity="${(.5 + r() * .5).toFixed(2)}"/>`;
+    // cimitero (in basso a sinistra)
+    for (let k = 0; k < 22; k++) { const x = 60 + r() * 420, y = 880 + r() * 260; s += k % 3 ? `<path d="M${f(x)},${f(y)} v-34 a14,14 0 0 1 28,0 v34Z" fill="#5a5a66"/>` : `<path d="M${f(x + 12)},${f(y)} v-50 M${f(x)},${f(y - 36)} h24" stroke="#6a6a76" stroke-width="7"/>`; }
+    for (let k = 0; k < 10; k++) s += `<circle cx="${f(80 + r() * 400)}" cy="${f(900 + r() * 240)}" r="${f(30 + r() * 30)}" fill="#7dff8a" opacity=".06" filter="url(#sfoca)"/>`;
+    // laguna nera
+    s += `<path d="${blob(620, 1080, 200, 100, r, 18, .15)}" fill="#0a1e26"/>`;
+    for (let k = 0; k < 9; k++) s += `<circle cx="${f(480 + r() * 280)}" cy="${f(1030 + r() * 100)}" r="10" fill="#e8f0e0" opacity=".8"/>`;
+    // laboratorio con torre e fulmini
+    s += `<rect x="960" y="880" width="120" height="200" fill="#2a2a34"/><rect x="1000" y="760" width="40" height="120" fill="#33333f"/><circle cx="1020" cy="755" r="14" fill="#7dff4a" filter="url(#bagliore)"/>`;
+    s += `<path d="M1020,600 l-20,60 h18 l-24,70 l46,-80 h-18 l16,-50Z" fill="#c8ffb0"/>`;
+    for (let k = 0; k < 4; k++) s += `<rect x="${975 + k * 26}" y="920" width="14" height="22" fill="#7dff4a" opacity=".7"/>`;
+    // piramide maledetta
+    s += `<path d="M1180,980 L1330,740 L1480,980Z" fill="#8a7448"/><path d="M1330,740 L1480,980 L1400,980Z" fill="#6a5634"/><rect x="1318" y="900" width="24" height="80" fill="#1a1208"/>`;
+    // bosco della luna piena
+    for (let k = 0; k < 40; k++) { const x = 360 + r() * 520, y = 520 + r() * 200, h = 60 + r() * 80; s += `<path d="M${f(x)},${f(y)} l${f(h * .25)},${f(-h)} l${f(h * .25)},${f(h)}Z" fill="${["#0e1a14", "#12221a", "#0a140e"][k % 3]}"/>`; }
+    for (let k = 0; k < 8; k++) s += `<circle cx="${f(380 + r() * 500)}" cy="${f(560 + r() * 140)}" r="3" fill="#ffd04a"/>`;
+    // torre della strega
+    s += `<rect x="200" y="300" width="70" height="260" fill="#1e1430"/><path d="M180,300 L235,180 L290,300Z" fill="#3a1a5a"/><circle cx="235" cy="360" r="10" fill="#c38bff" filter="url(#bagliore)"/>`;
+    // nebbiolina bassa
+    for (let k = 0; k < 18; k++) s += `<ellipse cx="${f(r() * W)}" cy="${f(800 + r() * 380)}" rx="${f(120 + r() * 120)}" ry="${f(20 + r() * 20)}" fill="#cfd8e8" opacity=".035"/>`;
+    return s;
+  }
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -645,7 +687,7 @@ const MappeStoria = (() => {
     // colore di base e colore delle nuvole per ogni capitolo
     const NEBBIE = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
       ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"],
-      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"],
+      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"],
       ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]];
     const [base, nuv] = NEBBIE[k] || NEBBIE[0];
     g.fillStyle = base; g.fillRect(0, 0, W, H);

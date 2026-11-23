@@ -65,6 +65,8 @@ const SINERGIE_BASE = {
   starwars: { tipo: "para",     v2: 5, v3: 8, v5: 11, testo: v => `${v}% di probabilità di parare un attacco con la Forza (non subiscono danni né effetti)` },
   // Elementi: si caricano restando in campo. Ogni fine turno in campo +v% attacco, fino a 5 volte; uscendo si scaricano.
   elementi: { tipo: "accumulo", v2: 5, v3: 9, v5: 13, testo: v => `restando in campo si caricano: +${v}% di attacco a ogni fine turno, fino a 5 volte (massimo +${Math.round(v * 50) / 10}%); se escono si scaricano` },
+  // Creature mistiche: non muoiono davvero. La prima volta che vanno KO hanno v% di probabilità di rialzarsi con il 20% dei PV (una volta a carta).
+  creature: { tipo: "rinascita", v2: 12, v3: 20, v5: 30, testo: v => `la prima volta che vanno KO hanno ${_il(v)} di probabilità di rialzarsi con il 20% dei PV (una volta per carta)` },
   mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -170,6 +172,7 @@ class Battaglia {
         else if (s.tipo === "vampiro") x.sin.vampiro = s.val;
         else if (s.tipo === "para") x.sin.para = s.val;
         else if (s.tipo === "accumulo") x.sin.accumulo = s.val;
+        else if (s.tipo === "rinascita") x.sin.rinascita = s.val;
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
         else if (s.tipo === "critico") { x.sin.crit = s.val; x.sin.critX = s.liv >= 3 ? 2 : s.liv === 2 ? 1.75 : 1.5; }
         else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; x.sin.dannoEff = [0, 15, 25, 45][s.liv] || 0; if (s.liv >= 2) x.sin.effetti = 1; }
@@ -385,12 +388,14 @@ class Battaglia {
         let dmg = r.danno;
         if (d.scudo) { dmg = Math.max(1, Math.round(dmg * (1 - d.scudo / 100))); d.scudo = 0; }
         d.pv = Math.max(0, d.pv - dmg);
+        const cade = d.pv <= 0;
         totale += dmg;
         const nota = r.stile > 1 ? " Super efficace!" : r.stile < 1 ? " Poco efficace." : "";
         this._log(`${r.crit ? "Critico! " : ""}${d.c.nome} perde ${dmg} PV.${nota}`, { lato: l, colpo: 1 - l, danno: dmg, crit: r.crit, stile: a.c.stile, efficace: r.stile });
+        if (cade) this._rialza(1 - l, d);
         if (r.parato) { const n = this.gv(1 - l, "specchio"); O.energia = Math.min(ENERGIA_MAX, O.energia + n); this._log(`Graffito Specchio: il critico rimbalza, ${O.nome} prende +${n} energia.`, { lato: 1 - l, anim: "energia", su: 1 - l, graffito: "specchio" }); }
         const spina = this.gv(1 - l, "spina");
-        if (spina && a.pv > 0) { const rif = Math.max(1, Math.round(dmg * spina / 100)); a.pv = Math.max(0, a.pv - rif); this._log(`Graffito Spina: ${a.c.nome} si punge e perde ${rif} PV.`, { lato: 1 - l, colpo: l, danno: rif, graffito: "spina" }); }
+        if (spina && a.pv > 0) { const rif = Math.max(1, Math.round(dmg * spina / 100)); a.pv = Math.max(0, a.pv - rif); this._log(`Graffito Spina: ${a.c.nome} si punge e perde ${rif} PV.`, { lato: 1 - l, colpo: l, danno: rif, graffito: "spina" }); this._rialza(l, a); }
       }
       // mossa che drena e sinergia Demoni non si sommano: vale la più alta (prima si arrivava al 60% dei danni)
       const drena = Math.max(m.drena || 0, (a.sin && a.sin.vampiro) || 0);
@@ -449,6 +454,15 @@ class Battaglia {
     else if (e.tipo === "energia") { L.energia = Math.min(ENERGIA_MAX, L.energia + e.val); this._log(`${L.nome} guadagna ${e.val} energia.`, { lato: l, anim: "energia", su: l }); }
   }
 
+  // Creature mistiche: alla prima caduta si rialzano (non conta come cura: niente tempio né sirene)
+  _rialza(l, x) {
+    if (x.pv > 0 || !x.sin || !x.sin.rinascita || x.rialzato) return;
+    x.rialzato = true;
+    if (this.rng() >= x.sin.rinascita / 100) return;
+    x.pv = Math.max(1, Math.round(x.pvMax * .2));
+    x.stati = {}; x.stordito = false;
+    this._log(`${x.c.nome} non muore così facilmente: si rialza con ${x.pv} PV!`, { lato: l, cura: l, quanto: x.pv });
+  }
   _cura(l, x, n) {
     if (this.campo === "tempio") n *= 2;
     if (this.turno >= TURNO_SIRENE) n = Math.round(n / 2);
@@ -483,6 +497,7 @@ class Battaglia {
           a.pv = Math.max(0, a.pv - dmg);
           this._log(`${a.c.nome} brucia: −${dmg} PV.`, { lato: l, colpo: l, danno: dmg, stile: "FOR", brucia: true });
           if (--b.turni <= 0) delete a.stati.brucia;
+          this._rialza(l, a);
         }
         if (a.rigenera && a.pv > 0 && a.pv < a.pvMax && !a.stati.brucia) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * a.rigenera / 100)));
         if (a.sin && a.sin.rigenera && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * a.sin.rigenera / 100)));
@@ -497,12 +512,13 @@ class Battaglia {
           const dmg = Math.max(1, Math.round(pvCura(a) * 0.02));
           a.pv = Math.max(0, a.pv - dmg);
           this._log(`La lava scotta: ${a.c.nome} perde ${dmg} PV.`, { lato: l, colpo: l, danno: dmg, brucia: true });
+          this._rialza(l, a);
         }
         if (a.pv > 0 && this.turno >= TURNO_SIRENE) {
           const pct = 4 + 2 * (this.turno - TURNO_SIRENE);
           const dmg = Math.max(1, Math.round(pvCura(a) * pct / 100));
           a.pv = Math.max(0, a.pv - dmg);
-          this._log(`Sirene in arrivo: ${a.c.nome} perde ${dmg} PV.`, { lato: l, colpo: l, danno: dmg });
+          this._log(`Sirene in arrivo: ${a.c.nome} perde ${dmg} PV.`, { lato: l, colpo: l, danno: dmg }); this._rialza(l, a);
         }
       }
       for (const x of L.squadra) {
