@@ -403,7 +403,21 @@ function aggiungiXP(n) {
 //  CARTA (componente grafico)
 // ============================================================
 const PROB_OLO = 1 / 50;
+// Leggendaria garantita: dopo 10 bustine di fila senza leggendarie, l'ultima carta dell'11ª è leggendaria.
+// Esempio: apri 10 bustine normali e non esce nessuna leggendaria → la prossima ne ha una sicura, e il conto riparte da 0.
+const PIETA = 10;
+const mancaPieta = () => Math.max(1, PIETA + 1 - (S.pieta || 0));   // bustine da aprire per arrivare alla garantita (questa compresa)
+function htmlPieta() {
+  const n = mancaPieta();
+  return `<p class="pieta-riga"><span class="pallino r-leggendaria"></span>${n <= 1 ? "<b>La prossima bustina ha una leggendaria garantita!</b>" : `Leggendaria garantita tra <b>${n}</b> bustine (se non ne trovi prima)`}<span class="pieta-barra"><i style="--p:${Math.round(Math.min(PIETA, S.pieta || 0) / PIETA * 100)}%"></i></span></p>`;
+}
 const haOlo = id => !!(S.olo && S.olo[id]);
+// rarità attuale di una tua carta (con l'Ascesa può essere più alta di quella di partenza)
+const rarCarta = id => PER_ID[id] ? rarDopo(PER_ID[id].rarita, (S.asc || {})[id]) : "comune";
+function puoAscendere(id) {
+  if (!S.carte[id] || infoCarta(id).liv < LIVELLO_MAX) return false;
+  const r = rarCarta(id); return r !== "leggendaria" && (S.admin || S.monete >= ASCESA_MONETE[r]);
+}
 const haUltra = id => !!(S.ultra && S.ultra[id] && PER_ID[id] && PER_ID[id].ultra);
 const PROB_ULTRA = .15;   // quando trovi una carta che ha la versione Ultra, 15 volte su 100 è Ultra (circa 1 bustina su 180, 1 Leggendaria su 18)
 function htmlCarta(c, opz = {}) {
@@ -411,12 +425,14 @@ function htmlCarta(c, opz = {}) {
   const lode = opz.lode ?? (opz.liv === undefined && haLode(c.id));
   const info = opz.liv === undefined && S.carte[c.id] ? infoCarta(c.id) : null;
   const coperta = opz.coperta;
+  const rar = opz.rar || (opz.liv === undefined && S.carte[c.id] ? rarCarta(c.id) : c.rarita), salita = !coperta && rar !== c.rarita;
   return `
-  <div class="carta r-${c.rarita}${coperta ? " sconosciuta" : ""}${opz.piccola ? " piccola" : ""}${opz.mini ? " mini" : ""}${!coperta && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? " olo" : ""}${!coperta && c.ultra && (opz.ultra ?? (opz.liv === undefined && haUltra(c.id))) ? " ultra" : ""}" data-id="${c.id}" ${opz.click ? 'role="button" tabindex="0"' : ""}>
+  <div class="carta r-${rar}${salita ? " ascesa" : ""}${coperta ? " sconosciuta" : ""}${opz.piccola ? " piccola" : ""}${opz.mini ? " mini" : ""}${!coperta && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? " olo" : ""}${!coperta && c.ultra && (opz.ultra ?? (opz.liv === undefined && haUltra(c.id))) ? " ultra" : ""}" data-id="${c.id}" ${opz.click ? 'role="button" tabindex="0"' : ""}>
     <img src="${imgCarta(c.id)}" alt="${coperta ? "Carta da scoprire" : esc(c.nome)}" loading="lazy" draggable="false">
     ${coperta ? `<div class="punto-domanda">?</div>` : opz.mini ? "" : `
     <div class="carta-testa"><span class="stile s-${c.stile}" title="${STILI[c.stile].nome}">${c.stile}</span><span class="serie-ico" style="--c:${SERIE[c.serie].colore}" title="${esc(SERIE[c.serie].nome)}">${SERIE[c.serie].simbolo}</span>${liv ? `<span class="liv ${lode ? "lode" : ""}">${lode ? "30 e lode" : `Lv ${liv}`}</span>` : ""}</div>
-    ${htmlEtichettaPot(info)}
+    ${htmlEtichettaPot(info)}${info && !opz.mini && puoAscendere(c.id) ? `<span class="potenziabile ascesa-pronta" title="Al 30: può salire di rarità"><b>⬆</b><em>Ascesa</em></span>` : ""}
+    ${salita && !opz.mini ? `<span class="ascesa-tag" title="Salita di rarità: era ${esc(RARITA[c.rarita].nome.toLowerCase())}">⬆</span>` : ""}
     ${info && !opz.piccola && !opz.mini ? `<div class="carta-xp ${info.liv >= LIVELLO_MAX ? "verso-lode" : ""} ${info.lode ? "piena" : ""}"><i style="width:${info.lode ? 100 : Math.round(info.dentro / info.serve * 100)}%"></i></div>` : ""}
     <div class="carta-piede">
       ${!coperta && !opz.mini && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? `<div class="olo-scritta">✦ Olografica</div>` : ""}
@@ -454,18 +470,18 @@ function htmlTipo(c) {
   return `<p class="passiva tipo-riga"><b class="s-${c.stile}">${t.icona} Tipo ${esc(t.nome)}</b>: ${esc(t.bonus)}. Batte ${esc(STILI[t.batte].nome)}, soffre ${esc(debole[1].nome)}.</p>`;
 }
 function apriDettaglio(id) {
-  const c = PER_ID[id], inf = infoCarta(id), liv = inf.liv || 1, lode = inf.lode, s = statistiche(c, liv, lode), r = RUOLI[c.ruolo];
+  const c = PER_ID[id], inf = infoCarta(id), liv = inf.liv || 1, lode = inf.lode, rar = rarCarta(id), s = statistiche(c, liv, lode, rar), r = RUOLI[c.ruolo];
   const copie = S.carte[id] || 0;
   apriModale(`
     <div class="dettaglio">
-      <div class="dettaglio-carta" data-inclina>${htmlCarta(c, { liv, olo: haOlo(id), ultra: haUltra(id) })}</div>
+      <div class="dettaglio-carta" data-inclina>${htmlCarta(c, { liv, olo: haOlo(id), ultra: haUltra(id), rar })}</div>
       <div class="dettaglio-testo">
         <p class="serie-nome">${esc(SERIE[c.serie].nome)}</p>
         <h2>${esc(c.nome)}</h2>
         <p class="frase">${esc(c.frase)}</p>
         <div class="ruolo-box"><b>${esc(r.nome)}</b><span>${esc(r.cosa)}</span><p>${esc(r.passiva)}</p></div>
         ${htmlStatGriglia(c, s)}
-        ${htmlBonusRarita(c)}
+        ${htmlBonusRarita(rar === c.rarita ? c : Object.assign({}, c, { rarita: rar }))}${rar !== c.rarita ? `<p class="nota">⬆ Salita di rarità: in origine era ${esc(RARITA[c.rarita].nome.toLowerCase())}.</p>` : ""}
         ${htmlTipo(c)}
         ${squadreDi(id).length ? `<p class="passiva"><b>⚑ In squadra:</b> ${squadreDi(id).map(n => esc(S.squadre[n - 1].nome || `Squadra ${n}`) + (n === (S.attiva || 0) + 1 ? " (quella che usi adesso)" : "")).join(", ")}.</p>` : ""}
         <ul class="mosse-lista">
@@ -474,12 +490,13 @@ function apriDettaglio(id) {
         <div class="livello-box ${lode ? "lode" : ""}" id="livello-box">
           <div class="livello-riga"><b>${lode ? "Livello 30 e lode" : `Livello ${liv}`}</b><span>${lode ? "+5% a PV e danni" : liv < LIVELLO_MAX ? `Potenziatori ${inf.pot}/${inf.servePot}` : `Lode: ${inf.dentro}/${inf.serve} XP`}</span></div>
           <div class="xp-barra ${liv < LIVELLO_MAX ? "pot" : ""}"><i style="--p:${lode ? 100 : Math.round(inf.dentro / inf.serve * 100)}%"></i></div>
-          ${copie && liv < LIVELLO_MAX ? (() => { const s2 = statistiche(c, liv + 1, false), monOk = S.admin || S.monete >= inf.serveMon; return `
+          ${copie && liv < LIVELLO_MAX ? (() => { const s2 = statistiche(c, liv + 1, false, rar), monOk = S.admin || S.monete >= inf.serveMon; return `
           <p class="prossimo">Al livello ${liv + 1}: PV ${s.pv} → <b>${s2.pv}</b> · Attacco ${s.att} → <b>${s2.att}</b> · Difesa ${s.dif} → <b>${s2.dif}</b>${s2.vel !== s.vel ? ` · Velocità ${s.vel} → <b>${s2.vel}</b>` : ""}</p>
           <div class="potenzia-riga">
             <span class="costi"><span class="${inf.pronta ? "ok" : "manca"}">${inf.servePot} potenziatori</span><span class="${monOk ? "ok" : "manca"}">${inf.serveMon} monete</span></span>
             <button class="btn primario" data-fx="stelle" data-azione="potenzia" data-id="${id}" ${inf.puoi ? "" : "disabled"}>Potenzia</button>
           </div>`; })() : ""}
+          ${htmlAscesa(id)}
           ${haOlo(c.id) ? `<p class="olo-nota">✦ <b>Olografica</b>: +5% di PV e di danni in battaglia. Ne esce una ogni 50 carte circa.</p>` : ""}
           ${c.ultra ? (haUltra(c.id) ? `<p class="ultra-nota">◆ <b>Versione Ultra</b>: cornice nera e oro e +10% di PV e di danni in battaglia.</p>` : `<p class="nota">Questa carta ha anche una <b>versione Ultra</b> da trovare (+10% in battaglia): esce raramente quando la trovi in una bustina, sempre nella Bustina Ultra.</p>`) : ""}
           <p class="nota piccola">${lode ? "Ha la lode: è al massimo. I suoi doppioni ora danno monete." : liv < LIVELLO_MAX ? `Ogni doppione di questa carta dà ${POT_DOPPIONE[c.rarita]} potenziatori, e ogni battaglia vinta in cui scende in campo da 1 a 5.${!inf.pronta ? ` Te ne mancano ${inf.servePot - inf.pot}.` : !inf.puoi ? ` Ti mancano ${inf.serveMon - S.monete} monete.` : ""}` : "È al 30: continua a giocarci in battaglia per prendere la lode. I suoi doppioni ora danno monete."} · ${copie} ${copie === 1 ? "copia" : "copie"}</p>
@@ -502,6 +519,95 @@ function potenziaCarta(id, el, restaQui) {
   else { disegna(); apriDettaglio(id); }
   const lb = $("#livello-box"); if (lb) FX.riavvia(lb, "sale");
   if (S.liv[id] === LIVELLO_MAX) mostraAvviso(`${PER_ID[id].nome} è al livello 30! Ora giocaci in battaglia per prendere la lode.`);
+}
+
+// ---------------- Statistiche delle carte (admin) ----------------
+// Ogni battaglia manda al server le carte scese in campo e se hai vinto; l'admin vede per ogni carta quanto è usata
+// e quanto vince, così si bilancia guardando i numeri veri. Esempio: 120 battaglie e 84 vinte = 70%: troppo forte.
+const StatCarte = (() => {
+  let dati = null, errore = null, ordine = "usate", carico = false;
+  function registra(vinto, quale) {
+    if (S.admin || !socialeAttivo() || !B) return;
+    const carte = B.lati[0].squadra.filter(x => x.usata && S.carte[x.id]).map(x => x.id);
+    if (carte.length) rpcSociale("registra_carte", { carte, vinto: !!vinto, quale }).catch(() => {});
+  }
+  async function carica() {
+    carico = true; errore = null; ridisegna();
+    try { dati = await rpcSociale("statistiche_carte", {}); } catch (e) { errore = "Non riesco a leggere le statistiche. Hai eseguito di nuovo schema.sql su Supabase?"; }
+    carico = false; ridisegna();
+  }
+  function ridisegna() { const box = $("#admin-stat"); if (box) box.innerHTML = htmlAdmin(); }
+  const perc = (u, v) => u ? Math.round(v / u * 100) : null;
+  // sotto le 20 battaglie la percentuale dice poco: la mostro ma in grigio
+  const cellaPerc = (u, v) => { const p = perc(u, v); if (p === null) return `<td class="st-vuota">—</td>`;
+    return `<td class="${u < 20 ? "st-poche" : p >= 62 ? "st-forte" : p <= 38 ? "st-debole" : ""}">${p}%</td>`; };
+  function righe() {
+    const b = dati.battaglie || {}, p = dati.possesso || {}, g = Math.max(1, dati.giocatori || 0);
+    const r = CARTE.map(c => { const pc = b[`${c.id}:pc`] || [0, 0], vi = b[`${c.id}:vivo`] || [0, 0], po = p[c.id] || [0, 0, 0];
+      return { c, pc, vi, po, usate: pc[0] + vi[0], vince: perc(pc[0] + vi[0], pc[1] + vi[1]) ?? -1 }; });
+    const chiavi = { usate: x => x.usate, vince: x => x.vince, vivo: x => x.vi[0], squadra: x => x.po[1], possesso: x => x.po[0], livello: x => x.po[2] };
+    return r.sort((a, b) => chiavi[ordine](b) - chiavi[ordine](a) || a.c.nome.localeCompare(b.c.nome)).map(x => `<tr>
+      <td class="st-nome"><span class="pallino r-${x.c.rarita}"></span>${esc(x.c.nome)} <small style="color:${SERIE[x.c.serie].colore}">${SERIE[x.c.serie].simbolo}</small></td>
+      <td>${x.po[0]} <small>(${Math.round(x.po[0] / g * 100)}%)</small></td><td>${x.po[1]}</td><td>${x.po[2] || "—"}</td>
+      <td>${x.pc[0]}</td>${cellaPerc(x.pc[0], x.pc[1])}<td>${x.vi[0]}</td>${cellaPerc(x.vi[0], x.vi[1])}</tr>`).join("");
+  }
+  function htmlAdmin() {
+    const th = (k, t) => `<th><button class="st-ordina ${ordine === k ? "attivo" : ""}" data-admin="stat-ordina-${k}">${t}${ordine === k ? " ▾" : ""}</button></th>`;
+    return `<h3>Statistiche delle carte</h3>
+      <p class="nota">Per ogni carta: quanti giocatori ce l'hanno, quanti la tengono nella squadra attiva, il livello medio, e quante battaglie ha fatto (scesa in campo) con la percentuale di vittorie, contro il computer e dal vivo. In <b class="st-forte">rosso</b> le carte che vincono dal 62% in su, in <b class="st-debole">blu</b> quelle sotto il 38%; in grigio se le battaglie sono meno di 20 (troppo poche per giudicare). Le tue partite da admin non contano.</p>
+      <div class="azioni"><button class="btn primario" data-admin="stat-carica" ${carico ? "disabled" : ""}>${dati ? "Aggiorna" : "Carica le statistiche"}</button>${dati ? `<button class="btn" data-admin="stat-azzera">Azzera le battaglie</button>` : ""}</div>
+      ${errore ? `<p class="errore">${esc(errore)}</p>` : carico ? `<p class="nota">Carico…</p>` : !dati ? "" : `
+      <p class="nota">${dati.giocatori} giocatori (admin esclusi).</p>
+      <div class="st-scorri"><table class="st-tabella"><thead><tr><th>Carta</th>${th("possesso", "Ce l'hanno")}${th("squadra", "In squadra")}${th("livello", "Lv medio")}${th("usate", "Battaglie PC")}${th("vince", "Vince")}${th("vivo", "Dal vivo")}<th>Vince</th></tr></thead>
+      <tbody>${righe()}</tbody></table></div>`}`;
+  }
+  async function azione(cosa, el) {
+    if (cosa === "carica") return carica();
+    if (cosa.startsWith("ordina-")) { ordine = cosa.slice(7); ridisegna(); return; }
+    if (cosa === "azzera") {
+      if (!el.dataset.sicuro) { el.dataset.sicuro = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
+      try { await rpcSociale("azzera_statistiche_carte", {}); mostraAvviso("Battaglie azzerate: si riparte da zero (utile dopo aver cambiato le sinergie o una carta)."); } catch (e) { mostraAvviso(e.message); }
+      return carica();
+    }
+  }
+  return { registra, htmlAdmin, azione };
+})();
+
+// ---------------- Ascesa ----------------
+// Al 30 una comune, rara o epica può salire di rarità: riparte dal livello 1 con la forza della rarità nuova.
+function htmlAscesa(id) {
+  const c = PER_ID[id], inf = infoCarta(id), ora = rarCarta(id);
+  if (!S.carte[id] || ora === "leggendaria") return "";
+  const dopo = rarDopo(c.rarita, ((S.asc || {})[id] || 0) + 1), costo = ASCESA_MONETE[ora];
+  if (inf.liv < LIVELLO_MAX) return `<p class="nota piccola">⬆ <b>Ascesa</b>: al livello 30 questa carta potrà diventare ${esc(RARITA[dopo].nome.toLowerCase())} (${costo} monete).</p>`;
+  const ok = S.admin || S.monete >= costo;
+  return `<div class="ascesa-box r-${dopo}"><b>⬆ Ascesa: può diventare ${esc(RARITA[dopo].nome)}</b>
+    <p>Riparte dal livello 1, ma con la forza di una ${esc(RARITA[dopo].nome.toLowerCase())}: arrivata di nuovo al 30 sarà più forte di adesso.</p>
+    <div class="potenzia-riga"><span class="costi"><span class="${ok ? "ok" : "manca"}">${costo} monete</span></span><button class="btn primario" data-azione="ascesa" data-id="${id}" ${ok ? "" : "disabled"}>Fai salire</button></div></div>`;
+}
+function ascendiCarta(id, conferma, el) {
+  const c = PER_ID[id], inf = infoCarta(id), ora = rarCarta(id);
+  if (!c || !S.carte[id] || inf.liv < LIVELLO_MAX || ora === "leggendaria") return;
+  const passi = ((S.asc || {})[id] || 0) + 1, dopo = rarDopo(c.rarita, passi), costo = ASCESA_MONETE[ora];
+  if (!conferma) {
+    const a = statistiche(c, LIVELLO_MAX, inf.lode, ora), b1 = statistiche(c, 1, false, dopo), b30 = statistiche(c, LIVELLO_MAX, false, dopo);
+    apriModale(`<div class="codice-modale ascesa-conferma"><span class="codice-tag">Ascesa</span><h2>${esc(c.nome)} diventa ${esc(RARITA[dopo].nome.toLowerCase())}?</h2>
+      <div class="ascesa-carte">${htmlCarta(c, { liv: LIVELLO_MAX, lode: inf.lode, olo: haOlo(id), ultra: haUltra(id), rar: ora })}<span class="scambio-freccia">→</span>${htmlCarta(c, { liv: 1, olo: haOlo(id), ultra: haUltra(id), rar: dopo })}</div>
+      <table class="ascesa-tab"><tr><th></th><th>Adesso (Lv 30)</th><th>Dopo (Lv 1)</th><th>Dopo, di nuovo al 30</th></tr>
+        ${[["PV", "pv"], ["Attacco", "att"], ["Difesa", "dif"], ["Velocità", "vel"]].map(([n, k]) => `<tr><td>${n}</td><td>${a[k]}</td><td>${b1[k]}</td><td><b>${b30[k]}</b></td></tr>`).join("")}</table>
+      <p class="nota">Costa <b>${costo} monete</b>. Torna al livello 1${inf.lode ? " e perde la lode" : ""}: per riportarla su servono di nuovo potenziatori e monete. I potenziatori che hai già restano.</p>
+      <div class="azioni centro"><button class="btn" data-azione="chiudi">Non ancora</button><button class="btn primario" data-fx="stelle" data-azione="ascesa-ok" data-id="${id}" ${S.admin || S.monete >= costo ? "" : "disabled"}>Fai salire (${costo} 🪙)</button></div></div>`);
+    return;
+  }
+  if (!S.admin && S.monete < costo) { mostraAvviso(`Servono ${costo} monete.`); return; }
+  if (!S.admin) S.monete -= costo;
+  S.asc = Object.assign({}, S.asc, { [id]: passi });
+  S.liv[id] = 1; if (S.lodeXp) S.lodeXp[id] = 0;
+  S.stats.ascese = (S.stats.ascese || 0) + 1;
+  salva(); aggiornaTesta();
+  if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 70, forma: "stella", colori: ["#ffd76a", "#ff9bd2", "#ffffff"], velocita: 9, dimensione: 6, durata: 1400 }); }
+  chiudiModale(); disegna(); apriDettaglio(id);
+  mostraAvviso(`${c.nome} ora è ${RARITA[dopo].nome.toLowerCase()}! Riparte dal livello 1.`);
 }
 
 // ---------------- Modale e avvisi ----------------
@@ -658,6 +764,7 @@ function vistaBustine() {
   <section>
     <div class="titolo-riga"><h2>Le tue bustine</h2><p class="nota">${tot ? `Ne hai ${tot} da aprire. Ogni bustina aperta dà ${XP_BUSTINA} XP al pass.` : "Non hai bustine da aprire."}</p>
       <button class="btn oro" data-fx="salto" data-azione="vai-negozio">Vai al negozio</button></div>
+    ${htmlPieta()}
     ${disponibili.length ? `<div class="scaffale">
       ${disponibili.map(t => `
         <div class="bustina-box">
@@ -728,6 +835,7 @@ function vistaNegozio() {
       <p id="codice-esito" class="nota" aria-live="polite"></p>
       ${segreti.length ? `<div class="segreti"><span class="nota">Sorprese trovate:</span> ${segreti.map(x => `<button class="chip" data-fx="gelatina" data-riapri-codice="${esc(x.codice)}">${esc(x.titolo)}</button>`).join("")}</div>` : ""}
     </div>
+    ${htmlPieta()}
     <table class="probabilita">
       <caption>Probabilità per carta nella bustina classica</caption>
       <thead><tr><th>Rarità</th><th>Prime carte</th><th>Ultima carta</th></tr></thead>
@@ -822,8 +930,9 @@ function pescaDa(pesi) {
 function apriBustina(tipo) {
   const T = TIPI_BUSTINA[tipo];
   const uscite = [];
+  const pietaOra = (S.pieta || 0) >= PIETA;
   for (let i = 0; i < T.carte; i++) {
-    const r = pescaDa(i < T.carte - 1 ? "peso" : T.ultima);
+    const r = pietaOra && i === T.carte - 1 ? "leggendaria" : pescaDa(i < T.carte - 1 ? "peso" : T.ultima);
     const vale = c => (!T.serie || c.serie === T.serie) && (!T.stile || c.stile === T.stile);
     let pool = CARTE.filter(c => c.rarita === r && vale(c));
     // Bustina Ultra: l'ultima è una delle carte con la versione Ultra (prima quelle che non hai ancora Ultra)
@@ -855,9 +964,11 @@ function apriBustina(tipo) {
     const ultra = PER_ID[id].ultra && !haUltra(id) && (garantita || Math.random() < PROB_ULTRA);
     if (ultra) { S.ultra = Object.assign({}, S.ultra, { [id]: true }); S.stats.ultra = (S.stats.ultra || 0) + 1; }
     if (garantita && !ultra && PER_ID[id].ultra) { S.monete += 500; extra += 500; }   // le avevi già tutte Ultra: 500 monete
-    return { id, nuova: prima === 0, pot, pronta: !infoPrima.pronta && dopo.pronta, extra, liv: dopo.liv, lode: dopo.lode, olo, ultra };
+    return { id, nuova: prima === 0, pot, pronta: !infoPrima.pronta && dopo.pronta, extra, liv: dopo.liv, lode: dopo.lode, olo, ultra,
+      pieta: pietaOra && n === uscite.length - 1 && PER_ID[id].rarita === "leggendaria" };
   });
   S.stats.bustine++;
+  S.pieta = esiti.some(e => PER_ID[e.id].rarita === "leggendaria") ? 0 : (S.pieta || 0) + 1;
   // riempie da sola la prima squadra finché non è completa
   const sq = S.squadre[S.attiva];
   for (const e of esiti) if (sq.carte.length < CARTE_SQUADRA && !sq.carte.includes(e.id)) sq.carte.push(e.id);
@@ -944,16 +1055,16 @@ function htmlBonusRarita(c) {
 function apriSchedaCarta(e) {
   const c = PER_ID[e.id]; if (!c) return;
   chiudiSchedaCarta();
-  const inf = infoCarta(c.id), liv = inf.liv || e.liv || 1, lode = inf.lode || e.lode, olo = haOlo(c.id) || e.olo, ultra = haUltra(c.id) || e.ultra;
-  const s = statistiche(c, liv, lode), r = RUOLI[c.ruolo], st = STILI[c.stile];
+  const inf = infoCarta(c.id), liv = inf.liv || e.liv || 1, lode = inf.lode || e.lode, olo = haOlo(c.id) || e.olo, ultra = haUltra(c.id) || e.ultra, rar = S.carte[c.id] ? rarCarta(c.id) : c.rarita;
+  const s = statistiche(c, liv, lode, rar), r = RUOLI[c.ruolo], st = STILI[c.stile];
   const el = document.createElement("div");
   el.className = "scheda-veloce"; el.setAttribute("role", "dialog"); el.setAttribute("aria-label", `Statistiche di ${c.nome}`);
   el.innerHTML = `<div class="scheda-box">
     <button class="scheda-x" aria-label="Chiudi">✕</button>
     <div class="scheda-testa">
-      <div class="scheda-carta">${htmlCarta(c, { liv, lode, olo, ultra })}</div>
+      <div class="scheda-carta">${htmlCarta(c, { liv, lode, olo, ultra, rar })}</div>
       <div>
-        <p class="serie-nome">${esc(SERIE[c.serie].nome)} · <span class="r-testo r-${c.rarita}">${esc(RARITA[c.rarita].nome)}</span></p>
+        <p class="serie-nome">${esc(SERIE[c.serie].nome)} · <span class="r-testo r-${rar}">${esc(RARITA[rar].nome)}</span></p>
         <h2>${esc(c.nome)}</h2>
         <p class="nota">${lode ? "Livello 30 e lode" : `Livello ${liv}`} · ${esc(r.nome)} · ${st.icona} ${esc(st.nome)}</p>
         ${e.olo ? `<p class="olo-nota">✦ <b>Olografica</b>: +5% di PV e di danni in battaglia</p>` : ""}
@@ -992,7 +1103,7 @@ function mostraApertura2D(esiti, graffito) {
             <div class="faccia retro"><span class="neon">NV</span></div>
             <div class="faccia fronte">
               ${htmlCarta(PER_ID[e.id], { liv: e.liv, lode: e.lode, olo: e.olo, ultra: e.ultra })}
-              <span class="etichetta ${e.ultra ? "ultra-tag" : e.olo ? "olo-tag" : ""}">${e.ultra ? "ULTRA!" : e.olo ? "Olografica!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : ""}</span>
+              <span class="etichetta ${e.ultra ? "ultra-tag" : e.olo ? "olo-tag" : ""}">${e.ultra ? "ULTRA!" : e.olo ? "Olografica!" : e.pieta ? "Garantita!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : ""}</span>
             </div>
           </button>`).join("")}
       </div>
@@ -1042,6 +1153,7 @@ function htmlLegendaPot() {
 }
 function htmlBottonePot(id) {
   const inf = infoCarta(id);
+  if (inf.liv >= LIVELLO_MAX && rarCarta(id) !== "leggendaria") return `<button type="button" class="btn btn-pot" data-azione="ascesa" data-id="${id}">⬆ Ascesa a ${esc(RARITA[rarDopo(PER_ID[id].rarita, ((S.asc || {})[id] || 0) + 1)].nome.toLowerCase())} · ${ASCESA_MONETE[rarCarta(id)]} 🪙</button>`;
   if (!inf.liv || inf.liv >= LIVELLO_MAX) return "";
   if (inf.puoi) return `<button type="button" class="btn btn-pot" data-fx="stelle" data-sq-az="potenzia">▲ Potenzia a Lv ${inf.liv + 1} · ${S.admin ? "gratis" : inf.serveMon + " 🪙"}</button>`;
   if (inf.pronta) return `<button type="button" class="btn" disabled>▲ Potenzia: mancano ${inf.serveMon - S.monete} monete</button>`;
@@ -1116,7 +1228,7 @@ function vistaSquadra() {
   });
   const stili = { FOR: 0, DIF: 0, VEL: 0 };
   let pv = 0;
-  sq.carte.forEach(id => { stili[PER_ID[id].stile]++; pv += statistiche(PER_ID[id], livello(id), haLode(id)).pv; });
+  sq.carte.forEach(id => { stili[PER_ID[id].stile]++; pv += statistiche(PER_ID[id], livello(id), haLode(id), rarCarta(id)).pv; });
   const ruoli = sq.carte.map(id => RUOLI[PER_ID[id].ruolo].nome);
   const nPot = mie.filter(c => infoCarta(c.id).pronta).length;
   if (!nPot) filtri.squadra.pot = false;
@@ -1136,7 +1248,6 @@ function vistaSquadra() {
     <div class="slot5">${slot.join("")}</div>
     ${Graffiti.htmlSquadra()}
     ${Sinergie.htmlSquadra(sq.carte)}
-    ${htmlPuntiSquadra(sq.carte)}
     <div class="riepilogo">
       <div><span>Stili</span>${Object.entries(stili).map(([k, n]) => `<b class="stile s-${k}">${k} ${n}</b>`).join(" ")}</div>
       <div><span>Ruoli</span>${ruoli.length ? ruoli.map(r => `<b class="ruolo-pill">${esc(r)}</b>`).join(" ") : "—"}</div>
@@ -1149,8 +1260,8 @@ function vistaSquadra() {
     </div>
     ${elenco.length ? "" : `<p class="nota vuoto-filtri">Nessuna carta con questi filtri.</p>`}
     <div class="griglia">
-      ${elenco.map((c, i) => { const dentro = sq.carte.includes(c.id), troppo = !dentro && sq.carte.length < CARTE_SQUADRA && puntiSquadra(sq.carte) + puntiCarta(c.id) > REGOLE.tetto;
-        return `<div class="scegli cella ${dentro ? "scelta" : ""} ${troppo ? "troppo-costosa" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" role="button" tabindex="0" aria-pressed="${dentro}">${htmlCarta(c)}<span class="pt-carta" title="Punti squadra">${puntiCarta(c.id)} pt</span></div>`; }).join("")}
+      ${elenco.map((c, i) => { const dentro = sq.carte.includes(c.id);
+        return `<div class="scegli cella ${dentro ? "scelta" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" role="button" tabindex="0" aria-pressed="${dentro}">${htmlCarta(c)}</div>`; }).join("")}
     </div>
   </section>
   ${htmlAzioniCarta()}`;
@@ -1198,9 +1309,6 @@ const Sinergie = (() => {
         ${ORDINE_SERIE.filter(k => SINERGIE[k]).map(k => { const s = SINERGIE[k], se = SERIE[k]; return `<fieldset style="--c:${se.colore}"><legend>${se.simbolo} ${esc(se.nome)}</legend>
           <div class="campi-4">${[["v2", 2], ["v3", 3], ["v5", 5]].map(([v, n]) => `<label>Con ${n} (${s.tipo === "energia" ? "energia" : s.tipo === "effetti" ? "forza %" : "%"}) <input name="${k}.${v}" type="number" min="0" max="${s.tipo === "effetti" ? 200 : 60}" value="${s[v]}"></label>`).join("")}
           <label>Con 5 fa <input value="${esc(testoSerie(k, 3))}" disabled></label></div></fieldset>`; }).join("")}
-        <fieldset><legend>Punti squadra</legend><div class="campi-3">
-          <label>Tetto per squadra <input name="tetto" type="number" min="5" max="20" value="${REGOLE.tetto}"></label>
-          <label>Costo carte <input value="comune 1 · rara 2 · epica 3 · leggendaria 4" disabled></label></div></fieldset>
         <fieldset><legend>∞ Multiverso</legend><div class="campi-3">
           <label>2 versioni (%) <input name="multiverso.v2" type="number" min="0" max="30" value="${MULTIVERSO.v2}"></label>
           <label>3 o più (%) <input name="multiverso.v3" type="number" min="0" max="40" value="${MULTIVERSO.v3}"></label></div></fieldset>
@@ -1213,7 +1321,6 @@ const Sinergie = (() => {
       const f = new FormData(form);
       for (const k of Object.keys(SINERGIE)) { const d = {}; for (const v of ["v2", "v3", "v5"]) { const x = f.get(`${k}.${v}`); if (x !== null && x !== "") d[v] = +x; } if (Object.keys(d).length) nuovi[k] = d; }
       nuovi.multiverso = { v2: +f.get("multiverso.v2"), v3: +f.get("multiverso.v3") };
-      nuovi.tetto = Math.max(5, Math.min(20, +f.get("tetto") || 14));
     }
     try { await Archivio.db.doc("config/sinergie").set(nuovi); applicaSinergie(nuovi); mostraAvviso(base ? "Sinergie tornate ai valori di partenza." : "Sinergie salvate: ora valgono per tutti."); }
     catch (e) { mostraAvviso("Non sono riuscito a salvare. Serve la pagina online con il tuo account admin."); }
@@ -1252,7 +1359,7 @@ const Sinergie = (() => {
 let selSq = null;
 function htmlAzioniCarta() {
   if (!selSq || !PER_ID[selSq.id] || !S.carte[selSq.id]) return "";
-  const c = PER_ID[selSq.id], sq = squadraAttiva(), dentro = sq.carte.includes(c.id), s = statistiche(c, livello(c.id), haLode(c.id));
+  const c = PER_ID[selSq.id], sq = squadraAttiva(), dentro = sq.carte.includes(c.id), s = statistiche(c, livello(c.id), haLode(c.id), rarCarta(c.id));
   const guida = selSq.modo === "slot" ? `Tocca la carta della squadra da sostituire con <b>${esc(c.nome)}</b>.`
     : selSq.modo === "carta" ? `Tocca una carta qui sotto da mettere al posto di <b>${esc(c.nome)}</b>.`
     : selSq.modo === "confronta" ? `Tocca un'altra carta da confrontare con <b>${esc(c.nome)}</b>.` : "";
@@ -1304,15 +1411,6 @@ function disegnaQuieto() {
   main.classList.add("quieta");
   morfaFigli(main, t);
 }
-// ---------- punti squadra ----------
-const puntiOk = ids => puntiSquadra(ids) <= REGOLE.tetto;
-function avvisoPunti(ids) { mostraAvviso(`Troppi punti: ${puntiSquadra(ids)}/${REGOLE.tetto}. Togli o cambia una carta più rara (comune 1, rara 2, epica 3, leggendaria 4).`); FX.riavvia($(".punti-squadra"), "fx-scuoti"); }
-function htmlPuntiSquadra(ids) {
-  const p = puntiSquadra(ids), t = REGOLE.tetto, pct = Math.min(100, p / t * 100);
-  return `<div class="punti-squadra ${p > t ? "oltre" : p === t ? "pieno" : ""}" title="comune 1 · rara 2 · epica 3 · leggendaria 4">
-    <span>Punti squadra</span><div class="barra"><i style="--p:${pct}%"></i></div><b>${p}/${t}</b>
-    <small>${p > t ? "Troppi! Questa squadra non può combattere finché non togli una carta più rara." : `comune 1 · rara 2 · epica 3 · leggendaria 4${ids.length < CARTE_SQUADRA ? ` · ti restano ${t - p} punti` : ""}`}</small></div>`;
-}
 // tocco su una carta (della collezione o della squadra) mentre sta scegliendo
 function toccoCartaSquadra(id) {
   const sq = squadraAttiva();
@@ -1320,7 +1418,7 @@ function toccoCartaSquadra(id) {
   if (selSq && selSq.modo === "carta" && id !== selSq.id) {
     const i = sq.carte.indexOf(selSq.id);
     if (sq.carte.includes(id)) { const j = sq.carte.indexOf(id); [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]]; mostraAvviso("Ordine scambiato."); }
-    else { const prova = sq.carte.map(x => x === selSq.id ? id : x); if (!puntiOk(prova)) { avvisoPunti(prova); return; } sq.carte[i] = id; mostraAvviso(`${PER_ID[selSq.id].nome} esce, entra ${PER_ID[id].nome}.`); }
+    else { sq.carte[i] = id; mostraAvviso(`${PER_ID[selSq.id].nome} esce, entra ${PER_ID[id].nome}.`); }
     selSq = null; salva(); ridisegnaSquadra(); return;
   }
   if (selSq && selSq.modo === "slot") {
@@ -1328,7 +1426,7 @@ function toccoCartaSquadra(id) {
     if (j < 0 || id === selSq.id) return;
     const i = sq.carte.indexOf(selSq.id);
     if (i >= 0) [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]];
-    else { const prova = sq.carte.map((x, k) => k === j ? selSq.id : x); if (!puntiOk(prova)) { avvisoPunti(prova); return; } mostraAvviso(`${PER_ID[id].nome} esce, entra ${PER_ID[selSq.id].nome}.`); sq.carte[j] = selSq.id; }
+    else { mostraAvviso(`${PER_ID[id].nome} esce, entra ${PER_ID[selSq.id].nome}.`); sq.carte[j] = selSq.id; }
     selSq = null; salva(); ridisegnaSquadra(); return;
   }
   selSq = selSq && selSq.id === id && !selSq.modo ? null : { id };
@@ -1341,7 +1439,6 @@ function azioneCartaSquadra(az) {
   else if (az === "annulla") selSq = { id };
   else if (az === "aggiungi") {
     if (sq.carte.length < CARTE_SQUADRA && !sq.carte.includes(id)) {
-      if (!puntiOk(sq.carte.concat(id))) { avvisoPunti(sq.carte.concat(id)); return; }
       sq.carte.push(id);
     }
     selSq = null; salva();
@@ -1356,7 +1453,7 @@ function azioneCartaSquadra(az) {
 // Confronto di due carte, fianco a fianco: la statistica migliore è evidenziata
 function confrontaCarte(a, b) {
   const ca = PER_ID[a], cb = PER_ID[b]; if (!ca || !cb) return;
-  const sa = statistiche(ca, livello(a), haLode(a)), sb = statistiche(cb, livello(b), haLode(b));
+  const sa = statistiche(ca, livello(a), haLode(a), rarCarta(a)), sb = statistiche(cb, livello(b), haLode(b), rarCarta(b));
   const righe = [["PV", "pv"], ["Attacco", "att"], ["Difesa", "dif"], ["Velocità", "vel"]];
   const cella = (x, y) => x > y ? "meglio" : x < y ? "peggio" : "";
   const vs = multStile(ca.stile, cb.stile), testoVs = vs > 1 ? `${esc(ca.nome)} batte ${esc(cb.nome)}: fa il 30% di danni in più, e prende il 20% in meno.`
@@ -1918,6 +2015,7 @@ function vistaAdmin() {
       <div class="admin-box largo" id="admin-immagini">${htmlAdminImmagini()}</div>
       <div class="admin-box largo" id="admin-graffiti">${Graffiti.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-zaino">${Zaino.htmlAdmin()}</div>
+      <div class="admin-box largo" id="admin-stat">${StatCarte.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-sinergie">${Sinergie.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-evidenza">${Settimana.htmlAdmin()}</div>
       <div class="admin-box largo" id="admin-torneo">${Torneo.htmlAdmin()}</div>
@@ -2258,6 +2356,7 @@ async function azioneAdmin(cosa, el) {
   if (!S.admin) return;
   if (cosa === "ed-salva") { salvaEditor(el); return; }
   if (cosa === "img-trasferisci") { trasferisciImmagini(); return; }
+  if (cosa.startsWith("stat-")) { StatCarte.azione(cosa.slice(5), el); return; }
   if (cosa.startsWith("cod-")) { azioneCodici(cosa, el); return; }
   if (cosa.startsWith("ctl-")) { azioneControlli(cosa, el); return; }
   if (cosa.startsWith("reaz-")) { Reazioni.azioneAdmin(cosa, el); return; }
@@ -2566,12 +2665,12 @@ function scegliSquadra(poi, titolo = "Con quale squadra combatti?") {
   if (B && $("#azioni")) return;
   apriModale(`<div class="scelta-squadra"><h3>${esc(titolo)}</h3>
     <div class="ss-lista">${sq.map((q, i) => {
-      const p = puntiSquadra(q.carte), ok = q.carte.length >= Math.min(CARTE_SQUADRA, carteBattaglia()) && p <= REGOLE.tetto;
+      const ok = q.carte.length >= Math.min(CARTE_SQUADRA, carteBattaglia());
       const sin = sinergieDi(q.carte), icone = [...sin.serie.filter(s => s.liv).map(s => `<span class="sin-mini" style="--c:${SERIE[s.serie].colore}">${SERIE[s.serie].simbolo}${s.n}</span>`), ...sin.multiverso.map(m => `<span class="sin-mini multiverso">∞${m.n}</span>`)].join("");
       return `<button class="ss-squadra ${i === (S.attiva || 0) ? "attiva" : ""}" data-scegli-squadra="${i}" ${ok ? "" : "disabled"}>
-        <div class="ss-testa"><b>${esc(q.nome || `Squadra ${i + 1}`)}</b><span class="ss-punti ${p > REGOLE.tetto ? "oltre" : ""}">${p}/${REGOLE.tetto} pt</span>${icone}</div>
+        <div class="ss-testa"><b>${esc(q.nome || `Squadra ${i + 1}`)}</b><span class="ss-icone">${icone}</span></div>
         <div class="ss-carte">${q.carte.length ? q.carte.map(id => `<img src="${imgCarta(id)}" alt="${esc(PER_ID[id] ? PER_ID[id].nome : "")}" title="${esc(PER_ID[id] ? PER_ID[id].nome : "")} · Lv ${livello(id) || 1}">`).join("") : `<span class="nota">vuota</span>`}</div>
-        ${ok ? "" : `<small class="ss-no">${q.carte.length < CARTE_SQUADRA ? "Squadra incompleta" : "Troppi punti: sistemala in Squadre"}</small>`}</button>`; }).join("")}</div>
+        ${ok ? "" : `<small class="ss-no">${q.carte.length < CARTE_SQUADRA ? "Squadra incompleta" : ""}</small>`}</button>`; }).join("")}</div>
     <div class="azioni"><button class="btn" data-azione="vai-squadre">Modifica le squadre</button></div></div>`);
   scegliSquadra.poi = poi;
 }
@@ -2579,12 +2678,11 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   const Lp = typeof idLivello === "object" ? idLivello : LIVELLI_SFIDA.find(l => l.id === idLivello);
   // prima: scegli la squadra (non serve se guardi, se sei dal vivo, o se le carte sono già decise)
   if (!giaScelta && !carteForzate && Lp && !Lp.spettatore && !Lp.vivo) { scegliSquadra(() => avviaSfida(idLivello, carteForzate, nemiciForzati, true)); return; }
-  if (!carteForzate && Lp && !Lp.spettatore && !Lp.vivo && !puntiOk(squadraAttiva().carte.slice(0, CARTE_SQUADRA))) { avvisoPunti(squadraAttiva().carte); schermoIntero(false); return; }
   livelloAttuale = Lp;
   const n = carteForzate ? CARTE_SQUADRA : carteBattaglia();
   const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
-    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id) }));
+    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0 }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   // contro il computer: battaglia con un seme, così gli amici possono guardarla in diretta (le scelte del computer restano a caso)
@@ -2944,6 +3042,7 @@ async function sostituisciGiocatore(i) {
 // I doppioni restano il modo principale per averne tanti.
 const potVittoria = mult => Math.max(1, Math.min(5, Math.round(mult)));
 function premiaCarte(mult, vinto) {
+  if (livelloAttuale && !livelloAttuale.spettatore) StatCarte.registra(vinto, livelloAttuale.vivo ? "vivo" : "pc");
   const xp = Math.round((vinto ? 50 : 20) * mult * (carteBattaglia() === 3 ? .6 : 1));
   const potV = vinto ? potVittoria(mult) : 0;
   return B.lati[0].squadra.map(x => {
@@ -3175,6 +3274,8 @@ document.addEventListener("click", e => {
     case "vai-storia": vai("storia"); break;
     case "centra-mappa": centraMappa(); break;
     case "potenzia": potenziaCarta(t.dataset.id, t); break;
+    case "ascesa": ascendiCarta(t.dataset.id, false); break;
+    case "ascesa-ok": ascendiCarta(t.dataset.id, true, t); break;
     case "rifai-tutorial": chiudiModale(); if (!B) setTimeout(() => Tutorial.avvia(), 150); break;
     case "esci-account": (async () => { chiudiModale(); try { await Archivio.aspettaScritture(); } catch (e) {} try { await window.NoiversoAccesso.esci(); } catch (e) {} ImmaginiCarte.dimentica(); location.reload(); })(); break;
     case "ricarica": Archivio.aspettaScritture().catch(() => {}).then(() => location.reload()); break;

@@ -147,6 +147,26 @@ h2 { font-size: 1.35rem; }
 .potenziabile.manca em { text-transform: none; }
 .carta.piccola .potenziabile, .slot .potenziabile { top: 26px; right: 4px; height: 18px; padding: 0 6px; font-size: .62rem; }
 .carta.mini .potenziabile { display: none; }
+.potenziabile.ascesa-pronta { background: linear-gradient(135deg, #ffd76a, #ff9bd2); box-shadow: 0 0 0 2px rgba(30, 10, 20, .55), 0 0 14px rgba(255, 190, 120, .85); color: #2a0c18; }
+.carta .ascesa-tag { position: absolute; left: 6px; bottom: 58px; z-index: 3; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: .78rem; font-weight: 900; color: #1a0d05; background: var(--rc, #ffd76a); box-shadow: 0 0 0 2px rgba(0, 0, 0, .5), 0 0 10px var(--rc, #ffd76a); }
+.carta.piccola .ascesa-tag { width: 18px; height: 18px; font-size: .64rem; bottom: 44px; left: 4px; }
+.ascesa-box { margin-top: 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--rc, #ffd76a); background: linear-gradient(135deg, rgba(255, 215, 106, .1), rgba(255, 155, 210, .08)); }
+.ascesa-box.r-rara { --rc: var(--r-rara); } .ascesa-box.r-epica { --rc: var(--r-epica); } .ascesa-box.r-leggendaria { --rc: var(--r-leggendaria); }
+.ascesa-box > b { color: var(--rc); } .ascesa-box p { margin: 6px 0 8px; font-size: .9rem; opacity: .9; }
+.ascesa-carte { display: flex; align-items: center; justify-content: center; gap: 14px; margin: 10px 0; }
+.ascesa-carte .carta { width: 150px; }
+.ascesa-tab { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: .88rem; }
+.ascesa-tab th, .ascesa-tab td { padding: 5px 8px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, .08); }
+.st-scorri { overflow: auto; max-height: 560px; margin-top: 8px; }
+.st-tabella thead th { position: sticky; top: 0; background: #17121a; z-index: 1; }
+.st-tabella { width: 100%; border-collapse: collapse; font-size: .84rem; white-space: nowrap; }
+.st-tabella th, .st-tabella td { padding: 5px 8px; border-bottom: 1px solid rgba(255, 255, 255, .07); text-align: right; }
+.st-tabella th:first-child, .st-tabella td.st-nome { text-align: left; } .st-tabella td small { opacity: .6; }
+.st-ordina { background: none; border: 0; color: inherit; font: inherit; font-weight: 600; opacity: .7; cursor: pointer; padding: 0; } .st-ordina.attivo { opacity: 1; color: var(--accento, #ff2e46); }
+.st-forte { color: #ff6b6b; font-weight: 700; } .st-debole { color: #5aa9ff; font-weight: 700; } .st-poche { opacity: .45; } .st-vuota { opacity: .3; }
+.pieta-riga { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 6px 0 14px; padding: 9px 12px; border-radius: 10px; background: rgba(242, 193, 78, .08); border: 1px solid rgba(242, 193, 78, .25); font-size: .9rem; }
+.pieta-barra { flex: 1 1 120px; height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; } .pieta-barra i { display: block; height: 100%; width: var(--p); background: var(--r-leggendaria); }
+.ascesa-tab th { font-weight: 600; opacity: .75; font-size: .78rem; } .ascesa-tab td:first-child { text-align: left; opacity: .8; }
 .potenziabile.finto { position: static; animation: none; vertical-align: middle; margin: 0 4px 0 10px; }
 .potenziabile.finto:first-child { margin-left: 0; }
 .legenda-pot { margin: 4px 0 8px; font-size: .8rem; color: var(--spento); line-height: 1.9; }
@@ -1813,22 +1833,22 @@ body.in-accesso { overflow: hidden; }
 <div id="avviso" role="status" hidden></div>
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
-<script src="carte.9f69c4a7.js"></script>
-<script src="motore.aca4554d.js"></script>
+<script src="carte.983697a6.js"></script>
+<script src="motore.7278f42b.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
 <script src="scena3d.effbaf6b.js"></script>
 <script src="mappe.f1460cfe.js"></script>
 <script src="storia.b0c9d85b.js"></script>
-<script src="tutorial.4ca9ae7f.js"></script>
+<script src="tutorial.7c31bd58.js"></script>
 <script src="missioni.80068fac.js"></script>
 <script src="sociale.870259fd.js"></script>
 <script src="collezione.53cdb1a5.js"></script>
 <script src="graffiti.1ecab573.js"></script>
 <script src="zaino.f42c2817.js"></script>
-<script src="online.28cd7eb0.js"></script>
+<script src="online.19cdb9ea.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
 <script src="eventi.c820ef6e.js"></script>
-<script src="app.24dfd9a1.js"></script>
+<script src="app.c5edb873.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

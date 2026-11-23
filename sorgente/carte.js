@@ -412,6 +412,15 @@ const fattoreLivello = (liv = 1, lode = false) => (1 + 0.02 * (liv - 1)) * (lode
 const POT_DOPPIONE = { comune: 10, rara: 12, epica: 24, leggendaria: 60 };   // nov 2026: epica 30→24, leggendaria 100→60 (un doppione fortunato non porta più una carta al 16 in un colpo)
 const MONETE_DOPPIONE_30 = { comune: 15, rara: 20, epica: 40, leggendaria: 100 };   // doppione di una carta già al 30
 const potPerLivello = L => 3 + Math.floor(L / 2);
+
+// ---------------- Ascesa ----------------
+// Una carta comune, rara o epica arrivata al 30 può salire alla rarità successiva pagando monete:
+// riparte dal livello 1 ma con la forza della nuova rarità, e così via fino a leggendaria.
+// Esempio: una comune al 30 ha forza 1,00 × 1,58 = 1,58; diventata rara riparte da 1,10 e al 30 arriva a 1,10 × 1,58 = 1,74;
+// salita fino a leggendaria, al 30 vale 1,30 × 1,58 = 2,05 come una leggendaria trovata nelle bustine.
+// I doppioni continuano a dare i potenziatori della rarità di partenza (una comune dà sempre 10 potenziatori).
+const ASCESA_MONETE = { comune: 1000, rara: 2000, epica: 4000 };   // costo per salire DA questa rarità
+const rarDopo = (base, passi) => ORDINE_RARITA[Math.min(ORDINE_RARITA.length - 1, Math.max(0, ORDINE_RARITA.indexOf(base)) + Math.max(0, Math.min(3, passi | 0)))] || base;
 const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 5);
 
 // Statistiche reali di una carta.
@@ -433,8 +442,8 @@ function impronta(id) {
   const p = x => Math.max(-.08, Math.min(.08, (x - media) * .09));
   return (_impronte[id] = { pv: p(a[0]), att: p(a[1]), dif: p(a[2]), vel: v > .5 ? 1 : v < -.5 ? -1 : 0 });
 }
-function statistiche(c, liv = 1, lode = false) {
-  const b = RUOLI[c.ruolo], fr = RARITA[c.rarita].forza, f = fattoreLivello(liv, lode), t = BONUS_TIPO[c.stile] || {};
+function statistiche(c, liv = 1, lode = false, rar) {
+  const b = RUOLI[c.ruolo], fr = RARITA[RARITA[rar] ? rar : c.rarita].forza, f = fattoreLivello(liv, lode), t = BONUS_TIPO[c.stile] || {};
   const g = f - 1, fT = 1 + g * CRESCITA_TIPO, im = impronta(c.id);
   const pv = b.pv * (t.pv || 1) * fr * f * (1 + im.pv);
   const att = b.att * (t.att || 1) * fr * (c.stile === "FOR" ? fT : f) * (1 + im.att);
@@ -449,4 +458,4 @@ function statistiche(c, liv = 1, lode = false) {
   };
 }
 
-if (typeof module !== "undefined") module.exports = { SERIE, RARITA, ORDINE_RARITA, STILI, BONUS_TIPO, RUOLI, CARTE, PER_ID, ID_VECCHI, controllaLeggendarie, CARTE_ORIGINALI, applicaConfigCarte, LIVELLO_MAX, XP_LODE, XP_DOPPIONE, POT_DOPPIONE, MONETE_DOPPIONE_30, potPerLivello, monetePerLivello, xpPerLivello, xpPerArrivare, infoLivello, fattoreLivello, statistiche };
+if (typeof module !== "undefined") module.exports = { SERIE, RARITA, ORDINE_RARITA, STILI, BONUS_TIPO, RUOLI, CARTE, PER_ID, ID_VECCHI, controllaLeggendarie, CARTE_ORIGINALI, applicaConfigCarte, LIVELLO_MAX, XP_LODE, XP_DOPPIONE, ASCESA_MONETE, rarDopo, POT_DOPPIONE, MONETE_DOPPIONE_30, potPerLivello, monetePerLivello, xpPerLivello, xpPerArrivare, infoLivello, fattoreLivello, statistiche };

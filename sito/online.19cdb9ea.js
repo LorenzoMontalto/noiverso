@@ -202,7 +202,6 @@ const Online = (() => {
     const p = invitoDentro; if (!p) return;
     invitoDentro = null; chiudiModale();
     if (ok && mieCarte().length < CARTE_SQUADRA) { ok = false; mostraAvviso("Ti serve una squadra completa per accettare."); }
-    if (ok && puntiSquadra(mieCarte()) > REGOLE.tetto) { ok = false; mostraAvviso(`La squadra supera i punti (${puntiSquadra(mieCarte())}/${REGOLE.tetto}): sistemala prima.`); }
     risposte[p.id] = { id: p.id, a: p.da, ok, nome: mioNome(), motivo: ok ? "" : "rifiuta" };
     canale.send({ type: "broadcast", event: "risposta", payload: risposte[p.id] });
     if (ok) entraPartita({ id: p.id, seme: p.seme, avv: { id: p.da, nome: p.nome, avatar: p.avatar }, host: false });
@@ -300,9 +299,6 @@ const Online = (() => {
     const pulisci = q => ((q && q.squadra) || []).filter(x => PER_ID[x.id]).slice(0, CARTE_SQUADRA);
     const sqMia = pulisci(mia), sqSua = pulisci(sua);
     if (sqMia.length < CARTE_SQUADRA || sqSua.length < CARTE_SQUADRA) { mostraAvviso("Una delle due squadre non è completa: la sfida non può partire."); esci(); chiudiModale(); return; }
-    // punti squadra: tutti e due controllano anche la squadra dell'altro (letta dal server)
-    const troppo = [[sqMia, mioNome()], [sqSua, P.avv.nome]].find(([q]) => puntiSquadra(q.map(x => x.id)) > REGOLE.tetto);
-    if (troppo) { mostraAvviso(`La squadra di ${troppo[1]} supera i punti (${puntiSquadra(troppo[0].map(x => x.id))}/${REGOLE.tetto}): la sfida non può partire.`); esci(); chiudiModale(); return; }
     const g = x => x && x.graffito && GRAFFITI_COPPIE[x.graffito.id] ? x.graffito : null;
     P.iniziata = true;
     P.log = [];

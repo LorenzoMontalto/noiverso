@@ -19,6 +19,7 @@ const _carte = (typeof module !== "undefined") ? require("./carte.js") : null;
 const _PER_ID = _carte ? _carte.PER_ID : PER_ID;
 const _STILI = _carte ? _carte.STILI : STILI;
 const _stat = _carte ? _carte.statistiche : statistiche;
+const _rarDopo = _carte ? _carte.rarDopo : rarDopo;
 
 function multStile(sa, sd) {
   if (_STILI[sa].batte === sd) return 1.3;
@@ -28,23 +29,18 @@ function multStile(sa, sd) {
 
 // Le carte olografiche hanno il 5% in più di PV e di danni (come un piccolo livello extra)
 const BONUS_OLO = 1.05, BONUS_ULTRA = 1.10;   // la versione Ultra: +10% di PV e danni (si somma all'olografica)
-function nuovoCombattente(id, liv, lode, olo, ultra) {
-  const c = _PER_ID[id], s = _stat(c, liv, lode), k = (olo ? BONUS_OLO : 1) * (ultra && c.ultra ? BONUS_ULTRA : 1);
+// asc: quante volte la carta è salita di rarità (Ascesa). La carta in battaglia ha la rarità nuova (anche la cornice).
+function nuovoCombattente(id, liv, lode, olo, ultra, asc) {
+  const base = _PER_ID[id], rar = _rarDopo(base.rarita, asc);
+  const c = rar !== base.rarita ? Object.assign({}, base, { rarita: rar, ascesa: true }) : base, s = _stat(c, liv, lode), k = (olo ? BONUS_OLO : 1) * (ultra && c.ultra ? BONUS_ULTRA : 1);
   const pv = Math.round(s.pv * k);
-  return { id, c, liv, lode: !!lode, olo: !!olo, ultra: !!(ultra && c.ultra), f: s.f * k, pv, pvMax: pv, att: s.attBase, dif: s.dif, vel: s.vel,
+  return { id, c, liv, lode: !!lode, olo: !!olo, asc: rar !== base.rarita ? asc | 0 : 0, ultra: !!(ultra && c.ultra), f: s.f * k, pv, pvMax: pv, att: s.attBase, dif: s.dif, vel: s.vel,
     buff: {}, stati: {}, scudo: 0, nebbia: false, stordito: false, carica: false, koAnnunciato: false };
 }
 
-// ---------------- Punti squadra ----------------
-// Ogni carta "costa" punti secondo la rarità e una squadra non può superare il tetto: così non si possono
-// mettere 5 leggendarie e conviene mischiare. Il tetto si cambia dal pannello admin (config "sinergie", campo tetto).
-const PUNTI_RARITA = { comune: 1, rara: 2, epica: 3, leggendaria: 4 };
-const REGOLE = { tetto: 14 };
-const puntiCarta = id => (_PER_ID[id] && PUNTI_RARITA[_PER_ID[id].rarita]) || 0;
-const puntiSquadra = ids => ids.reduce((n, id) => n + puntiCarta(id), 0);
 
 // ---------------- Sinergie ----------------
-// Serie: 3 carte della stessa serie in squadra danno un bonus alle carte di quella serie, 5 carte un bonus più grande.
+// Serie: 2, 3 o 5 carte della stessa serie in squadra danno un bonus (sempre più grande) alle carte di quella serie.
 // Multiverso: 2 o più versioni della stessa persona (es. Lollifer + Lollinista) danno +5% / +10% a tutte le statistiche di quelle carte.
 // I valori si possono cambiare dal pannello admin (config "sinergie"): li legge applicaSinergie.
 const _il = v => (v === 1 || v === 11 || String(v)[0] === "8") ? `l'${v}%` : `il ${v}%`;
@@ -72,7 +68,6 @@ function applicaSinergie(cfg) {
     const b = SINERGIE_BASE[k], m = (nuove && c[k]) || {}, max = b.tipo === "energia" ? 5 : b.tipo === "effetti" ? 200 : 60;
     for (const v of ["v2", "v3", "v5"]) SINERGIE[k][v] = num(m[v], b[v], max);
   }
-  REGOLE.tetto = num(c.tetto, 14, 20) || 14;
   const mv = (nuove && c.multiverso) || {};
   MULTIVERSO.v2 = num(mv.v2, 8, 30);
   MULTIVERSO.v3 = num(mv.v3, 14, 40);
@@ -136,8 +131,8 @@ class Battaglia {
   constructor(sqG, sqC, nomeG = "Tu", nomeC = "Avversario", rng = Math.random) {
     this.rng = rng;
     this.lati = [
-      { nome: nomeG, squadra: sqG.map(x => nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra)), attivo: 0, energia: ENERGIA_INIZIALE },
-      { nome: nomeC, squadra: sqC.map(x => nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra)), attivo: 0, energia: ENERGIA_INIZIALE },
+      { nome: nomeG, squadra: sqG.map(x => nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra, x.asc)), attivo: 0, energia: ENERGIA_INIZIALE },
+      { nome: nomeC, squadra: sqC.map(x => nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra, x.asc)), attivo: 0, energia: ENERGIA_INIZIALE },
     ];
     this.turno = 1;
     this.vincitore = -1;
@@ -549,4 +544,4 @@ class Battaglia {
   }
 }
 
-if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE, OGGETTI_EFFETTI, sinergieDi, SINERGIE, applicaSinergie, MULTIVERSO, SOGLIE_SINERGIA, valSinergia, CAMPI, ORDINE_CAMPI, PUNTI_RARITA, REGOLE, puntiCarta, puntiSquadra };
+if (typeof module !== "undefined") module.exports = { Battaglia, multStile, ENERGIA_MAX, valoreGraffito, GRAFFITI_COPPIE, OGGETTI_EFFETTI, sinergieDi, SINERGIE, applicaSinergie, MULTIVERSO, SOGLIE_SINERGIA, valSinergia, CAMPI, ORDINE_CAMPI };

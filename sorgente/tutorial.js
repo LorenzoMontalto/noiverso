@@ -8,7 +8,7 @@
 // ============================================================
 const Tutorial = (() => {
   const PREMIO = 150;
-  const VERSIONE = 5;   // quando il tutorial cambia molto, chi l'aveva già fatto riceve un avviso (una volta)
+  const VERSIONE = 6;   // quando il tutorial cambia molto, chi l'aveva già fatto riceve un avviso (una volta)
   let passi = [], i = 0, attivo = false, timer = null, radice = null, entrato = 0;
 
   const vis = el => { if (!el) return null; const r = el.getBoundingClientRect(); return r.width > 2 && r.height > 2 ? r : null; };
@@ -32,7 +32,7 @@ const Tutorial = (() => {
         bersaglioInfo: ".scaffale" },
       { vista: "negozio", bersaglio: '.nav [data-vista="negozio"]', titolo: "Il negozio", testo: "Qui compri le bustine con le monete: classiche, di una sola serie (anche Demoni e Mestieri) o di un solo tipo, più un'offerta scontata ogni giorno. La <b>Bustina Ultra</b> costa tanto ma regala sempre una versione Ultra. Qui compri anche gli <b>oggetti dello zaino</b> da portare in battaglia. In fondo c'è il riquadro per i <b>codici promozionali</b>… alcuni nascondono delle sorprese." },
       { vista: "album", bersaglio: ".serie-copertine", titolo: "L'album", testo: "Le carte sono divise in serie. Tocca una serie per vederne le carte: quelle scure non le hai ancora trovate." },
-      { vista: "album", bersaglio: "#vista .griglia", titolo: "Potenziare le carte", testo: "Tocca una carta per vedere mosse e statistiche. Le carte salgono di livello solo se le potenzi tu: ogni <b>doppione</b> ti dà potenziatori per quella carta, e anche quando <b>vinci una battaglia</b> le carte scese in campo ne guadagnano qualcuno; e con potenziatori + monete la porti al livello dopo, fino al <b>30 e lode</b>. Il <b class=\"tut-su\">▲</b> verde ti dice quando puoi, e il badge <b>In squadra</b> ti ricorda quali carte stai usando: di solito conviene potenziare quelle." },
+      { vista: "album", bersaglio: "#vista .griglia", titolo: "Potenziare le carte", testo: "Tocca una carta per vedere mosse e statistiche. Le carte salgono di livello solo se le potenzi tu: ogni <b>doppione</b> ti dà potenziatori per quella carta, e anche quando <b>vinci una battaglia</b> le carte scese in campo ne guadagnano qualcuno; e con potenziatori + monete la porti al livello dopo, fino al <b>30 e lode</b>. Una comune, rara o epica arrivata al 30 può fare l'<b>Ascesa</b>: con un po' di monete sale alla rarità dopo e riparte dal livello 1, ma più forte (il badge <b>⬆</b>). Così anche le carte comuni, a forza di giocarci, arrivano forti come le leggendarie. Il <b class=\"tut-su\">▲</b> verde ti dice quando puoi, e il badge <b>In squadra</b> ti ricorda quali carte stai usando: di solito conviene potenziare quelle." },
       { vista: "album", bersaglio: ".schede-album", titolo: "Trofei e scambi", testo: "Nella scheda <b>Trofei</b> trovi gli obiettivi del gioco: ognuno dà monete e un <b>titolo</b> da mostrare sotto il tuo nome in classifica. Nella scheda <b>Scambi</b> proponi a un amico una tua carta in cambio di una sua: lo scambio si paga con i <b>potenziatori</b> di quella carta, e quando l'amico accetta premi <b>Ricevi carta</b>." },
       { vista: "squadra", bersaglio: "#vista .griglia", bolla: "alto", titolo: "La squadra",
         aspetta: squadraPiena,
@@ -41,7 +41,6 @@ const Tutorial = (() => {
         bersaglioInfo: ".slot5", bollaInfo: null },
       { vista: "squadra", bersaglio: ".riepilogo", titolo: "I tipi", testo: `Ogni carta ha un tipo che potenzia una sua statistica: <span class="s-FOR stile">FOR</span> Forza (+25% attacco), <span class="s-DIF stile">DIF</span> Difesa (+5% difesa), <span class="s-VEL stile">VEL</span> Velocità (+5 velocità: a parità di livello attacca sempre per prima, e +15% attacco). Potenziando salgono tutte le statistiche, quella del tipo di più. Forza batte Difesa, Difesa batte Velocità, Velocità batte Forza: chi è in vantaggio fa il 30% di danni in più, chi è in svantaggio il 20% in meno. Meglio una squadra con tipi misti.` },
       { vista: "squadra", bersaglio: ".sinergie-box", titolo: "Le sinergie", testo: "Bastano <b>2 carte della stessa serie</b> in squadra per un primo bonus a quelle carte; con <b>3</b> diventa più forte e con <b>5</b> molto di più. Ogni serie ha il suo: i Supereroi difendono di più, i Demoni si curano colpendo, i Mafiosi partono con più energia… Se metti <b>due o più versioni dello stesso amico</b> (per esempio Lollifer e Lollinista) scatta il <b>Multiverso</b>: +8% a tutte le loro statistiche (+14% con tre versioni). Qui vedi le sinergie attive e cosa ottieni aggiungendo un'altra carta." },
-      { vista: "squadra", bersaglio: ".punti-squadra", titolo: "I punti squadra", testo: "Ogni carta costa punti: <b>comune 1, rara 2, epica 3, leggendaria 4</b>. Una squadra può arrivare al massimo a <b>14 punti</b>, così non si possono mettere cinque leggendarie: devi scegliere dove spendere. Vale per tutte le battaglie, contro il computer e dal vivo. Prima di ogni battaglia scegli quale delle tue 3 squadre usare." },
       { vista: "sfida", bersaglio: ".prima-partita", titolo: "Zaino e graffito", saltaSe: () => !!B,
         testo: `Prima di combattere puoi riempire lo <b>zaino</b> con ${Zaino.POSTI} oggetti (cure, energia e altro): in battaglia ne usi uno per turno, e ognuno vale una volta sola. Il <b>graffito</b> della squadra è un piccolo bonus che sblocchi con le bombolette trovate nelle bustine.` },
       { vista: "sfida", bersaglio: ".livelli .livello", titolo: "Le sfide", saltaSe: () => !squadraPiena() || !!B,
@@ -203,7 +202,7 @@ const Tutorial = (() => {
       setTimeout(() => mostraAvviso("Novità: c'è un tutorial! Lo trovi nel tuo profilo, in alto a destra."), 1600);
     } else if ((S.tutorial.versione || 1) < VERSIONE) {
       S.tutorial = Object.assign({}, S.tutorial, { versione: VERSIONE }); salva();
-      setTimeout(() => mostraAvviso("Il tutorial è aggiornato con le novità (punti squadra, nuove sinergie, scambi per potenziare, campi di battaglia…). Lo rifai dal tuo profilo, in alto a destra."), 1600);
+      setTimeout(() => mostraAvviso("Il tutorial è aggiornato con le novità (Ascesa delle carte, leggendaria garantita, scelta della squadra, nuove sinergie, scambi per potenziare, campi di battaglia…). Lo rifai dal tuo profilo, in alto a destra."), 1600);
     }
   }
 

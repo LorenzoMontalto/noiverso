@@ -252,7 +252,9 @@ begin
         'liv', least(30, greatest(1, coalesce((d->'liv'->>x)::int, 1))),
         'lode', coalesce((d->'liv'->>x)::int, 1) >= 30 and coalesce((d->'lodeXp'->>x)::int, 0) >= 2000,
         'olo', coalesce((d->'olo'->>x)::boolean, false),
-        'ultra', coalesce((d->'ultra'->>x)::boolean, false)) order by n)
+        'ultra', coalesce((d->'ultra'->>x)::boolean, false),
+        -- Ascesa: quante volte la carta è salita di rarità (0-3)
+        'asc', least(3, greatest(0, case when d->'asc'->>x ~ '^[0-9]+$' then (d->'asc'->>x)::int else 0 end))) order by n)
       from jsonb_array_elements_text(coalesce(d->'squadre'->att->'carte', '[]'::jsonb)) with ordinality as t(x, n)), '[]'::jsonb));
 end $$;
 
@@ -1153,3 +1155,67 @@ revoke all on function public.assegna_torneo(bigint, uuid) from public, anon;
 grant execute on function public.assegna_torneo(bigint, uuid) to authenticated;
 revoke all on function public.annulla_torneo() from public, anon;
 grant execute on function public.annulla_torneo() to authenticated;
+
+-- ---------------- Statistiche delle carte (le vede solo l'admin) ----------------
+-- A fine battaglia il gioco manda le carte scese in campo e se ha vinto. Servono per bilanciare:
+-- una carta usata tantissimo che vince il 70% delle volte è da indebolire.
+create table if not exists public.stat_carte (
+  carta text not null,
+  modo  text not null check (modo in ('pc', 'vivo')),
+  usate integer not null default 0,
+  vinte integer not null default 0,
+  primary key (carta, modo)
+);
+alter table public.stat_carte enable row level security;
+revoke all on public.stat_carte from anon, authenticated;
+-- per non far gonfiare i numeri: una battaglia ogni 20 secondi e al massimo 150 al giorno per giocatore
+create table if not exists public.stat_limite (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  ultimo  timestamptz not null default now(),
+  giorno  date,
+  oggi    integer not null default 0
+);
+alter table public.stat_limite enable row level security;
+revoke all on public.stat_limite from anon, authenticated;
+
+create or replace function public.registra_carte(carte text[], vinto boolean, quale text) returns void
+language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); l public.stat_limite; g date := (now() at time zone 'Europe/Rome')::date;
+begin
+  if me is null or quale not in ('pc', 'vivo') or public.sono_admin() then return; end if;
+  select * into l from public.stat_limite where user_id = me for update;
+  if l.user_id is not null and (l.ultimo > now() - interval '20 seconds' or (l.giorno = g and l.oggi >= 150)) then return; end if;
+  insert into public.stat_limite as s (user_id, ultimo, giorno, oggi) values (me, now(), g, 1)
+    on conflict (user_id) do update set ultimo = now(), oggi = case when s.giorno = g then s.oggi + 1 else 1 end, giorno = g;
+  insert into public.stat_carte as s (carta, modo, usate, vinte)
+    select x, quale, 1, case when vinto then 1 else 0 end
+    from (select distinct x from unnest(carte[1:5]) as u(x) where public.rarita_carta(x) is not null) t
+    on conflict (carta, modo) do update set usate = s.usate + 1, vinte = s.vinte + excluded.vinte;
+end $$;
+
+-- per l'admin: battaglie e vittorie di ogni carta, e quanti giocatori ce l'hanno, quanti la usano in squadra, a che livello
+create or replace function public.statistiche_carte() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin'; end if;
+  return jsonb_build_object(
+    'giocatori', (select count(*) from public.salvataggi s where s.slot = 'partita'
+                   and not exists (select 1 from public.amministratori a where a.user_id = s.user_id)),
+    'battaglie', (select coalesce(jsonb_object_agg(carta || ':' || modo, jsonb_build_array(usate, vinte)), '{}'::jsonb) from public.stat_carte),
+    'possesso', (select coalesce(jsonb_object_agg(k, jsonb_build_array(n, sq, liv)), '{}'::jsonb) from (
+        select e.k, count(*) as n,
+          count(*) filter (where coalesce(s.dati->'squadre'->(case when s.dati->>'attiva' ~ '^[0-9]+$' then (s.dati->>'attiva')::int else 0 end)->'carte', '[]'::jsonb) ? e.k) as sq,
+          round(avg(case when s.dati->'liv'->>e.k ~ '^[0-9]+$' then least(30, (s.dati->'liv'->>e.k)::int) else 1 end), 1) as liv
+        from public.salvataggi s, jsonb_each_text(coalesce(s.dati->'carte', '{}'::jsonb)) as e(k, v)
+        where s.slot = 'partita' and e.v ~ '^[0-9]+$' and e.v::int > 0
+          and not exists (select 1 from public.amministratori a where a.user_id = s.user_id)
+        group by e.k) t));
+end $$;
+create or replace function public.azzera_statistiche_carte() returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if not public.sono_admin() then raise exception 'Solo l''admin'; end if;
+  delete from public.stat_carte where true;
+end $$;
+revoke all on function public.registra_carte(text[], boolean, text), public.statistiche_carte(), public.azzera_statistiche_carte() from public, anon;
+grant execute on function public.registra_carte(text[], boolean, text), public.statistiche_carte(), public.azzera_statistiche_carte() to authenticated;
