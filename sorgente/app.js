@@ -1125,9 +1125,17 @@ function htmlSezioneSerie(id, conTitolo) {
   const se = SERIE[id], st = statSerie(id);
   const fa = filtri.album, filtrando = !!(fa.tipo || fa.ruolo || fa.cerca);
   // con un filtro attivo si vedono solo le carte già trovate (le altre restano una sorpresa)
-  const elenco = [...st.carte].filter(c => !filtrando || (S.carte[c.id] && passaFiltri(c, fa))).sort((a, b) => ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita) || a.nome.localeCompare(b.nome));
+  // rarità attuale: una carta salita con l'Ascesa conta (e si ordina) con la rarità nuova
+  const rarOra = c => S.carte[c.id] ? rarCarta(c.id) : c.rarita;
+  const elenco = [...st.carte].filter(c => !filtrando || (S.carte[c.id] && passaFiltri(c, fa))).sort((a, b) => ORDINE_RARITA.indexOf(rarOra(b)) - ORDINE_RARITA.indexOf(rarOra(a)) || a.nome.localeCompare(b.nome));
   if (filtrando && !elenco.length) return conTitolo ? "" : `<section class="serie-sezione" style="--c:${se.colore}"><p class="nota">Nessuna carta trovata di questa serie con questi filtri.</p></section>`;
-  const perRarita = ORDINE_RARITA.slice().reverse().filter(r => st.carte.some(c => c.rarita === r)).map(r => { const cs = st.carte.filter(c => c.rarita === r); return `<span class="rar-conta"><span class="pallino r-${r}"></span>${RARITA[r].nome} ${cs.filter(c => S.carte[c.id]).length}/${cs.length}</span>`; }).join("");
+  // Esempio: 3 leggendarie nella serie, ne hai trovate 2 e una comune è salita a leggendaria → "Leggendaria 2/3 +1 ⬆";
+  // e quella comune non conta più tra le comuni ("Comune 3/5" invece di 4/5).
+  const perRarita = ORDINE_RARITA.slice().reverse().filter(r => st.carte.some(c => c.rarita === r || rarOra(c) === r)).map(r => {
+    const cs = st.carte.filter(c => c.rarita === r), qui = cs.filter(c => S.carte[c.id] && rarOra(c) === r).length;
+    const salite = st.carte.filter(c => c.rarita !== r && S.carte[c.id] && rarOra(c) === r).length, andate = cs.filter(c => S.carte[c.id] && rarOra(c) !== r).length;
+    const titolo = [salite ? `${salite} salite a ${RARITA[r].nome.toLowerCase()} con l'Ascesa` : "", andate ? `${andate} salite alla rarità dopo` : ""].filter(Boolean).join(" · ");
+    return `<span class="rar-conta"${titolo ? ` title="${titolo}"` : ""}><span class="pallino r-${r}"></span>${RARITA[r].nome} ${cs.length ? `${qui}/${cs.length}` : ""}${salite ? ` <b class="rar-salite">+${salite} ⬆</b>` : ""}</span>`; }).join("");
   return `
   <section class="serie-sezione" style="--c:${se.colore}">
     <div class="serie-testa">
