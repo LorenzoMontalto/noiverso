@@ -412,7 +412,10 @@ const fattoreLivello = (liv = 1, lode = false) => (1 + 0.02 * (liv - 1)) * (lode
 // Esempio: Lv1→2 costa 3 potenziatori e 10 monete; Lv10→11: 8 e 35; Lv29→30: 17 e 220.
 // In tutto, dal 1 al 30: 297 potenziatori e 2410 monete (circa 30 doppioni di una comune).
 const POT_DOPPIONE = { comune: 10, rara: 12, epica: 24, leggendaria: 60 };   // nov 2026: epica 30→24, leggendaria 100→60 (un doppione fortunato non porta più una carta al 16 in un colpo)
-const MONETE_DOPPIONE_30 = { comune: 15, rara: 20, epica: 40, leggendaria: 100 };   // doppione di una carta già al 30
+// Doppione di una carta già al 30 (nov 2026: prima 15 / 20 / 40 / 100).
+// Tetto: anche con TUTTE le carte di una bustina al 30, una bustina da 150 restituisce in media circa 138 monete,
+// quindi comprare bustine non diventa mai un modo per fare soldi.
+const MONETE_DOPPIONE_30 = { comune: 25, rara: 30, epica: 60, leggendaria: 150 };
 const potPerLivello = L => 3 + Math.floor(L / 2);
 
 // ---------------- Ascesa ----------------
