@@ -28,9 +28,14 @@ const Settimana = (() => {
   const inEvidenza = t => !!(TIPI_BUSTINA[t] && TIPI_BUSTINA[t].serie && TIPI_BUSTINA[t].serie === serie());
 
   // ---------- progressi della settimana ----------
+  // I progressi valgono per TUTTA la settimana, anche se nel frattempo la serie in evidenza cambia.
+  // Errore corretto (nov 2026): si azzeravano ogni volta che la serie risultava diversa, e succedeva a ogni rientro
+  // (per un attimo, prima di leggere la scelta dell'admin, la serie era quella automatica) e a ogni serie nuova aggiunta:
+  // così le sfide della settimana (fino a 1.650 monete e una bustina leggendaria) si potevano rivincere chiudendo e rientrando.
   function stato() {
     const k = chiave(), s = serie();
-    if (!S.settimana || S.settimana.chiave !== k || S.settimana.serie !== s) S.settimana = { chiave: k, serie: s, vinte: {}, prog: {}, riscosse: {} };
+    if (!S.settimana || S.settimana.chiave !== k) S.settimana = { chiave: k, serie: s, vinte: {}, prog: {}, riscosse: {} };
+    else if (S.settimana.serie !== s) S.settimana = Object.assign({}, S.settimana, { serie: s });
     return S.settimana;
   }
   const SFIDE = [
