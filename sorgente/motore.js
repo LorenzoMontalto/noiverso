@@ -61,6 +61,8 @@ const SINERGIE_BASE = {
   simpson:  { tipo: "critico",  v2: 15, v3: 25, v5: 35, testo: (v, liv) => `+${v}% di probabilità di colpo critico${liv >= 2 ? `, e i loro critici fanno ×${liv >= 3 ? "2" : "1,75"} invece di ×1,5` : ""}` },
   // Barbapapà: cambiano forma, quindi il tipo conta meno per loro: lo svantaggio di tipo (quando attaccano e quando difendono) si riduce
   barbapapa: { tipo: "forma",   v2: 40, v3: 80, v5: 95, testo: (v, liv) => v >= 100 ? `non soffrono più lo svantaggio di tipo, né in attacco né in difesa` : `lo svantaggio di tipo pesa ${_il(v)} in meno su di loro, in attacco e in difesa` },
+  // Star Wars: con i riflessi della Forza a volte parano un colpo intero (come una schivata)
+  starwars: { tipo: "para",     v2: 5, v3: 8, v5: 11, testo: v => `${v}% di probabilità di parare un attacco con la Forza (non subiscono danni né effetti)` },
   mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -164,6 +166,7 @@ class Battaglia {
         else if (s.tipo === "vel") x.vel = Math.round(x.vel * (1 + s.val / 100));
         else if (s.tipo === "rigenera") x.sin.rigenera = s.val;
         else if (s.tipo === "vampiro") x.sin.vampiro = s.val;
+        else if (s.tipo === "para") x.sin.para = s.val;
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
         else if (s.tipo === "critico") { x.sin.crit = s.val; x.sin.critX = s.liv >= 3 ? 2 : s.liv === 2 ? 1.75 : 1.5; }
         else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; x.sin.dannoEff = [0, 15, 25, 45][s.liv] || 0; if (s.liv >= 2) x.sin.effetti = 1; }
@@ -368,6 +371,7 @@ class Battaglia {
     if (mira) {
       if (d.nebbia) { d.nebbia = false; this._log(`${d.c.nome} sparisce: il colpo va a vuoto.`, { lato: 1 - l, anim: "schiva", bersaglio: 1 - l }); }
       else if (d.c.ruolo === "schivatore" && this.rng() < 0.15) { this._log(`${d.c.nome} schiva!`, { lato: 1 - l, anim: "schiva", bersaglio: 1 - l }); }
+      else if (d.sin && d.sin.para && this.rng() < d.sin.para / 100) { this._log(`${d.c.nome} para il colpo con la Forza!`, { lato: 1 - l, anim: "schiva", bersaglio: 1 - l }); }
       else colpito = true;
     }
     if (colpito && m.pot > 0) {

@@ -15,6 +15,7 @@ const SERIE = {
   mestieri: { nome: "Mestieri", colore: "#a6e22e", simbolo: "⚒", desc: "Hacker, spie, calciatori e pianisti: ognuno con il suo lavoro, tutti pronti a combattere." },
   simpson:  { nome: "Simpson", colore: "#ffd90f", simbolo: "◎", desc: "Ciambelle, Duff e la centrale nucleare: a Springfield tutti sono pronti a combattere." },
   barbapapa: { nome: "Barbapapà", colore: "#ff8fc8", simbolo: "✿", desc: "Barbatrucco! Una famiglia che cambia forma come vuole: spade, ombrelli, chitarre." },
+  starwars: { nome: "Star Wars", colore: "#4fc3ff", simbolo: "☄", desc: "Jedi, Sith, ribelli e cacciatori di taglie, in una galassia lontana lontana." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -383,6 +384,37 @@ const CARTE = [
     mosse: [m("Provetta Blu", 0, 26), m("Pozione Barba", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Esperimento Esplosivo", 5, 76, { drena: 40 })] },
   { id: "simopa", nome: "Simopà", serie: "barbapapa", rarita: "comune", stile: "FOR", ruolo: "imprevedibile", frase: "Giacca e cravatta, ma con il pennello in tasca.",
     mosse: [m("Pennellata", 0, 28), m("Schizzo di Colore", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Capolavoro", 5, 80)] },
+  // ---------------- Star Wars ----------------
+  { id: "ludowalker", nome: "Ludowalker", serie: "starwars", rarita: "leggendaria", stile: "VEL", ruolo: "capo", frase: "Un ragazzo di campagna che ha fatto saltare una stazione spaziale. Niente male.",
+    mosse: [m("Fendente Jedi", 0, 34), m("Usa la Forza", 2, 44, { penetra: 30 }), m("Colpo nel Condotto", 5, 100)] },
+  { id: "giueia", nome: "Giueia", serie: "starwars", rarita: "leggendaria", stile: "DIF", ruolo: "stratega", frase: "Principessa, generale e capa della Ribellione. Aiutami, sei la mia unica speranza.",
+    mosse: [m("Blaster della Principessa", 0, 30), m("Messaggio Olografico", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("La Ribellione", 5, 90, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "mauribecca", nome: "Mauribecca", serie: "starwars", rarita: "leggendaria", stile: "DIF", ruolo: "tank", frase: "Duecento anni, due metri e mezzo di pelo e un ruggito che fa tremare l'astronave.",
+    mosse: [m("Balestra Wookiee", 0, 34), m("Pelliccia Spessa", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Furia Wookiee", 5, 98)] },
+  { id: "lollakin", nome: "Lollakin Skywalker", serie: "starwars", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Il prescelto. Impaziente, fortissimo e con un debole per il lato oscuro.",
+    mosse: [m("Fendente Impaziente", 0, 32), m("Rabbia del Prescelto", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Duello su Mustafar", 5, 90, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  { id: "tizvader", nome: "Tiz Vader", serie: "starwars", rarita: "epica", stile: "DIF", ruolo: "stregone", frase: "Respira forte, parla piano e ti stringe la gola da lontano.",
+    mosse: [m("Spada Rossa", 0, 30), m("Stretta della Forza", 2, 30, { eff: { tipo: "stordisci", val: 40 } }), m("Lato Oscuro", 5, 88, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "simalpatine", nome: "Simalpatine", serie: "starwars", rarita: "epica", stile: "FOR", ruolo: "imprevedibile", frase: "Fai quello che devi fare. Anzi, fallo fare a lui.",
+    mosse: [m("Risata Sinistra", 0, 32), m("Fulmini della Forza", 2, 30, { eff: { tipo: "brucia", val: 7, turni: 3 } }), m("Ordine 66", 5, 24, { colpi: 4 })] },
+  { id: "samuwan", nome: "Samuwan", serie: "starwars", rarita: "epica", stile: "VEL", ruolo: "schivatore", frase: "Hello there! Il maestro Jedi più educato della galassia.",
+    mosse: [m("Hello There", 0, 32), m("Trucco Mentale Jedi", 2, 0, { eff: { tipo: "nebbia" } }), m("Ho l'Altura", 5, 92, { penetra: 25 })] },
+  { id: "aleadme", nome: "Aleadmè", serie: "starwars", rarita: "rara", stile: "DIF", ruolo: "tiratore", frase: "Regina di Naboo: prima prova a parlare, poi spara.",
+    mosse: [m("Blaster Reale", 0, 30), m("Diplomazia", 2, 28, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Regina di Naboo", 5, 84)] },
+  { id: "alihsoka", nome: "Alihsoka", serie: "starwars", rarita: "rara", stile: "VEL", ruolo: "assassino", frase: "Due spade bianche e nessuna paura di fare di testa sua.",
+    mosse: [m("Doppio Fendente", 0, 30, { penetra: 20 }), m("Salto Acrobatico", 2, 40, { penetra: 20 }), m("Lame Gemelle", 5, 20, { colpi: 4 })] },
+  { id: "pipsobafett", nome: "Pipsobà Fett", serie: "starwars", rarita: "rara", stile: "FOR", ruolo: "tiratore", frase: "Cacciatore di taglie: il prezzo sulla tua testa gli piace molto.",
+    mosse: [m("Blaster", 0, 30), m("Razzo da Polso", 2, 40), m("Jetpack Kamikaze", 5, 84)] },
+  { id: "ritey", nome: "Ritey", serie: "starwars", rarita: "rara", stile: "VEL", ruolo: "ladro", frase: "Raccoglieva rottami nel deserto. Ora raccoglie vittorie.",
+    mosse: [m("Bastone da Jakku", 0, 28, { eff: { tipo: "ruba", val: 1 } }), m("Recupero di Rottami", 2, 36, { eff: { tipo: "ruba", val: 1 } }), m("Spada di Skywalker", 5, 88)] },
+  { id: "aurothma", nome: "Aurothma", serie: "starwars", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "Senatrice e cuore della Ribellione: unisce tutti, poi vince.",
+    mosse: [m("Discorso al Senato", 0, 26), m("Alleanza Ribelle", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Voto di Sfiducia", 5, 76, { drena: 40 })] },
+  { id: "diegoren", nome: "Diegoren", serie: "starwars", rarita: "comune", stile: "FOR", ruolo: "picchiatore", frase: "Spada che sfrigola, elmo che vola: quando si arrabbia, si arrabbia davvero.",
+    mosse: [m("Spada Instabile", 0, 28), m("Crisi di Rabbia", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Elmo Spaccato", 5, 80)] },
+  { id: "senendulla", nome: "Senendulla", serie: "starwars", rarita: "comune", stile: "VEL", ruolo: "stratega", frase: "La pilota migliore della flotta: qualsiasi astronave, qualsiasi manovra.",
+    mosse: [m("Cannoniera", 0, 28), m("Manovra Spericolata", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Ghost all'Attacco", 5, 84)] },
+  { id: "vikyerso", nome: "Viky Erso", serie: "starwars", rarita: "comune", stile: "FOR", ruolo: "assassino", frase: "Ribelle per scelta: ruba i piani e scappa prima che se ne accorgano.",
+    mosse: [m("Colpo alle Spalle", 0, 28), m("I Piani Rubati", 2, 24, { eff: { tipo: "stordisci", val: 40 } }), m("Rogue One", 5, 80)] },
 ];
 
 
@@ -423,6 +455,9 @@ const PERSONE = {
   // Barbapapà
   lollapa: "Lorenzo", tizoba: "Tiziano", diegopa: "Diego", pipsoba: "Pips", samuba: "Samuele", mauriba: "Maurizio", ludopa: "Ludovico", simopa: "Simone",
   alebella: "Alessia", aliottina: "Alice", aurobrava: "Aurora", giulialla: "Giulia", ritamma: "Rita", seneforte: "Senè", vikylalla: "Viky",
+  // Star Wars
+  ludowalker: "Ludovico", giueia: "Giulia", mauribecca: "Maurizio", lollakin: "Lorenzo", tizvader: "Tiziano", simalpatine: "Simone", samuwan: "Samuele",
+  aleadme: "Alessia", alihsoka: "Alice", pipsobafett: "Pips", ritey: "Rita", aurothma: "Aurora", diegoren: "Diego", senendulla: "Senè", vikyerso: "Viky",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -433,9 +468,10 @@ CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 // nov 2026: rarità ribilanciate perché ogni amico abbia più o meno lo stesso numero di leggendarie, epiche, rare e comuni.
 // Qui le rarità di PRIMA delle carte cambiate: servono a sistemare l'Ascesa di chi le aveva già fatte salire.
 const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulsene": "rara", "c18ora": "rara", "poseludovico": "leggendaria", "adelrizio": "epica", "aresorenzo": "leggendaria", "atharita": "epica", "dionpips": "rara", "nikulia": "rara", "demviky": "comune", "persene": "comune", "samulett": "leggendaria", "mauriziente": "leggendaria", "pipverus": "epica", "vikatrix": "epica", "lollon": "rara", "giulifleur": "comune", "simothan": "leggendaria", "mauriphomet": "epica", "tiziazel": "epica", "aurorrigan": "epica", "diegial": "rara", "ritacubus": "rara", "giulimaah": "comune", "lollinista": "leggendaria", "senebroker": "epica", "maurialpinista": "epica", "simonducer": "epica", "diegarman": "rara", "samutografo": "rara", "alessiologa": "rara", "vikyventura": "rara", "auroressa": "comune", "tizomer": "leggendaria", "simarney": "epica", "samusty": "epica", "dieggum": "epica", "ludohouse": "rara", "vaggie": "rara", "giupatty": "comune"};
-// nov 2026: una versione Ultra per ogni amico (prima ce l'avevano solo Samuele, Tiziano, Simone, Lorenzo e Ludovico)
-const ULTRA_DI_PARTENZA = ["reina", "gokiele", "zeutiz", "ironlus", "simoldemort", "lollifer", "ludhacker",
-  "diegopa", "pipsoba", "ritamma", "alissith", "alisa", "vegerizio", "senebroker", "aurorrigan", "vikatrix", "nikulia"];
+// Una sola versione Ultra per serie, e mai due allo stesso amico.
+// Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
+// Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {

@@ -236,12 +236,30 @@ const STORIA = [
       { titolo: "La sala della musica", nemici: ["giulialla", "vikylalla", "aurobrava", "mauriba", "diegopa"], liv: [1, 1], abilita: 0.95, monete: 300,
         parla: "vikylalla", frase: "Un, due, tre, quattro! Questo assolo te lo suono in faccia." },
       { titolo: "La casa rosa", boss: true, nemici: ["ritamma", "lollapa", "pipsoba", "diegopa", "aliottina"], liv: [1, 1], abilita: 0.97, monete: 520, bustina: "leggendaria",
-        parla: "ritamma", frase: "In questa casa si entra pulendosi i piedi. Tu non l'hai fatto. Barbatrucco!", vittoria: "La famiglia Barbapapà ti saluta trasformandosi in un arco di fiori. Dietro l'ultimo petalo c'è uno specchio che riflette… mondi diversi." }
+        parla: "ritamma", frase: "In questa casa si entra pulendosi i piedi. Tu non l'hai fatto. Barbatrucco!", vittoria: "La famiglia Barbapapà ti saluta trasformandosi in un arco di fiori. Dietro l'ultimo petalo si vedono le stelle…" }
+    ],
+  },
+  {
+    id: "c18", campo: "notte", titolo: "Una galassia lontana lontana", serie: "starwars", colore: "#4fc3ff", simbolo: "☄",
+    intro: "Dietro l'ultimo petalo non c'è un muro, ma le stelle. Un'astronave un po' ammaccata ti aspetta: tanto tempo fa, in una galassia lontana lontana, i tuoi amici sono diventati Jedi, Sith e ribelli.",
+    tappe: [
+      { titolo: "Il deserto di Tatooine", nemici: ["ritey", "senendulla", "vikyerso", "diegoren", "aleadme"], liv: [1, 1], abilita: 0.88, monete: 270,
+        parla: "ritey", frase: "Questi rottami li ho trovati io. E anche questa battaglia." },
+      { titolo: "La cantina di Mos Eisley", nemici: ["pipsobafett", "senendulla", "vikyerso", "alihsoka", "aurothma"], liv: [1, 1], abilita: 0.9, monete: 280,
+        parla: "pipsobafett", frase: "Sulla tua testa c'è una bella taglia. Vivo o sconfitto, per me è uguale." },
+      { titolo: "Il Senato galattico", nemici: ["aurothma", "aleadme", "simalpatine", "alihsoka", "ritey"], liv: [1, 1], abilita: 0.92, monete: 290, bustina: "epica",
+        parla: "simalpatine", frase: "Il Senato ha votato: perdi tu. Eh eh eh." },
+      { titolo: "La base ribelle", nemici: ["giueia", "mauribecca", "vikyerso", "senendulla", "samuwan"], liv: [1, 1], abilita: 0.94, monete: 300,
+        parla: "giueia", frase: "Ci hanno trovati. Mettiti in posizione: questa base non cade." },
+      { titolo: "Il duello su Mustafar", nemici: ["lollakin", "samuwan", "ludowalker", "alihsoka", "diegoren"], liv: [1, 1], abilita: 0.95, monete: 310,
+        parla: "samuwan", frase: "Hello there! Attento alla lava: qui chi ha l'altura vince." },
+      { titolo: "La Morte Nera", boss: true, nemici: ["tizvader", "simalpatine", "diegoren", "pipsobafett", "lollakin"], liv: [1, 1], abilita: 0.97, monete: 540, bustina: "leggendaria",
+        parla: "tizvader", frase: "Non sottovalutare il potere del lato oscuro. Io… sono il tuo boss.", vittoria: "La Morte Nera esplode in mille stelle. Nel lampo si apre uno squarcio nello spazio: uno specchio che riflette… mondi diversi." }
     ],
   },
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
-    intro: "Dietro l'ultimo petalo del giardino dei Barbapapà c'è uno specchio enorme. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
+    intro: "Dallo squarcio lasciato dalla Morte Nera entri in uno specchio enorme. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
     tappe: [
       { titolo: "Il riflesso di Giulia", nemici: ["giulmai", "nikulia", "giulifleur", "giulimaah", "giudella"], liv: [1, 1], abilita: 0.9, monete: 290,
         parla: "giudella", frase: "Cinque Giulie e una sola passerella. Indovina quale è quella vera… mentre ti battiamo." },

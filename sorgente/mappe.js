@@ -23,6 +23,7 @@ const MappeStoria = (() => {
     [[230, 1000], [520, 760], [880, 950], [1190, 690], [1480, 890], [1560, 330]],   // città dei mestieri
     [[220, 1000], [540, 820], [880, 980], [1180, 720], [1470, 900], [1560, 360]],   // Springfield
     [[200, 980], [520, 780], [860, 960], [1160, 700], [1480, 860], [1300, 340]],   // casa dei Barbapapà
+    [[220, 980], [560, 840], [900, 1000], [1200, 760], [1520, 900], [1380, 330]],   // galassia lontana lontana
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -65,6 +66,9 @@ const MappeStoria = (() => {
     [[100, 1110, "✿", "Giardino Fiorito"], [400, 610, "⚗", "Laboratorio Blu"], [760, 1120, "📖", "Biblioteca"], [1080, 560, "⚽", "Campo Sportivo"],
      [1660, 1010, "♫", "Sala della Musica"], [1300, 180, "⌂", "La Casa Rosa"], [260, 300, "≈", "Laghetto"], [1660, 420, "🐘", "Zoo di Pipsobà"],
      [820, 300, "🎨", "Atelier"], [1440, 640, "☂", "Prato degli Ombrelli"]],
+    [[110, 1110, "☀", "Tatooine"], [440, 960, "🍸", "Cantina di Mos Eisley"], [780, 1130, "⚖", "Senato Galattico"], [1080, 620, "✦", "Base Ribelle"],
+     [1660, 1020, "♨", "Mustafar"], [1380, 180, "◉", "Morte Nera"], [300, 300, "❄", "Pianeta Ghiacciato"], [820, 300, "☄", "Campo di Asteroidi"],
+     [1680, 560, "⛭", "Flotta Imperiale"], [520, 600, "✧", "Tempio Jedi"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -533,7 +537,40 @@ const MappeStoria = (() => {
     for (let k = 0; k < 60; k++) { const x = r() * W, y = 150 + r() * 1050; s += `<line x1="${f(x)}" y1="${f(y)}" x2="${f(x - 4)}" y2="${f(y + 14)}" stroke="#4fa8ff" stroke-width="2" opacity=".35"/>`; }
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, specchi, treno, torre, dimensione];
+  function galassia(r) {
+    let s = `<rect width="${W}" height="${H}" fill="#070a1c"/>`;
+    // nebulose
+    for (const [x, y, c] of [[400, 500, "#3a1a6a"], [1300, 800, "#0a3a6a"], [900, 300, "#5a1a4a"], [1500, 300, "#1a2a6a"]]) s += `<ellipse cx="${x}" cy="${y}" rx="${f(300 + r() * 150)}" ry="${f(180 + r() * 100)}" fill="${c}" opacity=".45" filter="url(#sfoca)"/>`;
+    // stelle
+    for (let k = 0; k < 420; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * H)}" r="${(r() * 1.8 + .4).toFixed(1)}" fill="#ffffff" opacity="${(.3 + r() * .7).toFixed(2)}"/>`;
+    for (let k = 0; k < 12; k++) { const x = r() * W, y = r() * H; s += `<path d="M${f(x)},${f(y - 8)} L${f(x + 2)},${f(y - 2)} L${f(x + 8)},${f(y)} L${f(x + 2)},${f(y + 2)} L${f(x)},${f(y + 8)} L${f(x - 2)},${f(y + 2)} L${f(x - 8)},${f(y)} L${f(x - 2)},${f(y - 2)}Z" fill="#fff6d0"/>`; }
+    // Tatooine: pianeta di sabbia con due soli
+    s += `<circle cx="150" cy="1080" r="120" fill="#d8b07a"/><path d="M40,1060 q110,-30 220,0 M50,1110 q100,-20 200,10" stroke="#b08a50" stroke-width="10" fill="none" opacity=".6"/><circle cx="300" cy="940" r="26" fill="#ffd04a"/><circle cx="350" cy="960" r="18" fill="#ff9a3a"/>`;
+    // cantina: stazione/avamposto
+    s += `<circle cx="440" cy="900" r="70" fill="#a89070"/><rect x="400" y="880" width="80" height="40" rx="20" fill="#5a4a3a"/>`;
+    // Coruscant con il Senato
+    s += `<circle cx="780" cy="1100" r="110" fill="#5a6a8a"/>${[0, 1, 2, 3, 4, 5, 6].map(i => `<rect x="${700 + i * 22}" y="${1020 - (i * 37 % 50)}" width="12" height="${60 + (i * 37 % 50)}" fill="#ffd04a" opacity=".6"/>`).join("")}<path d="M740,1080 a40,20 0 0 1 80,0Z" fill="#c0c8d8"/>`;
+    // base ribelle su una luna verde
+    s += `<circle cx="1080" cy="560" r="80" fill="#3a8a4a"/><circle cx="1050" cy="540" r="20" fill="#2a6a3a"/><circle cx="1110" cy="590" r="14" fill="#2a6a3a"/>`;
+    // Mustafar: pianeta di lava
+    s += `<circle cx="1660" cy="1080" r="120" fill="#3a1a10"/>${[0, 1, 2, 3].map(i => `<path d="M${1580 + i * 40},${1000 + i * 20} q30,40 10,90" stroke="#ff6a2a" stroke-width="8" fill="none"/>`).join("")}`;
+    // Morte Nera
+    s += `<circle cx="1380" cy="190" r="140" fill="#8a909a" stroke="#5a606a" stroke-width="4"/><path d="M1240,190 h280" stroke="#5a606a" stroke-width="5"/><circle cx="1330" cy="140" r="34" fill="#6a707a" stroke="#4a505a" stroke-width="4"/><circle cx="1330" cy="140" r="10" fill="#3a404a"/>`;
+    for (let k = 0; k < 30; k++) s += `<rect x="${f(1260 + r() * 240)}" y="${f(100 + r() * 180)}" width="4" height="2" fill="#ffd04a" opacity=".7"/>`;
+    // pianeta ghiacciato
+    s += `<circle cx="300" cy="300" r="90" fill="#dfeef8"/><path d="M230,280 q70,-20 140,0" stroke="#a8c8e0" stroke-width="10" fill="none"/>`;
+    // asteroidi
+    for (let k = 0; k < 18; k++) s += `<path d="${blob(f(700 + r() * 260), f(220 + r() * 170), 10 + r() * 16, 8 + r() * 12, r, 8, .3)}" fill="#6a5a50"/>`;
+    // flotta imperiale: triangoli grigi
+    for (const [x, y, k] of [[1640, 540, 1], [1720, 600, .7], [1600, 620, .6]]) s += `<path d="M${x},${y} l${f(-90 * k)},${f(30 * k)} l${f(90 * k)},${f(30 * k)}Z" fill="#b0b8c4" stroke="#6a707a" stroke-width="2"/>`;
+    // tempio Jedi
+    s += `<circle cx="520" cy="560" r="60" fill="#7a6a5a"/><path d="M480,560 h80 l-10,-50 h-60Z" fill="#d8c8a8"/>${[0, 1, 2, 3].map(i => `<rect x="${488 + i * 18}" y="470" width="6" height="40" fill="#d8c8a8"/>`).join("")}`;
+    // un caccia ala X e un caccia TIE in volo
+    s += `<g transform="translate(1000 900) rotate(-20)"><rect x="-30" y="-4" width="60" height="8" fill="#e0e0e0"/><path d="M-10,-4 l-20,-22 h8 l18,22Z M-10,4 l-20,22 h8 l18,-22Z" fill="#c0c0c0"/><circle cx="30" cy="0" r="3" fill="#ff4a4a"/></g>`;
+    s += `<g transform="translate(1180 300)"><circle r="9" fill="#5a606a"/><rect x="-22" y="-20" width="6" height="40" fill="#3a404a"/><rect x="16" y="-20" width="6" height="40" fill="#3a404a"/><line x1="-16" y1="0" x2="16" y2="0" stroke="#5a606a" stroke-width="4"/></g>`;
+    return s;
+  }
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
