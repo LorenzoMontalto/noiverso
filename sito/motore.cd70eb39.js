@@ -403,7 +403,12 @@ class Battaglia {
 
   _effettoSe(l, a, e) {
     const L = this.lati[l];
-    if (e.tipo === "potenzia") { a.buff.att = { val: e.val, turni: e.turni }; this._log(`Attacco di ${a.c.nome} +${e.val}% per ${e.turni} turni.`, { lato: l, anim: "potenzia", su: l }); }
+    // "potenzia" vale per tutta la squadra: se chi l'ha usata va KO, chi entra tiene il bonus per i turni che restano.
+    // Se un compagno ha già un bonus più forte, tiene il suo.
+    if (e.tipo === "potenzia") {
+      for (const x of L.squadra) if (x.pv > 0 && (!x.buff.att || x.buff.att.val <= e.val)) x.buff.att = { val: e.val, turni: e.turni };
+      this._log(`Attacco di tutta la squadra +${e.val}% per ${e.turni} turni.`, { lato: l, anim: "potenzia", su: l });
+    }
     else if (e.tipo === "scudo") { a.scudo = e.val; this._log(`${a.c.nome} si protegge: il prossimo colpo fa il ${e.val}% di danni in meno.`, { lato: l, anim: "scudo", su: l }); }
     else if (e.tipo === "nebbia") {
       if (a.ultimaNebbia === this.turno - 1) { this._log(`${a.c.nome} prova a sparire di nuovo, ma non ci riesce.`, { lato: l }); }

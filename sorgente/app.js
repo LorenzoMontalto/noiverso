@@ -450,7 +450,7 @@ function descrMossa(mo) {
     p.push({
       brucia: `brucia ${e.val}% PV per ${e.turni} turni`, stordisci: `${e.val}% di stordire`,
       indebolisci: `attacco nemico −${e.val}% per ${e.turni} turni`, ruba: `ruba ${e.val} energia`,
-      potenzia: `attacco +${e.val}% per ${e.turni} turni`, scudo: `prossimo colpo −${e.val}%`,
+      potenzia: `attacco di tutta la squadra +${e.val}% per ${e.turni} turni`, scudo: `prossimo colpo −${e.val}%`,
       nebbia: "il prossimo attacco nemico va a vuoto", cura: `cura il ${e.val}% dei PV`, energia: `+${e.val} energia`,
     }[e.tipo]);
   }
