@@ -27,6 +27,7 @@ const MappeStoria = (() => {
     [[260, 1000], [620, 860], [360, 560], [960, 820], [1420, 880], [1380, 360]],    // regno degli elementi
     [[240, 1010], [620, 920], [1020, 1040], [1300, 820], [640, 620], [1500, 480]],   // notte delle creature
     [[220, 1030], [580, 880], [960, 1020], [1210, 760], [820, 520], [1500, 330]],    // città del futuro
+    [[300, 900], [620, 1000], [1060, 980], [1440, 760], [1020, 420], [520, 300]],     // tavolo da gioco
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -81,6 +82,8 @@ const MappeStoria = (() => {
     [[110, 1100, "✦", "Quartiere dei Neon"], [700, 1100, "⚙", "Mercato dei Ricambi"], [1180, 1100, "⚒", "Fabbrica dei Robot"], [1260, 600, "◈", "Dentro la Rete"],
      [700, 380, "▮", "Grattacielo della Corporazione"], [1500, 120, "◉", "Cervello Centrale"], [260, 420, "✈", "Stazione delle Auto Volanti"],
      [1700, 980, "♻", "Discarica Elettronica"], [1720, 560, "✚", "Clinica Cibernetica"]],
+    [[120, 1110, "☕", "L'Osteria"], [700, 1140, "♪", "La Sagra del Paese"], [1300, 1110, "♣", "Circolo della Briscola"], [1700, 700, "◆", "Sala del Tressette"],
+     [1500, 220, "♞", "Torneo dei Cavalli"], [520, 150, "♛", "Tavolo dei Re"], [900, 520, "▤", "Il Mazzo"], [110, 420, "$", "Cassa dei Denari"], [1710, 1110, "♠", "Bancone"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -690,7 +693,33 @@ const MappeStoria = (() => {
     for (let k = 0; k < 260; k++) { const x = r() * W, y = r() * H; s += `<path d="M${f(x)},${f(y)} l-6,22" stroke="#9fb8ff" stroke-width="1.2" opacity=".25"/>`; }
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, specchi, treno, torre, dimensione];
+  function tavolo(r) {
+    // il tavolo da gioco visto dall'alto: pavimento di legno, panno verde, carte, monete, coppe, spade e bastoni
+    let s = `<rect width="${W}" height="${H}" fill="#3a2414"/>`;
+    for (let k = 0; k < 24; k++) s += `<rect x="0" y="${k * 50}" width="${W}" height="48" fill="${["#4a2e18", "#422814", "#3e2612"][k % 3]}"/><path d="M${f(r() * W)},${k * 50} v48" stroke="#2a180a" stroke-width="3"/>`;
+    // il tavolo: bordo di legno e panno verde
+    s += `<ellipse cx="900" cy="640" rx="820" ry="520" fill="#5a3218"/><ellipse cx="900" cy="640" rx="790" ry="492" fill="#1f6a3a"/><ellipse cx="900" cy="640" rx="760" ry="465" fill="none" stroke="#e8b04a" stroke-width="3" opacity=".5"/>`;
+    for (let k = 0; k < 80; k++) s += `<circle cx="${f(200 + r() * 1400)}" cy="${f(250 + r() * 780)}" r="${f(20 + r() * 40)}" fill="#185a30" opacity=".35"/>`;
+    // carte sparse sul panno
+    const semi = [["♥", "#c82a2a"], ["◆", "#e8b04a"], ["†", "#2a4a8a"], ["▮", "#6a4a2a"]];
+    for (let k = 0; k < 22; k++) {
+      const x = 260 + r() * 1280, y = 260 + r() * 720, ang = f(-40 + r() * 80), [sim, col] = semi[k % 4];
+      s += `<g transform="translate(${f(x)} ${f(y)}) rotate(${ang})"><rect x="-34" y="-50" width="68" height="100" rx="8" fill="#f4ead2" stroke="#8a6a3a" stroke-width="2"/><rect x="-26" y="-42" width="52" height="84" rx="4" fill="none" stroke="${col}" stroke-width="2" opacity=".6"/><text x="0" y="12" text-anchor="middle" font-size="34" fill="${col}">${sim}</text></g>`;
+    }
+    // un mazzo coperto
+    for (let k = 0; k < 6; k++) s += `<rect x="${860 - k * 2}" y="${560 - k * 3}" width="80" height="116" rx="8" fill="#8a1a1a" stroke="#e8b04a" stroke-width="2"/>`;
+    // pile di monete d'oro
+    for (const [x, y] of [[420, 760], [1400, 480], [1250, 900], [600, 380]]) for (let k = 0; k < 5; k++) s += `<ellipse cx="${x}" cy="${y - k * 7}" rx="22" ry="9" fill="#e8b04a" stroke="#8a6a1a" stroke-width="2"/>`;
+    // coppe
+    for (const [x, y] of [[1500, 760], [300, 560]]) s += `<path d="M${x - 22},${y - 30} h44 q0,34 -22,40 v18 h14 v6 h-36 v-6 h14 v-18 q-22,-6 -22,-40Z" fill="#d89a2a" stroke="#6a4a0a" stroke-width="2"/>`;
+    // spade e bastoni incrociati
+    s += `<g transform="translate(1180 330) rotate(30)"><rect x="-4" y="-80" width="8" height="140" fill="#c8d0e0"/><rect x="-22" y="50" width="44" height="8" fill="#8a6a1a"/></g>`;
+    s += `<g transform="translate(700 930) rotate(-35)"><rect x="-8" y="-90" width="16" height="170" rx="8" fill="#7a4a1a"/><circle cx="0" cy="-90" r="12" fill="#6a3a12"/></g>`;
+    // lampadario sopra il tavolo
+    s += `<circle cx="900" cy="640" r="380" fill="#ffe9a8" opacity=".07" filter="url(#sfoca)"/>`;
+    return s;
+  }
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -718,7 +747,7 @@ const MappeStoria = (() => {
     // colore di base e colore delle nuvole per ogni capitolo
     const NEBBIE = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
       ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"],
-      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"],
+      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"],
       ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]];
     const [base, nuv] = NEBBIE[k] || NEBBIE[0];
     g.fillStyle = base; g.fillRect(0, 0, W, H);

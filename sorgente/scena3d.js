@@ -920,6 +920,7 @@ const Scena3D = (() => {
       if (tipo === "fiori") el.innerHTML = Array.from({ length: 30 }, () => `<b style="left:${Math.random() * 100}%;animation-delay:${Math.random() * .9}s">${["✿", "❀", "♥"][Math.floor(Math.random() * 3)]}</b>`).join("");
       if (tipo === "ki") el.innerHTML = Array.from({ length: 16 }, () => `<i style="left:${Math.random() * 100}%;animation-delay:${Math.random() * .5}s"></i>`).join("");
       if (tipo === "mare") el.innerHTML = `<i></i><i></i><i></i>`;
+      if (tipo === "mazzo") el.innerHTML = Array.from({ length: 22 }, () => { const [s, c] = [["♥", "#c82a2a"], ["♦", "#c82a2a"], ["♠", "#1a1a2a"], ["♣", "#1a1a2a"]][Math.floor(Math.random() * 4)]; return `<b style="left:${Math.random() * 100}%;animation-delay:${Math.random() * .8}s;color:${c}">${s}</b>`; }).join("");
       if (tipo === "codice") el.innerHTML = Array.from({ length: 24 }, () => `<b style="left:${Math.random() * 100}%;animation-delay:${Math.random() * .8}s">${Array.from({ length: 6 }, () => Math.random() < .5 ? "0" : "1").join("<br>")}</b>`).join("");
       if (tipo === "pipistrelli") el.innerHTML = Array.from({ length: 18 }, () => `<b style="top:${Math.random() * 80}%;animation-delay:${Math.random() * .6}s;font-size:${1 + Math.random() * 1.4}rem">⌒</b>`).join("");
       if (tipo === "gelo") el.innerHTML = Array.from({ length: 26 }, () => `<b style="left:${Math.random() * 100}%;animation-delay:${Math.random() * .9}s">❄</b>`).join("");
@@ -2291,6 +2292,88 @@ const Scena3D = (() => {
     "simonex:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#ff2a3a"); ar.schermo("allarme", 2000); const a = ar.pos(l), d = ar.pos(1 - l);
       for (let k = 3; k > 0; k--) { ar.simboli(a, String(k), "#ff2a3a", { n: 1, dim: .7 }); await ar.attendi(280); }
       await ar.scatto(l, { k: 1, andata: 160, colore: 0xff2a3a }); ar.schermo("bianco", 700); ar.esplosione(d, 0xff2a3a, 80, { velocita: 3.4, su: 1.6 }); ar.lampo(0xffffff, 10, d); ar.scossa = .6; },
+    // ================= Carte da Gioco =================
+    // ---- Alire (Re di Coppe) ----
+    "alire:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.proiettile(ar.pos(l).add(V(0, .6, 0)), d, { colore: 0xd89a2a, simbolo: "🍷", dim: .45, arco: .5, dur: 360 }); ar.esplosione(d, 0xc82a2a, 16, { velocita: 1.5 }); },
+    "alire:1": async (ar, l) => { const p = ar.pos(l); ar.schermo("corona", 1100); ar.simboli(p, "🍷", "#e8b04a", { n: 4, dim: .4, su: 1.3 }); await ar.colonna(p, 0xe8b04a, { alt: 2.4 }); },
+    "alire:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#c82a2a"); ar.schermo("mazzo", 1900); ar.luceScena(0x5a0a0a, { intensita: .5, dur: 1900 }); const a = ar.pos(l), d = ar.pos(1 - l);
+      for (let k = 0; k < 5; k++) { ar.proiettile(a.clone().add(V((k - 2) * .3, .6, 0)), d, { colore: 0xf4ead2, simbolo: "♥", dim: .45, arco: .4, dur: 360, ruota: 3 }); await ar.attendi(80); }
+      await ar.attendi(320); ar.esplosione(d, 0xc82a2a, 65, { velocita: 3 }); ar.lampo(0xe8b04a, 8, d); ar.scossa = .5; },
+    // ---- Maurire (Re di Bastoni) ----
+    "maurire:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .9, andata: 130, ruota: .5, colore: 0x8a5a2a }); ar.esplosione(d, 0x8a5a2a, 18, { velocita: 1.7 }); ar.ondaTerra(d, 0x8a5a2a, 3); },
+    "maurire:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "BRISCOLA!", "#e8b04a", { n: 1, dim: .5 }); await ar.scatto(l, { k: 1, andata: 110, ruota: .6, colore: 0xe8b04a }); ar.esplosione(d, 0xe8b04a, 26, { velocita: 2 }); ar.scossa = .25; },
+    "maurire:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#e8b04a"); ar.schermo("corona", 1700); const d = ar.pos(1 - l);
+      await ar.salto(l, { h: 1.8, dur: 620, giri: 1, colore: 0xe8b04a }); ar.ondaTerra(d, 0x8a5a2a, 10); ar.schermo("terremoto", 1000); ar.esplosione(d, 0xe8b04a, 70, { velocita: 3.2, su: 1.5 }); ar.scossa = .65; },
+    // ---- Tizire (Re di Spade) ----
+    "tizire:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .9, andata: 110, ruota: .4, colore: 0x9fb8ff }); ar.fendente(d, { colore: 0xdfe8ff }); },
+    "tizire:1": async (ar, l) => { const d = ar.pos(1 - l); await ar.proiettile(ar.pos(l).add(V(0, .6, 0)), d, { colore: 0xf4ead2, simbolo: "♠", dim: .55, arco: 0, dur: 260, ruota: 4 }); ar.lampo(0x9fb8ff, 5, d); ar.simboli(d, "✦", "#ffffff", { n: 3, dim: .3 }); },
+    "tizire:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#2a4a8a"); ar.schermo("tagli", 1500); const a = ar.pos(l), d = ar.pos(1 - l);
+      ar.simboli(a, "SCOPA!", "#e8b04a", { n: 1, dim: .7 }); await ar.attendi(300);
+      for (let k = 0; k < 3; k++) { await ar.scatto(l, { k: .95, andata: 70, ritorno: 60, ruota: k % 2 ? .5 : -.5, colore: 0x9fb8ff }); ar.fendente(d, { colore: 0xffffff, scala: 1.4 }); }
+      ar.schermo("mazzo", 1200); ar.esplosione(d, 0x9fb8ff, 65, { velocita: 3 }); ar.scossa = .5; },
+    // ---- Giulasso (Asso di Bastoni) ----
+    "giulasso:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .9, andata: 120, ruota: .5, colore: 0x8a5a2a }); ar.esplosione(d, 0x8a5a2a, 18, { velocita: 1.6 }); },
+    "giulasso:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(d, "◆", "#e8b04a", { n: 3, dim: .35, verso: ar.pos(l), durata: 500 }); await ar.scatto(l, { k: .9, andata: 110, colore: 0xe8b04a }); },
+    "giulasso:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#8a5a2a"); ar.schermo("mazzo", 1600); const a = ar.pos(l), d = ar.pos(1 - l);
+      await ar.proiettile(a.clone().add(V(0, 1.2, 0)), d, { colore: 0x7a4a1a, simbolo: "▮", dim: .9, arco: .8, dur: 500, ruota: 3 }); ar.ondaTerra(d, 0x8a5a2a, 8); ar.esplosione(d, 0xe8b04a, 60, { velocita: 2.8 }); ar.scossa = .5; },
+    // ---- Lollocallo (Cavallo di Denari) ----
+    "lollocallo:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: 1, andata: 110, ritorno: 120, ruota: .2, colore: 0xe8b04a }); ar.esplosione(d, 0xe8b04a, 16, { velocita: 1.6 }); },
+    "lollocallo:1": async (ar, l) => { const d = ar.pos(1 - l); ar.schermo("velocita", 700); await ar.scatto(l, { k: 1, andata: 90, colore: 0xe8b04a }); ar.simboli(d, "◉", "#e8b04a", { n: 4, dim: .35, verso: ar.pos(l), durata: 500 }); },
+    "lollocallo:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#e8b04a"); ar.schermo("velocita", 1600); const d = ar.pos(1 - l);
+      ar.simboli(ar.pos(l), "♞", "#e8b04a", { n: 1, dim: .8 }); for (let k = 0; k < 3; k++) { await ar.scatto(l, { k: 1, andata: 70, ritorno: 60, ruota: .2, colore: 0xe8b04a }); ar.lampo(0xe8b04a, 4, d); }
+      ar.pioggia(d, { colore: 0xe8b04a, testo: "◉", n: 18, dur: 700 }); ar.esplosione(d, 0xe8b04a, 60, { velocita: 2.8 }); ar.scossa = .45; },
+    // ---- Ludasso (Asso di Coppe) ----
+    "ludasso:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.getto(ar.pos(l), d, { colore: 0xa01a3a, dur: 380, densita: 3 }); ar.esplosione(d, 0xa01a3a, 12, { velocita: 1.3 }); },
+    "ludasso:1": async (ar, l) => { const p = ar.pos(l); ar.simboli(p, "🍷", "#e8b04a", { n: 3, dim: .4, su: 1.2 }); await ar.colonna(p, 0xc82a4a, { alt: 2.2 }); },
+    "ludasso:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#c82a4a"); ar.schermo("mazzo", 1700); const a = ar.pos(l), d = ar.pos(1 - l);
+      await ar.getto(a, d, { colore: 0xc82a4a, dur: 700, densita: 8, dimensione: .2, apertura: .45 }); ar.esplosione(d, 0xc82a4a, 55, { velocita: 2.5 }); ar.simboli(d, "♥", "#c82a2a", { n: 5, dim: .4 }); ar.scossa = .35; },
+    // ---- Samasso (Asso di Denari) ----
+    "samasso:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.proiettile(ar.pos(l).add(V(0, .6, 0)), d, { colore: 0xe8b04a, simbolo: "◉", dim: .4, arco: .6, dur: 340, ruota: 5 }); ar.esplosione(d, 0xe8b04a, 14, { velocita: 1.4 }); },
+    "samasso:1": async (ar, l) => { const p = ar.pos(l); ar.schermo("soldi", 1000); ar.simboli(p, "7◆", "#e8b04a", { n: 1, dim: .6 }); await ar.colonna(p, 0xe8b04a, { alt: 2.3 }); },
+    "samasso:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#e8b04a"); ar.schermo("soldi", 1800); ar.luceScena(0x5a4a0a, { intensita: .5, dur: 1800 }); const a = ar.pos(l), d = ar.pos(1 - l);
+      for (let k = 0; k < 7; k++) { ar.proiettile(a.clone().add(V((k - 3) * .2, .6, 0)), d, { colore: 0xe8b04a, simbolo: "◉", dim: .35, arco: .6, dur: 360, ruota: 5 }); await ar.attendi(70); }
+      await ar.attendi(300); ar.esplosione(d, 0xe8b04a, 60, { velocita: 2.8 }); ar.scossa = .45; },
+    // ---- Pipsante (Fante di Coppe) ----
+    "pipsante:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.proiettile(ar.pos(l).add(V(0, .6, 0)), d, { colore: 0xd89a2a, simbolo: "🍷", dim: .4, arco: .5, dur: 340, ruota: 3 }); ar.esplosione(d, 0xd89a2a, 14, { velocita: 1.4 }); },
+    "pipsante:1": async (ar, l) => { const p = ar.pos(l); await ar.orbita(l, { colore: 0xf4ead2, testo: "▯", n: 6, dur: 750, raggio: .9 }); ar.ondaTerra(p, 0xe8b04a, 3); },
+    "pipsante:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#d89a2a"); ar.schermo("mazzo", 1500); const a = ar.pos(l), d = ar.pos(1 - l);
+      await ar.proiettile(a.clone().add(V(0, 1, 0)), d, { colore: 0xf4ead2, simbolo: "▯", dim: .9, arco: .6, dur: 460, ruota: 4 }); ar.esplosione(d, 0xd89a2a, 55, { velocita: 2.5 }); ar.scossa = .4; },
+    // ---- Ritare (Re di Denari) ----
+    "ritare:0": async (ar, l) => { const d = ar.pos(1 - l); ar.pioggia(d, { colore: 0xe8b04a, testo: "◉", n: 8, dur: 600 }); await ar.attendi(450); ar.esplosione(d, 0xe8b04a, 12, { velocita: 1.3 }); },
+    "ritare:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "3·2·A", "#e8b04a", { n: 1, dim: .5, verso: d, durata: 500 }); await ar.attendi(400); await ar.vortice(1 - l, { giri: 2, dur: 500, colore: 0xe8b04a }); },
+    "ritare:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#e8b04a"); ar.schermo("soldi", 1900); ar.luceScena(0x5a4a0a, { intensita: .5, dur: 1900 }); const d = ar.pos(1 - l);
+      ar.pioggia(d, { colore: 0xe8b04a, testo: "◉", n: 30, dur: 1000, larg: 2 }); await ar.colonna(d, 0xe8b04a, { alt: 3.5, larg: .8 }); ar.esplosione(d, 0xe8b04a, 60, { velocita: 2.8 }); ar.scossa = .4; },
+    // ---- Senecallo (Cavallo di Spade) ----
+    "senecallo:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.proiettile(ar.pos(l).add(V(0, .7, 0)), d, { colore: 0xc8d0e0, simbolo: "†", dim: .55, arco: .1, dur: 280 }); ar.esplosione(d, 0x9fb8ff, 14, { velocita: 1.4 }); },
+    "senecallo:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "Cucù!", "#9fb8ff", { n: 1, dim: .5 }); await ar.scatto(l, { k: 1, andata: 100, colore: 0x9fb8ff }); ar.esplosione(d, 0x9fb8ff, 22, { velocita: 1.8 }); },
+    "senecallo:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#2a4a8a"); ar.schermo("velocita", 1600); const d = ar.pos(1 - l);
+      ar.simboli(ar.pos(l), "♞", "#9fb8ff", { n: 1, dim: .8 }); await ar.scatto(l, { k: 1, andata: 180, colore: 0x9fb8ff }); ar.fendente(d, { colore: 0xffffff, scala: 1.5 }); ar.esplosione(d, 0x9fb8ff, 60, { velocita: 2.8 }); ar.scossa = .45; },
+    // ---- Vikante (Fante di Bastoni) ----
+    "vikante:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .9, andata: 110, ruota: .4, colore: 0x8a5a2a }); ar.esplosione(d, 0x8a5a2a, 14, { velocita: 1.4 }); },
+    "vikante:1": async (ar, l) => { ar.schermo("mazzo", 900); await ar.teletrasporto(l, { colore: 0xe8b04a }); },
+    "vikante:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#8a5a2a"); ar.schermo("mazzo", 1600); const d = ar.pos(1 - l);
+      ar.simboli(ar.pos(l), "7½", "#e8b04a", { n: 1, dim: .8 }); await ar.attendi(300); await ar.teletrasporto(l, { colore: 0xe8b04a }); for (let k = 0; k < 2; k++) await ar.scatto(l, { k: .95, andata: 70, ritorno: 60, ruota: k % 2 ? .5 : -.5, colore: 0x8a5a2a });
+      ar.esplosione(d, 0xe8b04a, 55, { velocita: 2.5 }); ar.scossa = .4; },
+    // ---- Alessante (Fante di Spade) ----
+    "alessante:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .9, andata: 100, ritorno: 90, colore: 0x9fb8ff }); ar.fendente(d, { colore: 0xdfe8ff, scala: .8 }); },
+    "alessante:1": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l), "😏", "#ffffff", { n: 1, dim: .6 }); await ar.attendi(350); ar.simboli(d, "?", "#9fb8ff", { n: 3, dim: .45 }); ar.lampo(0x9fb8ff, 3, d); },
+    "alessante:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#2a4a8a"); ar.schermo("tagli", 1400); const d = ar.pos(1 - l);
+      for (let k = 0; k < 2; k++) { await ar.scatto(l, { k: .95, andata: 80, ritorno: 70, ruota: k % 2 ? .5 : -.5, colore: 0x9fb8ff }); ar.fendente(d, { colore: 0xffffff, scala: 1.2 }); } ar.esplosione(d, 0x9fb8ff, 50, { velocita: 2.4 }); ar.scossa = .35; },
+    // ---- Aurante (Fante di Denari) ----
+    "aurante:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.proiettile(ar.pos(l).add(V(0, .6, 0)), d, { colore: 0xe8b04a, simbolo: "◉", dim: .4, arco: .5, dur: 320, ruota: 5 }); ar.simboli(d, "◉", "#e8b04a", { n: 1, dim: .35, verso: ar.pos(l), durata: 450 }); },
+    "aurante:1": async (ar, l) => { const d = ar.pos(1 - l); await ar.teletrasporto(l, { colore: 0xe8b04a }); ar.esplosione(d, 0xe8b04a, 20, { velocita: 1.8 }); },
+    "aurante:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#e8b04a"); ar.schermo("soldi", 1500); const a = ar.pos(l), d = ar.pos(1 - l);
+      for (let k = 0; k < 4; k++) { ar.proiettile(a.clone().add(V((k - 1.5) * .25, .6, 0)), d, { colore: 0xe8b04a, simbolo: "◉", dim: .4, arco: .5, dur: 320, ruota: 5 }); await ar.attendi(110); } await ar.attendi(250); ar.esplosione(d, 0xe8b04a, 45, { velocita: 2.2 }); ar.scossa = .3; },
+    // ---- Diegallo (Cavallo di Coppe) ----
+    "diegallo:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .85, andata: 150, ruota: .2, colore: 0xc82a4a }); ar.esplosione(d, 0xc82a4a, 16, { velocita: 1.5 }); ar.ondaTerra(d, 0x8a5a2a, 3); },
+    "diegallo:1": async (ar, l) => { await ar.orbita(l, { colore: 0xd89a2a, testo: "🍷", n: 5, dur: 750, raggio: .9 }); },
+    "diegallo:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#c82a4a"); ar.schermo("velocita", 1400); const d = ar.pos(1 - l);
+      ar.simboli(ar.pos(l), "♞", "#c82a4a", { n: 1, dim: .8 }); await ar.scatto(l, { k: 1, andata: 200, colore: 0xc82a4a }); ar.ondaTerra(d, 0x8a5a2a, 8); ar.esplosione(d, 0xc82a4a, 55, { velocita: 2.6 }); ar.scossa = .45; },
+    // ---- Simocallo (Cavallo di Bastoni) ----
+    "simocallo:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .9, andata: 120, ruota: .5, colore: 0x8a5a2a }); ar.esplosione(d, 0x8a5a2a, 16, { velocita: 1.6 }); },
+    "simocallo:1": async (ar, l) => { const d = ar.pos(1 - l); ar.schermo("ubriaco", 800); await ar.vortice(1 - l, { giri: 2, dur: 500, colore: 0x8a5a2a }); ar.simboli(d, "💫", "#e8b04a", { n: 2, dim: .4 }); },
+    "simocallo:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#8a5a2a"); ar.schermo("ubriaco", 1500); const d = ar.pos(1 - l);
+      for (let k = 0; k < 3; k++) await ar.scatto(l, { k: .95, andata: 70, ritorno: 70, ruota: (k - 1) * .6, colore: 0x8a5a2a }); ar.ondaTerra(d, 0x8a5a2a, 7); ar.esplosione(d, 0xe8b04a, 55, { velocita: 2.6 }); ar.scossa = .45; },
   };
 
   // ============================================================

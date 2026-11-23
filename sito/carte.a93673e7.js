@@ -16,6 +16,7 @@ const SERIE = {
   simpson:  { nome: "Simpson", colore: "#ffd90f", simbolo: "◎", desc: "Ciambelle, Duff e la centrale nucleare: a Springfield tutti sono pronti a combattere." },
   barbapapa: { nome: "Barbapapà", colore: "#ff8fc8", simbolo: "✿", desc: "Barbatrucco! Una famiglia che cambia forma come vuole: spade, ombrelli, chitarre." },
   starwars: { nome: "Star Wars", colore: "#4fc3ff", simbolo: "☄", desc: "Jedi, Sith, ribelli e cacciatori di taglie, in una galassia lontana lontana." },
+  carte: { nome: "Carte da Gioco", colore: "#e8b04a", simbolo: "♣", desc: "Re, cavalli, fanti e assi delle carte napoletane: coppe, denari, spade e bastoni scendono dal mazzo e si siedono al tavolo." },
   cyborg: { nome: "Cyborg", colore: "#38e0ff", simbolo: "⌬", desc: "Metà persone e metà macchine, tra grattacieli al neon e auto volanti: il futuro è arrivato e picchia forte." },
   creature: { nome: "Creature Mistiche", colore: "#9d7bff", simbolo: "☠", desc: "Vampiri, lupi mannari, mummie e sirene: quando sorge la luna piena escono tutti allo scoperto." },
   elementi: { nome: "Elementi", colore: "#3fe0c0", simbolo: "❖", desc: "Fuoco, acqua, ghiaccio, fulmini, luce e ombra: i tuoi amici sono diventati i signori degli elementi." },
@@ -509,7 +510,37 @@ const CARTE = [
   { id: "mauriborg", nome: "Mauriborg", serie: "cyborg", rarita: "comune", stile: "FOR", ruolo: "tank", frase: "Un carro armato con i baffi: lento a partire, impossibile da fermare.",
     mosse: [m("Pressa Idraulica", 0, 26), m("Corazza Rinforzata", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Schiacciasassi", 5, 78)] },
   { id: "simonex", nome: "Simonex", serie: "cyborg", rarita: "comune", stile: "FOR", ruolo: "imprevedibile", frase: "Le luci rosse lampeggiano sempre: nessuno sa se è un errore di sistema o se è proprio fatto così.",
-    mosse: [m("Raggio Rosso", 0, 28), m("Errore di Sistema", 2, 24, { eff: { tipo: "stordisci", val: 40 } }), m("Autodistruzione", 5, 82)] },
+    mosse: [m("Raggio Rosso", 0, 28), m("Errore di Sistema", 2, 24, { eff: { tipo: "stordisci", val: 40 } }), m("Autodistruzione", 5, 82)] },  // ---------------- Carte da Gioco ----------------
+  { id: "alire", nome: "Alire", serie: "carte", rarita: "leggendaria", stile: "DIF", ruolo: "capo", frase: "Re di Coppe: alza il calice e tutto il tavolo brinda con lei. Poi vince lei.",
+    mosse: [m("Brindisi Reale", 0, 32), m("Coppa del Re", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Napoletana", 5, 94, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "maurire", nome: "Maurire", serie: "carte", rarita: "leggendaria", stile: "FOR", ruolo: "picchiatore", frase: "Re di Bastoni: la corona in testa e il bastone in mano. Indovina quale dei due usa di più.",
+    mosse: [m("Bastonata Reale", 0, 34), m("Briscola", 2, 44, { penetra: 30 }), m("Re di Bastoni", 5, 98)] },
+  { id: "tizire", nome: "Tizire", serie: "carte", rarita: "leggendaria", stile: "FOR", ruolo: "assassino", frase: "Re di Spade: non gioca mai a carte scoperte, ma quando cala la spada la mano è finita.",
+    mosse: [m("Spada del Re", 0, 32, { penetra: 20 }), m("Striscio", 2, 30, { eff: { tipo: "stordisci", val: 40 } }), m("Scopa!", 5, 98)] },
+  { id: "giulasso", nome: "Giulasso", serie: "carte", rarita: "epica", stile: "FOR", ruolo: "imprevedibile", frase: "Asso di Bastoni: sorride, ti saluta e ti cala una mazzata da carico pieno.",
+    mosse: [m("Mazzata", 0, 32), m("Asso Pigliatutto", 2, 34, { eff: { tipo: "ruba", val: 1 } }), m("Asso di Bastoni", 5, 90)] },
+  { id: "lollocallo", nome: "Lollocallo", serie: "carte", rarita: "epica", stile: "VEL", ruolo: "ladro", frase: "Cavallo di Denari: galoppa sul tavolo e si porta via le monete di tutti.",
+    mosse: [m("Carica a Cavallo", 0, 32), m("Rubamazzo", 2, 30, { eff: { tipo: "ruba", val: 1 } }), m("Galoppo d'Oro", 5, 90, { penetra: 25 })] },
+  { id: "ludasso", nome: "Ludasso", serie: "carte", rarita: "epica", stile: "DIF", ruolo: "guaritore", frase: "Asso di Coppe: ha sempre il calice pieno e un sorriso per tutti. Anche per chi perde.",
+    mosse: [m("Sorso", 0, 28), m("Coppa Colma", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Asso di Coppe", 5, 84, { drena: 35 })] },
+  { id: "samasso", nome: "Samasso", serie: "carte", rarita: "epica", stile: "VEL", ruolo: "stratega", frase: "Asso di Denari: corona d'alloro e una moneta d'oro in mano. Conta i punti prima ancora di giocare.",
+    mosse: [m("Moneta Lanciata", 0, 30), m("Settebello", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Primiera", 5, 90)] },
+  { id: "pipsante", nome: "Pipsante", serie: "carte", rarita: "rara", stile: "DIF", ruolo: "difensore", frase: "Fante di Coppe: piuma sul cappello, coppa in mano e nessuna intenzione di lasciarti passare.",
+    mosse: [m("Calice", 0, 28), m("Liscio", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Carico", 5, 84)] },
+  { id: "ritare", nome: "Ritare", serie: "carte", rarita: "rara", stile: "DIF", ruolo: "stregone", frase: "Re di Denari: ride, ti mostra una moneta e intanto ne ha già nascoste altre dieci.",
+    mosse: [m("Pioggia di Monete", 0, 28), m("Tressette", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Tesoro del Re", 5, 84)] },
+  { id: "senecallo", nome: "Senecallo", serie: "carte", rarita: "rara", stile: "FOR", ruolo: "tiratore", frase: "Cavallo di Spade: arriva al galoppo, spada in pugno, e i ricci al vento.",
+    mosse: [m("Lancia", 0, 30), m("Cucù", 2, 40), m("Carica di Cavalleria", 5, 84)] },
+  { id: "vikante", nome: "Vikante", serie: "carte", rarita: "rara", stile: "VEL", ruolo: "schivatore", frase: "Fante di Bastoni: quando pensi di averla presa, ha già cambiato mano.",
+    mosse: [m("Bastoncino", 0, 30), m("Volo", 2, 0, { eff: { tipo: "nebbia" } }), m("Sette e Mezzo", 5, 84, { penetra: 20 })] },
+  { id: "alessante", nome: "Alessante", serie: "carte", rarita: "comune", stile: "FOR", ruolo: "picchiatore", frase: "Fante di Spade: occhiali, piuma e spadino. Gioca come se avesse sempre l'asso in mano.",
+    mosse: [m("Spadino", 0, 28, { penetra: 20 }), m("Bluff", 2, 24, { eff: { tipo: "stordisci", val: 40 } }), m("Fante di Spade", 5, 80)] },
+  { id: "aurante", nome: "Aurante", serie: "carte", rarita: "comune", stile: "VEL", ruolo: "ladro", frase: "Fante di Denari: due monete in mano e lo sguardo di chi ne vuole una terza. La tua.",
+    mosse: [m("Moneta d'Oro", 0, 26, { eff: { tipo: "ruba", val: 1 } }), m("Mano Lesta", 2, 34), m("Tutti i Denari", 5, 20, { colpi: 4 })] },
+  { id: "diegallo", nome: "Diegallo", serie: "carte", rarita: "comune", stile: "DIF", ruolo: "tank", frase: "Cavallo di Coppe: in sella con un calice in mano senza versarne una goccia. Spostarlo è un'altra storia.",
+    mosse: [m("Zoccolata", 0, 26), m("Coppa Scudo", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Galoppata", 5, 78)] },
+  { id: "simocallo", nome: "Simocallo", serie: "carte", rarita: "comune", stile: "VEL", ruolo: "imprevedibile", frase: "Cavallo di Bastoni: non si sa mai da che parte arriva, ma si sa che arriva col bastone.",
+    mosse: [m("Randellata", 0, 28), m("Sgambetto", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Cavallo Pazzo", 5, 82)] },
 ];
 
 
@@ -562,6 +593,9 @@ const PERSONE = {
   // Cyborg
   alessiai: "Alessia", diegobot: "Diego", ritron: "Rita", piptron: "Pips", senetron: "Senè", tizitron: "Tiziano", vikybyte: "Viky",
   giulibyte: "Giulia", lolloborg: "Lorenzo", ludovolt: "Ludovico", samulex: "Samuele", alicircuit: "Alice", auroroide: "Aurora", mauriborg: "Maurizio", simonex: "Simone",
+  // Carte da Gioco
+  alire: "Alice", maurire: "Maurizio", tizire: "Tiziano", giulasso: "Giulia", lollocallo: "Lorenzo", ludasso: "Ludovico", samasso: "Samuele",
+  pipsante: "Pips", ritare: "Rita", senecallo: "Senè", vikante: "Viky", alessante: "Alessia", aurante: "Aurora", diegallo: "Diego", simocallo: "Simone",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -575,7 +609,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // Una sola versione Ultra per serie, e mai due allo stesso amico.
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {

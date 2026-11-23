@@ -69,6 +69,8 @@ const SINERGIE_BASE = {
   creature: { tipo: "rinascita", v2: 12, v3: 20, v5: 30, testo: v => `la prima volta che vanno KO hanno ${_il(v)} di probabilità di rialzarsi con il 20% dei PV (una volta per carta)` },
   // Cyborg: sistemi schermati. Hanno v% di probabilità di respingere gli effetti nemici (brucia, stordisci, indebolisci, ruba energia).
   cyborg: { tipo: "schermo", v2: 50, v3: 85, v5: 100, testo: (v, liv) => `${v}% di probabilità di respingere gli effetti nemici (bruciatura, stordimento, indebolimento, furto di energia)${liv >= 3 ? ", e l'effetto respinto torna indietro su chi l'ha lanciato" : ""}` },
+  // Carte da gioco: fortuna al tavolo. v% di probabilità che un attacco faccia «Scopa!» e colpisca di nuovo a metà danni.
+  carte: { tipo: "fortuna", v2: 11, v3: 24, v5: 33, testo: v => `${v}% di probabilità che un loro attacco faccia «Scopa!» e colpisca una seconda volta a metà danni` },
   mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -175,6 +177,7 @@ class Battaglia {
         else if (s.tipo === "para") x.sin.para = s.val;
         else if (s.tipo === "accumulo") x.sin.accumulo = s.val;
         else if (s.tipo === "rinascita") x.sin.rinascita = s.val;
+        else if (s.tipo === "fortuna") x.sin.fortuna = s.val;
         else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
         else if (s.tipo === "critico") { x.sin.crit = s.val; x.sin.critX = s.liv >= 3 ? 2 : s.liv === 2 ? 1.75 : 1.5; }
@@ -399,6 +402,13 @@ class Battaglia {
         if (r.parato) { const n = this.gv(1 - l, "specchio"); O.energia = Math.min(ENERGIA_MAX, O.energia + n); this._log(`Graffito Specchio: il critico rimbalza, ${O.nome} prende +${n} energia.`, { lato: 1 - l, anim: "energia", su: 1 - l, graffito: "specchio" }); }
         const spina = this.gv(1 - l, "spina");
         if (spina && a.pv > 0) { const rif = Math.max(1, Math.round(dmg * spina / 100)); a.pv = Math.max(0, a.pv - rif); this._log(`Graffito Spina: ${a.c.nome} si punge e perde ${rif} PV.`, { lato: 1 - l, colpo: l, danno: rif, graffito: "spina" }); this._rialza(l, a); }
+      }
+      // Carte da gioco: a volte fanno «Scopa!» e il colpo si ripete a metà danni (una volta per mossa)
+      if (a.sin && a.sin.fortuna && d.pv > 0 && a.pv > 0 && this.rng() < a.sin.fortuna / 100) {
+        const r = this.calcolaDanno(l, a, d, m, true), dmg = Math.max(1, Math.round(r.danno / 2));
+        d.pv = Math.max(0, d.pv - dmg); totale += dmg;
+        this._log(`Scopa! ${a.c.nome} rilancia: ${d.c.nome} perde altri ${dmg} PV.`, { lato: l, colpo: 1 - l, danno: dmg, stile: a.c.stile, efficace: r.stile });
+        if (d.pv <= 0) this._rialza(1 - l, d);
       }
       // mossa che drena e sinergia Demoni non si sommano: vale la più alta (prima si arrivava al 60% dei danni)
       const drena = Math.max(m.drena || 0, (a.sin && a.sin.vampiro) || 0);

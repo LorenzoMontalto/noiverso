@@ -308,12 +308,30 @@ const STORIA = [
       { titolo: "Il grattacielo della corporazione", nemici: ["ritron", "tizitron", "samulex", "vikybyte", "piptron"], liv: [1, 1], abilita: 0.95, monete: 340,
         parla: "ritron", frase: "Centesimo piano, vista sulla città e un cannone al plasma carico. Sorridi!" },
       { titolo: "Il cervello centrale", boss: true, nemici: ["alessiai", "diegobot", "ritron", "senetron", "tizitron"], liv: [1, 1], abilita: 0.97, monete: 600, bustina: "leggendaria",
-        parla: "alessiai", frase: "Ho simulato questa battaglia un milione di volte. Hai vinto zero volte.", vittoria: "Il cervello centrale si spegne e la città va al buio. Solo lo schermo più grande resta acceso, e non mostra te… ma mondi diversi." }
+        parla: "alessiai", frase: "Ho simulato questa battaglia un milione di volte. Hai vinto zero volte.", vittoria: "Il cervello centrale si spegne e la città va al buio. Nel silenzio si sente solo un rumore: qualcuno, da qualche parte, sta mescolando un mazzo di carte." }
+    ],
+  },
+  {
+    id: "c22", campo: "stadio", titolo: "Il tavolo da gioco", serie: "carte", colore: "#e8b04a", simbolo: "♣",
+    intro: "Ti ritrovi in un paese dove tutti giocano a carte, dall'osteria alla piazza. I tuoi amici sono diventati re, cavalli, fanti e assi delle carte napoletane, e ogni partita si gioca sul serio.",
+    tappe: [
+      { titolo: "L'osteria", nemici: ["aurante", "alessante", "diegallo", "simocallo", "pipsante"], liv: [1, 1], abilita: 0.9, monete: 310,
+        parla: "aurante", frase: "Si gioca a scopa? Chi perde paga da bere. E perdi tu." },
+      { titolo: "La sagra del paese", nemici: ["diegallo", "vikante", "senecallo", "simocallo", "alessante"], liv: [1, 1], abilita: 0.92, monete: 320,
+        parla: "diegallo", frase: "Alla sagra si mangia, si balla e si gioca a carte. Tu hai scelto la parte sbagliata." },
+      { titolo: "Il circolo della briscola", nemici: ["ritare", "pipsante", "senecallo", "aurante", "vikante"], liv: [1, 1], abilita: 0.93, monete: 330, bustina: "epica",
+        parla: "ritare", frase: "Qui si gioca a briscola da cent'anni. E da cent'anni vince il banco." },
+      { titolo: "La sala del tressette", nemici: ["samasso", "ludasso", "ritare", "lollocallo", "alessante"], liv: [1, 1], abilita: 0.94, monete: 340,
+        parla: "samasso", frase: "Ho già contato i punti: settebello, primiera e denari. Mi manca solo la tua sconfitta." },
+      { titolo: "Il torneo dei cavalli", nemici: ["lollocallo", "senecallo", "diegallo", "simocallo", "giulasso"], liv: [1, 1], abilita: 0.95, monete: 350,
+        parla: "lollocallo", frase: "Quattro cavalli in pista e tu a piedi. Mi sa che parti in svantaggio." },
+      { titolo: "Il tavolo dei re", boss: true, nemici: ["maurire", "alire", "tizire", "ritare", "samasso"], liv: [1, 1], abilita: 0.97, monete: 620, bustina: "leggendaria",
+        parla: "maurire", frase: "Quattro re sullo stesso tavolo. Tu che carta hai in mano?", vittoria: "I re abbassano le carte: la mano è tua. Sul tavolo resta solo una carta coperta. La giri, e non c'è disegnato nulla: riflette… mondi diversi." }
     ],
   },
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
-    intro: "Tocchi lo schermo gigante del cervello centrale e la superficie si muove come acqua. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
+    intro: "Tocchi la carta che riflette e la sua superficie si muove come acqua, sempre più grande. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
     tappe: [
       { titolo: "Il riflesso di Giulia", nemici: ["giulmai", "nikulia", "giulifleur", "giulimaah", "giudella"], liv: [1, 1], abilita: 0.9, monete: 290,
         parla: "giudella", frase: "Cinque Giulie e una sola passerella. Indovina quale è quella vera… mentre ti battiamo." },
