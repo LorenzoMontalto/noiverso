@@ -1921,6 +1921,71 @@ body.in-accesso { overflow: hidden; }
 .lvt.futuro { background: rgba(255, 255, 255, .02); }
 .lvt.grande .lvt-premio { color: #bfe8ff; } .lvt.titolo { border-style: dashed; border-color: rgba(255, 233, 168, .6); }
 .lv-profilo { margin-top: 8px; }
+
+/* ===== Extra: cosmetici, maestria, frammenti, vetrina, gradi, arena, offerte ===== */
+.cornice-avatar { display: inline-flex; vertical-align: middle; flex: 0 0 auto; }
+.cosm-cornice-neon .avatar { border-color: #39f3ff; box-shadow: 0 0 10px #39f3ff, inset 0 0 6px rgba(57, 243, 255, .5); }
+.cosm-cornice-fiamme .avatar { border-color: #ff7a1a; box-shadow: 0 0 12px #ff4a1a, 0 -3px 10px #ffb84d; animation: fiammella 1.4s ease-in-out infinite alternate; }
+.cosm-cornice-ghiaccio .avatar { border-color: #bfeaff; box-shadow: 0 0 12px #8fd8ff, inset 0 0 8px rgba(255, 255, 255, .6); }
+.cosm-cornice-oro .avatar { border-color: var(--oro); box-shadow: 0 0 12px rgba(242, 193, 78, .8); }
+.cosm-cornice-arcobaleno .avatar, .cosm-cornice-numero1 .avatar { border-color: transparent; background-image: linear-gradient(var(--muro), var(--muro)), linear-gradient(135deg, #ff2e46, #f2c14e, #5adc8c, #39f3ff, #c9a4ff); background-origin: border-box; background-clip: padding-box, border-box; }
+.cosm-cornice-arcobaleno .avatar { box-shadow: 0 0 12px rgba(201, 164, 255, .7); }
+.cosm-cornice-numero1 .avatar { border-width: 3px; box-shadow: 0 0 16px #f2c14e, 0 0 26px rgba(255, 46, 70, .6); }
+.cosm-cornice-maestro .avatar { border-color: #c9a4ff; box-shadow: 0 0 12px #9b6bff; }
+.cosm-cornice-diamante .avatar { border-color: #9ad8ff; box-shadow: 0 0 14px #9ad8ff, 0 0 4px #fff; }
+.cosm-cornice-leggenda .avatar { border-color: #ffe9a8; box-shadow: 0 0 16px #f2c14e, 0 0 30px rgba(242, 193, 78, .5); animation: fiammella 2s ease-in-out infinite alternate; }
+@keyframes fiammella { from { filter: brightness(1); } to { filter: brightness(1.25); } }
+.cosm-nome-neon { color: #39f3ff; text-shadow: 0 0 8px rgba(57, 243, 255, .8); }
+.cosm-nome-dorato { color: #ffe08a; text-shadow: 0 0 8px rgba(242, 193, 78, .7); }
+.cosm-nome-fuoco { background: linear-gradient(90deg, #ffd24d, #ff6a1a, #ff2e46); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cosm-nome-arcobaleno { background: linear-gradient(90deg, #ff2e46, #f2c14e, #5adc8c, #39f3ff, #c9a4ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cosm-nome-arena { color: #ff8fa0; text-shadow: 0 0 8px rgba(255, 46, 70, .8); }
+.cosm-chip.cosm-nome-fuoco, .cosm-chip.cosm-nome-arcobaleno { color: transparent; }
+.cosm-riga { margin: 8px 0; } .cosm-riga > b { display: block; font-size: .85rem; margin-bottom: 4px; }
+.maestria-box, .crea-box { margin-top: 12px; background: var(--muro); border: 1px solid var(--linea); border-radius: 12px; padding: 10px 12px; }
+.maestria-box > b { color: var(--oro); font-size: 1rem; letter-spacing: .05em; }
+.maestria-box ul { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
+.maestria-box li { display: grid; gap: 1px; font-size: .84rem; } .maestria-box li small { color: var(--spento); font-size: .74rem; }
+.maestria-box li.fatto span { color: var(--oro); } .maestria-box li.fatto small { color: #5adc8c; }
+.crea-box.grande { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; border: 0; background: none; }
+.crea-box.grande .crea-carta { width: 140px; } .crea-box.grande > div:last-child { flex: 1 1 220px; }
+.coperta-tocca { cursor: pointer; } .coperta-tocca:hover .carta { outline: 2px dashed #9ad8ff; outline-offset: 2px; }
+.framm-testo { color: #9ad8ff; font-weight: 700; }
+.vetrina-profilo { border-radius: 14px; padding: 12px; border: 1px solid var(--linea); background: linear-gradient(160deg, rgba(255, 255, 255, .04), rgba(0, 0, 0, .2)); margin: 8px 0; }
+.cosm-sfondo-tramonto { background: linear-gradient(160deg, #ff7a59, #b8336a 55%, #2b1a3d); }
+.cosm-sfondo-citta { background: radial-gradient(circle at 80% 15%, rgba(255, 240, 180, .5) 0 6%, transparent 7%), linear-gradient(180deg, #0b1730, #1d2f5a 70%, #0d0d18); }
+.cosm-sfondo-galassia { background: radial-gradient(ellipse at 30% 40%, rgba(201, 164, 255, .55), transparent 55%), radial-gradient(ellipse at 75% 70%, rgba(57, 243, 255, .35), transparent 50%), #090616; }
+.cosm-sfondo-oro { background: linear-gradient(135deg, #5a3f0c, #c8921f 50%, #5a3f0c); }
+.cosm-sfondo-noiverso { background: linear-gradient(135deg, #ff2e46, #6b1fd1 50%, #39f3ff); }
+.vp-carte { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 360px; margin: 0 auto 10px; }
+.vp-vuota { aspect-ratio: 5 / 7; border: 2px dashed rgba(255, 255, 255, .25); border-radius: 10px; display: grid; place-items: center; font-size: .72rem; color: rgba(255, 255, 255, .6); text-align: center; padding: 4px; }
+.vp-numeri { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; }
+.vp-numeri > div { background: rgba(0, 0, 0, .35); border-radius: 9px; padding: 6px 8px; display: grid; gap: 1px; }
+.vp-numeri b { font-size: .88rem; } .vp-numeri span { font-size: .68rem; color: rgba(255, 255, 255, .7); }
+.vp-scelte { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; } .vp-scelte select { width: 100%; min-width: 0; }
+.storico { list-style: none; padding: 0; margin: 6px 0 12px; display: grid; gap: 4px; }
+.storico li { display: grid; grid-template-columns: 54px 1fr auto; gap: 8px; align-items: center; font-size: .82rem; background: var(--muro); border-radius: 8px; padding: 5px 8px; border-left: 3px solid; }
+.storico li.vinta { border-color: #5adc8c; } .storico li.vinta b { color: #5adc8c; } .storico li.persa { border-color: #ff5a6e; } .storico li.persa b { color: #ff8fa0; }
+.storico small { color: var(--spento); }
+td.chi[data-profilo-amico] { cursor: pointer; } td.chi[data-profilo-amico]:hover > span:not(.cornice-avatar) { text-decoration: underline; }
+.grado-mini { display: block; font-size: .66rem; color: var(--spento); white-space: nowrap; }
+.gradi-box { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--muro); border: 1px solid var(--linea); border-radius: 12px; padding: 10px 12px; margin: 8px 0 14px; }
+.gradi-box .gr-ico { font-size: 2rem; } .gradi-box > div:nth-child(2) { flex: 1 1 240px; display: grid; gap: 2px; }
+.arena-box { background: linear-gradient(135deg, rgba(255, 46, 70, .12), rgba(242, 193, 78, .08)); border: 1px solid rgba(255, 46, 70, .4); border-radius: 14px; padding: 12px; margin: 10px 0 16px; }
+.ab-testa { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; } .ab-testa > div { flex: 1 1 220px; display: grid; gap: 2px; }
+.ab-ico { font-size: 1.8rem; }
+.ab-carte { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px; max-width: 480px; }
+.ab-pallini { display: flex; gap: 5px; align-items: center; margin-top: 8px; font-size: .8rem; }
+.ab-pallini i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--oro); } .ab-pallini i.v { background: var(--oro); }
+.ab-pallini i.p { border-color: #ff5a6e; } .ab-pallini i.p.x { background: #ff5a6e; }
+.arena-premi { margin-top: 8px; font-size: .8rem; } .arena-premi ul { margin: 6px 0 0; padding-left: 18px; }
+.arena-carte { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+.arena-opzione { background: none; border: 0; padding: 0; color: inherit; display: grid; gap: 4px; cursor: pointer; text-align: center; font: inherit; }
+.arena-opzione:hover .carta { transform: translateY(-4px); box-shadow: 0 0 18px rgba(242, 193, 78, .6); } .arena-opzione small { font-size: .72rem; color: var(--spento); }
+.offerte-speciali { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.off-sp { background: var(--muro); border: 1px solid var(--linea); border-radius: 12px; padding: 10px; display: grid; gap: 6px; justify-items: center; text-align: center; }
+.off-sp .carta { width: 110px; } .off-sp.presa { opacity: .6; }
+.off-cosm { display: grid; gap: 6px; justify-items: center; padding: 10px 0; } .off-cosm .avatar { width: 56px; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.8816af04.js"></script>
@@ -1964,7 +2029,7 @@ body.in-accesso { overflow: hidden; }
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
 <script src="carte.6334b81d.js"></script>
-<script src="motore.d8ca781b.js"></script>
+<script src="motore.be2669f6.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
 <script src="suoni.75417e9f.js"></script>
 <script src="scena3d.678d4420.js"></script>
@@ -1979,8 +2044,9 @@ body.in-accesso { overflow: hidden; }
 <script src="online.5ed82701.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
 <script src="eventi.61c26832.js"></script>
-<script src="progressi.c6769bc6.js"></script>
-<script src="app.4fcf594d.js"></script>
+<script src="progressi.030cee4b.js"></script>
+<script src="extra.7293731b.js"></script>
+<script src="app.dd6b9567.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

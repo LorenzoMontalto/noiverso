@@ -406,6 +406,8 @@ class Battaglia {
     this.ultimoAttacco = l;
     if (!giaPagata) L.energia -= m.costo;
     if (m.costo >= 5) { this.finali = this.finali || [0, 0]; this.finali[l]++; }   // per le sfide del pass
+    const st = a.st || (a.st = { d: 0, o: 0, f: 0 });   // per la maestria della carta (solo contatori, non cambiano la battaglia)
+    if (m.costo >= 5) st.f++;
     this._log(`${a.c.nome} usa ${m.nome}!`, { lato: l, anim: "attacco", id: a.id, mossa: a.c.mosse.indexOf(m), nome: m.nome, costo: m.costo, stile: a.c.stile, pot: m.pot, colpi: m.colpi || 1, eff: (m.eff || {}).tipo || "" });
     const e = m.eff || {};
     const SUL_BERSAGLIO = ["brucia", "stordisci", "indebolisci", "ruba"];
@@ -444,6 +446,7 @@ class Battaglia {
         this._log(`Scopa! ${a.c.nome} rilancia: ${d.c.nome} perde altri ${dmg} PV.`, { lato: l, colpo: 1 - l, danno: dmg, stile: a.c.stile, efficace: r.stile });
         if (d.pv <= 0) this._rialza(1 - l, d);
       }
+      st.d += totale; if (d.pv <= 0) st.o++;
       // mossa che drena e sinergia Demoni non si sommano: vale la più alta (prima si arrivava al 60% dei danni)
       a.pronta = false;
       const drena = Math.max(m.drena || 0, (a.sin && a.sin.vampiro) || 0);

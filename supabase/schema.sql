@@ -991,6 +991,15 @@ language sql immutable as $$
     case when d->'lv'->>'punti' ~ '^[0-9]+(\.[0-9]+)?$' then (d->'lv'->>'punti')::numeric end, 0)))) / 10)::int + 1))
 $$;
 
+-- nov 2026: cosmetico scelto, solo se risulta sbloccato nel salvataggio
+create or replace function public.cosm_valido(s jsonb, tipo text) returns text
+language sql immutable as $$
+  select case when coalesce(s->'cosm'->>tipo, '') ~ '^[a-z0-9-]{1,30}$'
+              and jsonb_typeof(s->'cosm'->'have') = 'object'
+              and coalesce(s->'cosm'->'have'->>(s->'cosm'->>tipo), '') = 'true'
+         then s->'cosm'->>tipo else '' end
+$$;
+
 create or replace function public.classifica_vera() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare s jsonb;
@@ -1019,6 +1028,18 @@ begin
     'vinte_vivo', (select count(*) from public.partite_vivo where vincitore = new.user_id and stato in ('ok', 'abbandono') and punti > 0 and creata >= public.inizio_classifica()),
     'giocate_vivo', (select count(*) from public.partite_vivo where (a = new.user_id or b = new.user_id) and stato in ('ok', 'abbandono') and creata >= public.inizio_classifica()),
     'livello', public.livello_giocatore(s));   -- nov 2026: il livello giocatore viene dal salvataggio, non dal dispositivo
+  -- nov 2026: vetrina, cosmetici e statistiche del profilo (dal salvataggio; la vetrina solo con carte trovate davvero)
+  new.dati := new.dati || jsonb_build_object(
+    'vetrina', coalesce((select jsonb_agg(v) from (select v from jsonb_array_elements_text(case when jsonb_typeof(s->'vetrina') = 'array' then s->'vetrina' else '[]'::jsonb end) v
+                 where v ~ '^[a-z0-9_-]{1,40}$' and coalesce((s->'carte'->>v)::int, 0) > 0 limit 3) x), '[]'::jsonb),
+    'cornice', public.cosm_valido(s, 'cornice'),
+    'stileNome', public.cosm_valido(s, 'nome'),
+    'sfondo', public.cosm_valido(s, 'sfondo'),
+    'stelle', (select coalesce(sum(jsonb_array_length(m->'presi')), 0) from jsonb_each(case when jsonb_typeof(s->'maestria') = 'object' then s->'maestria' else '{}'::jsonb end) e(k, m)
+               where jsonb_typeof(m->'presi') = 'array'),
+    'preferita', coalesce((select k from jsonb_each_text(case when jsonb_typeof(s->'usi') = 'object' then s->'usi' else '{}'::jsonb end) e(k, v)
+               where v ~ '^[0-9]{1,9}$' and coalesce((s->'carte'->>k)::int, 0) > 0 order by v::int desc limit 1), ''),
+    'seriePref', case when coalesce(new.dati->>'seriePref', '') ~ '^[a-z0-9]{1,20}$' then new.dati->>'seriePref' else '' end);
   new.aggiornato := now();
   return new;
 end $$;
@@ -1030,7 +1051,8 @@ create trigger classifica_vera before insert or update on public.classifica
 create or replace function public.salvataggio_livello() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
-  if new.slot = 'partita' and (tg_op = 'INSERT' or public.livello_giocatore(new.dati) is distinct from public.livello_giocatore(old.dati)) then
+  if new.slot = 'partita' and (tg_op = 'INSERT' or public.livello_giocatore(new.dati) is distinct from public.livello_giocatore(old.dati)
+      or new.dati->'vetrina' is distinct from old.dati->'vetrina' or new.dati->'cosm' is distinct from old.dati->'cosm') then
     update public.classifica set aggiornato = now() where user_id = new.user_id;
   end if;
   return null;

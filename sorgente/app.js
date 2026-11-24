@@ -283,6 +283,8 @@ const Archivio = {
     if (this.modo !== "cloud" || this.admin) return; // l'admin non entra in classifica
     const voce = { punti: S.stats.punti, vittorie: S.stats.vittorie, sconfitte: S.stats.sconfitte,
       carte: possedute().length, pass: livelloPass(), livello: S.lv ? Livello.info().liv : 1, nome: (S.profilo.nome || "").slice(0, 22), avatar: S.profilo.avatar || "", titolo_id: Trofei.titoloId(),
+      vetrina: Vetrina.lista(), cornice: Cosmetici.stato().cornice || "", stileNome: Cosmetici.stato().nome || "", sfondo: Cosmetici.stato().sfondo || "",
+      stelle: Maestria.totaleStelle(), preferita: Vetrina.preferita(), seriePref: Vetrina.seriePreferita(),
       aggiornato: new Date().toISOString() };
     const firma = JSON.stringify(Object.assign({}, voce, { aggiornato: 0 }));
     if (firma === this._ultimaVoce) return;
@@ -371,11 +373,11 @@ function aggiornaSalvataggio(fase) {
 }
 
 function aggiornaTesta() {
-  Livello.controlla();
+  Livello.controlla(); Extra.controlla();
   if (S.admin) { const m = $("#monete"); m.textContent = "∞"; m.dataset.valore = S.monete; }
   else FX.contatore($("#monete"), S.monete);
   const pb = $("#profilo-btn");
-  if (pb) { pb.hidden = !S.profilo.nome; pb.innerHTML = `${htmlAvatar(S.profilo.avatar)}${!S.admin && S.lv ? Livello.badge(Livello.info().liv, "testa") : ""}<span>${esc(S.profilo.nome || "")}</span>${S.admin ? `<em>Admin</em>` : ""}`; }
+  if (pb) { pb.hidden = !S.profilo.nome; pb.innerHTML = `${S.admin ? htmlAvatar(S.profilo.avatar) : Cosmetici.avatar(S.profilo.avatar, Cosmetici.stato().cornice)}${!S.admin && S.lv ? Livello.badge(Livello.info().liv, "testa") : ""}<span>${esc(S.profilo.nome || "")}</span>${S.admin ? `<em>Admin</em>` : ""}`; }
   const na = $('[data-vista="admin"]'); if (na) na.hidden = !S.admin;
   Trofei.controlla();
   const nst = $('[data-vista="strada"] .badge'); if (nst) { const q = Missioni.pronte() + Livello.daRiscuotere().length; nst.textContent = q; nst.hidden = !q; }
@@ -520,6 +522,7 @@ function apriDettaglio(id) {
           ${c.ultra ? (haUltra(c.id) ? `<p class="ultra-nota">◆ <b>Versione Ultra</b>: cornice nera e oro e +10% di PV e di danni in battaglia.</p>` : `<p class="nota">Questa carta ha anche una <b>versione Ultra</b> da trovare (+10% in battaglia): esce raramente quando la trovi in una bustina, sempre nella Bustina Ultra.</p>`) : ""}
           <p class="nota piccola">${lode ? "Ha la lode: è al massimo. I suoi doppioni ora danno monete." : liv < LIVELLO_MAX ? `Ogni doppione di questa carta dà ${POT_DOPPIONE[c.rarita]} potenziatori, e ogni battaglia vinta in cui scende in campo da 1 a 5.${!inf.pronta ? ` Te ne mancano ${inf.servePot - inf.pot}.` : !inf.puoi ? ` Ti mancano ${inf.serveMon - S.monete} monete.` : ""}` : "È al 30: continua a giocarci in battaglia per prendere la lode. I suoi doppioni ora danno monete."} · ${copie} ${copie === 1 ? "copia" : "copie"}</p>
         </div>
+        ${Maestria.htmlDettaglio(id)}
       </div>
     </div>`);
 }
@@ -842,6 +845,7 @@ function vistaNegozio() {
           : `<s>${TO.prezzo}</s><button class="btn oro" data-fx="monete" data-compra="${off.t}:offerta" ${S.admin || S.monete >= off.prezzo ? "" : "disabled"}>${off.prezzo} <i class="moneta-ico"></i></button><small class="nota">una sola al giorno</small>`}</div>
       </div>
     </div>
+    ${Offerte.html()}
     ${gruppo("classiche", "Classiche", "Da tutte le serie.")}
     ${gruppo("serie", "Per serie", "Solo carte di una serie: per completare l'album.")}
     ${gruppo("stile", "Per stile", "Solo carte di uno stile: per costruire la squadra.")}
@@ -913,7 +917,7 @@ function applicaCodice(p) {
       const prima = S.carte[id] || 0, inf = infoCarta(id);
       S.carte[id] = prima + 1;
       if (!prima) { S.liv[id] = S.liv[id] || 1; parti.push(c.nome); }
-      else if (inf.liv >= LIVELLO_MAX) { S.monete += MONETE_DOPPIONE_30[c.rarita]; parti.push(`${c.nome} (doppione: +${MONETE_DOPPIONE_30[c.rarita]} monete)`); }
+      else if (inf.liv >= LIVELLO_MAX) { S.monete += MONETE_DOPPIONE_30[c.rarita]; Frammenti.aggiungi(Frammenti.DA_DOPPIONE[c.rarita], false); parti.push(`${c.nome} (doppione: +${MONETE_DOPPIONE_30[c.rarita]} monete e ${Frammenti.DA_DOPPIONE[c.rarita]} ◈)`); }
       else { S.pot[id] = (S.pot[id] || 0) + POT_DOPPIONE[c.rarita]; parti.push(`${c.nome} (doppione: +${POT_DOPPIONE[c.rarita]} potenziatori)`); }
     }
   }
@@ -981,10 +985,10 @@ function apriBustina(tipo) {
   uscite.push(ultima);
   const esiti = uscite.map((id, n) => {
     const prima = S.carte[id] || 0, infoPrima = infoCarta(id), r = PER_ID[id].rarita;
-    let extra = 0, pot = 0;
+    let extra = 0, pot = 0, framm = 0;
     S.carte[id] = prima + 1;
     if (prima === 0) S.liv[id] = S.liv[id] || 1;
-    else if (infoPrima.liv >= LIVELLO_MAX) { extra = MONETE_DOPPIONE_30[r]; S.monete += extra; }
+    else if (infoPrima.liv >= LIVELLO_MAX) { extra = MONETE_DOPPIONE_30[r]; S.monete += extra; framm = S.admin ? 0 : Frammenti.DA_DOPPIONE[r]; }
     else { pot = POT_DOPPIONE[r]; S.pot[id] = (S.pot[id] || 0) + pot; }
     const dopo = infoCarta(id);
     // 1 carta su 50 esce olografica (se non ce l'hai già così)
@@ -995,7 +999,7 @@ function apriBustina(tipo) {
     const ultra = PER_ID[id].ultra && !haUltra(id) && (garantita || Math.random() < PROB_ULTRA);
     if (ultra) { S.ultra = Object.assign({}, S.ultra, { [id]: true }); S.stats.ultra = (S.stats.ultra || 0) + 1; }
     if (garantita && !ultra && PER_ID[id].ultra) { S.monete += 500; extra += 500; }   // le avevi già tutte Ultra: 500 monete
-    return { id, nuova: prima === 0, pot, pronta: !infoPrima.pronta && dopo.pronta, extra, liv: dopo.liv, lode: dopo.lode, olo, ultra,
+    return { id, nuova: prima === 0, pot, framm, pronta: !infoPrima.pronta && dopo.pronta, extra, liv: dopo.liv, lode: dopo.lode, olo, ultra,
       pieta: pietaOra && n === uscite.length - 1 && PER_ID[id].rarita === "leggendaria" };
   });
   S.stats.bustine++;
@@ -1029,7 +1033,7 @@ function usaBustina(tipo, pagando) {
     S.inventario[tipo]--;
   }
   const esiti = apriBustina(tipo);
-  Livello.carteNuove(esiti);
+  Livello.carteNuove(esiti); Frammenti.daEsiti(esiti);
   const su = aggiungiXP(XP_BUSTINA);
   Missioni.evento("bustina", { tipo });
   const graffito = Graffiti.forseInBustina(tipo);
@@ -1135,7 +1139,7 @@ function mostraApertura2D(esiti, graffito) {
             <div class="faccia retro"><span class="neon">NV</span></div>
             <div class="faccia fronte">
               ${htmlCarta(PER_ID[e.id], { liv: e.liv, lode: e.lode, olo: e.olo, ultra: e.ultra })}
-              <span class="etichetta ${e.ultra ? "ultra-tag" : e.olo ? "olo-tag" : ""}">${e.ultra ? "ULTRA!" : e.olo ? "Olografica!" : e.pieta ? "Garantita!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : ""}</span>
+              <span class="etichetta ${e.ultra ? "ultra-tag" : e.olo ? "olo-tag" : ""}">${e.ultra ? "ULTRA!" : e.olo ? "Olografica!" : e.pieta ? "Garantita!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete${e.framm ? ` · +${e.framm} ◈` : ""}` : ""}</span>
             </div>
           </button>`).join("")}
       </div>
@@ -1181,7 +1185,7 @@ function htmlSezioneSerie(id, conTitolo) {
       <div class="serie-progresso"><b>${st.mie}<small>/${st.tot}</small></b><div class="barra"><i style="--p:${st.pct}%;background:${se.colore}"></i></div>${st.mie === st.tot ? `<span class="completa">Serie completa!</span>` : ""}</div>
     </div>
     <div class="griglia">
-      ${elenco.map((c, i) => `<div class="cella" style="--i:${i}">${S.carte[c.id] ? htmlCarta(c, { click: true }) + htmlBadgeSquadra(c.id) : htmlCarta(c, { coperta: true })}</div>`).join("")}
+      ${elenco.map((c, i) => `<div class="cella" style="--i:${i}">${S.carte[c.id] ? htmlCarta(c, { click: true }) + htmlBadgeSquadra(c.id) : S.admin ? htmlCarta(c, { coperta: true }) : `<div class="coperta-tocca" data-mistero="${c.id}" role="button" tabindex="0" aria-label="Carta da scoprire: crea con i frammenti">${htmlCarta(c, { coperta: true })}</div>`}</div>`).join("")}
     </div>
   </section>`;
 }
@@ -1227,7 +1231,7 @@ function vistaAlbum() {
   return `
   <section>
     ${htmlSchedeAlbum()}
-    <div class="titolo-riga"><h2>Album</h2><p class="nota">${tot}/${CARTE.length} carte trovate in ${ORDINE_SERIE.length} serie${olo ? ` · <span class="olo-testo">✦ ${olo} olografiche</span>` : ""}.</p></div>
+    <div class="titolo-riga"><h2>Album</h2><p class="nota">${tot}/${CARTE.length} carte trovate in ${ORDINE_SERIE.length} serie${S.admin ? "" : ` · <span class="framm-testo" title="Frammenti: tocca una carta coperta per crearla">◈ ${Frammenti.quanti()} frammenti</span>`}${olo ? ` · <span class="olo-testo">✦ ${olo} olografiche</span>` : ""}.</p></div>
     ${htmlBarraFiltri("album")}${filtri.album.tipo || filtri.album.ruolo || filtri.album.cerca ? `<p class="nota">Con un filtro attivo vedi solo le carte che hai già trovato.${filtroAlbum === "pot" ? "" : " Tocca una serie qui sotto per cercare solo lì."}</p>` : ""}
     <div class="serie-copertine">
       ${htmlCopertinaPot()}
@@ -1540,6 +1544,7 @@ function vistaSfida() {
     <div class="prima-partita">${Graffiti.htmlPannello()}${Zaino.htmlPannello()}</div>
     ${BossGiorno.htmlSfida()}
     ${Settimana.htmlSfida()}
+    ${Arena.htmlSfida()}
     ${socialeAttivo() ? `<div class="sfida-sociale">${Boss.htmlGrande()}<div class="amici-invito"><b>Sfida un amico</b><span class="nota">Combatti contro la squadra vera di un amico, guidata dal computer. Se vinci gli rubi un punto in classifica.</span><button class="btn primario" data-fx="spinta" data-azione="vai-amici">Scegli chi sfidare</button></div></div>
     <div class="titolo-riga piccola"><h3>Contro il computer</h3></div>` : ""}
     <div class="modo-riga">${segmento("modalita", "Modalità", [["classica", "Classica 5 contro 5"], ["rapida", "Rapida 3 contro 3"]])}</div>
@@ -1819,13 +1824,14 @@ function vistaClassifica() {
   <section>
     <div class="titolo-riga"><h2>${esc(titoloClassifica())}</h2></div>
     <p class="nota">Contano solo le sfide dal vivo: +3 punti per ogni vittoria, 0 per le sconfitte. A pari punti sta sopra chi ha il livello giocatore più alto, poi il pass, poi più carte, poi più partite giocate. A fine mese premi ai primi tre: 🥇 ${PREMI_CLASSIFICA[0]} · 🥈 ${PREMI_CLASSIFICA[1]} · 🥉 ${PREMI_CLASSIFICA[2]}.</p>
+    ${Gradi.htmlClassifica()}
     ${htmlAlbo()}
     ${Torneo.htmlTabellone()}
     <table class="classifica">
       <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vinte / giocate</th><th>Carte</th><th>Livello</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
       <tbody>${classificaDati.map((r, i) => `
-        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${r.id !== Archivio.uid && Online.eOnline(r.id) ? `<span class="pallino-online" title="Online adesso"></span>` : ""}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
-        <td>${Number(r.punti) || 0}</td><td>${Number(r.vinte_vivo) || 0}/${Number(r.giocate_vivo) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>${Number(r.livello) > 0 ? Livello.badge(Number(r.livello), "mini") : "–"}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<span class="sfida-celle"><button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>${Online.eOnline(r.id) ? `<button class="btn piccolo primario" data-fx="spinta" data-sfida-vivo="${esc(r.id)}">Dal vivo</button>` : ""}</span>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
+        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi" data-profilo-amico="${esc(r.id)}" role="button" tabindex="0" title="Vedi il profilo">${Cosmetici.avatar(String(r.avatar || ""), r.cornice, "mini")}${r.id !== Archivio.uid && Online.eOnline(r.id) ? `<span class="pallino-online" title="Online adesso"></span>` : ""}<span class="${Cosmetici.classeNome(r.stileNome)}">${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}</span>${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
+        <td>${Number(r.punti) || 0}<small class="grado-mini" title="Grado della stagione">${Gradi.nome(Number(r.punti) || 0)}</small></td><td>${Number(r.vinte_vivo) || 0}/${Number(r.giocate_vivo) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>${Number(r.livello) > 0 ? Livello.badge(Number(r.livello), "mini") : "–"}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<span class="sfida-celle"><button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>${Online.eOnline(r.id) ? `<button class="btn piccolo primario" data-fx="spinta" data-sfida-vivo="${esc(r.id)}">Dal vivo</button>` : ""}</span>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
     </table>
   </section>`;
 }
@@ -1837,7 +1843,7 @@ function avviaClassifica() {
   Archivio.ascoltaClassifica(async righe => {
     clearTimeout(classificaTimer); classificaErrore = false;
     // ogni salvataggio di un amico tocca la sua riga (anche solo l'ora): ridisegno solo se cambia qualcosa che si vede
-    const firma = JSON.stringify(righe.map(r => [r.id, r.punti, r.vinte_vivo, r.giocate_vivo, r.carte, r.pass, r.livello, r.nome, r.avatar, r.titolo_id]));
+    const firma = JSON.stringify(righe.map(r => [r.id, r.punti, r.vinte_vivo, r.giocate_vivo, r.carte, r.pass, r.livello, r.nome, r.avatar, r.titolo_id, r.cornice, r.stileNome, r.sfondo, String(r.vetrina || "")]));
     const uguale = classificaDati && firma === avviaClassifica._firma;
     avviaClassifica._firma = firma;
     classificaDati = ordinaClassifica(righe);
@@ -2003,7 +2009,7 @@ function apriProfilo() {
   const tipo = S.admin ? "Account admin" : Archivio.modo === "cloud" ? (window.NOIVERSO_SUPABASE ? `Account · ${Archivio.nomeAccount}` : "Account Claude") : "Profilo su questo dispositivo";
   apriModale(`
     <div class="profilo-modale">
-      <div class="profilo-testa">${htmlAvatar(S.profilo.avatar, "grande")}<div><small>${tipo}</small><h2>${esc(S.profilo.nome || "Giocatore")}</h2>
+      <div class="profilo-testa">${Cosmetici.avatar(S.profilo.avatar, S.admin ? "" : Cosmetici.stato().cornice, "grande")}<div><small>${tipo}</small><h2 class="${S.admin ? "" : Cosmetici.classeNome(Cosmetici.stato().nome)}">${esc(S.profilo.nome || "Giocatore")}</h2>
         <span class="nota">${S.admin ? "Monete infinite · tutte le carte · fuori classifica" : `${S.stats.vittorie} vittorie · ${possedute().length}/${CARTE.length} carte · pass Lv ${livelloPass()}`}</span>
         ${!S.admin && S.lv ? `<button class="btn piccolo lv-profilo" data-azione="livello-pagina">${Livello.badge(Livello.info().liv, "mini")} Livello giocatore ${Livello.info().liv} · vedi livelli e premi${Livello.daRiscuotere().length ? ` (${Livello.daRiscuotere().length} da riscuotere)` : ""}</button>` : ""}</div></div>
       <details class="profilo-modifica" ${!S.profilo.avatar && possedute().length ? "open" : ""}>
@@ -2015,6 +2021,7 @@ function apriProfilo() {
           <button class="btn primario" data-fx="onda" type="submit">Salva profilo</button>
         </form>
       </details>
+      ${Vetrina.htmlProfilo()}
       <h3>Impostazioni</h3>
       ${segmento("modalita", "Modalità di gioco", [["classica", "Classica 5 contro 5"], ["rapida", "Rapida 3 contro 3"]], "La rapida usa le prime 3 carte della squadra e dà premi ridotti.")}
       ${segmento("velocita", "Velocità animazioni", [["normale", "Normale"], ["veloce", "Veloce"], ["turbo", "Turbo"]])}
@@ -2797,6 +2804,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   const n = carteForzate ? CARTE_SQUADRA : carteBattaglia();
   const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
+    : Lp && Lp.arena ? carteForzate.slice(0, n).map(id => ({ id, liv: 20, lode: false, olo: false, ultra: false, asc: 0 }))   // Arena: tutti uguali al livello 20
     : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0 }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
@@ -2811,7 +2819,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   if (campoFisso) B.impostaCampo(campoFisso);
   const bossG = L.spettatore ? L.spettatore.bossGiorno : L.bossGiorno;   // boss del giorno: corazza e punto debole
   if (bossG) BossGiorno.prepara(B, bossG);
-  B.zaino = L.spettatore ? null : Zaino.perBattaglia();
+  B.zaino = L.spettatore || L.arena ? null : Zaino.perBattaglia();
   if (L.spettatore) Online.rigioca(B);   // porta la battaglia al punto in cui è adesso, prima di disegnare l'arena
   if (L.bossGruppo) Boss.prepara(B);
   if (!L.spettatore && !L.vivo && !L.provaAdmin && !S.admin)
@@ -2994,9 +3002,9 @@ function htmlAzioni() {
     return `<div class="fine ${vinto ? "vinto" : "perso"}">
       <b>${vinto ? "Vittoria!" : "Sconfitta"}</b>
       <span>${(() => { const pr = premiSfida(livelloAttuale); return vinto ? `+${pr.monete} monete · +${pr.xp} XP` : `+10 monete · +${XP_SCONFITTA} XP`; })()}</span>
-      ${vinto && livelloAttuale.extraFine ? `<span class="punti-amico">${livelloAttuale.extraFine}</span>` : ""}
+      ${(vinto || livelloAttuale.arena) && livelloAttuale.extraFine ? `<span class="punti-amico">${livelloAttuale.extraFine}</span>` : ""}
       ${htmlEspCarte()}
-      <div class="azioni centro"><button class="btn primario" data-fx="onda" data-azione="rivincita">Rivincita</button><button class="btn" data-fx="salto" data-azione="esci-battaglia">Torna alle sfide</button></div>
+      <div class="azioni centro">${livelloAttuale.arena && (!Arena.stato() || Arena.stato().finita) ? "" : `<button class="btn primario" data-fx="onda" data-azione="rivincita">${livelloAttuale.arena ? "Prossima partita" : "Rivincita"}</button>`}<button class="btn" data-fx="salto" data-azione="esci-battaglia">${livelloAttuale.arena && Arena.stato() && Arena.stato().finita ? "Riscuoti il premio" : "Torna alle sfide"}</button></div>
     </div>`;
   }
   if (!animazione && B.serveSostituzione(0)) {
@@ -3218,6 +3226,7 @@ function premiaCarte(mult, vinto, potSempre) {
     return { id: x.id, xp: verso ? xp : 0, pot, prontaNuova: !prima.pronta && dopo.pronta, liv: dopo.liv, lode: dopo.lode, lodeNuova: !prima.lode && dopo.lode };
   }).filter(Boolean);
   try { Livello.fineBattaglia(vinto, risultati); SfidePass.fineBattaglia(vinto); } catch (e) { /* i progressi sono un extra */ }
+  try { if (!(livelloAttuale && livelloAttuale.arena)) Maestria.fineBattaglia(vinto); Vetrina.fineBattaglia(vinto); } catch (e) { console.error(e); }
   return risultati;
 }
 function htmlEspCarte() {
@@ -3252,7 +3261,7 @@ function chiudiSfida() {
     livelloAttuale.extraFine = livelloAttuale.dopoVittoria ? livelloAttuale.dopoVittoria() : "";
     if (arena) arena.vittoria(0);
     setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 60, forma: "coriandolo", colori: ["#f2c14e", "#ff2e46", "#3fd8ff", "#ffffff"], velocita: 8, dimensione: 5, durata: 1500 }); } }, 50);
-  } else { S.monete += 10; S.stats.sconfitte++; su = aggiungiXP(XP_SCONFITTA); }
+  } else { S.monete += 10; S.stats.sconfitte++; su = aggiungiXP(XP_SCONFITTA); livelloAttuale.extraFine = livelloAttuale.dopoSconfitta ? livelloAttuale.dopoSconfitta() : ""; }
   salva();
   Archivio.pubblicaClassifica();
   aggiornaTesta();
@@ -3293,14 +3302,20 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.immaginePer) Graffiti.immagineScelta(e.target); });
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
-document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
+document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.vetrina !== undefined) { Vetrina.metti(+e.target.dataset.vetrina, e.target.value); return; } if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  const t = e.target.closest("[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
   }
+  if (t.dataset.cosmUsa !== undefined) { const [tipo, id] = t.dataset.cosmUsa.split(":"); Cosmetici.usa(tipo, id); apriProfilo(); return; }
+  if (t.dataset.crea) { chiudiModale(); Frammenti.crea(t.dataset.crea, t); return; }
+  if (t.dataset.mistero) { Frammenti.apriMistero(t.dataset.mistero); return; }
+  if (t.dataset.arenaScegli) { Arena.scegli(t.dataset.arenaScegli); return; }
+  if (t.dataset.offertaSp) { Offerte.compra(t.dataset.offertaSp, t); return; }
+  if (t.dataset.profiloAmico !== undefined) { if (t.dataset.profiloAmico === Archivio.uid) apriProfilo(); else Vetrina.apriAmico((classificaDati || []).find(r => r.id === t.dataset.profiloAmico)); return; }
   if (t.disabled) return;
   if (t.id === "profilo-btn") { apriProfilo(); return; }
   if (t.dataset.avatar) { avatarScelto = t.dataset.avatar; $$(".av-btn").forEach(b => { const si = b.dataset.avatar === avatarScelto; b.classList.toggle("sel", si); b.setAttribute("aria-checked", si); }); return; }
@@ -3461,6 +3476,11 @@ document.addEventListener("click", e => {
     case "ricarica": Archivio.aspettaScritture().catch(() => {}).then(() => location.reload()); break;
     case "controlla-versione": controllaAggiornamento().then(v => mostraAvviso(!v ? "Non riesco a controllare la versione da qui." : v === VERSIONE ? `Hai l'ultima versione (${VERSIONE}).` : "Versione nuova trovata: aggiorno…")); break;
     case "esci-battaglia": esciBattaglia(); break;
+    case "arena-entra": Arena.entra(); break;
+    case "arena-scelta": Arena.apriScelta(); break;
+    case "arena-gioca": Arena.gioca(); break;
+    case "arena-riscuoti": Arena.riscuoti(t); break;
+    case "gradi-riscuoti": Gradi.riscuoti(); break;
     case "chiudi": chiudiModale(); if (vista === "bustine" && !B) disegna(); break;
   }
 });

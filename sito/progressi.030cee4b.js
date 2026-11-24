@@ -47,7 +47,8 @@ const Livello = (() => {
     if (Object.keys(b).length) p.bustine = b;
     return p;
   }
-  const testoPremioLv = L => testoPremio(premio(L)) + (TITOLI[L] ? ` e il titolo «${TITOLI[L]}»` : "");
+  const premiExtra = {};   // cosmetici legati a certi livelli (li aggiunge extra.js)
+  const testoPremioLv = L => testoPremio(premio(L)) + (TITOLI[L] ? ` e il titolo «${TITOLI[L]}»` : "") + (premiExtra[L] ? ` + ${premiExtra[L].testo}` : "");
   // chi giocava già prima: parte dal livello che corrisponde a quello che ha fatto finora
   function iniziali() {
     let p = 0; const st = S.stats || {};
@@ -89,6 +90,7 @@ const Livello = (() => {
     const tot = { monete: 0, bustine: {} };
     for (const L of lista) { const p = premio(L); tot.monete += p.monete; for (const [t, n] of Object.entries(p.bustine || {})) tot.bustine[t] = (tot.bustine[t] || 0) + n; }
     daiPremio(tot);
+    for (const L of lista) if (premiExtra[L]) premiExtra[L].dai();
     S.lv = Object.assign({}, S.lv, { riscossi: S.lv.riscossi.concat(lista) });
     salva(); aggiornaTesta(); Trofei.controlla(); disegna();
     if (document.querySelector(".lv-pagina")) apriLivelli();
@@ -146,7 +148,7 @@ const Livello = (() => {
       return `<div class="lvt ${stato}${attuale ? " attuale" : ""}${TITOLI[L] ? " titolo" : ""}${premio(L).bustine ? " grande" : ""}" id="lvt-${L}">
         <span class="lvt-num">${badge(L)}</span>
         <span class="lvt-ico" aria-hidden="true">${icona(L)}</span>
-        <span class="lvt-premio">${esc(testoPremio(premio(L)))}${TITOLI[L] ? `<b class="lvt-titolo">Titolo «${esc(TITOLI[L])}»</b>` : ""}</span>
+        <span class="lvt-premio">${esc(testoPremio(premio(L)))}${TITOLI[L] ? `<b class="lvt-titolo">Titolo «${esc(TITOLI[L])}»</b>` : ""}${premiExtra[L] ? `<b class="lvt-titolo">${esc(premiExtra[L].testo)}</b>` : ""}</span>
         <span class="lvt-stato">${preso ? "Riscosso ✓" : raggiunto ? "Da riscuotere" : `mancano ${mancano.toLocaleString("it-IT")} ✦`}</span>
       </div>`;
     }).join("");
@@ -171,7 +173,7 @@ const Livello = (() => {
       <ul class="lg-premi">${prossimi.map(L => `<li class="${L <= i.liv ? (S.lv.riscossi.includes(L) ? "preso" : "pronto") : ""}">${badge(L)} ${esc(testoPremioLv(L))}${L <= i.liv && !S.lv.riscossi.includes(L) ? " · <b>da riscuotere</b>" : L <= i.liv ? " ✓" : ""}</li>`).join("")}</ul>
       <div class="azioni centro"><button class="btn" data-azione="livello-pagina">Tutti i livelli e premi</button><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }
-  return { apriLivelli, MAX, TITOLI, PUNTI, info, controlla, guadagna, riscuoti, daRiscuotere, fineBattaglia, carteNuove, htmlStrada, apriInfo, badge, totaleA };
+  return { premiExtra, apriLivelli, MAX, TITOLI, PUNTI, info, controlla, guadagna, riscuoti, daRiscuotere, fineBattaglia, carteNuove, htmlStrada, apriInfo, badge, totaleA };
 })();
 
 // ---------------- Sfide del pass ----------------
