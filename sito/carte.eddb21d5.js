@@ -781,7 +781,9 @@ const potPerLivello = L => 3 + Math.floor(L / 2);
 // Esempio: una comune al 30 ha forza 1,00 × 1,58 = 1,58; diventata rara resta al 30 e vale 1,10 × 1,58 = 1,74;
 // salita fino a leggendaria, al 30 vale 1,30 × 1,58 = 2,05 come una leggendaria trovata nelle bustine.
 // I doppioni continuano a dare i potenziatori della rarità di partenza (una comune dà sempre 10 potenziatori).
-const ASCESA_MONETE = { comune: 500, rara: 1000, epica: 2000 };   // costo per salire DA questa rarità
+// costo per salire DA questa rarità. nov 2026: raddoppiato (era 500 / 1000 / 2000) perché ora l'ascesa non fa più ripartire dal livello 1
+const ASCESA_MONETE = { comune: 1000, rara: 2000, epica: 4000 };
+const ASCESA_MONETE_PRIMA = { comune: 500, rara: 1000, epica: 2000 };   // i prezzi di prima, per i rimborsi delle ascese vecchie
 const rarDopo = (base, passi) => ORDINE_RARITA[Math.min(ORDINE_RARITA.length - 1, Math.max(0, ORDINE_RARITA.indexOf(base)) + Math.max(0, Math.min(3, passi | 0)))] || base;
 // nov 2026: costo in monete dimezzato (prima 5 · arrotonda((10 + L²/4) / 5): dal 1 al 30 servivano 2410 monete, ora 1205)
 const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 10);

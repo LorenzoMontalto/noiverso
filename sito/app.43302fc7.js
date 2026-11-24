@@ -3534,7 +3534,7 @@ function applicaSalvataggio(salvato) {
         const prima = RARITA_PRIMA_NOV26[id]; if (!prima || !PER_ID[id] || !passi) continue;
         const ora = PER_ID[id].rarita, iPrima = ORDINE_RARITA.indexOf(prima), eff = Math.min(3, iPrima + passi), iOra = ORDINE_RARITA.indexOf(ora);
         if (eff > iOra) asc[id] = eff - iOra;
-        else { delete asc[id]; for (let k = iPrima; k < eff; k++) S.monete += ASCESA_MONETE[ORDINE_RARITA[k]] || 0; }
+        else { delete asc[id]; for (let k = iPrima; k < eff; k++) S.monete += ASCESA_MONETE_PRIMA[ORDINE_RARITA[k]] || 0; }   // rimborso al prezzo pagato allora
       }
       S.asc = asc; S.rarNov26 = true;
     }
