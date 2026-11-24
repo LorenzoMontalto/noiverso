@@ -2892,7 +2892,8 @@ function htmlListaSquadre(attr, scelta) {
 // L'ordine resta salvato nella squadra.
 const Ordine = (() => {
   let poi = null, titolo = "", sel = -1;
-  function apri(f, t) { poi = f; titolo = t || titolo; sel = -1; disegnaOrdine(); }
+  let tornaIndietro = null;   // nella storia «Cambia squadra» torna alla tappa (la squadra si sceglie lì)
+  function apri(f, t, indietroFn = null) { poi = f; titolo = t || titolo; tornaIndietro = indietroFn; sel = -1; disegnaOrdine(); }
   function disegnaOrdine() {
     const sq = squadraAttiva(), n = carteBattaglia();
     apriModale(`<div class="ordine-entrata"><span class="codice-tag">${esc(sq.nome || `Squadra ${(S.attiva || 0) + 1}`)}</span><h3>Ordine di entrata</h3>
@@ -2917,7 +2918,7 @@ const Ordine = (() => {
     for (let k = 0; k < 20 && Archivio._inScrittura; k++) await attesa(100);
     if (f) f();
   }
-  function indietro() { const f = poi; poi = null; scegliSquadra(f, titolo || undefined); }
+  function indietro() { const f = poi; poi = null; if (tornaIndietro) { tornaIndietro(); return; } scegliSquadra(f, titolo || undefined); }
   return { apri, scambia, tocca, via, indietro };
 })();
 function scegliSquadra(poi, titolo = "Con quale squadra combatti?") {
@@ -3561,7 +3562,7 @@ document.addEventListener("click", e => {
     if (box) { box.innerHTML = htmlSceltaTappa(k, i, q); const b = box.querySelector("[data-tappa-via]"); if (b) { FX.riavvia(b, "entra"); b.scrollIntoView({ block: "nearest", behavior: ridotto ? "auto" : "smooth" }); } }
     return;
   }
-  if (t.dataset.tappaVia) { const [k, i] = t.dataset.tappaVia.split(":").map(Number); schermoIntero(true); setTimeout(() => avviaStoria(k, i), ridotto ? 0 : 200); return; }
+  if (t.dataset.tappaVia) { const [k, i] = t.dataset.tappaVia.split(":").map(Number); schermoIntero(true); Ordine.apri(() => setTimeout(() => avviaStoria(k, i), ridotto ? 0 : 200), "", () => { schermoIntero(false); apriTappa(k, i); }); return; }
   if (t.dataset.scrigno) { const [k, id] = t.dataset.scrigno.split(":"); riscuotiScrigno(+k, id, t); return; }
   if (t.dataset.edFiltro) { edFiltro = t.dataset.edFiltro; aggiornaEditor(true); return; }
   if (t.dataset.vista) { if (B) return; vai(t.dataset.vista); return; }
