@@ -434,6 +434,7 @@ function htmlCarta(c, opz = {}) {
   return `
   <div class="carta r-${rar}${salita ? " ascesa" : ""}${coperta ? " sconosciuta" : ""}${opz.piccola ? " piccola" : ""}${opz.mini ? " mini" : ""}${!coperta && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? " olo" : ""}${!coperta && c.ultra && (opz.ultra ?? (opz.liv === undefined && haUltra(c.id))) ? " ultra" : ""}" data-id="${c.id}" ${opz.click ? 'role="button" tabindex="0"' : ""}>
     <img src="${opz.piena ? imgCarta(c.id) : imgMini(c.id)}" alt="${coperta ? "Carta da scoprire" : esc(c.nome)}" loading="lazy" draggable="false">
+    ${coperta || typeof Cosmetici === "undefined" ? "" : Cosmetici.htmlTelaio(opz.cc !== undefined ? opz.cc : (opz.liv === undefined || opz.stelle !== undefined) && S.carte[c.id] && !S.admin ? Cosmetici.corniceCarta(c.id) : "")}
     ${coperta ? `<div class="punto-domanda">?</div>` : opz.mini ? "" : `
     <div class="carta-testa"><span class="stile s-${c.stile}" title="${STILI[c.stile].nome}">${c.stile}</span><span class="serie-ico" style="--c:${SERIE[c.serie].colore}" title="${esc(SERIE[c.serie].nome)}">${SERIE[c.serie].simbolo}</span>${liv ? `<span class="liv ${lode ? "lode" : ""}">${lode ? "30 e lode" : `Lv ${liv}`}</span>` : ""}</div>
     ${htmlEtichettaPot(info)}${info && !opz.mini && puoAscendere(c.id) ? `<span class="potenziabile ascesa-pronta" title="Al 30: può salire di rarità"><b>⬆</b><em>Ascesa</em></span>` : ""}
@@ -523,7 +524,7 @@ function apriDettaglio(id) {
           ${c.ultra ? (haUltra(c.id) ? `<p class="ultra-nota">◆ <b>Versione Ultra</b>: cornice nera e oro e +10% di PV e di danni in battaglia.</p>` : `<p class="nota">Questa carta ha anche una <b>versione Ultra</b> da trovare (+10% in battaglia): esce raramente quando la trovi in una bustina, sempre nella Bustina Ultra.</p>`) : ""}
           <p class="nota piccola">${lode ? "Ha la lode: è al massimo. I suoi doppioni ora danno monete." : liv < LIVELLO_MAX ? `Ogni doppione di questa carta dà ${POT_DOPPIONE[c.rarita]} potenziatori, e ogni battaglia vinta in cui scende in campo da 1 a 5.${!inf.pronta ? ` Te ne mancano ${inf.servePot - inf.pot}.` : !inf.puoi ? ` Ti mancano ${inf.serveMon - S.monete} monete.` : ""}` : "È al 30: continua a giocarci in battaglia per prendere la lode. I suoi doppioni ora danno monete."} · ${copie} ${copie === 1 ? "copia" : "copie"}</p>
         </div>
-        ${Maestria.htmlDettaglio(id)}
+        ${Maestria.htmlDettaglio(id)}${Cosmetici.htmlSceltaCarta(id)}
       </div>
     </div>`);
 }
@@ -2937,7 +2938,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
     : Lp && Lp.arena ? carteForzate.slice(0, n).map(id => ({ id, liv: 20, lode: false, olo: false, ultra: false, asc: 0 }))   // Arena: tutti uguali al livello 20
-    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id) }));
+    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id), cc: S.admin ? "" : Cosmetici.corniceCarta(id) }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   // contro il computer: battaglia con un seme, così gli amici possono guardarla in diretta (le scelte del computer restano a caso)
@@ -3523,7 +3524,7 @@ document.addEventListener("click", e => {
   if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
   if (e.target.id === "avviso") { mostraAvviso.prossimo(); return; }
-  const t = e.target.closest("[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3533,6 +3534,7 @@ document.addEventListener("click", e => {
   if (t.dataset.mistero) { Frammenti.apriMistero(t.dataset.mistero); return; }
   if (t.dataset.arenaScegli) { Arena.scegli(t.dataset.arenaScegli); return; }
   if (t.dataset.arenaInfo) { Arena.info(t.dataset.arenaInfo); return; }
+  if (t.dataset.ccUsa !== undefined) { const [c, cc] = t.dataset.ccUsa.split(":"); Cosmetici.usaCarta(c, cc); return; }
   if (t.dataset.offertaSp) { Offerte.compra(t.dataset.offertaSp, t); return; }
   if (t.dataset.profiloAmico !== undefined) { if (t.dataset.profiloAmico === Archivio.uid) apriProfilo(); else Vetrina.apriAmico((classificaDati || []).find(r => r.id === t.dataset.profiloAmico)); return; }
   if (t.disabled) return;

@@ -17,7 +17,7 @@ const Cosmetici = (() => {
     "cornice-oro":       { tipo: "cornice", nome: "Cornice d'Oro", da: "Livello giocatore 30" },
     "cornice-arcobaleno":{ tipo: "cornice", nome: "Cornice Arcobaleno", da: "Livello giocatore 50" },
     "cornice-numero1":   { tipo: "cornice", nome: "Cornice del Numero Uno", da: "Livello giocatore 100" },
-    "cornice-maestro":   { tipo: "cornice", nome: "Cornice del Maestro", da: "Una carta con 5 stelle di maestria" },
+    "cornice-maestro":   { tipo: "cornice", nome: "Cornice del Maestro (vecchia)", da: "Non si sblocca più: ora la maestria dà la cornice alla carta" },
     "cornice-diamante":  { tipo: "cornice", nome: "Cornice Diamante", da: "Grado Diamante in una stagione" },
     "cornice-leggenda":  { tipo: "cornice", nome: "Cornice Leggenda", da: "Grado Leggenda in una stagione" },
     // colore del nome
@@ -32,15 +32,27 @@ const Cosmetici = (() => {
     "sfondo-galassia":   { tipo: "sfondo", nome: "Sfondo Galassia", prezzo: 1000 },
     "sfondo-oro":        { tipo: "sfondo", nome: "Sfondo d'Oro", da: "Livello giocatore 60" },
     "sfondo-noiverso":   { tipo: "sfondo", nome: "Sfondo Noiverso", da: "Livello giocatore 90" },
+    // cornici delle carte: una volta sbloccate si mettono su tutte le carte che vuoi (dal dettaglio della carta)
+    "cc-neon":           { tipo: "carta", nome: "Cornice carta Neon", prezzo: 700 },
+    "cc-ghiaccio":       { tipo: "carta", nome: "Cornice carta di Ghiaccio", prezzo: 1000 },
+    "cc-sakura":         { tipo: "carta", nome: "Cornice carta Sakura", prezzo: 1200 },
+    "cc-oro":            { tipo: "carta", nome: "Cornice carta d'Oro", prezzo: 1600 },
+    "cc-fiamme":         { tipo: "carta", nome: "Cornice carta di Fiamme", da: "Livello giocatore 35" },
+    "cc-galassia":       { tipo: "carta", nome: "Cornice carta Galassia", da: "Livello giocatore 55" },
+    "cc-arcobaleno":     { tipo: "carta", nome: "Cornice carta Arcobaleno", da: "Livello giocatore 80" },
+    "cc-diamante":       { tipo: "carta", nome: "Cornice carta Diamante", da: "Grado Platino in una stagione" },
   };
+  // la Cornice del Maestro è unica: non si compra e non si trova, la ha solo la carta con 5 stelle di maestria
+  const MAESTRO = "cc-maestro";
+  const NOMI_CARTA = Object.assign({ [MAESTRO]: "Cornice del Maestro" }, Object.fromEntries(Object.entries(CAT).filter(([, v]) => v.tipo === "carta").map(([k, v]) => [k, v.nome.replace(/^Cornice carta (d'|di )?/, "").replace(/^./, x => x.toUpperCase())])));
   const TIPI = { cornice: "Cornice dell'avatar", nome: "Colore del nome", sfondo: "Sfondo della vetrina" };
   const stato = () => { if (!S.cosm || typeof S.cosm !== "object") S.cosm = { have: {}, cornice: "", nome: "", sfondo: "" }; return S.cosm; };
   const ha = id => !!stato().have[id];
   function sblocca(id, avvisa = true) {
     if (!CAT[id] || ha(id)) return false;
     const s = stato(); S.cosm = Object.assign({}, s, { have: Object.assign({}, s.have, { [id]: true }) });
-    if (!S.cosm[CAT[id].tipo]) S.cosm[CAT[id].tipo] = id;   // il primo di un tipo si mette da solo
-    if (avvisa) setTimeout(() => mostraAvviso(`Nuovo cosmetico: ${CAT[id].nome}! Lo trovi nel profilo.`), 900);
+    if (CAT[id].tipo !== "carta" && !S.cosm[CAT[id].tipo]) S.cosm[CAT[id].tipo] = id;   // il primo di un tipo si mette da solo
+    if (avvisa) setTimeout(() => mostraAvviso(CAT[id].tipo === "carta" ? `Nuova ${CAT[id].nome}! La metti dal dettaglio di ogni carta.` : `Nuovo cosmetico: ${CAT[id].nome}! Lo trovi nel profilo.`), 900);
     return true;
   }
   function usa(tipo, id) { const s = stato(); if (id && (!ha(id) || CAT[id].tipo !== tipo)) return; S.cosm = Object.assign({}, s, { [tipo]: id || "" }); salva(); Archivio.pubblicaClassifica(); aggiornaTesta(); }
@@ -48,6 +60,26 @@ const Cosmetici = (() => {
   const classeCornice = id => CAT[id] && CAT[id].tipo === "cornice" ? `cosm-${id}` : "";
   const classeNome = id => CAT[id] && CAT[id].tipo === "nome" ? `cosm-${id}` : "";
   const classeSfondo = id => CAT[id] && CAT[id].tipo === "sfondo" ? `cosm-${id}` : "";
+  // cornice di una carta (solo se valida: quella del Maestro solo con 5 stelle su quella carta)
+  const valida = (cartaId, cc) => cc === MAESTRO ? typeof Maestria !== "undefined" && Maestria.stelle(cartaId) >= 5 : !!(CAT[cc] && CAT[cc].tipo === "carta" && ha(cc));
+  function corniceCarta(cartaId) { const cc = (stato().carte || {})[cartaId]; return cc && valida(cartaId, cc) ? cc : ""; }
+  function usaCarta(cartaId, cc) {
+    if (cc && !valida(cartaId, cc)) return;
+    const s = stato(), carte = Object.assign({}, s.carte); if (cc) carte[cartaId] = cc; else delete carte[cartaId];
+    S.cosm = Object.assign({}, s, { carte }); salva(); apriDettaglio(cartaId); disegnaQuieto();
+  }
+  // il "telaio" sopra l'immagine della carta (anche per le carte degli amici, con la loro cornice)
+  const htmlTelaio = cc => cc && NOMI_CARTA[cc] ? `<i class="cc-telaio ${cc}" aria-hidden="true"></i>${cc === MAESTRO ? `<i class="cc-deco" aria-hidden="true"><b>★</b><b>★</b><b>★</b><b>★</b><span>MAESTRO</span></i>` : ""}` : "";
+  function htmlSceltaCarta(cartaId) {
+    if (S.admin || !S.carte[cartaId]) return "";
+    const attuale = corniceCarta(cartaId), maestro = valida(cartaId, MAESTRO);
+    const mie = Object.keys(CAT).filter(id => CAT[id].tipo === "carta" && ha(id));
+    return `<div class="cc-scelta"><b>Cornice della carta</b><div class="filtri">
+      <button class="chip" data-cc-usa="${cartaId}:" aria-pressed="${!attuale}">Nessuna</button>
+      ${maestro ? `<button class="chip cc-chip-maestro" data-cc-usa="${cartaId}:${MAESTRO}" aria-pressed="${attuale === MAESTRO}">★ Maestro</button>` : ""}
+      ${mie.map(id => `<button class="chip" data-cc-usa="${cartaId}:${id}" aria-pressed="${attuale === id}">${esc(NOMI_CARTA[id])}</button>`).join("")}</div>
+      <p class="nota">${maestro ? "La Cornice del Maestro è solo di questa carta: l'ha guadagnata con 5 stelle di maestria." : "La Cornice del Maestro si sblocca solo per la carta che arriva a 5 stelle di maestria."}${mie.length ? "" : " Le altre cornici si trovano nel negozio e salendo di livello."}</p></div>`;
+  }
   const avatar = (avatarId, corniceId, cls = "") => `<span class="cornice-avatar ${classeCornice(corniceId)}">${htmlAvatar(avatarId, cls)}</span>`;
   function htmlProfilo() {
     const s = stato();
@@ -56,14 +88,15 @@ const Cosmetici = (() => {
       return `<div class="cosm-riga"><b>${nomeTipo}</b><div class="filtri">
         <button class="chip" data-cosm-usa="${tipo}:" aria-pressed="${!s[tipo]}">Nessuno</button>
         ${miei.map(id => `<button class="chip cosm-chip ${tipo === "nome" ? classeNome(id) : ""}" data-cosm-usa="${tipo}:${id}" aria-pressed="${s[tipo] === id}">${esc(CAT[id].nome)}</button>`).join("")}
-        ${miei.length ? "" : `<span class="nota">Ancora nessuno: si trovano nel negozio, con i livelli, la maestria, i gradi e l'Arena.</span>`}</div></div>`;
-    }).join("");
+        ${miei.length ? "" : `<span class="nota">Ancora nessuno: si trovano nel negozio, con i livelli, i gradi e l'Arena.</span>`}</div></div>`;
+    }).join("") + (() => { const n = Object.keys(CAT).filter(id => CAT[id].tipo === "carta" && ha(id)).length, m = possedute().filter(c => Maestria.stelle(c.id) >= 5).length;
+      return `<div class="cosm-riga"><b>Cornici delle carte</b><p class="nota">Ne hai ${n}${m ? `, più ${m} ${m === 1 ? "Cornice del Maestro" : "Cornici del Maestro"} (una per ogni carta con 5 stelle)` : ""}. Si mettono dal dettaglio di ogni carta.</p></div>`; })();
   }
-  return { CAT, ha, sblocca, usa, stato, classeCornice, classeNome, classeSfondo, avatar, htmlProfilo };
+  return { CAT, MAESTRO, corniceCarta, usaCarta, htmlTelaio, htmlSceltaCarta, ha, sblocca, usa, stato, classeCornice, classeNome, classeSfondo, avatar, htmlProfilo };
 })();
 
 // ---------------- Maestria delle carte ----------------
-// Ogni carta ha 5 obiettivi suoi. Ogni obiettivo raggiunto è una stella: monete, punti Fama e, alla quinta, la Cornice del Maestro.
+// Ogni carta ha 5 obiettivi suoi. Ogni obiettivo raggiunto è una stella: monete, potenziatori, punti Fama e, alla quinta, la Cornice del Maestro per quella carta.
 const Maestria = (() => {
   const OBIETTIVI = [
     { k: "v", n: 3,    testo: "Vinci 3 battaglie con questa carta scesa in campo", monete: 25,  pot: 5,  fama: 10 },
@@ -93,7 +126,10 @@ const Maestria = (() => {
         if (ob.frammenti) Frammenti.aggiungi(ob.frammenti, false);
         Livello.guadagna(ob.fama);
         avvisi.push(`Maestria ${PER_ID[x.id].nome} ${"★".repeat(m.presi.length)}: ${al30 ? `+${ob.monete + extra} monete (è già al 30)` : `+${ob.pot} potenziatori ▲ e +${ob.monete} monete`}${ob.frammenti ? ` e ${ob.frammenti} frammenti` : ""}`);
-        if (m.presi.length >= OBIETTIVI.length) Cosmetici.sblocca("cornice-maestro");
+        if (m.presi.length >= OBIETTIVI.length) {   // quinta stella: la Cornice del Maestro, solo per questa carta (e la mette subito)
+          const s = Cosmetici.stato(); S.cosm = Object.assign({}, s, { carte: Object.assign({}, s.carte, { [x.id]: Cosmetici.MAESTRO }) });
+          avvisi.push(`${PER_ID[x.id].nome} ha 5 stelle: sblocca la Cornice del Maestro, solo sua!`);
+        }
       });
       S.maestria = Object.assign({}, S.maestria, { [x.id]: m });
     }
@@ -105,7 +141,7 @@ const Maestria = (() => {
     return `<div class="maestria-box"><b>Maestria ${"★".repeat(m.presi.length)}${"☆".repeat(OBIETTIVI.length - m.presi.length)}</b>
       <ul>${OBIETTIVI.map((ob, i) => { const v = Math.min(ob.n, m[ob.k]), ok = m.presi.includes(i);
         return `<li class="${ok ? "fatto" : ""}"><span>${ok ? "★" : "☆"} ${esc(ob.testo)}</span><small>${ok ? "fatto" : `${v.toLocaleString("it-IT")} / ${ob.n.toLocaleString("it-IT")}`} · +${ob.pot} ▲ e +${ob.monete} monete${ob.frammenti ? ` e ${ob.frammenti} ◈` : ""}</small></li>`; }).join("")}</ul>
-      <p class="nota">Le stelle si prendono da sole giocando: contano le battaglie in cui questa carta è scesa in campo. Ogni stella dà potenziatori ▲ per questa carta (80 in tutto); se è già al 30 li ricevi in monete, 5 l'uno. Con 5 stelle sblocchi la Cornice del Maestro.</p></div>`;
+      <p class="nota">Le stelle si prendono da sole giocando: contano le battaglie in cui questa carta è scesa in campo. Ogni stella dà potenziatori ▲ per questa carta (80 in tutto); se è già al 30 li ricevi in monete, 5 l'uno. Con 5 stelle questa carta sblocca la Cornice del Maestro, che è solo sua.</p></div>`;
   }
   return { OBIETTIVI, stelle, totaleStelle, fineBattaglia, htmlDettaglio };
 })();
@@ -207,7 +243,7 @@ const Gradi = (() => {
     { nome: "Bronzo", da: 0, ico: "🥉", premio: null },
     { nome: "Argento", da: 9, ico: "🥈", premio: { monete: 300 } },
     { nome: "Oro", da: 21, ico: "🥇", premio: { monete: 600, bustine: { epica: 1 } } },
-    { nome: "Platino", da: 36, ico: "💠", premio: { monete: 1000, bustine: { epica: 2 } } },
+    { nome: "Platino", da: 36, ico: "💠", premio: { monete: 1000, bustine: { epica: 2 } }, cosm: "cc-diamante" },
     { nome: "Diamante", da: 54, ico: "💎", premio: { monete: 1500, bustine: { leggendaria: 1 } }, cosm: "cornice-diamante" },
     { nome: "Leggenda", da: 75, ico: "👑", premio: { monete: 2500, bustine: { leggendaria: 1, ultra: 1 } }, cosm: "cornice-leggenda" },
   ];
@@ -372,7 +408,7 @@ const Offerte = (() => {
     const pot = sorteggia(salgono.filter(c => squadraAttiva().carte.includes(c.id)).length ? salgono.filter(c => squadraAttiva().carte.includes(c.id)) : salgono, seme + ":pot");
     if (pot) out.push({ k: "pot", id: pot.id, prezzo: PREZZO_POT, titolo: `${POT} potenziatori per ${pot.nome}`, desc: "Per farla salire di livello prima." });
     const cosm = sorteggia(Object.keys(Cosmetici.CAT).filter(id => Cosmetici.CAT[id].prezzo && !Cosmetici.ha(id)), seme + ":cosm");
-    if (cosm) out.push({ k: "cosm", id: cosm, prezzo: Cosmetici.CAT[cosm].prezzo, titolo: Cosmetici.CAT[cosm].nome, desc: "Cosmetico: non cambia la forza, si vede in classifica e nel profilo." });
+    if (cosm) out.push({ k: "cosm", id: cosm, prezzo: Cosmetici.CAT[cosm].prezzo, titolo: Cosmetici.CAT[cosm].nome, desc: "Cosmetico: non cambia la forza." });
     return out;
   }
   const preso = k => !!(S.offerteSpeciali && S.offerteSpeciali.giorno === giorno() && (S.offerteSpeciali.presi || []).includes(k));
@@ -393,7 +429,7 @@ const Offerte = (() => {
     const l = elenco(); if (!l.length) return "";
     return `<div class="titolo-riga piccola"><h3>Offerte speciali di oggi</h3><p class="nota">Cambiano ogni giorno e sono diverse per ognuno. Le bustine restano qui sotto come sempre.</p></div>
       <div class="offerte-speciali">${l.map(o => `<div class="off-sp ${preso(o.k) ? "presa" : ""}">
-        ${o.k === "carta" ? htmlCarta(PER_ID[o.id], { piccola: true, coperta: !preso(o.k) }) : o.k === "pot" ? htmlCarta(PER_ID[o.id], { piccola: true }) : `<div class="off-cosm"><span class="cornice-avatar ${Cosmetici.classeCornice(o.id)}">${htmlAvatar(S.profilo.avatar)}</span><b class="${Cosmetici.classeNome(o.id)}">${esc(S.profilo.nome || "")}</b></div>`}
+        ${o.k === "carta" ? htmlCarta(PER_ID[o.id], { piccola: true, coperta: !preso(o.k) }) : o.k === "pot" ? htmlCarta(PER_ID[o.id], { piccola: true }) : Cosmetici.CAT[o.id].tipo === "carta" ? htmlCarta(possedute()[0] || CARTE[0], { piccola: true, cc: o.id }) : `<div class="off-cosm"><span class="cornice-avatar ${Cosmetici.classeCornice(o.id)}">${htmlAvatar(S.profilo.avatar)}</span><b class="${Cosmetici.classeNome(o.id)}">${esc(S.profilo.nome || "")}</b></div>`}
         <b>${esc(o.titolo)}</b><span class="nota">${esc(o.desc)}</span>
         ${preso(o.k) ? `<span class="nota">Comprato! Domani nuove offerte.</span>` : `<button class="btn oro" data-fx="monete" data-offerta-sp="${o.k}" ${S.monete >= o.prezzo ? "" : "disabled"}>${o.prezzo} <i class="moneta-ico"></i></button>`}
       </div>`).join("")}</div>`;
@@ -403,7 +439,7 @@ const Offerte = (() => {
 
 // Cosmetici dei livelli giocatore (si sbloccano riscuotendo quei livelli)
 if (typeof Livello !== "undefined" && Livello.premiExtra) {
-  const PER_LIVELLO = { 30: "cornice-oro", 40: "nome-fuoco", 50: "cornice-arcobaleno", 60: "sfondo-oro", 70: "nome-arcobaleno", 90: "sfondo-noiverso", 100: "cornice-numero1" };
+  const PER_LIVELLO = { 30: "cornice-oro", 35: "cc-fiamme", 40: "nome-fuoco", 50: "cornice-arcobaleno", 55: "cc-galassia", 60: "sfondo-oro", 70: "nome-arcobaleno", 80: "cc-arcobaleno", 90: "sfondo-noiverso", 100: "cornice-numero1" };
   for (const [L, id] of Object.entries(PER_LIVELLO)) Livello.premiExtra[L] = { id, testo: Cosmetici.CAT[id].nome, dai: () => Cosmetici.sblocca(id) };
 }
 
@@ -460,7 +496,7 @@ const Novita = (() => {
     { ico: "◈", titolo: "Frammenti", testo: "I doppioni delle carte già al 30 ora danno anche frammenti. Con i frammenti crei le carte che ti mancano: tocca una carta coperta nell'album." },
     { ico: "💎", titolo: "Gradi della stagione", testo: "Con i punti dal vivo sali da Bronzo a Leggenda. A fine stagione riscuoti il premio del grado più alto che hai raggiunto." },
     { ico: "🛒", titolo: "Offerte speciali", testo: "Nel negozio, ogni giorno, 3 offerte solo per te: una carta che ti manca, potenziatori, un cosmetico. Le bustine sono tutte lì come prima." },
-    { ico: "🎨", titolo: "Vetrina e cosmetici", testo: "Nel profilo scegli 3 carte da mostrare, cornici per l'avatar, il colore del nome e lo sfondo. Tocca un nome in classifica per vedere il profilo di un amico." },
+    { ico: "🎨", titolo: "Vetrina e cosmetici", testo: "Nel profilo scegli 3 carte da mostrare, cornici per l'avatar, il colore del nome e lo sfondo; dal dettaglio di ogni carta le metti una cornice. Tocca un nome in classifica per vedere il profilo di un amico." },
   ];
   let i = 0;
   function controlla() {

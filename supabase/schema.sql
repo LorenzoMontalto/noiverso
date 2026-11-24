@@ -256,7 +256,13 @@ begin
         -- Ascesa: quante volte la carta è salita di rarità (0-3)
         'asc', least(3, greatest(0, case when d->'asc'->>x ~ '^[0-9]+$' then (d->'asc'->>x)::int else 0 end)),
         -- nov 2026: stelle della maestria (si vedono sulla carta in battaglia, non cambiano la forza)
-        'stelle', least(5, case when jsonb_typeof(d->'maestria'->x->'presi') = 'array' then jsonb_array_length(d->'maestria'->x->'presi') else 0 end)) order by n)
+        'stelle', least(5, case when jsonb_typeof(d->'maestria'->x->'presi') = 'array' then jsonb_array_length(d->'maestria'->x->'presi') else 0 end),
+        -- nov 2026: cornice della carta (la Cornice del Maestro solo con 5 stelle su quella carta, le altre solo se sbloccate)
+        'cc', case
+          when coalesce(d->'cosm'->'carte'->>x, '') = 'cc-maestro' then
+            case when jsonb_typeof(d->'maestria'->x->'presi') = 'array' and jsonb_array_length(d->'maestria'->x->'presi') >= 5 then 'cc-maestro' else '' end
+          when coalesce(d->'cosm'->'carte'->>x, '') ~ '^cc-[a-z]{1,15}$' and coalesce(d->'cosm'->'have'->>(d->'cosm'->'carte'->>x), '') = 'true' then d->'cosm'->'carte'->>x
+          else '' end) order by n)
       from jsonb_array_elements_text(coalesce(d->'squadre'->att->'carte', '[]'::jsonb)) with ordinality as t(x, n)), '[]'::jsonb));
 end $$;
 

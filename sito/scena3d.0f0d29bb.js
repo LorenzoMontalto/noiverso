@@ -59,8 +59,8 @@ const Scena3D = (() => {
 
   // Faccia della carta disegnata su canvas: foto, cornice, nome, ruolo
   const cacheFronte = {};
-  async function texFronte(c, liv, lode, olo, ultra, stelle = 0) {
-    const k = c.id + ":" + liv + (lode ? "L" : "") + (olo ? "O" : "") + (ultra ? "U" : "") + (stelle ? "S" + stelle : "");
+  async function texFronte(c, liv, lode, olo, ultra, stelle = 0, cc = "") {
+    const k = c.id + ":" + liv + (lode ? "L" : "") + (olo ? "O" : "") + (ultra ? "U" : "") + (stelle ? "S" + stelle : "") + (cc ? "C" + cc : "");
     if (cacheFronte[k]) return cacheFronte[k];
     await font();
     const W = 512, H = 716, cv = document.createElement("canvas");
@@ -82,6 +82,20 @@ const Scena3D = (() => {
       const go = g.createLinearGradient(0, 0, W, H); go.addColorStop(0, "#fff3c4"); go.addColorStop(.5, "#c9a13a"); go.addColorStop(1, "#fff3c4");
       g.lineWidth = 6; g.strokeStyle = go; g.strokeRect(20, 20, W - 40, H - 40); g.lineWidth = 2; g.strokeRect(30, 30, W - 60, H - 60);
       g.fillStyle = "#0b0a08"; g.fillRect(W / 2 - 90, 4, 180, 40); g.fillStyle = go; g.font = '30px "Bungee", Impact, sans-serif'; g.textAlign = "center"; g.fillText("ULTRA", W / 2, 36); g.textAlign = "left";
+    }
+    // cornice della carta (cosmetico): sopra il bordo della rarità
+    const TELAI = { "cc-neon": ["#39f3ff", "#a8fbff"], "cc-ghiaccio": ["#bfeaff", "#ffffff"], "cc-sakura": ["#ff9ab8", "#ffe0ea"], "cc-oro": ["#c9a13a", "#fff3c4"],
+      "cc-fiamme": ["#ff4a1a", "#ffd24d"], "cc-galassia": ["#6a2aff", "#e0c8ff"], "cc-arcobaleno": ["#ff2e46", "#3fd8ff"], "cc-diamante": ["#9ad8ff", "#ffffff"], "cc-maestro": ["#f2c14e", "#ffffff"] };
+    if (TELAI[cc]) {
+      const [c1, c2] = TELAI[cc], gt = g.createLinearGradient(0, 0, W, H);
+      if (cc === "cc-arcobaleno") ["#ff2e46", "#f2c14e", "#5adc8c", "#39f3ff", "#c9a4ff"].forEach((x, i, a) => gt.addColorStop(i / (a.length - 1), x));
+      else { gt.addColorStop(0, c2); gt.addColorStop(.5, c1); gt.addColorStop(1, c2); }
+      g.save(); g.shadowColor = c1; g.shadowBlur = 18; g.lineWidth = cc === "cc-maestro" ? 22 : 16; g.strokeStyle = gt; g.strokeRect(10, 10, W - 20, H - 20); g.restore();
+      if (cc === "cc-maestro") {
+        g.save(); g.fillStyle = "#fff3c4"; g.font = '40px sans-serif'; g.shadowColor = "#f2c14e"; g.shadowBlur = 12;
+        for (const [x, y] of [[8, 46], [W - 46, 46], [8, H - 10], [W - 46, H - 10]]) g.fillText("★", x, y);
+        g.fillStyle = "#1a1206"; g.fillRect(W / 2 - 96, H - 34, 192, 30); g.fillStyle = gt; g.font = '22px "Bungee", Impact, sans-serif'; g.textAlign = "center"; g.fillText("MAESTRO", W / 2, H - 11); g.restore();
+      }
     }
     // nome e ruolo
     g.font = '40px "Bungee", Impact, sans-serif';
@@ -577,7 +591,7 @@ const Scena3D = (() => {
     }
 
     async _creaUnita(l, i, x) {
-      const carta = creaCarta(await texFronte(x.c, x.liv, x.lode, x.olo, x.ultra, x.stelle), texRetro(), x.c.rarita);
+      const carta = creaCarta(await texFronte(x.c, x.liv, x.lode, x.olo, x.ultra, x.stelle, x.cc), texRetro(), x.c.rarita);
       carta.userData.i = i;
       const gruppo = new T.Group();
       gruppo.add(carta);

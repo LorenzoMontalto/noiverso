@@ -2056,6 +2056,27 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 .ord-maniglia { color: var(--spento); font-size: 1.1rem; }
 .ord-riga.fuori { opacity: .5; }
 .ord-riga.sel { transform: translateX(6px); box-shadow: 0 0 0 2px var(--oro); }
+/* cornici delle carte */
+.cc-telaio { position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; border: 4px solid transparent; }
+.cc-telaio.cc-neon { border-color: #39f3ff; box-shadow: inset 0 0 12px #39f3ff, 0 0 10px #39f3ff; }
+.cc-telaio.cc-ghiaccio { border-color: #d8f2ff; box-shadow: inset 0 0 14px rgba(160, 220, 255, .9); background: linear-gradient(160deg, rgba(255, 255, 255, .25), transparent 25%); }
+.cc-telaio.cc-sakura { border-color: #ff9ab8; box-shadow: inset 0 0 12px rgba(255, 154, 184, .9); background: radial-gradient(circle at 8% 6%, #ffd2df 0 5%, transparent 6%), radial-gradient(circle at 92% 94%, #ffd2df 0 5%, transparent 6%); }
+.cc-telaio.cc-oro { border: 4px solid transparent; background: linear-gradient(135deg, #fff3c4, #c9a13a, #fff3c4) border-box; -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; box-shadow: 0 0 14px rgba(242, 193, 78, .7); }
+.cc-telaio.cc-fiamme { border-color: #ff6a1a; box-shadow: inset 0 0 16px #ff4a1a, inset 0 -18px 22px -8px rgba(255, 180, 60, .8); animation: fiammella 1.3s ease-in-out infinite alternate; }
+.cc-telaio.cc-galassia { border-color: #8a4aff; box-shadow: inset 0 0 18px rgba(138, 74, 255, .9); background: radial-gradient(circle at 15% 85%, rgba(224, 200, 255, .5) 0 2px, transparent 3px), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, .6) 0 2px, transparent 3px), radial-gradient(circle at 60% 90%, rgba(255, 255, 255, .5) 0 1.5px, transparent 3px); }
+.cc-telaio.cc-arcobaleno { border: 4px solid transparent; background: linear-gradient(135deg, #ff2e46, #f2c14e, #5adc8c, #39f3ff, #c9a4ff) border-box; -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.cc-telaio.cc-diamante { border-color: #bfeaff; box-shadow: inset 0 0 0 1px #fff, inset 0 0 16px rgba(154, 216, 255, .9), 0 0 14px rgba(154, 216, 255, .6); }
+/* la Cornice del Maestro: unica, solo per la carta con 5 stelle */
+.cc-telaio.cc-maestro { border: 5px solid transparent; background: conic-gradient(from var(--giro, 0deg), #fff3c4, #f2c14e, #fff, #c9a13a, #fff3c4) border-box; -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; box-shadow: 0 0 18px rgba(242, 193, 78, .9); animation: cc-giro 4s linear infinite; }
+.cc-deco { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.cc-deco b { position: absolute; color: #fff3c4; font-size: .9rem; line-height: 1; text-shadow: 0 0 6px #f2c14e, 0 1px 2px #000; }
+.cc-deco b:nth-child(1) { top: 1px; left: 2px; } .cc-deco b:nth-child(2) { top: 1px; right: 2px; } .cc-deco b:nth-child(3) { bottom: 1px; left: 2px; } .cc-deco b:nth-child(4) { bottom: 1px; right: 2px; }
+.cc-deco span { position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); font: 900 .5rem/1 var(--display); letter-spacing: .12em; color: #1a1206; background: linear-gradient(90deg, #fff3c4, #f2c14e); padding: 2px 6px 1px; border-radius: 6px 6px 0 0; }
+.carta.piccola .cc-deco { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+.cc-deco b { font-size: .62rem; } .carta.piccola .cc-deco span { font-size: .42rem; }
+@keyframes cc-giro { to { --giro: 360deg; } }
+.cc-scelta { margin-top: 12px; } .cc-scelta > b { display: block; margin-bottom: 4px; }
+.cc-chip-maestro { background: linear-gradient(90deg, #fff3c4, #f2c14e) !important; color: #1a1206 !important; font-weight: 800; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.8816af04.js"></script>
@@ -2099,10 +2120,10 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
 <script src="carte.1df28b36.js"></script>
-<script src="motore.4beffd03.js"></script>
+<script src="motore.93d1a354.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
 <script src="suoni.75417e9f.js"></script>
-<script src="scena3d.76234673.js"></script>
+<script src="scena3d.0f0d29bb.js"></script>
 <script src="mappe.4e2ef4d0.js"></script>
 <script src="storia.183f0258.js"></script>
 <script src="tutorial.f41d146f.js"></script>
@@ -2115,8 +2136,8 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <script src="reazioni.4a0e6db8.js"></script>
 <script src="eventi.2585cec8.js"></script>
 <script src="progressi.07b8e2a1.js"></script>
-<script src="extra.da08140e.js"></script>
-<script src="app.5b4a657d.js"></script>
+<script src="extra.63ddeef4.js"></script>
+<script src="app.7fecfe33.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
