@@ -59,9 +59,68 @@ const ImmaginiCarte = (() => {
     const dati = giaPronta ? blob : await inFormatoCarta(blob);
     const { error } = await sb.storage.from(BUCKET).upload(`${file(id)}.webp`, dati, { upsert: true, contentType: "image/webp", cacheControl: String(DURATA) });
     if (error) throw error;
+    dimenticaMini(file(id));
   }
   function dimentica() { try { localStorage.removeItem(CHIAVE); } catch (e) {} }
 
-  return { url, file, prepara, elenco, carica, dimentica, VUOTA };
+  // ---------- miniature (nov 2026) ----------
+  // Squadre, album e negozio mostrano tante carte piccole. Con le immagini intere (520×728), ogni volta che
+  // rientri in una pagina il telefono le deve ricaricare e ridecodificare tutte, e per un paio di secondi le
+  // carte restano vuote. Così invece ne faccio una copia piccola (300×420) una volta sola, la tengo nella
+  // memoria del dispositivo e la uso da lì: compare subito. Le immagini intere restano per il dettaglio e la battaglia.
+  const MINI_W = 300, MINI_H = 420, DEPOSITO = "noiverso-miniature";
+  const mini = {}, coda = [], inCoda = new Set();
+  let deposito = null, inCorso = 0;
+  const chiaveMini = f => `https://miniature.noiverso/v1/${encodeURIComponent(f)}.jpg`;
+  function urlMini(id) {
+    const f = file(id);
+    if (mini[f]) return mini[f];
+    const u = url(id);
+    if (u !== VUOTA && window.NOIVERSO_SUPABASE) accoda(f, u);
+    return u;
+  }
+  async function apriMiniature() {
+    if (!window.NOIVERSO_SUPABASE || !("caches" in window)) return;
+    try {
+      deposito = await caches.open(DEPOSITO);
+      for (const r of await deposito.keys()) {
+        const nome = decodeURIComponent(new URL(r.url).pathname.split("/").pop().replace(/\.jpg$/, ""));
+        if (mini[nome]) continue;
+        const res = await deposito.match(r); if (res) mini[nome] = URL.createObjectURL(await res.blob());
+      }
+    } catch (e) { deposito = null; }
+    for (const f of coda.splice(0)) inCoda.delete(f.f), accoda(f.f, f.u);
+  }
+  function accoda(f, u) {
+    if (mini[f] || inCoda.has(f)) return;
+    inCoda.add(f); coda.push({ f, u });
+    if (deposito) avanti();
+  }
+  function avanti() {
+    while (inCorso < 2 && coda.length) {
+      const x = coda.shift(); inCorso++;
+      crea(x.f, x.u).catch(() => {}).finally(() => { inCorso--; inCoda.delete(x.f); setTimeout(avanti, 30); });
+    }
+  }
+  async function crea(f, u) {
+    if (mini[f] || !deposito) return;
+    const res = await fetch(u); if (!res.ok) return;
+    const bmp = await createImageBitmap(await res.blob());
+    const cv = document.createElement("canvas"); cv.width = MINI_W; cv.height = MINI_H;
+    const g = cv.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(bmp, 0, 0, MINI_W, MINI_H);
+    if (bmp.close) bmp.close();
+    const piccola = await new Promise(ok => cv.toBlob(ok, "image/jpeg", .85)); if (!piccola) return;
+    try { await deposito.put(chiaveMini(f), new Response(piccola, { headers: { "Content-Type": "image/jpeg" } })); } catch (e) {}
+    mini[f] = URL.createObjectURL(piccola);
+  }
+  // dopo l'accesso: carico quelle già pronte e preparo, con calma, quelle delle carte che hai
+  async function preparaMiniature(ids) {
+    await apriMiniature();
+    for (const id of ids) { const u = url(id); if (u !== VUOTA) accoda(file(id), u); }
+  }
+  async function dimenticaMini(f) { delete mini[f]; try { if (deposito) await deposito.delete(chiaveMini(f)); } catch (e) {} }
+
+  return { url, urlMini, file, prepara, preparaMiniature, dimenticaMini, elenco, carica, dimentica, VUOTA };
 })();
 function imgCarta(id) { return ImmaginiCarte.url(id); }
+function imgMini(id) { return ImmaginiCarte.urlMini(id); }   // carte piccole nelle liste

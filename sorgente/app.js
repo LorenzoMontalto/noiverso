@@ -433,7 +433,7 @@ function htmlCarta(c, opz = {}) {
   const rar = opz.rar || (opz.liv === undefined && S.carte[c.id] ? rarCarta(c.id) : c.rarita), salita = !coperta && rar !== c.rarita;
   return `
   <div class="carta r-${rar}${salita ? " ascesa" : ""}${coperta ? " sconosciuta" : ""}${opz.piccola ? " piccola" : ""}${opz.mini ? " mini" : ""}${!coperta && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? " olo" : ""}${!coperta && c.ultra && (opz.ultra ?? (opz.liv === undefined && haUltra(c.id))) ? " ultra" : ""}" data-id="${c.id}" ${opz.click ? 'role="button" tabindex="0"' : ""}>
-    <img src="${imgCarta(c.id)}" alt="${coperta ? "Carta da scoprire" : esc(c.nome)}" loading="lazy" draggable="false">
+    <img src="${opz.piena ? imgCarta(c.id) : imgMini(c.id)}" alt="${coperta ? "Carta da scoprire" : esc(c.nome)}" loading="lazy" draggable="false">
     ${coperta ? `<div class="punto-domanda">?</div>` : opz.mini ? "" : `
     <div class="carta-testa"><span class="stile s-${c.stile}" title="${STILI[c.stile].nome}">${c.stile}</span><span class="serie-ico" style="--c:${SERIE[c.serie].colore}" title="${esc(SERIE[c.serie].nome)}">${SERIE[c.serie].simbolo}</span>${liv ? `<span class="liv ${lode ? "lode" : ""}">${lode ? "30 e lode" : `Lv ${liv}`}</span>` : ""}</div>
     ${htmlEtichettaPot(info)}${info && !opz.mini && puoAscendere(c.id) ? `<span class="potenziabile ascesa-pronta" title="Al 30: può salire di rarità"><b>⬆</b><em>Ascesa</em></span>` : ""}
@@ -495,7 +495,7 @@ function apriDettaglio(id) {
   const copie = S.carte[id] || 0;
   apriModale(`
     <div class="dettaglio">
-      <div class="dettaglio-carta" data-inclina>${htmlCarta(c, { liv, olo: haOlo(id), ultra: haUltra(id), rar })}</div>
+      <div class="dettaglio-carta" data-inclina>${htmlCarta(c, { liv, olo: haOlo(id), ultra: haUltra(id), rar, piena: true })}</div>
       <div class="dettaglio-testo">
         <p class="serie-nome">${esc(SERIE[c.serie].nome)}</p>
         <h2>${esc(c.nome)}</h2>
@@ -1175,7 +1175,7 @@ function mostraApertura2D(esiti, graffito) {
           <button class="gira r-${PER_ID[e.id].rarita}" data-i="${i}" aria-label="Gira la carta ${i + 1}">
             <div class="faccia retro"><span class="neon">NV</span></div>
             <div class="faccia fronte">
-              ${htmlCarta(PER_ID[e.id], { liv: e.liv, lode: e.lode, olo: e.olo, ultra: e.ultra })}
+              ${htmlCarta(PER_ID[e.id], { liv: e.liv, lode: e.lode, olo: e.olo, ultra: e.ultra, piena: true })}
               <span class="etichetta ${e.ultra ? "ultra-tag" : e.olo ? "olo-tag" : ""}">${e.ultra ? "ULTRA!" : e.olo ? "Olografica!" : e.pieta ? "Garantita!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete${e.framm ? ` · +${e.framm} ◈` : ""}` : ""}</span>
             </div>
           </button>`).join("")}
@@ -3725,6 +3725,7 @@ async function avvia() {
   if (cfg === undefined) cfg = Archivio._cache !== undefined ? Archivio._cache : await Archivio.caricaConfig();
   applicaConfigCarte(cfg);
   await ImmaginiCarte.prepara(CARTE.map(c => c.id));   // link alle immagini private (solo dopo l'accesso)
+  setTimeout(() => ImmaginiCarte.preparaMiniature(typeof S !== "undefined" && S && S.carte ? possedute().map(c => c.id) : []), 3000);   // copie piccole per le liste
   if (Archivio.modo === "cloud") await caricaStato();
   applicaImpostazioni();
   aggiornaSalvataggio();
