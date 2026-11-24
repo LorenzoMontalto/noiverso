@@ -2231,6 +2231,7 @@ async function trasferisciImmagini() {
 async function caricaFileImmagini(files) {
   const el = $("#stato-immagini"), ko = []; let ok = 0;
   const perNome = {}; CARTE.forEach(c => { perNome[normNome(c.id)] = c.id; perNome[normNome(c.nome)] = c.id; });
+  Object.assign(perNome, { aurokistune: "aurokitsune", samurai: "samuruele" });   // file con un nome diverso dalla carta (Mitologia Giapponese)
   for (const [i, f] of [...files].entries()) {
     const id = perNome[normNome(f.name.replace(/\.[^.]+$/, ""))];
     if (!id) { ko.push(f.name); continue; }

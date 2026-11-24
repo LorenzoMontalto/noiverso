@@ -380,7 +380,25 @@ const STORIA = [
       { titolo: "Il laboratorio", nemici: ["pipscience", "alesshack", "tizianator", "maurizomb", "vikydead"], liv: [1, 1], abilita: 0.95, monete: 360,
         parla: "pipscience", frase: "Questa provetta può salvare il mondo. O finirlo. Facciamo una prova su di te?" },
       { titolo: "L'ultimo rifugio", boss: true, nemici: ["dieghunter", "ritageddon", "pipscience", "vikydead", "maurizomb"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
-        parla: "dieghunter", frase: "Ho contato ogni infetto che ho abbattuto. Tu saresti il numero mille: un bel numero tondo.", vittoria: "Dieghunter abbassa la balestra: non sei infetto, sei solo ostinato. All'alba arriva l'elicottero e, tra le scorte del rifugio, trovi un mappamondo di vetro che non riflette la città in rovina… ma mondi diversi." }
+        parla: "dieghunter", frase: "Ho contato ogni infetto che ho abbattuto. Tu saresti il numero mille: un bel numero tondo.", vittoria: "Dieghunter abbassa la balestra: non sei infetto, sei solo ostinato. All'alba arriva l'elicottero e, tra le scorte del rifugio, trovi una lanterna di carta rossa che si accende da sola. Dentro, un petalo di ciliegio e una scritta: «Il santuario ti aspetta»." }
+    ],
+  },
+  {
+    id: "c26", campo: "tempio", titolo: "Il santuario della luna rossa", serie: "giappone", colore: "#e84a7f", simbolo: "⛩",
+    intro: "La lanterna ti guida oltre un torii rosso, in una valle di ciliegi sotto una luna color sangue. Qui gli dèi e i demoni camminano tra la gente, e i tuoi amici sono diventati samurai, kami e yokai: per arrivare al santuario devi superarli tutti, con onore.",
+    tappe: [
+      { titolo: "Il torii del villaggio", nemici: ["ritamiko", "pipsuki", "seneko", "vikitsune", "alikami"], liv: [1, 1], abilita: 0.9, monete: 320,
+        parla: "ritamiko", frase: "Prima di passare sotto il torii ci si inchina. Tu non ti sei inchinato. Quindi niente, torni indietro." },
+      { titolo: "La foresta degli spiriti", nemici: ["giulyokai", "vikitsune", "alikami", "pipsuki", "seneko"], liv: [1, 1], abilita: 0.92, monete: 330,
+        parla: "giulyokai", frase: "Stanotte sfilano i cento demoni. Ne manca uno per fare cifra tonda: mi sembri perfetto." },
+      { titolo: "Il dojo del clan", nemici: ["ludoninja", "alesshogun", "maurioni", "seneko", "ritamiko"], liv: [1, 1], abilita: 0.93, monete: 340, bustina: "epica",
+        parla: "alesshogun", frase: "Nel mio clan si entra in due modi: con un invito o con la spada. Il tuo invito non lo vedo." },
+      { titolo: "La vetta del tengu", nemici: ["simotengu", "aurokitsune", "diegami", "ludoninja", "giulyokai"], liv: [1, 1], abilita: 0.94, monete: 350,
+        parla: "simotengu", frase: "Sei salito fin quassù senza ali? Complimenti. Adesso scendi, e senza ali è più veloce." },
+      { titolo: "Il lago dell'Orochi", nemici: ["lollorochi", "maurioni", "aurokitsune", "diegami", "simotengu"], liv: [1, 1], abilita: 0.95, monete: 360,
+        parla: "lollorochi", frase: "Otto teste, otto fame diverse. E tu sei uno solo: dovrete fare a turno, ragazzi." },
+      { titolo: "Il santuario della luna rossa", boss: true, nemici: ["samuruele", "tizunagi", "lollorochi", "diegami", "aurokitsune"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
+        parla: "samuruele", frase: "Ho vinto mille duelli e non ho mai smesso di sorridere. Il millesimo primo sei tu: inchiniamoci, e cominciamo.", vittoria: "Samuruele rinfodera la katana e si inchina: hai combattuto con onore. I ciliegi lasciano cadere una pioggia di petali e, sull'altare del santuario, trovi un mappamondo di vetro che non riflette la valle… ma mondi diversi." }
     ],
   },
   {

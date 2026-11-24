@@ -79,6 +79,8 @@ const SINERGIE_BASE = {
   farwest: { tipo: "duello", v2: 18, v3: 22, v5: 44, testo: v => `estrazione rapida: la prima mossa d'attacco dopo che entrano in campo fa +${v}% di danni` },
   // Apocalisse: istinto di sopravvivenza. Sotto il 35% dei PV subiscono v% di danni in meno.
   apocalisse: { tipo: "sopravvivenza", v2: 32, v3: 35, v5: 48, testo: v => `istinto di sopravvivenza: quando hanno meno del 35% dei PV subiscono ${_il(v)} di danni in meno` },
+  // Mitologia Giapponese: spirito del Bushidō. Per ogni compagno di squadra già KO fanno +v% di danni (l'onore dei caduti).
+  giappone: { tipo: "onore", v2: 5, v3: 7, v5: 9, testo: v => `spirito del Bushidō: per ogni compagno di squadra già KO fanno +${v}% di danni (fino a 4 compagni)` },
   mestieri: { tipo: "vel",      v2: 6, v3: 18, v5: 37, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -193,6 +195,7 @@ class Battaglia {
         else if (s.tipo === "fortuna") x.sin.fortuna = s.val;
         else if (s.tipo === "ospitalita") x.sin.ospitalita = s.val;
         else if (s.tipo === "sopravvivenza") x.sin.sopravvive = s.val;
+        else if (s.tipo === "onore") x.sin.onore = s.val;
         else if (s.tipo === "duello") { x.sin.duello = s.val; x.pronta = true; }
         else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
@@ -320,6 +323,7 @@ class Battaglia {
     let dmg = m.pot * rapporto * stile * varia * (crit ? ((a.sin && a.sin.critX) || 1.5) : 1) * K_DANNO * (a.f || 1);
     dmg *= (1 + this.gv(l, "fiamma") / 100) * (1 - this.gv(1 - l, "muro") / 100);
     if (a.c.ruolo === "tiratore" && m.costo >= 2) dmg *= 1.1;
+    if (a.sin && a.sin.onore) { const caduti = this.lati[l].squadra.filter(x => x !== a && x.pv <= 0).length; if (caduti) dmg *= 1 + Math.min(4, caduti) * a.sin.onore / 100; }   // sinergia Mitologia Giapponese
     if (a.c.ruolo === "incendiario" && d.stati && d.stati.brucia) dmg *= 1.2;   // nov 2026: l'Incendiario picchia di più chi sta già bruciando
     if (m.eff && a.sin && a.sin.dannoEff) dmg *= 1 + a.sin.dannoEff / 100;   // sinergia Maghi
     // boss del giorno: corazze e punti deboli (funzioni messe da BossGiorno.prepara)

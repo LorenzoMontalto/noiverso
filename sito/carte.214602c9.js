@@ -23,6 +23,7 @@ const SERIE = {
   paesi: { nome: "Paesi del Mondo", colore: "#4fb87a", simbolo: "✈", desc: "Bandiere, costumi e monumenti: i tuoi amici fanno il giro del mondo, un paese a testa." },
   farwest: { nome: "Far West", colore: "#d9893b", simbolo: "✶", desc: "Saloon, sceriffi e fuorilegge: al tramonto, nel deserto, vince chi estrae per primo." },
   apocalisse: { nome: "Apocalisse", colore: "#e0552e", simbolo: "☣", desc: "Città in rovina, orde di infetti e un virus che non perdona: sopravvive solo chi resta in piedi fino all'ultimo." },
+  giappone: { nome: "Mitologia Giapponese", colore: "#e84a7f", simbolo: "⛩", desc: "Torii rossi, ciliegi in fiore e una luna di sangue: tra samurai, kami, volpi a nove code e demoni oni, l'onore vale più della vita." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -637,6 +638,37 @@ const CARTE = [
     mosse: [m("Colpo di Fucile", 0, 28, { penetra: 20 }), m("Mirino", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Colpo alla Testa", 5, 80, { penetra: 25 })] },
   { id: "senemune", nome: "Senemune", serie: "apocalisse", rarita: "comune", stile: "DIF", ruolo: "difensore", frase: "L'unica immune: il virus la morde e si arrende. Sorride tra i cartelli di quarantena, perché il suo sangue è la speranza di tutti.",
     mosse: [m("Spallata", 0, 26), m("Anticorpi", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Sangue Immune", 5, 76, { drena: 40 })] },
+  // ---------------- Mitologia Giapponese ----------------
+  { id: "samuruele", nome: "Samuruele", serie: "giappone", rarita: "leggendaria", stile: "FOR", ruolo: "assassino", frase: "Armatura laccata, katana sulla spalla e il Fuji alle spalle. Sorride sempre: il samurai che non ha mai perso un duello, e nemmeno il buonumore.",
+    mosse: [m("Iaidō", 0, 34, { penetra: 20 }), m("Via del Bushidō", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Taglio delle Mille Foglie", 5, 24, { colpi: 4 })] },
+  { id: "lollorochi", nome: "Lollorochi", serie: "giappone", rarita: "leggendaria", stile: "FOR", ruolo: "picchiatore", frase: "Dietro di lui si alzano otto teste di drago sotto la luna rossa. Lui è la nona, e la più pericolosa.",
+    mosse: [m("Morso del Serpente", 0, 34), m("Veleno di Orochi", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Otto Teste", 5, 12, { colpi: 8 })] },
+  { id: "tizunagi", nome: "Tizunagi", serie: "giappone", rarita: "leggendaria", stile: "DIF", ruolo: "stregone", frase: "Il dio che creò le isole immergendo una lancia nel mare. Tiene in mano il bastone sacro dei tuoni e ti guarda come un granello di sabbia.",
+    mosse: [m("Lancia Celeste", 0, 32), m("Ama-no-Nuboko", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Nascita delle Isole", 5, 94, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "diegami", nome: "Diegami", serie: "giappone", rarita: "epica", stile: "VEL", ruolo: "tiratore", frase: "Raijin in persona: rosario di tamburi al collo, fulmini tra le dita e un sorrisetto. Quando suona, il cielo si spacca in due.",
+    mosse: [m("Tamburo del Tuono", 0, 30, { penetra: 20 }), m("Fulmine di Raijin", 2, 28, { eff: { tipo: "stordisci", val: 40 } }), m("Tempesta Divina", 5, 90, { penetra: 25 })] },
+  { id: "aurokitsune", nome: "Aurokitsune", serie: "giappone", rarita: "epica", stile: "VEL", ruolo: "schivatore", frase: "Nove code bianche, fuoco di volpe azzurro sul palmo e uno sguardo che inganna. Quella che vedi potrebbe non essere lei.",
+    mosse: [m("Fuoco di Volpe", 0, 30, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Illusione", 2, 0, { eff: { tipo: "nebbia" } }), m("Nove Code", 5, 10, { colpi: 9 })] },
+  { id: "maurioni", nome: "Maurioni", serie: "giappone", rarita: "epica", stile: "FOR", ruolo: "incendiario", frase: "Corna rosse, maschera da oni sulla spalla e un kanabō chiodato. Gli oni dicono che è troppo cattivo anche per loro.",
+    mosse: [m("Kanabō", 0, 32), m("Fiamme dell'Oni", 2, 28, { eff: { tipo: "brucia", val: 5, turni: 2 } }), m("Furia dell'Oni", 5, 88, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  { id: "simotengu", nome: "Simotengu", serie: "giappone", rarita: "epica", stile: "VEL", ruolo: "ladro", frase: "Ali nere da corvo, bastone da monaco e un sorriso furbo. Il tengu della montagna: ti insegna l'arte della spada, poi ti ruba il pranzo.",
+    mosse: [m("Shakujō", 0, 30, { eff: { tipo: "ruba", val: 1 } }), m("Ventaglio di Piume", 2, 28, { eff: { tipo: "stordisci", val: 35 } }), m("Volo del Tengu", 5, 88, { eff: { tipo: "ruba", val: 1 } })] },
+  { id: "alikami", nome: "Alikami", serie: "giappone", rarita: "rara", stile: "DIF", ruolo: "guaritore", frase: "La sacerdotessa del santuario, con la lanterna sacra e il bastone degli spiriti. Dove passa, i ciliegi fioriscono di nuovo.",
+    mosse: [m("Bastone Sacro", 0, 26), m("Benedizione del Kami", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Luce del Santuario", 5, 78, { eff: { tipo: "indebolisci", val: 25, turni: 2 } })] },
+  { id: "giulyokai", nome: "Giulyokai", serie: "giappone", rarita: "rara", stile: "DIF", ruolo: "stregone", frase: "Lanterne di carta, fuochi fatui azzurri e uno spettro alle spalle che sorride come lei. La notte dei cento demoni la guida lei.",
+    mosse: [m("Lanterna Spettrale", 0, 28, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Hitodama", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Parata dei Cento Demoni", 5, 14, { colpi: 6 })] },
+  { id: "ludoninja", nome: "Ludoninja", serie: "giappone", rarita: "rara", stile: "VEL", ruolo: "assassino", frase: "Fascia del villaggio sulla fronte, katana sulla schiena e un sorriso che stona con il mestiere. Non lo vedi arrivare: lo vedi andare via.",
+    mosse: [m("Shuriken", 0, 28, { penetra: 20 }), m("Bomba Fumogena", 2, 0, { eff: { tipo: "nebbia" } }), m("Kunai nell'Ombra", 5, 82, { penetra: 25 })] },
+  { id: "alesshogun", nome: "Alesshogun", serie: "giappone", rarita: "rara", stile: "FOR", ruolo: "capo", frase: "Lo shogun del clan: kimono nero e oro, katana al fianco e occhiali sul naso. Al suo ordine, l'intero esercito sguaina la spada.",
+    mosse: [m("Katana del Clan", 0, 30), m("Ordine dello Shogun", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Carica dei Samurai", 5, 84)] },
+  { id: "ritamiko", nome: "Ritamiko", serie: "giappone", rarita: "comune", stile: "DIF", ruolo: "difensore", frase: "La miko del tempio: nastri rossi, campanelli e una katana nascosta nella manica del kimono. Ride sempre, anche mentre ti scaccia.",
+    mosse: [m("Gohei", 0, 26), m("Barriera Sacra", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Purificazione", 5, 76, { eff: { tipo: "indebolisci", val: 25, turni: 2 } })] },
+  { id: "pipsuki", nome: "Pipsuki", serie: "giappone", rarita: "comune", stile: "DIF", ruolo: "stratega", frase: "Il tanuki burlone: cappello di paglia, fiasca di sakè e un procione sulla spalla. Si trasforma in qualsiasi cosa, tranne che in uno serio.",
+    mosse: [m("Fiasca di Sakè", 0, 26), m("Sakè Caldo", 0, 0, { eff: { tipo: "energia", val: 3 } }), m("Trasformazione del Tanuki", 5, 78, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "seneko", nome: "Seneko", serie: "giappone", rarita: "comune", stile: "VEL", ruolo: "tiratore", frase: "Orecchie da gatto, faretra piena e una maschera da kitsune alla cintura. Fa le fusa finché non tende l'arco.",
+    mosse: [m("Freccia", 0, 26, { penetra: 20 }), m("Occhi di Gatto", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Pioggia di Frecce", 5, 13, { colpi: 6 })] },
+  { id: "vikitsune", nome: "Vikitsune", serie: "giappone", rarita: "comune", stile: "FOR", ruolo: "imprevedibile", frase: "Orecchie di volpe, kimono rosso e un fiore tra i capelli. Ti sorride dolce, ma la coda dice che sta tramando qualcosa.",
+    mosse: [m("Graffio di Volpe", 0, 28), m("Kitsunebi", 2, 24, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Inganno della Volpe", 5, 16, { colpi: 5 })] },
 ];
 
 
@@ -701,6 +733,9 @@ const PERSONE = {
   // Apocalisse
   dieghunter: "Diego", pipscience: "Pips", ritageddon: "Rita", alesshack: "Alessia", maurizomb: "Maurizio", tizianator: "Tiziano", vikydead: "Viky",
   alizombie: "Alice", auroravive: "Aurora", lollivor: "Lorenzo", simopter: "Simone", giulimort: "Giulia", ludovirus: "Ludovico", samudead: "Samuele", senemune: "Senè",
+  // Mitologia Giapponese
+  samuruele: "Samuele", lollorochi: "Lorenzo", tizunagi: "Tiziano", diegami: "Diego", aurokitsune: "Aurora", maurioni: "Maurizio", simotengu: "Simone",
+  alikami: "Alice", giulyokai: "Giulia", ludoninja: "Ludovico", alesshogun: "Alessia", ritamiko: "Rita", pipsuki: "Pips", seneko: "Senè", vikitsune: "Viky",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -715,7 +750,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // (ma conviene darla prima a chi ne ha meno: lo mostra il riquadro «Versioni Ultra» nel pannello admin).
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, ruolo: c.ruolo, persona: c.persona, ultra: c.ultra, mosse: c.mosse.map(m => m.nome) }]));
 function applicaConfigCarte(cfg) {
@@ -812,6 +847,8 @@ function impronta(id) {
 // Bilanciamento per carta (nov 2026): un piccolo correttivo a PV, attacco e difesa, calcolato con migliaia di partite simulate,
 // perché ogni carta valga quanto le altre della sua rarità (le mosse e i ruoli non sono tutti uguali). 1 = nessuna correzione.
 const BILANCIO = {
+  // Mitologia Giapponese (nov 2026), dalle simulazioni
+  tizunagi: 1.11, lollorochi: 0.97, diegami: 0.97, aurokitsune: 0.955, maurioni: 1.04, simotengu: 0.96, alikami: 0.95, giulyokai: 1.12, ludoninja: 0.99, alesshogun: 0.98, pipsuki: 1.03, vikitsune: 1.05,
   aleadme: 1.168, alebella: 1.117, aleghilterra: 0.97, alessante: 0.985, alesshack: 0.99, alessiai: 0.956, alessieno: 1.02, alessiologa: 1.078,
   alessmione: 0.924, alessoutlaw: 1.073, alicircuit: 1.094, alicolt: 0.99, aligorgona: 1.031, alihsoka: 1.038, aliottina: 1.136, alire: 1.028,
   alirtogallo: 1.068, alisa: 0.916, alisombra: 0.943, alispia: 0.922, alissith: 0.958, alistaroth: 0.905, alizombie: 1.038, alledna: 1.051,

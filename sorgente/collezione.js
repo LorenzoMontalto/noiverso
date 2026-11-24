@@ -5,7 +5,7 @@
 // ---------------- TROFEI E TITOLI ----------------
 // Ogni trofeo dà monete (una volta) e sblocca un titolo da mostrare sotto il nome in classifica.
 const Trofei = (() => {
-  const TITOLI_SERIE = { eroi: "Supereroe", db: "Guerriero leggendario", dei: "Divinità", nueve: "Boss della mala", maghi: "Arcimago", demoni: "Signore degli Inferi", mestieri: "Stacanovista", simpson: "Re di Springfield", barbapapa: "Barbatrucco", starwars: "Maestro Jedi", elementi: "Avatar degli Elementi", creature: "Signore della Notte", cyborg: "Cyborg Supremo", carte: "Re del Mazzo", paesi: "Cittadino del Mondo", farwest: "Sceriffo della Frontiera", apocalisse: "Ultimo Sopravvissuto" };
+  const TITOLI_SERIE = { eroi: "Supereroe", db: "Guerriero leggendario", dei: "Divinità", nueve: "Boss della mala", maghi: "Arcimago", demoni: "Signore degli Inferi", mestieri: "Stacanovista", simpson: "Re di Springfield", barbapapa: "Barbatrucco", starwars: "Maestro Jedi", elementi: "Avatar degli Elementi", creature: "Signore della Notte", cyborg: "Cyborg Supremo", carte: "Re del Mazzo", paesi: "Cittadino del Mondo", farwest: "Sceriffo della Frontiera", apocalisse: "Ultimo Sopravvissuto", giappone: "Shogun del Sol Levante" };
   const stelleTot = () => Object.values((S.storia || {}).stelle || {}).reduce((a, n) => a + n, 0);
   const lodi = () => possedute().filter(c => haLode(c.id)).length;
   const oloTot = () => Object.keys(S.olo || {}).filter(id => S.olo[id] && PER_ID[id]).length;
