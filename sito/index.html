@@ -1714,6 +1714,13 @@ body.in-accesso { overflow: hidden; }
 .carta.ultra::before { content: "ULTRA"; position: absolute; z-index: 3; left: 50%; top: 0; transform: translateX(-50%); padding: 1px 10px 2px; border-radius: 0 0 8px 8px;
   background: #0b0a08; color: #ffe9a8; font-family: var(--display); font-size: .62rem; letter-spacing: .12em; border: 1px solid #c9a13a; border-top: 0; }
 .carta.ultra.mini::before { font-size: .45rem; padding: 0 5px 1px; }
+/* olografica + Ultra insieme: cornice Ultra, riflesso arcobaleno dell'olografica e alone di tutte e due */
+.carta.olo.ultra { box-shadow: 0 6px 22px rgba(0, 0, 0, .6), 0 0 20px rgba(255, 233, 168, .5), 0 0 34px rgba(200, 110, 255, .45), 0 0 2px #000 inset; }
+.carta.olo.ultra::after { border-radius: inherit; z-index: 2;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 80, 120, .28) 30%, rgba(255, 210, 90, .26) 38%, rgba(90, 255, 170, .26) 46%, rgba(80, 190, 255, .28) 54%, rgba(200, 110, 255, .28) 62%, transparent 72%);
+  background-size: 300% 300%; mix-blend-mode: color-dodge; animation: olo-scorre 4.5s ease-in-out infinite; }
+.carta.olo.ultra::before { content: "✦ ULTRA"; }
+.carta.olo.ultra.mini::before { content: "✦ ULTRA"; top: 0; right: auto; left: 50%; color: #ffe9a8; text-shadow: none; font-size: .45rem; padding: 0 5px 1px; white-space: nowrap; }
 .r-testo.r-ultra, .tut-bolla .r-ultra, .r-ultra.r-testo { color: var(--r-ultra); text-shadow: 0 0 8px rgba(255, 233, 168, .6); }
 .pallino.r-ultra { background: conic-gradient(#fff3c4, #c9a13a, #1a1408, #fff3c4); }
 .bonus-rarita.r-ultra { border-color: var(--r-ultra); } .bonus-rarita.r-ultra b { color: var(--r-ultra); }
