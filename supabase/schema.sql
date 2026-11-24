@@ -869,6 +869,18 @@ begin
   if exists (select 1 from jsonb_each_text(coalesce(d->'liv', '{}'::jsonb)) where value::numeric > 30) then
     raise exception 'Salvataggio non valido (livelli)';
   end if;
+  -- nov 2026: frammenti, Arena e maestria hanno limiti che giocando non si superano mai
+  if coalesce((d->>'framm')::numeric, 0) < 0 or coalesce((d->>'framm')::numeric, 0) > 200000 then
+    raise exception 'Salvataggio non valido (frammenti)';
+  end if;
+  if jsonb_typeof(d->'arena') = 'object' and (coalesce((d->'arena'->>'vinte')::int, 0) > 7 or coalesce((d->'arena'->>'perse')::int, 0) > 3
+       or jsonb_array_length(case when jsonb_typeof(d->'arena'->'scelte') = 'array' then d->'arena'->'scelte' else '[]'::jsonb end) > 5) then
+    raise exception 'Salvataggio non valido (Arena)';
+  end if;
+  if jsonb_typeof(d->'maestria') = 'object' and exists (select 1 from jsonb_each(d->'maestria') e(k, m)
+       where jsonb_typeof(m->'presi') = 'array' and jsonb_array_length(m->'presi') > 5) then
+    raise exception 'Salvataggio non valido (maestria)';
+  end if;
   -- monete, vittorie e punti non possono saltare di colpo tra un salvataggio e l'altro
   select dati into vecchio from public.salvataggi where user_id = new.user_id and slot = new.slot;
   if vecchio is not null then
@@ -883,6 +895,21 @@ begin
     if coalesce((d->>'monete')::numeric, 0) - coalesce((vecchio->>'monete')::numeric, 0) > 5000 then
       insert into public.registro (user_id, tipo, dettagli) values (new.user_id, 'monete',
         jsonb_build_object('da', coalesce((vecchio->>'monete')::numeric, 0), 'a', coalesce((d->>'monete')::numeric, 0)));
+    end if;
+    -- nov 2026: altri salti sospetti (non bloccano, finiscono nel registro dell'admin)
+    if coalesce((d->'lv'->>'punti')::numeric, 0) - coalesce((vecchio->'lv'->>'punti')::numeric, 0) > 1500 then
+      insert into public.registro (user_id, tipo, dettagli) values (new.user_id, 'livello',
+        jsonb_build_object('da', coalesce((vecchio->'lv'->>'punti')::numeric, 0), 'a', coalesce((d->'lv'->>'punti')::numeric, 0)));
+    end if;
+    if coalesce((d->>'framm')::numeric, 0) - coalesce((vecchio->>'framm')::numeric, 0) > 1500 then
+      insert into public.registro (user_id, tipo, dettagli) values (new.user_id, 'frammenti',
+        jsonb_build_object('da', coalesce((vecchio->>'framm')::numeric, 0), 'a', coalesce((d->>'framm')::numeric, 0)));
+    end if;
+    if (select count(*) from jsonb_each_text(coalesce(d->'carte', '{}'::jsonb)) where value ~ '^[0-9]+$' and value::int > 0)
+       - (select count(*) from jsonb_each_text(coalesce(vecchio->'carte', '{}'::jsonb)) where value ~ '^[0-9]+$' and value::int > 0) > 40 then
+      insert into public.registro (user_id, tipo, dettagli) values (new.user_id, 'carte',
+        jsonb_build_object('nuove', (select count(*) from jsonb_each_text(coalesce(d->'carte', '{}'::jsonb)) where value ~ '^[0-9]+$' and value::int > 0)
+          - (select count(*) from jsonb_each_text(coalesce(vecchio->'carte', '{}'::jsonb)) where value ~ '^[0-9]+$' and value::int > 0)));
     end if;
     if coalesce((d->'stats'->>'vittorie')::int, 0) - coalesce((vecchio->'stats'->>'vittorie')::int, 0) > 5 then
       insert into public.registro (user_id, tipo, dettagli) values (new.user_id, 'vittorie',

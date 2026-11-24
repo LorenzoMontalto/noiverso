@@ -39,7 +39,7 @@ const Livello = (() => {
     return { liv: L, punti: p, dentro: p - totaleA(L), serve: L < MAX ? serve(L) : 0, max: L >= MAX };
   }
   function premio(L) {
-    const p = { monete: 50 + 10 * L }, b = {};
+    const p = { monete: 50 + 5 * L }, b = {};   // nov 2026: era 50 + 10 × L (troppe monete con maestria e Arena)
     if (L % 5 === 0) b.epica = 1;
     if (L % 10 === 0) b.leggendaria = 1;
     if (L % 25 === 0) b.ultra = 1;   // 25, 50, 75, 100
@@ -169,7 +169,7 @@ const Livello = (() => {
       <p class="nota">Il livello giocatore è separato dal pass e non si azzera mai. Si sale con i punti Fama ✦, che arrivano un po' da tutto quello che fai. Livelli: ${MAX}.</p>
       <table class="lg-tab">${COME.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)} ✦</td></tr>`).join("")}</table>
       <h3>Premi</h3>
-      <p class="nota">Ogni livello: monete (50 + 10 × il livello). Ogni 5 livelli anche una bustina epica, ogni 10 una leggendaria e un titolo, al 25, 50, 75 e 100 una Bustina Ultra.</p>
+      <p class="nota">Ogni livello: monete (50 + 5 × il livello). Ogni 5 livelli anche una bustina epica, ogni 10 una leggendaria e un titolo, al 25, 50, 75 e 100 una Bustina Ultra.</p>
       <ul class="lg-premi">${prossimi.map(L => `<li class="${L <= i.liv ? (S.lv.riscossi.includes(L) ? "preso" : "pronto") : ""}">${badge(L)} ${esc(testoPremioLv(L))}${L <= i.liv && !S.lv.riscossi.includes(L) ? " · <b>da riscuotere</b>" : L <= i.liv ? " ✓" : ""}</li>`).join("")}</ul>
       <div class="azioni centro"><button class="btn" data-azione="livello-pagina">Tutti i livelli e premi</button><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }

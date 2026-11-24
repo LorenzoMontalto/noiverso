@@ -51,7 +51,7 @@ class BattagliaSpecchio {
 }
 
 const Online = (() => {
-  const TEMPO_TURNO = 45, TEMPO_RIENTRO = 60, TEMPO_INVITO = 30;
+  const TEMPO_TURNO = 45, TEMPO_RIENTRO = 90, TEMPO_INVITO = 30;   // nov 2026: 90 s per rientrare (era 60)
   let canale = null, presenti = {}, attivo = false;
   let invitoFuori = null, invitoDentro = null;
   const risposte = {};   // inviti a cui ho già risposto: se l'invito arriva di nuovo, rimando la stessa risposta
@@ -92,6 +92,7 @@ const Online = (() => {
     clearTimeout(timerNascosto);
     if (document.visibilityState === "visible") {
       if (canale.state && !["joined", "joining"].includes(canale.state)) riavvia(); else annuncia();
+      if (P && P.ch && !["joined", "joining"].includes(P.ch.state)) { P.perso = P.perso || Date.now() - 3000; ricollega(); }
     } else if (!P && !D && !G) {
       // app in sottofondo da più di 2 minuti: non risulto più online (torno appena riapri)
       timerNascosto = setTimeout(() => { try { canale && canale.untrack(); } catch (e) {} }, 120000);
@@ -213,12 +214,8 @@ const Online = (() => {
     entraPartita({ id: inv.id, seme: inv.seme, avv: { id: inv.a, nome: inv.nomeAvv, avatar: presenti[inv.a] ? presenti[inv.a].avatar : "" }, host: true });
   }
 
-  // ---------------- la partita: messaggi con conferma ----------------
-  function entraPartita(dati) {
-    P = Object.assign(dati, { ch: null, mie: {}, loro: {}, mieOgg: {}, risolti: {}, firmeMie: {}, firmeLoro: {}, visti: new Set(), inAttesa: {}, prontoLoro: null, prontoMio: null,
-      sostLoro: [], scadenza: 0, rientro: 0, finita: false, motivo: "", avvPresente: false, iniziata: false, seq: 0 });
-    annuncia();
-    apriModale(`<div class="invito-vivo"><span class="codice-tag">Sfida dal vivo</span><h2>Mi collego con ${esc(P.avv.nome)}…</h2><p class="nota">Un attimo: ci scambiamo le squadre.</p></div>`, { bloccata: true });
+  // il canale della partita: lo apro all'inizio e lo riapro se cade (rete persa, telefono in sottofondo)
+  function apriCanale() {
     const ch = sb().channel(`noiverso-vivo-${P.id}`, { config: { presence: { key: io() }, broadcast: { self: false } } });
     P.ch = ch;
     ch.on("broadcast", { event: "m" }, ({ payload }) => ricevi(payload))
@@ -244,6 +241,33 @@ const Online = (() => {
         manda({ tipo: "pronto", nome: mioNome(), avatar: S.profilo.avatar || "" });
         provaInizio();
       });
+  }
+  function ricollega() {
+    if (!P || P.finita || !P.ch) return;
+    const stato = P.ch.state;
+    if (["joined", "joining"].includes(stato)) { P.perso = 0; return; }
+    if (!P.perso) { P.perso = Date.now(); aggiornaBanner(); return; }
+    if (Date.now() - P.perso < 3000) return;   // a volte torna da solo in un attimo
+    if (P.ricollego) return;
+    const p = P, vecchio = P.ch; P.perso = Date.now(); P.ricollego = true;
+    try { if (sb().realtime && !sb().realtime.isConnected()) sb().realtime.connect(); } catch (e) {}
+    // prima tolgo il canale vecchio (supabase ridarebbe lo stesso), poi lo riapro con lo stesso nome:
+    // l'avversario mi ritrova e i messaggi non ancora confermati si rimandano da soli
+    const togli = Promise.resolve().then(() => sb().removeChannel(vecchio)).catch(() => {});
+    Promise.race([togli, new Promise(r => setTimeout(r, 1500))]).then(() => {
+      try { const rt = sb().realtime; if (rt && Array.isArray(rt.channels) && rt.channels.includes(vecchio)) rt.channels = rt.channels.filter(c => c !== vecchio); } catch (e) {}
+      p.ricollego = false;
+      if (P === p && !p.finita) apriCanale();
+    });
+  }
+
+  // ---------------- la partita: messaggi con conferma ----------------
+  function entraPartita(dati) {
+    P = Object.assign(dati, { ch: null, mie: {}, loro: {}, mieOgg: {}, risolti: {}, firmeMie: {}, firmeLoro: {}, visti: new Set(), inAttesa: {}, prontoLoro: null, prontoMio: null,
+      sostLoro: [], scadenza: 0, rientro: 0, finita: false, motivo: "", avvPresente: false, iniziata: false, seq: 0 });
+    annuncia();
+    apriModale(`<div class="invito-vivo"><span class="codice-tag">Sfida dal vivo</span><h2>Mi collego con ${esc(P.avv.nome)}…</h2><p class="nota">Un attimo: ci scambiamo le squadre.</p></div>`, { bloccata: true });
+    apriCanale();
     const p = P;
     P.timerRete = setInterval(() => rimanda(p), 1500);
     P.timerOrologio = setInterval(orologio, 500);
@@ -397,6 +421,7 @@ const Online = (() => {
   // ---------------- orologio: tempo per scegliere e per rientrare ----------------
   function orologio() {
     if (!P || !B || P.finita) return;
+    ricollega();
     // se un messaggio è arrivato mentre partiva un'animazione, lo applico adesso
     if (!animazione && B.vincitore < 0) { if (P.sostLoro.length) provaSost(); else provaRisolvi(); }
     if (P.rientro && Date.now() > P.rientro && B.vincitore < 0) {   // l'avversario non è tornato: vinci tu
@@ -428,6 +453,7 @@ const Online = (() => {
   }
   function testoBanner() {
     if (!P || !B || B.vincitore >= 0) return "";
+    if (P.perso) return `<b class="vivo-allarme">Connessione persa</b> · mi ricollego… (la partita ti aspetta)`;
     if (P.rientro) return `<b class="vivo-allarme">${esc(P.avv.nome)} si è disconnesso</b> · ha ${Math.max(0, Math.ceil((P.rientro - Date.now()) / 1000))} s per rientrare`;
     if (animazione) return `Turno in corso…`;
     const s = P.scadenza ? Math.max(0, Math.ceil((P.scadenza - Date.now()) / 1000)) : 0;

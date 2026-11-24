@@ -380,7 +380,7 @@ function aggiornaTesta() {
   if (pb) { pb.hidden = !S.profilo.nome; pb.innerHTML = `${S.admin ? htmlAvatar(S.profilo.avatar) : Cosmetici.avatar(S.profilo.avatar, Cosmetici.stato().cornice)}${!S.admin && S.lv ? Livello.badge(Livello.info().liv, "testa") : ""}<span>${esc(S.profilo.nome || "")}</span>${S.admin ? `<em>Admin</em>` : ""}`; }
   const na = $('[data-vista="admin"]'); if (na) na.hidden = !S.admin;
   Trofei.controlla();
-  const nst = $('[data-vista="strada"] .badge'); if (nst) { const q = Missioni.pronte() + Livello.daRiscuotere().length; nst.textContent = q; nst.hidden = !q; }
+  const nst = $('[data-vista="strada"] .badge'); if (nst) { const q = S.admin ? Missioni.pronte() + Livello.daRiscuotere().length : Progressi.totale(); nst.textContent = q; nst.hidden = !q; }
   const ns = $('[data-vista="storia"] .badge'); if (ns) { const q = scrigniPronti(); ns.textContent = q; ns.hidden = !q; }
   const nal = $('[data-vista="album"] .badge'); if (nal) { const q = potenziabili() + Trofei.pronti() + Scambi.inArrivo; nal.textContent = q; nal.hidden = !q; }
   const b = bustineTotali(), r = daRiscuotere();
@@ -573,6 +573,17 @@ const StatCarte = (() => {
       <td>${x.po[0]} <small>(${Math.round(x.po[0] / g * 100)}%)</small></td><td>${x.po[1]}</td><td>${x.po[2] || "—"}</td>
       <td>${x.pc[0]}</td>${cellaPerc(x.pc[0], x.pc[1])}<td>${x.vi[0]}</td>${cellaPerc(x.vi[0], x.vi[1])}</tr>`).join("");
   }
+  // riassunto per serie e le carte da tenere d'occhio (con abbastanza battaglie per fidarsi)
+  function htmlRiassunto() {
+    const b = dati.battaglie || {}, tot = id => { const pc = b[`${id}:pc`] || [0, 0], vi = b[`${id}:vivo`] || [0, 0]; return [pc[0] + vi[0], pc[1] + vi[1]]; };
+    const serie = ORDINE_SERIE.map(k => { const t = CARTE.filter(c => c.serie === k).map(c => tot(c.id)).reduce((a, x) => [a[0] + x[0], a[1] + x[1]], [0, 0]); return { k, u: t[0], v: t[1] }; }).filter(x => x.u);
+    const occhio = CARTE.map(c => { const [u, v] = tot(c.id); return { c, u, p: perc(u, v) }; }).filter(x => x.u >= 30 && (x.p >= 60 || x.p <= 40)).sort((x, y) => y.p - x.p);
+    if (!serie.length) return `<p class="nota">Ancora nessuna battaglia registrata.</p>`;
+    return `<div class="st-riassunto"><div><b>Per serie</b> <small class="nota">(battaglie in cui una carta della serie è scesa in campo)</small>
+        <div class="st-serie">${serie.map(x => { const p = perc(x.u, x.v); return `<span class="${x.u < 40 ? "st-poche" : p >= 58 ? "st-forte" : p <= 42 ? "st-debole" : ""}" style="--c:${SERIE[x.k].colore}">${SERIE[x.k].simbolo} ${esc(SERIE[x.k].nome)} <b>${p}%</b> <small>${x.u}</small></span>`; }).join("")}</div></div>
+      <div><b>Da tenere d'occhio</b> <small class="nota">(almeno 30 battaglie, vince più del 60% o meno del 40%)</small>
+        ${occhio.length ? `<div class="st-serie">${occhio.map(x => `<span class="${x.p >= 60 ? "st-forte" : "st-debole"}">${esc(x.c.nome)} <b>${x.p}%</b> <small>${x.u}</small></span>`).join("")}</div>` : `<p class="nota">Nessuna carta fuori misura per ora.</p>`}</div></div>`;
+  }
   function htmlAdmin() {
     const th = (k, t) => `<th><button class="st-ordina ${ordine === k ? "attivo" : ""}" data-admin="stat-ordina-${k}">${t}${ordine === k ? " ▾" : ""}</button></th>`;
     return `<h3>Statistiche delle carte</h3>
@@ -580,6 +591,7 @@ const StatCarte = (() => {
       <div class="azioni"><button class="btn primario" data-admin="stat-carica" ${carico ? "disabled" : ""}>${dati ? "Aggiorna" : "Carica le statistiche"}</button>${dati ? `<button class="btn" data-admin="stat-azzera">Azzera le battaglie</button>` : ""}</div>
       ${errore ? `<p class="errore">${esc(errore)}</p>` : carico ? `<p class="nota">Carico…</p>` : !dati ? "" : `
       <p class="nota">${dati.giocatori} giocatori (admin esclusi).</p>
+      ${htmlRiassunto()}
       <div class="st-scorri"><table class="st-tabella"><thead><tr><th>Carta</th>${th("possesso", "Ce l'hanno")}${th("squadra", "In squadra")}${th("livello", "Lv medio")}${th("usate", "Battaglie PC")}${th("vince", "Vince")}${th("vivo", "Dal vivo")}<th>Vince</th></tr></thead>
       <tbody>${righe()}</tbody></table></div>`}`;
   }
@@ -649,14 +661,40 @@ function chiudiModale() {
   if (typeof scegliSquadra === "function" && scegliSquadra.poi) { scegliSquadra.poi = null; if (!B) schermoIntero(false); }
 }
 
+// Avvisi in fila: uno alla volta (toccandolo passi al prossimo). A fine battaglia non escono come avvisi:
+// finiscono tutti nel riepilogo «Progressi di questa partita» sotto il risultato.
 function mostraAvviso(testo) {
-  const el = $("#avviso");
-  el.textContent = testo;
-  el.hidden = false;
-  FX.riavvia(el, "entra");
-  clearTimeout(mostraAvviso._t);
-  mostraAvviso._t = setTimeout(() => { el.hidden = true; }, 5000);
+  testo = String(testo == null ? "" : testo).trim(); if (!testo) return;
+  if (Riepilogo.attivo()) { Riepilogo.aggiungi(testo); return; }
+  const c = mostraAvviso.coda || (mostraAvviso.coda = []);
+  if (mostraAvviso.ora === testo || c.includes(testo)) return;
+  c.push(testo);
+  if (!mostraAvviso.ora) mostraAvviso.prossimo(); else mostraAvviso.conta();
 }
+mostraAvviso.conta = () => { const el = $("#avviso"), n = (mostraAvviso.coda || []).length; if (el && mostraAvviso.ora) el.dataset.altri = n ? `+${n}` : ""; };
+mostraAvviso.prossimo = () => {
+  const el = $("#avviso"), c = mostraAvviso.coda || [];
+  clearTimeout(mostraAvviso._t);
+  const t = c.shift(); mostraAvviso.ora = t || null;
+  if (!t) { el.hidden = true; return; }
+  el.textContent = t; mostraAvviso.conta(); el.hidden = false; FX.riavvia(el, "entra");
+  mostraAvviso._t = setTimeout(mostraAvviso.prossimo, c.length ? 3500 : 5000);
+};
+const Riepilogo = {
+  attivo: () => !!(typeof B !== "undefined" && B && B.vincitore >= 0 && livelloAttuale && !livelloAttuale.spettatore),
+  aggiungi(testo) {
+    B.riepilogo = B.riepilogo || [];
+    if (B.riepilogo.includes(testo)) return;
+    B.riepilogo.push(testo);
+    const vecchio = document.querySelector(".fine .riepilogo-fine"), nuovo = Riepilogo.html();
+    if (vecchio) vecchio.outerHTML = nuovo;
+    else { const az = document.querySelector(".fine .azioni"); if (az) az.insertAdjacentHTML("beforebegin", nuovo); }
+  },
+  html() {
+    const l = (B && B.riepilogo) || [];
+    return l.length ? `<div class="riepilogo-fine"><b>Progressi di questa partita</b><ul>${l.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>` : "";
+  },
+};
 
 // ============================================================
 //  VISTE
@@ -747,6 +785,7 @@ function vistaStrada() {
     </div>
     <div class="ventaglio" aria-hidden="true">${anteprima.map(c => htmlCarta(c, { liv: 0, piccola: true })).join("")}</div>
   </section>
+  ${Progressi.htmlStrada()}
   ${Missioni.htmlStrada()}
   ${(() => { const p = prossimaTappa(); const c = p ? STORIA[p.k] : STORIA[STORIA.length - 1];
     return `<section class="storia-banner" style="--c:${c.colore}">
@@ -756,14 +795,8 @@ function vistaStrada() {
         <p class="nota">${p ? `Prossima tappa: ${esc(c.tappe[p.i].titolo)}. Vinci per sbloccare monete, bustine e il resto della storia.` : "Rigioca le tappe per prendere tutte le stelle e aprire gli scrigni."}</p></div>
       <button class="btn primario" data-fx="onda" data-azione="vai-storia">${p ? "Continua la storia" : "Apri la mappa"}</button>
     </section>`; })()}
-  <section class="riquadri">
-    <div class="riquadro"><span>Album</span><b>${mie}<small>/${tot}</small></b><div class="barra"><i style="--p:${Math.round(mie / tot * 100)}%"></i></div></div>
-    <div class="riquadro"><span>Vittorie</span><b>${S.stats.vittorie}<small> su ${giocate}</small></b></div>
-    <div class="riquadro"><span>Pass</span><b>Lv ${livelloPass()}<small>/${PASS.livelli}</small></b><div class="barra oro"><i style="--p:${(S.pass.xp % PASS.xpLivello) / PASS.xpLivello * 100}%"></i></div></div>
-    <div class="riquadro"><span>Punti classifica</span><b>${(() => { const io = classificaDati && classificaDati.find(r => r.id === Archivio.uid); return io ? Number(io.punti) || 0 : 0; })()}</b></div>
-  </section>
   <section class="regole">
-    <div class="titolo-riga"><h2>Come si gioca</h2><button class="btn piccolo" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button></div>
+    <div class="titolo-riga"><h2>Come si gioca</h2><div class="azioni"><button class="btn piccolo" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button>${S.admin ? "" : `<button class="btn piccolo" data-azione="novita-rivedi">Le novità</button>`}</div></div>
     <ol>
       <li><b>Bustine.</b> Ogni giorno ricevi una bustina gratis; le altre le compri nel <b>Negozio</b> (classiche, per serie e per stile) o arrivano dal pass. Le apri dalla pagina Bustine. La prima è di benvenuto: 5 carte tutte diverse.</li>
       <li><b>Potenziare.</b> Le carte salgono di livello solo se le potenzi tu, dal dettaglio della carta (il segno ▲ verde dice quando puoi). Ogni doppione dà potenziatori per quella carta: ${POT_DOPPIONE.comune} se è Comune, ${POT_DOPPIONE.rara} Rara, ${POT_DOPPIONE.epica} Epica, ${POT_DOPPIONE.leggendaria} Leggendaria. Ogni livello costa potenziatori e monete, sempre di più: da ${potPerLivello(1)} potenziatori e ${monetePerLivello(1)} monete per il livello 2 fino a ${potPerLivello(29)} e ${monetePerLivello(29)} per il 30. Ogni livello dà +2% a PV e danni.</li>
@@ -772,7 +805,11 @@ function vistaStrada() {
       <li><b>Battaglia.</b> Cinque contro cinque. Ogni turno scegli una mossa, <i>Carica</i> (+2 energia e ti proteggi) o un cambio. Ogni carta fa una sola mossa per turno: la più veloce attacca per prima (a pari velocità si alterna). L'energia è della squadra: si parte da 3 e si guadagnano 2 punti a turno.</li>
       <li><b>Classifica.</b> Si fanno punti solo con le sfide dal vivo contro gli amici online: +3 per ogni vittoria, 0 per le sconfitte.</li>
       <li><b>Tipi.</b> Ogni carta è di un tipo che potenzia una sua statistica: <span class="s-FOR stile">FOR</span> Forza +25% attacco, <span class="s-DIF stile">DIF</span> Difesa +5% difesa, <span class="s-VEL stile">VEL</span> Velocità +5 velocità e +15% attacco (a parità di livello una carta Velocità attacca sempre prima delle altre). Potenziando salgono attacco, difesa, velocità e PV di tutte le carte, e la statistica del tipo sale di più. Forza batte Difesa, Difesa batte Velocità, Velocità batte Forza: il vantaggio vale ×1,3, lo svantaggio ×0,8.</li>
-      <li><b>Pass.</b> Ogni sfida e ogni bustina danno punti esperienza. Ogni livello del pass sblocca un premio.</li>
+      <li><b>Pass.</b> Le sfide del pass (3 al giorno, 4 alla settimana) danno tanta esperienza; battaglie e bustine ne danno un po'. Ogni livello del pass sblocca un premio.</li>
+      <li><b>Livello giocatore.</b> Sale con tutto quello che fai (battaglie, storia, carte nuove, potenziamenti) fino al 100. Ogni livello ha un premio, alcuni anche un titolo o un cosmetico.</li>
+      <li><b>Arena.</b> Scegli 5 carte tra quelle proposte, tutte al livello 20, e gioca finché non perdi 3 volte: più vittorie fai (fino a 7), più ricco è il premio.</li>
+      <li><b>Maestria e frammenti.</b> Ogni carta ha 5 stelle di maestria da conquistare giocandola. I doppioni delle carte al 30 danno frammenti ◈, con cui crei le carte che ti mancano.</li>
+      <li><b>Gradi.</b> I punti dal vivo del mese ti danno un grado, da Bronzo a Leggenda: a fine stagione riscuoti il premio del più alto.</li>
     </ol>
   </section>`;
 }
@@ -1289,6 +1326,7 @@ function vistaSquadra() {
     <div class="squadra-barra">
       <label for="nome-squadra">Nome</label>
       <input id="nome-squadra" maxlength="22" value="${esc(sq.nome)}" autocomplete="off">
+      <button class="btn piccolo" data-fx="stelle" data-azione="consiglio-calcola">✦ Squadra consigliata</button>
       <span class="nota">${sq.carte.length === CARTE_SQUADRA ? "Squadra pronta per le sfide." : `Mancano ${CARTE_SQUADRA - sq.carte.length} ${CARTE_SQUADRA - sq.carte.length === 1 ? "carta" : "carte"}.`}</span>
     </div>
     <div class="slot5">${slot.join("")}</div>
@@ -2163,6 +2201,9 @@ function testoSegnalazione(x) {
     "sfide-veloci": [3, `Il ${d.giorno ? new Date(d.giorno).toLocaleDateString("it-IT") : "?"} ha fatto ${n(d.quante)} sfide tra amici a meno di 25 secondi l'una dall'altra: una battaglia vera dura di più.`],
     "sempre-vinte": [1, `${n(d.quante)} sfide tra amici in 2 settimane, tutte vinte. Può essere solo molto forte: guarda se ci sono anche altre segnalazioni.`],
     "boss-alto": [2, `Media di ${n(d.media)} danni per attacco al boss in ${n(d.colpi)} attacchi (il massimo è 6.000).`],
+    livello: [1, `In un solo salvataggio i punti del livello giocatore sono passati da ${n(d.da)} a ${n(d.a)}: una battaglia ne dà al massimo un centinaio.`],
+    frammenti: [1, `In un solo salvataggio i frammenti sono passati da ${n(d.da)} a ${n(d.a)}: anche un'Arena perfetta ne dà 100.`],
+    carte: [1, `In un solo salvataggio ha trovato ${n(d.nuove)} carte nuove: anche aprendo tante bustine di fila è strano.`],
     rimedio: [0, `Hai già fatto: ${esc(String(d.cosa || ""))}${d.quante !== undefined ? ` (${n(d.quante)})` : ""}.`],
   }[x.tipo] || [1, esc(x.tipo)];
   return { gravita: T[0], testo: T[1], quando };
@@ -3001,7 +3042,7 @@ function htmlAzioni() {
     const vinto = B.vincitore === 0;
     return `<div class="fine ${vinto ? "vinto" : "perso"}">
       <b>${vinto ? "Vittoria!" : "Sconfitta"}</b>
-      <span>${(() => { const pr = premiSfida(livelloAttuale); return vinto ? `+${pr.monete} monete · +${pr.xp} XP` : `+10 monete · +${XP_SCONFITTA} XP`; })()}</span>
+      <span>${(() => { const pr = premiSfida(livelloAttuale); return livelloAttuale.arena ? (vinto ? `+${pr.xp} XP · le monete arrivano tutte insieme alla fine dell'Arena` : `+10 monete · +${XP_SCONFITTA} XP`) : vinto ? `+${pr.monete} monete · +${pr.xp} XP` : `+10 monete · +${XP_SCONFITTA} XP`; })()}</span>
       ${(vinto || livelloAttuale.arena) && livelloAttuale.extraFine ? `<span class="punti-amico">${livelloAttuale.extraFine}</span>` : ""}
       ${htmlEspCarte()}
       <div class="azioni centro">${livelloAttuale.arena && (!Arena.stato() || Arena.stato().finita) ? "" : `<button class="btn primario" data-fx="onda" data-azione="rivincita">${livelloAttuale.arena ? "Prossima partita" : "Rivincita"}</button>`}<button class="btn" data-fx="salto" data-azione="esci-battaglia">${livelloAttuale.arena && Arena.stato() && Arena.stato().finita ? "Riscuoti il premio" : "Torna alle sfide"}</button></div>
@@ -3210,7 +3251,7 @@ async function sostituisciGiocatore(i) {
 const potVittoria = mult => Math.max(1, Math.min(5, Math.round(mult)));
 // potSempre: le carte scese in campo prendono potenziatori anche se si perde (attacco al boss del gruppo)
 function premiaCarte(mult, vinto, potSempre) {
-  if (livelloAttuale && !livelloAttuale.spettatore) StatCarte.registra(vinto, livelloAttuale.vivo ? "vivo" : "pc");
+  if (livelloAttuale && !livelloAttuale.spettatore && !livelloAttuale.arena) StatCarte.registra(vinto, livelloAttuale.vivo ? "vivo" : "pc");
   const xp = Math.round((vinto ? 50 : 20) * mult * (carteBattaglia() === 3 ? .6 : 1));
   // sconfitta: 1 potenziatore a ogni carta scesa in campo, se la battaglia è durata almeno 3 turni e non ti sei arreso
   // (così non si possono fare potenziatori arrendendosi subito una battaglia dopo l'altra)
@@ -3231,7 +3272,7 @@ function premiaCarte(mult, vinto, potSempre) {
 }
 function htmlEspCarte() {
   const lista = livelloAttuale && livelloAttuale.espCarte;
-  if (!lista || !lista.length) return "";
+  if (!lista || !lista.length) return Riepilogo.html();
   const totPot = lista.reduce((n, r) => n + (r.pot || 0), 0);
   return `${totPot ? `<p class="esp-pot-nota">Le carte scese in campo hanno guadagnato <b>potenziatori</b> ▲${lista.some(r => r.prontaNuova) ? " — qualcuna ora si può potenziare!" : ""}</p>` : ""}<div class="esp-carte">${lista.map((r, j) => {
     const ora = infoCarta(r.id), pct = ora.lode ? 100 : Math.round(ora.dentro / ora.serve * 100);
@@ -3241,7 +3282,7 @@ function htmlEspCarte() {
     <span class="esp-barra ${ora.liv < LIVELLO_MAX ? "pot" : ""}"><i style="--p:${pct}%"></i></span>
     ${r.pot ? `<span class="esp-pot">+${r.pot} ▲</span>` : ""}
     <small>${r.lodeNuova ? "LODE!" : r.xp ? `+${r.xp} lode` : ora.lode ? "Lode" : ora.puoi ? "Potenzia!" : `${ora.pot}/${ora.servePot}`}</small>
-  </div>`; }).join("")}</div>`;
+  </div>`; }).join("")}</div>${Riepilogo.html()}`;
 }
 
 function chiudiSfida() {
@@ -3305,6 +3346,7 @@ document.addEventListener("change", e => { if (e.target.id === "img-file" && e.t
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.vetrina !== undefined) { Vetrina.metti(+e.target.dataset.vetrina, e.target.value); return; } if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
 document.addEventListener("click", e => {
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
+  if (e.target.id === "avviso") { mostraAvviso.prossimo(); return; }
   const t = e.target.closest("[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
@@ -3428,6 +3470,15 @@ document.addEventListener("click", e => {
     case "vai-classifica": vai("classifica"); break;
     case "vai-squadra": vai("squadra"); break;
     case "vai-pass": vai("pass"); break;
+    case "vai-album": albumScheda = "carte"; vai("album"); break;
+    case "vai-trofei": albumScheda = "trofei"; vai("album"); break;
+    case "vai-missioni": { const el = $(".oggi"); if (el) el.scrollIntoView({ behavior: ridotto ? "auto" : "smooth", block: "start" }); break; }
+    case "consiglio-calcola": Consiglio.calcola(); break;
+    case "consiglio-usa": Consiglio.usa(); break;
+    case "novita-avanti": Novita.avanti(); break;
+    case "novita-indietro": Novita.indietro(); break;
+    case "novita-fine": Novita.fine(); break;
+    case "novita-rivedi": Novita.rivedi(); break;
     case "livello-riscuoti": Livello.riscuoti(t); break;
     case "livello-info": Livello.apriInfo(); break;
     case "livello-pagina": Livello.apriLivelli(); break;

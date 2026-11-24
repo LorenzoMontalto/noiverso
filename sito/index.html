@@ -1986,6 +1986,26 @@ td.chi[data-profilo-amico] { cursor: pointer; } td.chi[data-profilo-amico]:hover
 .off-sp { background: var(--muro); border: 1px solid var(--linea); border-radius: 12px; padding: 10px; display: grid; gap: 6px; justify-items: center; text-align: center; }
 .off-sp .carta { width: 110px; } .off-sp.presa { opacity: .6; }
 .off-cosm { display: grid; gap: 6px; justify-items: center; padding: 10px 0; } .off-cosm .avatar { width: 56px; }
+#avviso { cursor: pointer; } #avviso[data-altri]:not([data-altri=""])::after { content: attr(data-altri); margin-left: 10px; font-size: .72rem; font-weight: 800; background: var(--oro); color: #1b1206; border-radius: 8px; padding: 1px 6px; }
+.riepilogo-fine { width: min(100%, 460px); margin: 6px auto 2px; text-align: left; background: rgba(0, 0, 0, .3); border: 1px solid rgba(242, 193, 78, .35); border-radius: 12px; padding: 8px 12px; }
+.riepilogo-fine > b { font-size: .8rem; color: var(--oro); letter-spacing: .04em; }
+.riepilogo-fine ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; font-size: .8rem; }
+.riepilogo-fine li { animation: avviso-entra .4s var(--molla); }
+.progressi-hub { margin: 10px 0 18px; }
+.ph-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.ph-voce { position: relative; display: grid; gap: 2px; text-align: left; background: var(--muro); border: 1px solid var(--linea); border-radius: 12px; padding: 10px 12px; color: inherit; font: inherit; cursor: pointer; transition: transform .15s, border-color .15s; }
+.ph-voce:hover { transform: translateY(-2px); border-color: var(--neon); }
+.ph-voce.pronta { border-color: var(--oro); box-shadow: 0 0 14px rgba(242, 193, 78, .25); }
+.ph-ico { font-size: 1.15rem; } .ph-nome { font-size: .72rem; color: var(--spento); text-transform: uppercase; letter-spacing: .05em; }
+.ph-voce b { font-size: 1.05rem; } .ph-voce small { font-size: .72rem; color: var(--spento); }
+.ph-barra { height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .08); overflow: hidden; } .ph-barra i { display: block; height: 100%; width: var(--p); background: linear-gradient(90deg, var(--neon), var(--oro)); }
+.ph-punto { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; border-radius: 10px; background: #ff2e46; color: #fff; font-size: .7rem; font-weight: 800; display: grid; place-items: center; padding: 0 5px; box-shadow: 0 0 8px rgba(255, 46, 70, .7); }
+.novita { text-align: center; max-width: 420px; margin: 0 auto; } .nv-ico { font-size: 3rem; margin: 10px 0 4px; }
+.nv-punti { display: flex; gap: 6px; justify-content: center; margin: 10px 0; } .nv-punti i { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .2); } .nv-punti i.on { background: var(--oro); }
+.st-riassunto { display: grid; gap: 10px; margin: 8px 0 12px; }
+.st-serie { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; } .st-serie span { border: 1px solid var(--linea); border-left: 3px solid var(--c, var(--linea)); border-radius: 8px; padding: 3px 8px; font-size: .78rem; } .st-serie small { color: var(--spento); }
+.consiglio-modale { text-align: center; max-width: 520px; margin: 0 auto; } .consiglio-modale .barra { margin: 14px auto; max-width: 320px; }
+.cons-carte { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 12px 0; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.8816af04.js"></script>
@@ -2041,12 +2061,12 @@ td.chi[data-profilo-amico] { cursor: pointer; } td.chi[data-profilo-amico]:hover
 <script src="collezione.b216ba0e.js"></script>
 <script src="graffiti.87ba5b2f.js"></script>
 <script src="zaino.f42c2817.js"></script>
-<script src="online.5ed82701.js"></script>
+<script src="online.546aed30.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
 <script src="eventi.61c26832.js"></script>
-<script src="progressi.030cee4b.js"></script>
-<script src="extra.7293731b.js"></script>
-<script src="app.dd6b9567.js"></script>
+<script src="progressi.07b8e2a1.js"></script>
+<script src="extra.4fce3e79.js"></script>
+<script src="app.55db41bb.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

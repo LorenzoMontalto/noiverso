@@ -66,11 +66,11 @@ const Cosmetici = (() => {
 // Ogni carta ha 5 obiettivi suoi. Ogni obiettivo raggiunto è una stella: monete, punti Fama e, alla quinta, la Cornice del Maestro.
 const Maestria = (() => {
   const OBIETTIVI = [
-    { k: "v", n: 3,    testo: "Vinci 3 battaglie con questa carta scesa in campo", monete: 50,  fama: 10 },
-    { k: "d", n: 1500, testo: "Fai 1.500 danni con questa carta", monete: 100, fama: 20 },
-    { k: "o", n: 10,   testo: "Manda KO 10 carte nemiche con questa carta", monete: 150, fama: 30 },
-    { k: "f", n: 10,   testo: "Usa 10 volte la sua mossa finale", monete: 250, fama: 40 },
-    { k: "v", n: 25,   testo: "Vinci 25 battaglie con questa carta scesa in campo", monete: 400, fama: 60, frammenti: 30 },
+    { k: "v", n: 3,    testo: "Vinci 3 battaglie con questa carta scesa in campo", monete: 25,  fama: 10 },
+    { k: "d", n: 1500, testo: "Fai 1.500 danni con questa carta", monete: 50, fama: 20 },
+    { k: "o", n: 10,   testo: "Manda KO 10 carte nemiche con questa carta", monete: 75, fama: 30 },
+    { k: "f", n: 10,   testo: "Usa 10 volte la sua mossa finale", monete: 100, fama: 40 },
+    { k: "v", n: 25,   testo: "Vinci 25 battaglie con questa carta scesa in campo", monete: 150, fama: 60, frammenti: 30 },
   ];
   const dati = id => (S.maestria && S.maestria[id]) || { v: 0, d: 0, o: 0, f: 0, presi: [] };
   const stelle = id => dati(id).presi.length;
@@ -391,5 +391,149 @@ const Extra = {
     if (!attivoExtra()) return;
     if (S.lv && Array.isArray(S.lv.riscossi)) for (const L of S.lv.riscossi) { const x = Livello.premiExtra[L]; if (x && x.id && !Cosmetici.ha(x.id)) Cosmetici.sblocca(x.id, false); }
     Gradi.controlla();
+    if (!Extra.nv) { Extra.nv = true; setTimeout(Novita.controlla, 2500); }
   },
 };
+
+// ---------------- I tuoi progressi (un solo posto) ----------------
+// In cima alla Strada: un riquadro per ogni cosa che avanza, con il puntino rosso dove c'è qualcosa da riscuotere.
+const Progressi = (() => {
+  function voci() {
+    const lv = Livello.info(), sp = SfidePass.stato(), a = Arena.stato();
+    const mie = possedute().length, stelleMax = mie * Maestria.OBIETTIVI.length, st = Maestria.totaleStelle();
+    const gr = Gradi.indice(Gradi.mieiPunti()), G = Gradi.GRADI[gr];
+    const passR = daRiscuotere();
+    const sfideTot = sp.gIds.length + sp.sIds.length, sfideFatte = sp.gFatte.length + sp.sFatte.length;
+    return [
+      { ico: "⬆", nome: "Livello giocatore", valore: `Lv ${lv.liv}`, barra: lv.max ? 100 : Math.round(lv.dentro / lv.serve * 100), sotto: lv.max ? "Massimo!" : `${lv.dentro}/${lv.serve} punti`, pronti: Livello.daRiscuotere().length, azione: "livello-pagina" },
+      { ico: "🎟", nome: "Pass", valore: `Lv ${livelloPass()}`, barra: (S.pass.xp % PASS.xpLivello) / PASS.xpLivello * 100, sotto: passR ? `${passR} premi da prendere` : "Sfide del pass per salire", pronti: passR, azione: "vai-pass" },
+      { ico: "🎯", nome: "Sfide del pass", valore: `${sfideFatte}/${sfideTot}`, barra: sfideTot ? sfideFatte / sfideTot * 100 : 0, sotto: "Oggi e questa settimana", pronti: 0, azione: "vai-pass" },
+      { ico: "📋", nome: "Missioni di oggi", valore: Missioni.pronte() ? `${Missioni.pronte()} ${Missioni.pronte() === 1 ? "pronta" : "pronte"}` : "In corso", sotto: "Le trovi qui sotto", pronti: Missioni.pronte(), azione: "vai-missioni" },
+      { ico: "★", nome: "Maestria", valore: `${st} ★`, barra: stelleMax ? st / stelleMax * 100 : 0, sotto: `su ${stelleMax} possibili`, pronti: 0, azione: "vai-album" },
+      { ico: "⚔", nome: "Arena", valore: !a ? "Libera" : a.finita ? "Finita!" : `${a.vinte} V · ${a.perse} S`, sotto: !a ? `Ingresso ${Arena.INGRESSO} monete` : a.finita ? "Riscuoti il premio" : a.scelte.length < 5 ? "Scelta in corso" : "Partita in corso", pronti: a && a.finita ? 1 : 0, azione: "vai-sfida" },
+      { ico: G.ico, nome: "Grado della stagione", valore: G.nome, sotto: Gradi.GRADI[gr + 1] ? `${Gradi.GRADI[gr + 1].nome} a ${Gradi.GRADI[gr + 1].da} punti` : "Grado massimo", pronti: Gradi.daRiscuotere().length, azione: "vai-classifica" },
+      { ico: "🏆", nome: "Trofei", valore: Trofei.pronti() ? `${Trofei.pronti()} ${Trofei.pronti() === 1 ? "pronto" : "pronti"}` : "Collezione", sotto: "Nell'album, scheda Trofei", pronti: Trofei.pronti(), azione: "vai-trofei" },
+      { ico: "📖", nome: "Album", valore: `${mie}/${CARTE.length}`, barra: mie / CARTE.length * 100, sotto: `◈ ${Frammenti.quanti()} frammenti`, pronti: 0, azione: "vai-album" },
+    ];
+  }
+  const totale = () => attivoExtra() ? voci().reduce((n, v) => n + (v.pronti || 0), 0) : 0;
+  function htmlStrada() {
+    if (!attivoExtra()) return "";
+    return `<section class="progressi-hub"><div class="titolo-riga piccola"><h2>I tuoi progressi</h2><p class="nota">Tutto in un posto: il puntino rosso vuol dire che c'è qualcosa da riscuotere.</p></div>
+      <div class="ph-griglia">${voci().map(v => `<button class="ph-voce ${v.pronti ? "pronta" : ""}" data-azione="${v.azione}">
+        ${v.pronti ? `<span class="ph-punto">${v.pronti}</span>` : ""}
+        <span class="ph-ico">${v.ico}</span><span class="ph-nome">${esc(v.nome)}</span><b>${esc(v.valore)}</b>
+        ${v.barra !== undefined ? `<span class="ph-barra"><i style="--p:${Math.max(0, Math.min(100, Math.round(v.barra)))}%"></i></span>` : ""}
+        <small>${esc(v.sotto)}</small></button>`).join("")}</div></section>`;
+  }
+  return { totale, htmlStrada };
+})();
+
+// ---------------- Novità (una volta sola per ogni aggiornamento) ----------------
+const Novita = (() => {
+  const VERSIONE = "2026-11-extra";
+  const SCHEDE = [
+    { ico: "⚔", titolo: "Arena", testo: "Nella pagina Sfida: paghi 300 monete, scegli 5 carte (ogni volta tra 3) e giochi finché non perdi 3 volte. Tutte le carte sono al livello 20: vince chi sceglie e gioca meglio. Fino a 7 vittorie, e il premio cresce a ogni vittoria." },
+    { ico: "★", titolo: "Maestria delle carte", testo: "Ogni carta ha 5 obiettivi: vittorie, danni, KO e mosse finali. Ogni obiettivo è una stella con monete in premio. Li vedi nel dettaglio della carta e si prendono da soli giocando." },
+    { ico: "◈", titolo: "Frammenti", testo: "I doppioni delle carte già al 30 ora danno anche frammenti. Con i frammenti crei le carte che ti mancano: tocca una carta coperta nell'album." },
+    { ico: "💎", titolo: "Gradi della stagione", testo: "Con i punti dal vivo sali da Bronzo a Leggenda. A fine stagione riscuoti il premio del grado più alto che hai raggiunto." },
+    { ico: "🛒", titolo: "Offerte speciali", testo: "Nel negozio, ogni giorno, 3 offerte solo per te: una carta che ti manca, potenziatori, un cosmetico. Le bustine sono tutte lì come prima." },
+    { ico: "🎨", titolo: "Vetrina e cosmetici", testo: "Nel profilo scegli 3 carte da mostrare, cornici per l'avatar, il colore del nome e lo sfondo. Tocca un nome in classifica per vedere il profilo di un amico." },
+  ];
+  let i = 0;
+  function controlla() {
+    if (!attivoExtra() || S.novita === VERSIONE) return;
+    if (typeof Tutorial !== "undefined" && Tutorial.attivo) { setTimeout(controlla, 20000); return; }
+    if (!$("#modale").hidden || (typeof B !== "undefined" && B)) return;
+    if (!(S.stats.vittorie + S.stats.sconfitte)) { S.novita = VERSIONE; return; }   // chi è appena arrivato le scopre col tutorial
+    i = 0; mostra();
+  }
+  function mostra() {
+    const s = SCHEDE[i];
+    apriModale(`<div class="novita"><span class="codice-tag">Novità · ${i + 1} di ${SCHEDE.length}</span>
+      <div class="nv-ico">${s.ico}</div><h2>${esc(s.titolo)}</h2><p>${esc(s.testo)}</p>
+      <div class="nv-punti">${SCHEDE.map((_, k) => `<i class="${k === i ? "on" : ""}"></i>`).join("")}</div>
+      <div class="azioni centro">${i > 0 ? `<button class="btn" data-azione="novita-indietro">Indietro</button>` : ""}
+      <button class="btn primario" data-azione="${i < SCHEDE.length - 1 ? "novita-avanti" : "novita-fine"}">${i < SCHEDE.length - 1 ? "Avanti" : "Ho capito"}</button></div></div>`);
+  }
+  const avanti = () => { i = Math.min(SCHEDE.length - 1, i + 1); mostra(); };
+  const indietro = () => { i = Math.max(0, i - 1); mostra(); };
+  const fine = () => { S.novita = VERSIONE; salva(); chiudiModale(); };
+  const rivedi = () => { i = 0; mostra(); };
+  return { controlla, avanti, indietro, fine, rivedi };
+})();
+
+// ---------------- Squadra consigliata ----------------
+// Prova alcune squadre fatte con le tue carte (le più forti, e quelle che sfruttano le sinergie di una serie)
+// facendole combattere davvero, di nascosto, contro avversari del tuo livello. Propone quella che vince di più.
+const Consiglio = (() => {
+  const rng = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const membro = id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0 });
+  const valore = id => { const s = statistiche(PER_ID[id], livello(id) || 1, haLode(id), rarCarta(id)); return s.pv * s.att * (1 + s.vel / 200); };
+  function candidate() {
+    const mie = possedute().map(c => c.id).sort((a, b) => valore(b) - valore(a));
+    const out = [], chiave = new Set(), add = l => { if (l.length < CARTE_SQUADRA) return; const k = l.slice().sort().join(); if (!chiave.has(k)) { chiave.add(k); out.push(l); } };
+    add(mie.slice(0, CARTE_SQUADRA));
+    const perSerie = {}; for (const id of mie) (perSerie[PER_ID[id].serie] = perSerie[PER_ID[id].serie] || []).push(id);
+    for (const l of Object.values(perSerie).filter(l => l.length >= 2)) {
+      for (const k of [5, 3, 2]) { if (l.length < k) continue; const base = l.slice(0, k); add(base.concat(mie.filter(x => !base.includes(x)).slice(0, CARTE_SQUADRA - k))); }
+    }
+    const somma = l => l.reduce((a, id) => a + valore(id), 0);
+    return out.sort((a, b) => somma(b) - somma(a)).slice(0, 10);
+  }
+  function avversari(R) {
+    const mie = possedute(), lv = Math.round(mie.map(c => livello(c.id) || 1).sort((a, b) => b - a).slice(0, 10).reduce((a, b, _, l) => a + b / l.length, 0)) || 1;
+    const pesca = rar => { const l = CARTE.filter(c => rar.includes(c.rarita)); return l[Math.floor(R() * l.length)].id; };
+    const out = [];
+    for (let i = 0; i < 6; i++) { const s = new Set(); while (s.size < CARTE_SQUADRA) s.add(pesca(i < 3 ? ["epica", "leggendaria"] : ["rara", "epica", "leggendaria"])); out.push([...s]); }
+    for (let i = 0; i < 4; i++) { const ser = ORDINE_SERIE[Math.floor(R() * ORDINE_SERIE.length)], l = CARTE.filter(c => c.serie === ser).map(c => c.id); const s = new Set(); while (s.size < Math.min(CARTE_SQUADRA, l.length)) s.add(l[Math.floor(R() * l.length)]); while (s.size < CARTE_SQUADRA) s.add(pesca(["epica"])); out.push([...s]); }
+    return out.map(l => l.map(id => ({ id, liv: lv, lode: lv >= 30 })));
+  }
+  function combatti(mia, nemica, R) {
+    const b = new Battaglia(mia.map(membro), nemica, "A", "B", rng(1 + Math.floor(R() * 1e9)));
+    let g = 0;
+    while (b.vincitore < 0 && g++ < 300) {
+      for (const l of [0, 1]) if (b.serveSostituzione(l)) b.sostituisci(l, b.scegliSostituto(l));
+      if (b.vincitore >= 0) break;
+      b.risolviTurno(b.scegliAzione(0, .9), b.scegliAzione(1, .9));
+    }
+    return b.vincitore === 0;
+  }
+  // tutto a pezzetti, così lo schermo non si blocca
+  function calcola() {
+    if (possedute().length < CARTE_SQUADRA) { mostraAvviso(`Servono almeno ${CARTE_SQUADRA} carte.`); return; }
+    apriModale(`<div class="consiglio-modale"><h2>Squadra consigliata</h2><p class="nota">Faccio combattere di nascosto alcune squadre con le tue carte…</p><div class="barra"><i id="cons-barra" style="--p:0%"></i></div></div>`);
+    const R = rng(hashTesto(chiaveGiorno(new Date()) + (S.profilo && S.profilo.nome || ""))), nem = avversari(R);
+    const attuale = squadraAttiva().carte.length === CARTE_SQUADRA ? squadraAttiva().carte.slice() : null;
+    const prove = candidate(); if (attuale && !prove.some(l => l.slice().sort().join() === attuale.slice().sort().join())) prove.push(attuale);
+    const ris = prove.map(l => ({ l, v: 0, n: 0 })), GIRI = 3, totale = ris.length * nem.length * GIRI;
+    let i = 0;
+    const passo = () => {
+      if ($("#modale").hidden) return;   // chiuso a metà
+      const fine = Date.now() + 40;
+      while (i < totale && Date.now() < fine) { const r = ris[Math.floor(i / (nem.length * GIRI))], n = nem[i % nem.length]; r.n++; if (combatti(r.l, n, R)) r.v++; i++; }
+      const bar = $("#cons-barra"); if (bar) bar.style.setProperty("--p", `${Math.round(i / totale * 100)}%`);
+      if (i < totale) setTimeout(passo, 0); else mostra(ris, attuale);
+    };
+    setTimeout(passo, 50);
+  }
+  let proposta = null;
+  function mostra(ris, attuale) {
+    ris.sort((a, b) => b.v / b.n - a.v / a.n);
+    const best = ris[0], pct = r => Math.round(r.v / r.n * 100), att = attuale && ris.find(r => r.l.slice().sort().join() === attuale.slice().sort().join());
+    // in campo per prima la carta con più vita
+    proposta = best.l.slice().sort((a, b) => statistiche(PER_ID[b], livello(b) || 1, haLode(b), rarCarta(b)).pv - statistiche(PER_ID[a], livello(a) || 1, haLode(a), rarCarta(a)).pv);
+    const uguale = att === best;
+    apriModale(`<div class="consiglio-modale"><h2>Squadra consigliata</h2>
+      <div class="cons-carte">${proposta.map(id => htmlCarta(PER_ID[id], { piccola: true })).join("")}</div>
+      <p>Contro avversari del tuo livello ha vinto <b>${pct(best)}%</b> delle battaglie di prova${att && !uguale ? `; la tua squadra di adesso il <b>${pct(att)}%</b>` : ""}.</p>
+      <p class="nota">${uguale ? "La tua squadra di adesso è già la migliore tra quelle provate!" : "È un consiglio: le battaglie di prova usano il computer, e tu puoi giocare meglio. Ho messo per prima la carta con più vita."}</p>
+      <div class="azioni centro">${uguale ? "" : `<button class="btn primario" data-fx="onda" data-azione="consiglio-usa">Usa questa squadra</button>`}<button class="btn" data-azione="chiudi">${uguale ? "Bene così" : "Lascia la mia"}</button></div></div>`);
+  }
+  function usa() {
+    if (!proposta) return;
+    const sq = squadraAttiva(); sq.carte = proposta.slice(); S.squadre = S.squadre.slice();
+    salva(); chiudiModale(); disegna(); mostraAvviso(`Squadra «${sq.nome}» aggiornata.`);
+  }
+  return { calcola, usa };
+})();
