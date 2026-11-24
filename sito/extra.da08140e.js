@@ -271,8 +271,27 @@ const Arena = (() => {
     const a = stato(); if (!a || a.scelte.length >= 5) return;
     apriModale(`<div class="arena-scelta"><span class="codice-tag">Arena · scelta ${a.scelte.length + 1} di 5</span><h2>Scegli una carta</h2>
       <p class="nota">Tutte le carte in Arena sono al livello 20. Pensa al tipo (Forza, Difesa, Velocità) e alle sinergie tra le carte che scegli.</p>
-      <div class="arena-carte">${a.proposta.map(id => `<button class="arena-opzione" data-arena-scegli="${id}">${htmlCarta(PER_ID[id], { liv: 20 })}<small>${esc(RUOLI[PER_ID[id].ruolo].nome)} · ${esc(SERIE[PER_ID[id].serie].nome)}</small></button>`).join("")}</div>
+      <div class="arena-carte">${a.proposta.map(id => `<div class="arena-opz"><button class="arena-opzione" data-arena-scegli="${id}">${htmlCarta(PER_ID[id], { liv: 20 })}<small>${esc(RUOLI[PER_ID[id].ruolo].nome)} · ${esc(SERIE[PER_ID[id].serie].nome)}</small></button>
+        <button class="btn piccolo" data-arena-info="${id}">Dettagli</button></div>`).join("")}</div>
+      <p class="nota">Tocca «Dettagli» per vedere statistiche e mosse al livello 20; tocca la carta per sceglierla.</p>
       ${a.scelte.length ? `<p class="nota">Già scelte: ${a.scelte.map(id => esc(PER_ID[id].nome)).join(", ")}</p>` : ""}</div>`);
+  }
+  // scheda della carta come sarà in Arena (livello 20, senza lode né olografica), poi si torna alla scelta
+  function info(id) {
+    const a = stato(); if (!a || !a.proposta.includes(id)) return;
+    const c = PER_ID[id], s = statistiche(c, 20, false, c.rarita), r = RUOLI[c.ruolo];
+    apriModale(`<div class="dettaglio">
+      <div class="dettaglio-carta">${htmlCarta(c, { liv: 20, piena: true })}</div>
+      <div class="dettaglio-testo"><span class="codice-tag">Arena · livello 20</span>
+        <p class="serie-nome">${esc(SERIE[c.serie].nome)}</p><h2>${esc(c.nome)}</h2>
+        <div class="ruolo-box"><b>${esc(r.nome)}</b><span>${esc(r.cosa)}</span><p>${esc(r.passiva)}</p></div>
+        ${htmlStatGriglia(c, s)}${htmlBonusRarita(c)}${htmlTipo(c)}
+        <ul class="mosse-lista">${c.mosse.map(mo => `<li><span class="costo">${mo.costo}◆</span><b>${esc(mo.nome)}</b><small>${esc(descrMossa(mo))}</small></li>`).join("")}</ul>
+        ${(() => { const n = a.scelte.filter(x => PER_ID[x].serie === c.serie).length + 1, S2 = SINERGIE[c.serie]; if (n < 2 || !S2) return "";
+          const liv = n >= 5 ? 3 : n >= 3 ? 2 : 1, v = S2[["", "v2", "v3", "v5"][liv]];
+          return `<p class="passiva"><b>Sinergia:</b> con questa avresti ${n} carte ${esc(SERIE[c.serie].nome)}: ${esc(S2.testo(v, liv))}.</p>`; })()}
+        <div class="azioni"><button class="btn primario" data-arena-scegli="${id}">Scegli questa</button><button class="btn" data-azione="arena-scelta">Torna alla scelta</button></div>
+      </div></div>`);
   }
   function scegli(id) {
     const a = stato(); if (!a || !a.proposta.includes(id) || a.scelte.length >= 5) return;
@@ -325,7 +344,7 @@ const Arena = (() => {
       <div class="ab-carte">${a.scelte.map(id => htmlCarta(PER_ID[id], { piccola: true, liv: 20 })).join("")}</div>
       <div class="ab-pallini">${Array.from({ length: MAX_VINTE }, (_, i) => `<i class="${i < a.vinte ? "v" : ""}"></i>`).join("")}<span>·</span>${Array.from({ length: MAX_PERSE }, (_, i) => `<i class="p ${i < a.perse ? "x" : ""}"></i>`).join("")}</div>${premi}</section>`;
   }
-  return { INGRESSO, PREMI, entra, apriScelta, scegli, gioca, riscuoti, htmlSfida, stato };
+  return { INGRESSO, PREMI, entra, apriScelta, scegli, info, gioca, riscuoti, htmlSfida, stato };
 })();
 
 // ---------------- Offerte speciali del negozio ----------------
