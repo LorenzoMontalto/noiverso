@@ -1272,8 +1272,10 @@ function vistaSquadra() {
   const ruoli = sq.carte.map(id => RUOLI[PER_ID[id].ruolo].nome);
   const nPot = mie.filter(c => infoCarta(c.id).pronta).length;
   if (!nPot) filtri.squadra.pot = false;
+  // nov 2026: dal livello più alto al più basso (30 e lode in cima), poi rarità e nome
+  const liv = c => livello(c.id) + (haLode(c.id) ? .5 : 0);
   const elenco = mie.filter(c => passaFiltri(c, filtri.squadra))
-    .sort((a, b) => ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita) || a.nome.localeCompare(b.nome));
+    .sort((a, b) => liv(b) - liv(a) || ORDINE_RARITA.indexOf(rarCarta(b.id)) - ORDINE_RARITA.indexOf(rarCarta(a.id)) || a.nome.localeCompare(b.nome));
   return `
   <section>
     <div class="titolo-riga">
@@ -1755,6 +1757,10 @@ async function apriScrignoBonus(origine) {
 
 // ---------- CLASSIFICA ----------
 let classificaDati = null, classificaErrore = false, nomiCache = {};
+// Ordine della classifica (nov 2026): punti; a pari punti il livello giocatore, poi il livello del pass,
+// poi le carte in collezione, infine le partite dal vivo giocate (chi ne ha giocate di più sta sopra).
+const _n = x => Number(x) || 0;
+const ordinaClassifica = righe => righe.slice().sort((a, b) => _n(b.punti) - _n(a.punti) || _n(b.livello) - _n(a.livello) || _n(b.pass) - _n(a.pass) || _n(b.carte) - _n(a.carte) || _n(b.giocate_vivo) - _n(a.giocate_vivo));
 // Premi di fine mese per i primi 3 (li assegna il server quando l'admin azzera la classifica)
 const PREMI_CLASSIFICA = ["1000 monete + Bustina Leggendaria", "600 monete + Bustina Epica", "300 monete + 2 Bustine"];
 async function ritiraPremiClassifica() {
@@ -1812,7 +1818,7 @@ function vistaClassifica() {
   return `
   <section>
     <div class="titolo-riga"><h2>${esc(titoloClassifica())}</h2></div>
-    <p class="nota">Contano solo le sfide dal vivo: +3 punti per ogni vittoria, 0 per le sconfitte. A fine mese premi ai primi tre: 🥇 ${PREMI_CLASSIFICA[0]} · 🥈 ${PREMI_CLASSIFICA[1]} · 🥉 ${PREMI_CLASSIFICA[2]}.</p>
+    <p class="nota">Contano solo le sfide dal vivo: +3 punti per ogni vittoria, 0 per le sconfitte. A pari punti sta sopra chi ha il livello giocatore più alto, poi il pass, poi più carte, poi più partite giocate. A fine mese premi ai primi tre: 🥇 ${PREMI_CLASSIFICA[0]} · 🥈 ${PREMI_CLASSIFICA[1]} · 🥉 ${PREMI_CLASSIFICA[2]}.</p>
     ${htmlAlbo()}
     ${Torneo.htmlTabellone()}
     <table class="classifica">
@@ -1834,7 +1840,7 @@ function avviaClassifica() {
     const firma = JSON.stringify(righe.map(r => [r.id, r.punti, r.vinte_vivo, r.giocate_vivo, r.carte, r.pass, r.livello, r.nome, r.avatar, r.titolo_id]));
     const uguale = classificaDati && firma === avviaClassifica._firma;
     avviaClassifica._firma = firma;
-    classificaDati = righe;
+    classificaDati = ordinaClassifica(righe);
     if (uguale) { Amici.aggiornaElenco(); return; }
     try {
       const ids = righe.map(r => r.id).filter(id => !(id in nomiCache));

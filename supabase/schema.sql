@@ -958,18 +958,22 @@ end $$;
 revoke all on function public.riscatta_premi_classifica() from public, anon;
 grant execute on function public.riscatta_premi_classifica() to authenticated;
 
+-- un numero dai dati della classifica (0 se manca o non è un numero): serve per gli spareggi
+create or replace function public.num_dati(d jsonb, k text) returns integer
+language sql immutable as $$ select case when d->>k ~ '^[0-9]+$' then (d->>k)::int else 0 end $$;
+
 create or replace function public.azzera_classifica() returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare podio jsonb; vecchio jsonb;
 begin
   if not public.sono_admin() then raise exception 'Solo l''admin può azzerare la classifica'; end if;
-  select coalesce(jsonb_agg(jsonb_build_object('nome', coalesce(dati->>'nome', 'Giocatore'), 'avatar', dati->>'avatar', 'punti', punti) order by punti desc), '[]'::jsonb) into podio
-    from (select dati, punti from public.classifica where punti > 0 order by punti desc limit 3) t;
+  select coalesce(jsonb_agg(jsonb_build_object('nome', coalesce(dati->>'nome', 'Giocatore'), 'avatar', dati->>'avatar', 'punti', punti) order by ord), '[]'::jsonb) into podio
+    from (select dati, punti, row_number() over (order by punti desc, public.num_dati(dati, 'livello') desc, public.num_dati(dati, 'pass') desc, public.num_dati(dati, 'carte') desc, public.num_dati(dati, 'giocate_vivo') desc, aggiornato asc) as ord from public.classifica where punti > 0) t where ord <= 3;
   select dati into vecchio from public.config where id = 'classifica';
   -- premi ai primi 3 (solo a chi ha fatto almeno un punto)
   insert into public.premi_classifica (user_id, posizione, titolo, punti, premio)
     select user_id, pos, coalesce(vecchio->>'titolo', 'Classifica'), punti, public.premio_posizione(pos::int)
-    from (select user_id, punti, row_number() over (order by punti desc, aggiornato asc) as pos from public.classifica where punti > 0) t where pos <= 3;
+    from (select user_id, punti, row_number() over (order by punti desc, public.num_dati(dati, 'livello') desc, public.num_dati(dati, 'pass') desc, public.num_dati(dati, 'carte') desc, public.num_dati(dati, 'giocate_vivo') desc, aggiornato asc) as pos from public.classifica where punti > 0) t where pos <= 3;
   insert into public.config (id, dati) values ('classifica', jsonb_build_object('dal', now(), 'titolo', public.titolo_mese(now()),
       'storico', (jsonb_build_array(jsonb_build_object('dal', vecchio->>'dal', 'al', now(), 'titolo', vecchio->>'titolo', 'podio', podio)) || coalesce(vecchio->'storico', '[]'::jsonb)) - 12))
     on conflict (id) do update set dati = excluded.dati, aggiornato = now();
