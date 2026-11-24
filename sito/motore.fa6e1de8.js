@@ -42,7 +42,7 @@ function nuovoCombattente(id, liv, lode, olo, ultra, asc) {
 
 // ---------------- Sinergie ----------------
 // Serie: 2, 3 o 5 carte della stessa serie in squadra danno un bonus (sempre più grande) alle carte di quella serie.
-// Multiverso: 2 o più versioni della stessa persona (es. Lollifer + Lollinista) danno +2% / +4% a tutte le statistiche di quelle carte.
+// Multiverso: 2 o più versioni della stessa persona (es. Lollifer + Lollinista) danno +2% / +4% a PV, attacco e difesa di quelle carte (non alla velocità).
 // I valori si possono cambiare dal pannello admin (config "sinergie"): li legge applicaSinergie.
 const _il = v => (v === 1 || v === 11 || String(v)[0] === "8") ? `l'${v}%` : `il ${v}%`;
 // Tre livelli: 2 carte della stessa serie (bonus piccolo), 3 (medio), 5 (grande). liv = 1, 2, 3.
@@ -198,8 +198,10 @@ class Battaglia {
       if (s.tipo === "vel" && s.liv >= 3) L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
     }
     for (const m of sin.multiverso) {
+      // nov 2026: niente più velocità. Anche +4% bastava a far scattare la velocità di 1 punto (13 → 14)
+      // e quindi ad attaccare sempre per primi: le squadre «di due amici» vincevano molto più delle altre.
       const k = 1 + m.val / 100;
-      for (const x of L.squadra) if (m.ids.includes(x.id)) { x.att *= k; x.dif *= k; x.pv = Math.round(x.pv * k); x.pvMax = x.pv; x.vel = Math.round(x.vel * k); }
+      for (const x of L.squadra) if (m.ids.includes(x.id)) { x.att *= k; x.dif *= k; x.pv = Math.round(x.pv * k); x.pvMax = x.pv; }
     }
   }
 

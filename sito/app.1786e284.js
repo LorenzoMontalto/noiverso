@@ -1324,7 +1324,7 @@ const Sinergie = (() => {
       if (s.liv) righe.push(`<li class="sin-attiva" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} ${s.n}${p ? `/${p}` : ""}</b> · carte ${esc(se.nome)}: ${testoSerie(s.serie, s.liv)}.${dopo}</span></li>`);
       else if (suggerimenti++ < 2) righe.push(`<li class="sin-quasi" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} 1/2</b> · aggiungine un'altra: carte ${esc(se.nome)}, ${testoSerie(s.serie, 1)}.</span></li>`);
     }
-    for (const m of sin.multiverso) righe.push(`<li class="sin-attiva multiverso"><span class="sin-ico">∞</span><span><b>Multiverso: ${esc(m.persona)} ×${m.n}</b> +${m.val}% a tutte le statistiche di ${m.ids.map(id => esc(PER_ID[id].nome)).join(", ")}.${m.n === 2 ? ` <small>Con 3 versioni: +${MULTIVERSO.v3}%.</small>` : ""}</span></li>`);
+    for (const m of sin.multiverso) righe.push(`<li class="sin-attiva multiverso"><span class="sin-ico">∞</span><span><b>Multiverso: ${esc(m.persona)} ×${m.n}</b> +${m.val}% a PV, attacco e difesa di ${m.ids.map(id => esc(PER_ID[id].nome)).join(", ")}.${m.n === 2 ? ` <small>Con 3 versioni: +${MULTIVERSO.v3}%.</small>` : ""}</span></li>`);
     return `<div class="sinergie-box"><div class="sin-testa"><span>Sinergie</span><small>2, 3 o 5 carte della stessa serie danno a quelle carte un bonus sempre più grande. 2 o più versioni della stessa persona: Multiverso.</small></div>
       ${righe.length ? `<ul class="sin-lista">${righe.join("")}</ul>` : `<p class="nota">Nessuna sinergia: prova a mettere 2 carte della stessa serie, o due versioni dello stesso amico.</p>`}</div>`;
   }
@@ -1375,7 +1375,7 @@ const Sinergie = (() => {
     if (!persone.length) return "";
     const pronte = persone.filter(x => x.mie >= 2).length;
     return `<details class="multiverso-album">
-      <summary><span class="sin-ico">∞</span><span><b>Sinergie del Multiverso</b><small>2 versioni della stessa persona in squadra: <b>+${MULTIVERSO.v2}%</b> a tutte le loro statistiche · 3 o più: <b>+${MULTIVERSO.v3}%</b>${pronte ? ` · ne puoi già fare ${pronte}` : ""}</small></span></summary>
+      <summary><span class="sin-ico">∞</span><span><b>Sinergie del Multiverso</b><small>2 versioni della stessa persona in squadra: <b>+${MULTIVERSO.v2}%</b> a PV, attacco e difesa · 3 o più: <b>+${MULTIVERSO.v3}%</b>${pronte ? ` · ne puoi già fare ${pronte}` : ""}</small></span></summary>
       <div class="mv-lista">${persone.map(x => `<div class="mv-persona ${x.mie >= 3 ? "tre" : x.mie >= 2 ? "due" : ""}">
         <div class="mv-testa"><b>${esc(x.p)}</b><small>${x.mie}/${x.l.length} versioni${x.mie >= 3 ? ` · +${MULTIVERSO.v3}%` : x.mie >= 2 ? ` · +${MULTIVERSO.v2}%` : ""}</small></div>
         <div class="mv-carte">${x.l.map(c => S.carte[c.id]
