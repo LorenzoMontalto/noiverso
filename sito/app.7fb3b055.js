@@ -2324,23 +2324,23 @@ function htmlAdminUltra() {
   }
   const nomi = Object.keys(pers).sort((a, b) => a.localeCompare(b));
   const con = nomi.filter(p => pers[p].ultra.length), senza = nomi.filter(p => !pers[p].ultra.length);
-  const doppie = nomi.filter(p => pers[p].ultra.length > 1);
+  const minimo = Math.min(...nomi.map(p => pers[p].ultra.length)), piene = nomi.filter(p => pers[p].ultra.length >= minimo + 2);
   const serieVuote = Object.keys(SERIE).filter(s => !(perSerie[s] || []).length), serieDoppie = Object.keys(SERIE).filter(s => (perSerie[s] || []).length > 1);
   const pill = (c, cls) => `<span class="pill-carta ${cls}" title="${esc(SERIE[bozza[c.id].serie].nome)}">${SERIE[bozza[c.id].serie].simbolo} ${esc(c.nome)}</span>`;
   const avvisi = [
-    doppie.length ? `${doppie.map(esc).join(", ")} ${doppie.length === 1 ? "ha" : "hanno"} più di una Ultra` : "",
     serieDoppie.length ? `più Ultra nella stessa serie: ${serieDoppie.map(s => esc(SERIE[s].nome)).join(", ")}` : "",
   ].filter(Boolean);
   const tutte = Object.values(perSerie).flat();
   const nonLegg = tutte.filter(c => bozza[c.id].rarita !== "leggendaria"), anonime = tutte.filter(c => !bozza[c.id].persona.trim());
   return `<h3>Versioni Ultra · ${con.length}/${nomi.length} amici</h3>
-    <p class="nota">Regola: una sola Ultra per serie e mai due allo stesso amico. Si cambiano qui sotto, nell'editor delle carte (casella «Ultra»), e qui si aggiorna subito.</p>
+    <p class="nota">Regola: una sola Ultra per serie. Ora che le serie sono più di voi un amico può averne anche più di una, ma conviene darla prima a chi ne ha meno. Si cambiano qui sotto, nell'editor delle carte (casella «Ultra»), e qui si aggiorna subito.</p>
     ${avvisi.length ? `<p class="nota"><b class="errore">Da sistemare: ${avvisi.join(" · ")}.</b></p>` : `<p class="nota">Regola rispettata.</p>`}
+    ${piene.length && senza.length ? `<p class="nota">Equilibrio: ${piene.map(p => `${esc(p)} (${pers[p].ultra.length})`).join(", ")} ${piene.length === 1 ? "ne ha" : "ne hanno"} già almeno due in più di chi è ancora senza: la prossima conviene darla a ${senza.map(esc).join(", ")}.</p>` : ""}
     ${nonLegg.length ? `<p class="nota">Attenzione: ${nonLegg.map(c => esc(c.nome)).join(", ")} ${nonLegg.length === 1 ? "non è leggendaria" : "non sono leggendarie"} (finora le Ultra sono tutte leggendarie).</p>` : ""}
     ${anonime.length ? `<p class="nota piccola">Ultra senza un amico assegnato: ${anonime.map(c => pill(c, "r-ultra")).join(" ")}</p>` : ""}
     <div class="ultra-colonne">
       <div><p class="ultra-titolo">✔ Hanno l'Ultra (${con.length})</p>
-        <div class="persone">${con.map(p => `<div class="persona ${pers[p].ultra.length > 1 ? "errata" : ""}"><b>${esc(p)}</b>${pers[p].ultra.map(c => pill(c, "r-ultra")).join("")}</div>`).join("") || `<p class="nota">Nessuno.</p>`}</div></div>
+        <div class="persone">${con.map(p => `<div class="persona"><b>${esc(p)}${pers[p].ultra.length > 1 ? ` <span class="ultra-quante">×${pers[p].ultra.length}</span>` : ""}</b>${pers[p].ultra.map(c => pill(c, "r-ultra")).join("")}</div>`).join("") || `<p class="nota">Nessuno.</p>`}</div></div>
       <div><p class="ultra-titolo senza">✘ Ancora senza (${senza.length})</p>
         <div class="persone">${senza.map(p => `<div class="persona"><b>${esc(p)}</b>${pers[p].legg.length ? `<span class="nota piccola">leggendarie:</span>${pers[p].legg.map(c => pill(c, "r-leggendaria")).join("")}` : `<span class="nota piccola">nessuna leggendaria</span>`}</div>`).join("") || `<p class="nota">Tutti hanno la loro Ultra!</p>`}</div>
         ${serieVuote.length ? `<p class="nota">Serie ancora senza Ultra: ${serieVuote.map(s => `${SERIE[s].simbolo} ${esc(SERIE[s].nome)}`).join(" · ")}</p>` : `<p class="nota">Ogni serie ha la sua Ultra.</p>`}</div>
