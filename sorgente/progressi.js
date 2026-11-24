@@ -62,11 +62,14 @@ const Livello = (() => {
     p += Object.keys(S.trofei || {}).filter(id => S.trofei[id]).length * PUNTI.trofeo;
     return Math.min(Math.round(p), totaleA(MAX));
   }
+  let pubblicato = 0;
   function controlla() {
-    if (!attivo() || (S.lv && typeof S.lv === "object")) return;
+    if (!attivo()) return;
+    // la riga della classifica si aggiorna appena entri e ogni volta che il livello cambia (anche senza battaglie)
+    if (S.lv && typeof S.lv === "object") { const l = info().liv; if (l !== pubblicato) { pubblicato = l; Archivio.pubblicaClassifica(); } return; }
     S.lv = { punti: iniziali(), riscossi: [] };
     const l = info().liv;
-    salva();
+    salva(); pubblicato = l; Archivio.pubblicaClassifica();
     if (l > 1) setTimeout(() => mostraAvviso(`Novità: il livello giocatore! Per quello che hai fatto finora parti dal livello ${l}: hai ${l - 1} ${l === 2 ? "premio" : "premi"} da riscuotere nella Strada.`), 2500);
   }
   function daRiscuotere() { if (!S.lv) return []; const l = info().liv, out = []; for (let k = 2; k <= l; k++) if (!S.lv.riscossi.includes(k)) out.push(k); return out; }

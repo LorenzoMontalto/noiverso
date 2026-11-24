@@ -983,6 +983,14 @@ end $$;
 revoke all on function public.azzera_classifica() from public, anon;
 grant execute on function public.azzera_classifica() to authenticated;
 
+-- Livello giocatore (nov 2026) dai punti Fama del salvataggio: per arrivare al livello L servono 90·(L-1) + 5·(L-1)·(L-2) punti.
+-- Con n = L-1: 5n² + 85n ≤ punti  →  n = parte intera di (-85 + √(7225 + 20·punti)) / 10. Massimo 100.
+create or replace function public.livello_giocatore(d jsonb) returns integer
+language sql immutable as $$
+  select least(100, greatest(1, floor((-85 + sqrt(7225 + 20 * greatest(0, coalesce(
+    case when d->'lv'->>'punti' ~ '^[0-9]+(\.[0-9]+)?$' then (d->'lv'->>'punti')::numeric end, 0)))) / 10)::int + 1))
+$$;
+
 create or replace function public.classifica_vera() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare s jsonb;
@@ -1009,13 +1017,27 @@ begin
     'carte', (select count(*) from jsonb_object_keys(coalesce(s->'carte', '{}'::jsonb))),
     'vinte_amici', (select count(*) from public.sfide_amici where (sfidante = new.user_id and vinto) or (sfidato = new.user_id and not vinto)),
     'vinte_vivo', (select count(*) from public.partite_vivo where vincitore = new.user_id and stato in ('ok', 'abbandono') and punti > 0 and creata >= public.inizio_classifica()),
-    'giocate_vivo', (select count(*) from public.partite_vivo where (a = new.user_id or b = new.user_id) and stato in ('ok', 'abbandono') and creata >= public.inizio_classifica()));
+    'giocate_vivo', (select count(*) from public.partite_vivo where (a = new.user_id or b = new.user_id) and stato in ('ok', 'abbandono') and creata >= public.inizio_classifica()),
+    'livello', public.livello_giocatore(s));   -- nov 2026: il livello giocatore viene dal salvataggio, non dal dispositivo
   new.aggiornato := now();
   return new;
 end $$;
 drop trigger if exists classifica_vera on public.classifica;
 create trigger classifica_vera before insert or update on public.classifica
   for each row execute function public.classifica_vera();
+
+-- quando un salvataggio cambia il livello giocatore, la riga in classifica si ricalcola subito
+create or replace function public.salvataggio_livello() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.slot = 'partita' and (tg_op = 'INSERT' or public.livello_giocatore(new.dati) is distinct from public.livello_giocatore(old.dati)) then
+    update public.classifica set aggiornato = now() where user_id = new.user_id;
+  end if;
+  return null;
+end $$;
+drop trigger if exists salvataggio_livello on public.salvataggi;
+create trigger salvataggio_livello after insert or update on public.salvataggi
+  for each row execute function public.salvataggio_livello();
 
 -- ---------------- Codici promozionali ----------------
 -- I codici (e le sorprese che nascondono) stanno solo qui: il codice del gioco su GitHub non li contiene.
