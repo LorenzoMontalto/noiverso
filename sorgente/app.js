@@ -441,7 +441,7 @@ function htmlCarta(c, opz = {}) {
     ${info && !opz.piccola && !opz.mini ? `<div class="carta-xp ${info.liv >= LIVELLO_MAX ? "verso-lode" : ""} ${info.lode ? "piena" : ""}"><i style="width:${info.lode ? 100 : Math.round(info.dentro / info.serve * 100)}%"></i></div>` : ""}
     <div class="carta-piede">
       ${!coperta && !opz.mini && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? `<div class="olo-scritta">✦ Olografica</div>` : ""}
-      ${info && !opz.mini && typeof Maestria !== "undefined" && Maestria.stelle(c.id) ? `<div class="carta-maestria" title="Maestria: ${Maestria.stelle(c.id)} stelle su 5">${"★".repeat(Maestria.stelle(c.id))}<i>${"★".repeat(5 - Maestria.stelle(c.id))}</i></div>` : ""}
+      ${(() => { const st = opz.stelle ?? (info && !opz.mini && typeof Maestria !== "undefined" ? Maestria.stelle(c.id) : 0); return st ? `<div class="carta-maestria" title="Maestria: ${st} stelle su 5">${"★".repeat(st)}<i>${"★".repeat(5 - st)}</i></div>` : ""; })()}
       <div class="carta-nome">${esc(c.nome)}</div>
       <div class="carta-sotto"><span class="ruolo-tag">${esc(RUOLI[c.ruolo].nome)}</span> ${opz.piccola ? "" : `<span class="ruolo-cosa">${esc(RUOLI[c.ruolo].cosa)}</span>`}</div>
     </div>`}
@@ -496,7 +496,7 @@ function apriDettaglio(id) {
   const copie = S.carte[id] || 0;
   apriModale(`
     <div class="dettaglio">
-      <div class="dettaglio-carta" data-inclina>${htmlCarta(c, { liv, olo: haOlo(id), ultra: haUltra(id), rar, piena: true })}</div>
+      <div class="dettaglio-carta" data-inclina>${htmlCarta(c, { liv, olo: haOlo(id), ultra: haUltra(id), rar, piena: true, stelle: S.admin || !S.carte[id] ? 0 : Maestria.stelle(id) })}</div>
       <div class="dettaglio-testo">
         <p class="serie-nome">${esc(SERIE[c.serie].nome)}</p>
         <h2>${esc(c.nome)}</h2>
@@ -1189,7 +1189,7 @@ function apriSchedaCarta(e) {
   el.innerHTML = `<div class="scheda-box">
     <button class="scheda-x" aria-label="Chiudi">✕</button>
     <div class="scheda-testa">
-      <div class="scheda-carta">${htmlCarta(c, { liv, lode, olo, ultra, rar })}</div>
+      <div class="scheda-carta">${htmlCarta(c, { liv, lode, olo, ultra, rar, stelle: S.admin ? 0 : Maestria.stelle(c.id) })}</div>
       <div>
         <p class="serie-nome">${esc(SERIE[c.serie].nome)} · <span class="r-testo r-${rar}">${esc(RARITA[rar].nome)}</span></p>
         <h2>${esc(c.nome)}</h2>
