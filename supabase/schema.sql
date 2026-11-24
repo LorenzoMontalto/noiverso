@@ -804,7 +804,7 @@ language sql immutable as $$
     when 'vittoria-1' then 'Recluta' when 'vittorie-50' then 'Veterano' when 'vittorie-200' then 'Leggenda'
     when 'carte-25' then 'Collezionista' when 'carte-50' then 'Archivista' when 'carte-tutte' then 'Completista'
     when 'serie-eroi' then 'Supereroe' when 'serie-db' then 'Guerriero leggendario' when 'serie-dei' then 'Divinità'
-    when 'serie-nueve' then 'Boss della mala' when 'serie-maghi' then 'Arcimago' when 'serie-demoni' then 'Signore degli Inferi' when 'serie-mestieri' then 'Stacanovista' when 'serie-simpson' then 'Re di Springfield' when 'serie-barbapapa' then 'Barbatrucco' when 'serie-starwars' then 'Maestro Jedi' when 'serie-elementi' then 'Avatar degli Elementi' when 'serie-creature' then 'Signore della Notte' when 'serie-cyborg' then 'Cyborg Supremo' when 'serie-carte' then 'Re del Mazzo' when 'serie-paesi' then 'Cittadino del Mondo' when 'serie-farwest' then 'Sceriffo della Frontiera' when 'serie-apocalisse' then 'Ultimo Sopravvissuto' when 'giocatore-10' then 'Veterano' when 'giocatore-20' then 'Campione' when 'giocatore-30' then 'Gran Maestro' when 'giocatore-40' then 'Leggenda vivente' when 'giocatore-50' then 'Mito del Noiverso'
+    when 'serie-nueve' then 'Boss della mala' when 'serie-maghi' then 'Arcimago' when 'serie-demoni' then 'Signore degli Inferi' when 'serie-mestieri' then 'Stacanovista' when 'serie-simpson' then 'Re di Springfield' when 'serie-barbapapa' then 'Barbatrucco' when 'serie-starwars' then 'Maestro Jedi' when 'serie-elementi' then 'Avatar degli Elementi' when 'serie-creature' then 'Signore della Notte' when 'serie-cyborg' then 'Cyborg Supremo' when 'serie-carte' then 'Re del Mazzo' when 'serie-paesi' then 'Cittadino del Mondo' when 'serie-farwest' then 'Sceriffo della Frontiera' when 'serie-apocalisse' then 'Ultimo Sopravvissuto' when 'giocatore-10' then 'Veterano' when 'giocatore-20' then 'Campione' when 'giocatore-30' then 'Gran Maestro' when 'giocatore-40' then 'Leggenda vivente' when 'giocatore-50' then 'Mito del Noiverso' when 'giocatore-60' then 'Signore delle carte' when 'giocatore-70' then 'Imbattibile' when 'giocatore-80' then 'Leggenda del gruppo' when 'giocatore-90' then 'Semidio' when 'giocatore-100' then 'Il Numero Uno'
     when 'olo-1' then 'Brillante' when 'olo-5' then 'Arcobaleno' when 'livello-10' then 'Allenatore' when 'livello-30' then 'Maestro'
     when 'lode-1' then 'Lodato' when 'bustine-50' then 'Strappabustine' when 'stelle-30' then 'Narratore' when 'stelle-120' then 'Giramondo' when 'ultra-1' then 'Ultra' when 'pass-50' then 'Fedelissimo'
     when 'accessi-7' then 'Sempre presente' when 'amici-10' then 'Bullo di quartiere' when 'boss-20000' then 'Ammazzaboss' when 'scambi-3' then 'Mercante'
@@ -843,8 +843,8 @@ begin
     when t = 'boss-20000' then coalesce((select sum(danni) from public.boss_danni where user_id = u), 0) >= 20000
     when t = 'scambi-3' then (select count(*) from public.scambi where (da = u or a = u) and stato = 'accettato') >= 3
     when t = 'vivo-5' then (select count(*) from public.partite_vivo where vincitore = u and stato = 'ok') >= 5
-    -- livello giocatore (nov 2026): punti Fama salvati in lv.punti; per arrivare al livello L ne servono 100·(L-1) + 10·(L-1)·(L-2)
-    when t like 'giocatore-%' then coalesce((d->'lv'->>'punti')::numeric, 0) >= 100 * (substring(t from 11)::int - 1) + 10 * (substring(t from 11)::int - 1) * (substring(t from 11)::int - 2)
+    -- livello giocatore (nov 2026): punti Fama salvati in lv.punti; per arrivare al livello L ne servono 90·(L-1) + 5·(L-1)·(L-2)
+    when t like 'giocatore-%' then coalesce((d->'lv'->>'punti')::numeric, 0) >= 90 * (substring(t from 11)::int - 1) + 5 * (substring(t from 11)::int - 1) * (substring(t from 11)::int - 2)
     else false end;
 end $$;
 -- Il gioco gira sul dispositivo di ognuno, quindi il server controlla i salvataggi:

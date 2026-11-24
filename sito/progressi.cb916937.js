@@ -2,17 +2,19 @@
 //  PROGRESSI (nov 2026)
 //  - Livello giocatore: un livello dell'account, separato dal pass, con punti suoi (punti Fama ✦).
 //    Si guadagnano un po' con tutto: battaglie, storia, carte nuove, potenziamenti, missioni, trofei.
-//    50 livelli per ora; ogni livello dà monete, ogni 5 una bustina epica, ogni 10 una leggendaria e un titolo,
-//    al 25 e al 50 una Bustina Ultra.
+//    100 livelli; ogni livello dà monete, ogni 5 una bustina epica, ogni 10 una leggendaria e un titolo,
+//    al 25, 50, 75 e 100 una Bustina Ultra.
 //  - Sfide del pass: 3 sfide al giorno e 4 alla settimana che danno tanti XP del pass.
 //    Da nov 2026 battaglie, bustine e missioni danno solo un quinto degli XP di prima: il pass sale soprattutto con le sfide.
 // ============================================================
 
 const Livello = (() => {
-  const MAX = 50;
-  const serve = L => 100 + 20 * (L - 1);                              // punti per passare da L a L+1 (1→2: 100, 49→50: 1060)
-  const totaleA = L => 100 * (L - 1) + 10 * (L - 1) * (L - 2);         // punti per arrivare al livello L (al 50: 28.420)
-  const TITOLI = { 10: "Veterano", 20: "Campione", 30: "Gran Maestro", 40: "Leggenda vivente", 50: "Mito del Noiverso" };
+  const MAX = 100;
+  // nov 2026: curva accorciata (era 100 + 20 a livello: il 100 arrivava dopo circa 8 mesi). Ora circa 5 settimane per il 50 e 4 mesi per il 100.
+  const serve = L => 90 + 10 * (L - 1);                               // punti per passare da L a L+1 (1→2: 90, 49→50: 570, 99→100: 1070)
+  const totaleA = L => 90 * (L - 1) + 5 * (L - 1) * (L - 2);          // punti per arrivare al livello L (al 50: 16.170, al 100: 57.420)
+  const TITOLI = { 10: "Veterano", 20: "Campione", 30: "Gran Maestro", 40: "Leggenda vivente", 50: "Mito del Noiverso",
+    60: "Signore delle carte", 70: "Imbattibile", 80: "Leggenda del gruppo", 90: "Semidio", 100: "Il Numero Uno" };
   // quanto vale ogni cosa (lo stesso elenco si vede nella finestra «Come si guadagna»)
   const PUNTI = {
     computer: { recluta: 10, sfidante: 15, boss: 25, leggenda: 40 }, settimana: 30, bossGiorno: 60, bossGiornoAncora: 15,
@@ -40,7 +42,8 @@ const Livello = (() => {
     const p = { monete: 50 + 10 * L }, b = {};
     if (L % 5 === 0) b.epica = 1;
     if (L % 10 === 0) b.leggendaria = 1;
-    if (L === 25 || L === 50) b.ultra = 1;
+    if (L % 25 === 0) b.ultra = 1;   // 25, 50, 75, 100
+    if (L === MAX) b.leggendaria = 2;  // il livello 100: premio speciale
     if (Object.keys(b).length) p.bustine = b;
     return p;
   }
@@ -122,7 +125,7 @@ const Livello = (() => {
       <div class="lg-stemma">${badge(i.liv, "grande")}</div>
       <div class="lg-info"><p class="serie-nome">Livello giocatore</p>
         <div class="xp"><div class="xp-barra lg-barra"><i style="--p:${i.max ? 100 : i.dentro / i.serve * 100}%"></i></div>
-          <small>${i.max ? "Livello massimo raggiunto (per ora)!" : `${i.dentro} / ${i.serve} ✦ al livello ${prossimo} · premio: ${esc(testoPremioLv(prossimo))}`}</small></div></div>
+          <small>${i.max ? "Livello 100: il massimo!" : `${i.dentro} / ${i.serve} ✦ al livello ${prossimo} · premio: ${esc(testoPremioLv(prossimo))}`}</small></div></div>
       <div class="lg-azioni">${r.length ? `<button class="btn oro" data-fx="coriandoli" data-azione="livello-riscuoti">Riscuoti ${r.length === 1 ? "il premio" : `${r.length} premi`}</button>` : ""}
         <button class="btn piccolo" data-azione="livello-pagina">Tutti i livelli e premi</button></div>
     </section>`;
@@ -147,7 +150,7 @@ const Livello = (() => {
     apriModale(`<div class="lv-pagina">
       <div class="lv-testa">${badge(i.liv, "grande")}<div><span class="codice-tag">Livello giocatore</span><h2>Livello ${i.liv}${i.max ? " · massimo" : ""}</h2>
         <div class="xp"><div class="xp-barra lg-barra"><i style="--p:${i.max ? 100 : i.dentro / i.serve * 100}%"></i></div>
-        <small>${i.max ? "Hai raggiunto il livello più alto (per ora)." : `${i.dentro} / ${i.serve} ✦ al livello ${i.liv + 1}`} · ${i.punti.toLocaleString("it-IT")} ✦ in tutto</small></div></div></div>
+        <small>${i.max ? "Hai raggiunto il livello 100, il più alto." : `${i.dentro} / ${i.serve} ✦ al livello ${i.liv + 1}`} · ${i.punti.toLocaleString("it-IT")} ✦ in tutto</small></div></div></div>
       <div class="azioni">${r.length ? `<button class="btn oro" data-fx="coriandoli" data-azione="livello-riscuoti">Riscuoti ${r.length === 1 ? "il premio" : `${r.length} premi`}</button>` : ""}<button class="btn" data-azione="livello-info">Come si sale</button><button class="btn" data-azione="chiudi">Chiudi</button></div>
       <div class="lv-griglia">${tessere}</div>
     </div>`);
@@ -158,10 +161,10 @@ const Livello = (() => {
     const prossimi = []; for (let L = Math.max(2, i.liv - 1); L <= Math.min(MAX, i.liv + 8); L++) prossimi.push(L);
     apriModale(`<div class="codice-modale lg-modale"><span class="codice-tag">Livello giocatore ${i.liv}</span>
       <h2>Come si sale di livello</h2>
-      <p class="nota">Il livello giocatore è separato dal pass e non si azzera mai. Si sale con i punti Fama ✦, che arrivano un po' da tutto quello che fai. Livelli per ora: ${MAX}.</p>
+      <p class="nota">Il livello giocatore è separato dal pass e non si azzera mai. Si sale con i punti Fama ✦, che arrivano un po' da tutto quello che fai. Livelli: ${MAX}.</p>
       <table class="lg-tab">${COME.map(([a, b]) => `<tr><td>${esc(a)}</td><td>${esc(b)} ✦</td></tr>`).join("")}</table>
       <h3>Premi</h3>
-      <p class="nota">Ogni livello: monete (50 + 10 × il livello). Ogni 5 livelli anche una bustina epica, ogni 10 una leggendaria e un titolo, al 25 e al 50 una Bustina Ultra.</p>
+      <p class="nota">Ogni livello: monete (50 + 10 × il livello). Ogni 5 livelli anche una bustina epica, ogni 10 una leggendaria e un titolo, al 25, 50, 75 e 100 una Bustina Ultra.</p>
       <ul class="lg-premi">${prossimi.map(L => `<li class="${L <= i.liv ? (S.lv.riscossi.includes(L) ? "preso" : "pronto") : ""}">${badge(L)} ${esc(testoPremioLv(L))}${L <= i.liv && !S.lv.riscossi.includes(L) ? " · <b>da riscuotere</b>" : L <= i.liv ? " ✓" : ""}</li>`).join("")}</ul>
       <div class="azioni centro"><button class="btn" data-azione="livello-pagina">Tutti i livelli e premi</button><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }

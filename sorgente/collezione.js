@@ -37,8 +37,8 @@ const Trofei = (() => {
       { id: "pass-50", nome: "Fedelissimo", desc: "Arriva al livello 50 del pass", titolo: "Fedelissimo", premio: 300, prog: livelloPass, max: 50 },
       { id: "accessi-7", nome: "Sempre presente", desc: "Riscuoti il premio di accesso 7 giorni di fila", titolo: "Sempre presente", premio: 200, prog: () => st("serieMax"), max: 7 },
     );
-    // nov 2026: titoli del livello giocatore (10, 20, 30, 40, 50)
-    if (typeof Livello !== "undefined") for (const L of [10, 20, 30, 40, 50]) v.push({ id: `giocatore-${L}`, nome: `Livello giocatore ${L}`, desc: `Arriva al livello giocatore ${L}`, titolo: Livello.TITOLI[L], premio: 100, prog: () => (S.lv ? Livello.info().liv : 1), max: L });
+    // nov 2026: titoli del livello giocatore (ogni 10 livelli, fino al 100)
+    if (typeof Livello !== "undefined") for (const L of Object.keys(Livello.TITOLI).map(Number)) v.push({ id: `giocatore-${L}`, nome: `Livello giocatore ${L}`, desc: `Arriva al livello giocatore ${L}`, titolo: Livello.TITOLI[L], premio: 100, prog: () => (S.lv ? Livello.info().liv : 1), max: L });
     if (window.NOIVERSO_SUPABASE) v.push(
       { id: "amici-10", nome: "Bullo di quartiere", desc: "Batti 10 volte la squadra di un amico", titolo: "Bullo di quartiere", premio: 300, prog: () => st("vinteAmici"), max: 10 },
       { id: "boss-20000", nome: "Ammazzaboss", desc: "Fai 20.000 danni ai boss del gruppo", titolo: "Ammazzaboss", premio: 300, prog: () => st("danniBoss"), max: 20000 },
