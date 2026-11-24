@@ -398,7 +398,25 @@ const STORIA = [
       { titolo: "Il lago dell'Orochi", nemici: ["lollorochi", "maurioni", "aurokitsune", "diegami", "simotengu"], liv: [1, 1], abilita: 0.95, monete: 360,
         parla: "lollorochi", frase: "Otto teste, otto fame diverse. E tu sei uno solo: dovrete fare a turno, ragazzi." },
       { titolo: "Il santuario della luna rossa", boss: true, nemici: ["samuruele", "tizunagi", "lollorochi", "diegami", "aurokitsune"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
-        parla: "samuruele", frase: "Ho vinto mille duelli e non ho mai smesso di sorridere. Il millesimo primo sei tu: inchiniamoci, e cominciamo.", vittoria: "Samuruele rinfodera la katana e si inchina: hai combattuto con onore. I ciliegi lasciano cadere una pioggia di petali e, sull'altare del santuario, trovi un mappamondo di vetro che non riflette la valle… ma mondi diversi." }
+        parla: "samuruele", frase: "Ho vinto mille duelli e non ho mai smesso di sorridere. Il millesimo primo sei tu: inchiniamoci, e cominciamo.", vittoria: "Samuruele rinfodera la katana e si inchina: hai combattuto con onore. I ciliegi lasciano cadere una pioggia di petali e, sull'altare del santuario, trovi un biglietto dorato che brilla come una stella: «Circo Intergalattico — ingresso per uno. Lo spettacolo comincia stanotte, in orbita»." }
+    ],
+  },
+  {
+    id: "c27", campo: "stadio", titolo: "Il circo tra le stelle", serie: "circo", colore: "#9b4dff", simbolo: "✪",
+    intro: "Il biglietto dorato si accende e ti ritrovi su una nave a forma di tendone, in orbita tra pianeti e galassie. Il Circo Intergalattico è pieno di alieni urlanti e i tuoi amici sono le stelle dello spettacolo: per arrivare al centro della pista devi battere tutti i numeri, uno dopo l'altro.",
+    tappe: [
+      { titolo: "La biglietteria", nemici: ["tiziclown", "giullia", "ritacrobata", "vikyrobata", "pipstronauta"], liv: [1, 1], abilita: 0.9, monete: 320,
+        parla: "tiziclown", frase: "Biglietto, prego! Ah, ce l'hai. Peccato: oggi si entra solo battendo il clown." },
+      { titolo: "Il trapezio orbitale", nemici: ["ritacrobata", "vikyrobata", "aurorbit", "giullia", "ludovolo"], liv: [1, 1], abilita: 0.92, monete: 330,
+        parla: "aurorbit", frase: "Quassù non c'è gravità e non c'è rete. Se cadi, finisci su Saturno." },
+      { titolo: "Il serraglio alieno", nemici: ["mauriziano", "diegolo", "pipstronauta", "tiziclown", "aurorbit"], liv: [1, 1], abilita: 0.93, monete: 340, bustina: "epica",
+        parla: "mauriziano", frase: "Le mie bestie non mangiano da tre galassie. Tranquillo, sei solo l'antipasto." },
+      { titolo: "Il numero di magia", nemici: ["samufo", "alessiastro", "senebula", "diegolo", "ludovolo"], liv: [1, 1], abilita: 0.94, monete: 350,
+        parla: "samufo", frase: "Pesca una carta, una qualsiasi. Adesso guarda in alto: il disco volante sta per farti sparire." },
+      { titolo: "La regina degli alieni", nemici: ["aliena", "lollovni", "senebula", "alessiastro", "mauriziano"], liv: [1, 1], abilita: 0.95, monete: 360,
+        parla: "aliena", frase: "Tutti questi alieni lavorano per me. E da stasera, anche tu." },
+      { titolo: "Il gran finale", boss: true, nemici: ["simoonauta", "aliena", "mauriziano", "lollovni", "samufo"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
+        parla: "simoonauta", frase: "Tre, due, uno… accensione! Sono l'uomo cannone del circo, e il prossimo bersaglio sei tu.", vittoria: "Il pubblico alieno si alza in piedi e il tendone trema di applausi: il gran finale è tuo. Simoonauta ti stringe la mano con il guanto della tuta e ti lascia il premio dello spettacolo: un mappamondo di vetro che non riflette le stelle… ma mondi diversi." }
     ],
   },
   {

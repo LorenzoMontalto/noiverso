@@ -24,6 +24,7 @@ const SERIE = {
   farwest: { nome: "Far West", colore: "#d9893b", simbolo: "✶", desc: "Saloon, sceriffi e fuorilegge: al tramonto, nel deserto, vince chi estrae per primo." },
   apocalisse: { nome: "Apocalisse", colore: "#e0552e", simbolo: "☣", desc: "Città in rovina, orde di infetti e un virus che non perdona: sopravvive solo chi resta in piedi fino all'ultimo." },
   giappone: { nome: "Mitologia Giapponese", colore: "#e84a7f", simbolo: "⛩", desc: "Torii rossi, ciliegi in fiore e una luna di sangue: tra samurai, kami, volpi a nove code e demoni oni, l'onore vale più della vita." },
+  circo: { nome: "Circo Intergalattico", colore: "#9b4dff", simbolo: "✪", desc: "Tendoni tra le galassie, acrobati in orbita, alieni domati e un direttore col cilindro: lo spettacolo più grande dell'universo sta per cominciare." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -669,6 +670,37 @@ const CARTE = [
     mosse: [m("Freccia", 0, 26, { penetra: 20 }), m("Occhi di Gatto", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Pioggia di Frecce", 5, 13, { colpi: 6 })] },
   { id: "vikitsune", nome: "Vikitsune", serie: "giappone", rarita: "comune", stile: "FOR", ruolo: "imprevedibile", frase: "Orecchie di volpe, kimono rosso e un fiore tra i capelli. Ti sorride dolce, ma la coda dice che sta tramando qualcosa.",
     mosse: [m("Graffio di Volpe", 0, 28), m("Kitsunebi", 2, 24, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Inganno della Volpe", 5, 16, { colpi: 5 })] },
+  // ---------------- Circo Intergalattico ----------------
+  { id: "simoonauta", nome: "Simoonauta", serie: "circo", rarita: "leggendaria", stile: "VEL", ruolo: "assassino", frase: "Tuta d'argento, casco aperto e un dito puntato su di te: è l'astronauta che il circo spara fuori dal cannone. Torna sempre, e torna di corsa.",
+    mosse: [m("Sparo di Razzo", 0, 34, { penetra: 20 }), m("Conto alla Rovescia", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Uomo Cannone", 5, 98, { penetra: 25 })] },
+  { id: "aliena", nome: "Aliena", serie: "circo", rarita: "leggendaria", stile: "DIF", ruolo: "stregone", frase: "La regina degli alieni: corona di stelle, scettro con una galassia dentro e un piccolo grigio che le fa da maggiordomo. Il circo è suo, voi siete gli ospiti.",
+    mosse: [m("Scettro Galattico", 0, 32), m("Raggio Traente", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Invasione", 5, 94, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "mauriziano", nome: "Mauriziano", serie: "circo", rarita: "leggendaria", stile: "FOR", ruolo: "picchiatore", frase: "Il domatore di bestie aliene: frusta in mano, occhialoni sul cappello e un mostro a sei zampe che gli lecca la spalla. Le bestie gli obbediscono. Quasi sempre.",
+    mosse: [m("Frustata", 0, 34), m("Schiocco di Frusta", 2, 28, { eff: { tipo: "stordisci", val: 35 } }), m("Carica delle Bestie", 5, 24, { colpi: 4 })] },
+  { id: "lollovni", nome: "Lollovni", serie: "circo", rarita: "epica", stile: "FOR", ruolo: "capo", frase: "Il direttore del circo: cilindro con le stelle, bastone con un pianeta in cima e la voce che riempie il tendone. «Signore e signori… e alieni!»",
+    mosse: [m("Colpo di Bastone", 0, 32), m("Signore e Signori!", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Gran Finale", 5, 90)] },
+  { id: "samufo", nome: "Samufo", serie: "circo", rarita: "epica", stile: "VEL", ruolo: "imprevedibile", frase: "Il mago del circo: ventaglio di carte in una mano, cilindro piumato e un disco volante che rapisce la gente dal pubblico. Fa parte del numero, dice lui.",
+    mosse: [m("Carta Tagliente", 0, 30), m("Rapimento", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Sparizione Cosmica", 5, 18, { colpi: 5 })] },
+  { id: "senebula", nome: "Senebula", serie: "circo", rarita: "epica", stile: "DIF", ruolo: "guaritore", frase: "La nebulosa del circo: ricci pieni di polvere di stelle e un sorriso che illumina il tendone. Dove passa, le ferite si chiudono e gli applausi ripartono.",
+    mosse: [m("Polvere di Stelle", 0, 30), m("Nebulosa Calda", 2, 0, { eff: { tipo: "cura", val: 32 } }), m("Esplosione di Luce", 5, 86, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "alessiastro", nome: "Alessiastro", serie: "circo", rarita: "epica", stile: "VEL", ruolo: "tiratore", frase: "La stella del circo intergalattico: mantello con le spalline d'oro, occhiali sul naso e uno sguardo che vale il prezzo del biglietto. Brilla, e quando brilla colpisce.",
+    mosse: [m("Stella Cadente", 0, 30, { penetra: 20 }), m("Riflettori", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Supernova", 5, 90, { penetra: 25 })] },
+  { id: "aurorbit", nome: "Aurorbit", serie: "circo", rarita: "rara", stile: "VEL", ruolo: "schivatore", frase: "Volteggia dentro un cerchio d'oro come un satellite intorno al suo pianeta. Prova a prenderla: è già dall'altra parte del tendone.",
+    mosse: [m("Calcio in Orbita", 0, 28), m("Giro della Morte", 2, 0, { eff: { tipo: "nebbia" } }), m("Rientro nell'Atmosfera", 5, 82)] },
+  { id: "ludovolo", nome: "Ludovolo", serie: "circo", rarita: "rara", stile: "DIF", ruolo: "stratega", frase: "Il presentatore di riserva: cilindro stellato, bastone col sistema solare in cima e un sorriso da chi sa sempre dove sta andando lo spettacolo.",
+    mosse: [m("Bastone Planetario", 0, 26), m("Cambio di Scena", 0, 0, { eff: { tipo: "energia", val: 3 } }), m("Sistema Solare", 5, 80, { eff: { tipo: "indebolisci", val: 25, turni: 2 } })] },
+  { id: "diegolo", nome: "Diegolo", serie: "circo", rarita: "rara", stile: "FOR", ruolo: "ladro", frase: "Il giocoliere: tre pianeti in aria, colletto di pizzo e mani velocissime. Mentre guardi i pianeti, lui ti ha già svuotato le tasche.",
+    mosse: [m("Pianeta al Volo", 0, 28, { eff: { tipo: "ruba", val: 1 } }), m("Giocoleria", 2, 14, { colpi: 3 }), m("Pioggia di Pianeti", 5, 80, { eff: { tipo: "ruba", val: 1 } })] },
+  { id: "pipstronauta", nome: "Pipstronauta", serie: "circo", rarita: "rara", stile: "DIF", ruolo: "tank", frase: "Tuta spaziale blindata, baffi e occhiali dentro il casco. Lo usano come bersaglio per il lanciatore di coltelli: finora i coltelli hanno sempre perso.",
+    mosse: [m("Pugno a Gravità Zero", 0, 28), m("Tuta Pressurizzata", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Atterraggio Pesante", 5, 82)] },
+  { id: "giullia", nome: "Giullia", serie: "circo", rarita: "comune", stile: "FOR", ruolo: "incendiario", frase: "La giullare intergalattica: cappello a sonagli, colletto di pizzo e un sorriso furbo. Il suo numero preferito? Sputare fuoco di cometa sul pubblico.",
+    mosse: [m("Sonagli", 0, 26, { eff: { tipo: "brucia", val: 3, turni: 2 } }), m("Fuoco di Cometa", 2, 24, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Mangiafuoco", 5, 76, { eff: { tipo: "brucia", val: 5, turni: 3 } })] },
+  { id: "tiziclown", nome: "Tiziclown", serie: "circo", rarita: "comune", stile: "DIF", ruolo: "difensore", frase: "Naso rosso, birilli giganti e un cilindro con gli occhialoni da pilota. Fa ridere tutti, tranne chi prova a passargli davanti.",
+    mosse: [m("Birillata", 0, 26), m("Torta in Faccia", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Macchinina dei Clown", 5, 76)] },
+  { id: "ritacrobata", nome: "Ritacrobata", serie: "circo", rarita: "comune", stile: "VEL", ruolo: "schivatore", frase: "L'acrobata galattica: appesa a un cerchio d'oro con un braccio solo, e ti saluta con l'altro. Ride sempre, anche a testa in giù.",
+    mosse: [m("Capriola", 0, 26), m("Salto Mortale", 2, 0, { eff: { tipo: "nebbia" } }), m("Triplo Avvitamento", 5, 13, { colpi: 6 })] },
+  { id: "vikyrobata", nome: "Vikyrobata", serie: "circo", rarita: "comune", stile: "FOR", ruolo: "tiratore", frase: "L'acrobata delle galassie: lancia il suo cerchio come un anello di Saturno, e lo riprende al volo senza neanche guardare.",
+    mosse: [m("Cerchio Lanciato", 0, 28, { penetra: 20 }), m("Anello di Saturno", 2, 22, { eff: { tipo: "stordisci", val: 30 } }), m("Volo tra le Stelle", 5, 78, { penetra: 25 })] },
 ];
 
 
@@ -736,6 +768,9 @@ const PERSONE = {
   // Mitologia Giapponese
   samuruele: "Samuele", lollorochi: "Lorenzo", tizunagi: "Tiziano", diegami: "Diego", aurokitsune: "Aurora", maurioni: "Maurizio", simotengu: "Simone",
   alikami: "Alice", giulyokai: "Giulia", ludoninja: "Ludovico", alesshogun: "Alessia", ritamiko: "Rita", pipsuki: "Pips", seneko: "Senè", vikitsune: "Viky",
+  // Circo Intergalattico
+  simoonauta: "Simone", aliena: "Alice", mauriziano: "Maurizio", lollovni: "Lorenzo", samufo: "Samuele", senebula: "Senè", alessiastro: "Alessia",
+  aurorbit: "Aurora", ludovolo: "Ludovico", diegolo: "Diego", pipstronauta: "Pips", giullia: "Giulia", tiziclown: "Tiziano", ritacrobata: "Rita", vikyrobata: "Viky",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -750,7 +785,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // (ma conviene darla prima a chi ne ha meno: lo mostra il riquadro «Versioni Ultra» nel pannello admin).
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, ruolo: c.ruolo, persona: c.persona, ultra: c.ultra, mosse: c.mosse.map(m => m.nome) }]));
 function applicaConfigCarte(cfg) {
@@ -847,6 +882,8 @@ function impronta(id) {
 // Bilanciamento per carta (nov 2026): un piccolo correttivo a PV, attacco e difesa, calcolato con migliaia di partite simulate,
 // perché ogni carta valga quanto le altre della sua rarità (le mosse e i ruoli non sono tutti uguali). 1 = nessuna correzione.
 const BILANCIO = {
+  // Circo Intergalattico (nov 2026), dalle simulazioni
+  simoonauta: 1.02, aliena: 1.12, mauriziano: 0.96, senebula: 0.94, alessiastro: 0.98, aurorbit: 0.97, ludovolo: 1.05, diegolo: 0.96, tiziclown: 1.05, vikyrobata: 0.97,
   // Mitologia Giapponese (nov 2026), dalle simulazioni
   tizunagi: 1.11, lollorochi: 0.97, diegami: 0.97, aurokitsune: 0.955, maurioni: 1.04, simotengu: 0.96, alikami: 0.95, giulyokai: 1.12, ludoninja: 0.99, alesshogun: 0.98, pipsuki: 1.03, vikitsune: 1.05,
   aleadme: 1.168, alebella: 1.117, aleghilterra: 0.97, alessante: 0.985, alesshack: 0.99, alessiai: 0.956, alessieno: 1.02, alessiologa: 1.078,
