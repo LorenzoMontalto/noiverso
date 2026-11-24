@@ -28,6 +28,7 @@ const MappeStoria = (() => {
     [[240, 1010], [620, 920], [1020, 1040], [1300, 820], [640, 620], [1500, 480]],   // notte delle creature
     [[220, 1030], [580, 880], [960, 1020], [1210, 760], [820, 520], [1500, 330]],    // città del futuro
     [[300, 900], [620, 1000], [1060, 980], [1440, 760], [1020, 420], [520, 300]],     // tavolo da gioco
+    [[900, 228], [685, 824], [1055, 400], [1600, 352], [880, 150], [515, 328]],       // giro del mondo
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -84,6 +85,8 @@ const MappeStoria = (() => {
      [1700, 980, "♻", "Discarica Elettronica"], [1720, 560, "✚", "Clinica Cibernetica"]],
     [[120, 1110, "☕", "L'Osteria"], [700, 1140, "♪", "La Sagra del Paese"], [1300, 1110, "♣", "Circolo della Briscola"], [1700, 700, "◆", "Sala del Tressette"],
      [1500, 220, "♞", "Torneo dei Cavalli"], [520, 150, "♛", "Tavolo dei Re"], [900, 520, "▤", "Il Mazzo"], [110, 420, "$", "Cassa dei Denari"], [1710, 1110, "♠", "Bancone"]],
+    [[990, 250, "⌚", "Londra"], [700, 920, "♪", "Rio de Janeiro"], [1110, 470, "▲", "Il Cairo"], [1640, 420, "✿", "Tokyo"], [790, 110, "♣", "Edimburgo"], [470, 400, "★", "Washington"],
+     [975, 330, "⛫", "Roma"], [1050, 330, "◎", "Atene"], [1560, 960, "☼", "Sydney"], [300, 700, "≈", "Oceano"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -719,7 +722,49 @@ const MappeStoria = (() => {
     s += `<circle cx="900" cy="640" r="380" fill="#ffe9a8" opacity=".07" filter="url(#sfoca)"/>`;
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, specchi, treno, torre, dimensione];
+  function mondo(r) {
+    // il giro del mondo: un planisfero con i continenti, le rotte degli aerei e qualche monumento
+    const P = (lon, lat) => [f((lon + 180) * 5), f((80 - lat) * 8)];
+    let s = `<defs><linearGradient id="mareMondo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d5a8a"/><stop offset="1" stop-color="#123c66"/></linearGradient></defs>
+      <rect width="${W}" height="${H}" fill="url(#mareMondo)"/>`;
+    // meridiani e paralleli
+    for (let lon = -150; lon <= 180; lon += 30) s += `<path d="M${P(lon, 80)[0]},0 V${H}" stroke="#ffffff" stroke-width="1" opacity=".08"/>`;
+    for (let lat = 60; lat >= -60; lat -= 30) s += `<path d="M0,${P(0, lat)[1]} H${W}" stroke="#ffffff" stroke-width="1" opacity=".08"/>`;
+    for (let k = 0; k < 40; k++) s += `<path d="M${f(r() * W)},${f(r() * H)} q12,-6 24,0" stroke="#9fd8ff" stroke-width="2" fill="none" opacity=".25"/>`;
+    // continenti (contorni semplificati in longitudine e latitudine)
+    const terre = [
+      [[-165, 68], [-140, 70], [-100, 72], [-80, 66], [-60, 55], [-75, 45], [-80, 30], [-97, 25], [-105, 20], [-90, 15], [-80, 8], [-105, 25], [-117, 33], [-125, 45], [-135, 58], [-160, 60]],   // Nord America
+      [[-80, 10], [-60, 8], [-35, -5], [-38, -15], [-48, -26], [-58, -35], [-68, -52], [-74, -45], [-72, -20], [-80, -5]],   // Sud America
+      [[-10, 36], [-9, 44], [-2, 48], [-5, 52], [-3, 58], [5, 62], [20, 70], [40, 68], [45, 55], [30, 45], [28, 40], [20, 38], [12, 44], [15, 38], [5, 43]],   // Europa
+      [[-17, 15], [-10, 30], [-5, 36], [10, 37], [32, 31], [43, 12], [51, 11], [40, -15], [30, -34], [18, -34], [12, -15], [9, 4], [-8, 5]],   // Africa
+      [[40, 68], [70, 75], [110, 77], [140, 72], [170, 66], [160, 58], [140, 50], [130, 35], [120, 22], [106, 10], [100, 15], [92, 22], [80, 8], [72, 20], [57, 25], [48, 30], [36, 36], [30, 45], [45, 55]],   // Asia
+      [[114, -22], [122, -18], [131, -12], [142, -11], [153, -25], [150, -37], [140, -38], [130, -32], [115, -34]],   // Australia
+      [[-6, 50], [2, 51], [0, 54], [-3, 58], [-6, 57], [-5, 52]],   // Gran Bretagna
+      [[130, 31], [136, 34], [141, 38], [142, 43], [140, 41], [135, 35]],   // Giappone
+    ];
+    for (const t of terre) {
+      const pts = t.map(([a, b]) => P(a, b));
+      s += `<path d="${curva(pts.concat([pts[0]]))}Z" fill="#3f8f5a" stroke="#2a6a40" stroke-width="4"/>`;
+      s += `<path d="${curva(pts.concat([pts[0]]))}Z" fill="none" stroke="#d8c890" stroke-width="10" opacity=".25"/>`;
+    }
+    // un po' di deserto, ghiaccio e foreste sopra i continenti
+    for (const [lon, lat, c, rx, ry] of [[15, 22, "#d8b878", 120, 50], [45, 25, "#d8b878", 60, 30], [-60, -8, "#2e7a42", 90, 60], [100, 60, "#e8f0f0", 200, 35], [-100, 62, "#e8f0f0", 150, 30], [133, -25, "#c89a5a", 80, 40]]) {
+      const [x, y] = P(lon, lat); s += `<path d="${blob(x, y, rx, ry, r, 16, .2)}" fill="${c}" opacity=".55"/>`;
+    }
+    // rotte degli aerei (tratteggiate) tra gli scali
+    const scali = [[0, 51.5], [-43, -23], [31, 30], [140, 36], [-4, 57], [-77, 39]];
+    for (let k = 0; k < scali.length - 1; k++) {
+      const [a, b] = [P(...scali[k]), P(...scali[k + 1])], mx = (a[0] + b[0]) / 2, my = Math.min(a[1], b[1]) - 120;
+      s += `<path d="M${a[0]},${a[1]} Q${mx},${my} ${b[0]},${b[1]}" stroke="#ffffff" stroke-width="4" stroke-dasharray="14 12" fill="none" opacity=".55"/>`;
+    }
+    // aeroplanini e nuvole
+    for (const [lon, lat, rot] of [[-20, 10, 120], [80, 50, 80], [-110, 50, -20]]) { const [x, y] = P(lon, lat); s += `<text x="${x}" y="${y}" font-size="44" fill="#ffffff" transform="rotate(${rot} ${x} ${y})" text-anchor="middle">✈</text>`; }
+    for (let k = 0; k < 12; k++) s += `<ellipse cx="${f(r() * W)}" cy="${f(r() * H)}" rx="${f(50 + r() * 60)}" ry="${f(14 + r() * 10)}" fill="#ffffff" opacity=".18"/>`;
+    // rosa dei venti
+    s += `<g transform="translate(1660 1060)"><circle r="70" fill="#0d2c4a" stroke="#d8c890" stroke-width="4"/><path d="M0,-62 L12,0 L0,62 L-12,0Z M-62,0 L0,-12 L62,0 L0,12Z" fill="#d8c890"/><text y="-74" text-anchor="middle" font-size="26" fill="#d8c890">N</text></g>`;
+    return s;
+  }
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -747,7 +792,7 @@ const MappeStoria = (() => {
     // colore di base e colore delle nuvole per ogni capitolo
     const NEBBIE = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
       ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"],
-      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"],
+      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"],
       ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]];
     const [base, nuv] = NEBBIE[k] || NEBBIE[0];
     g.fillStyle = base; g.fillRect(0, 0, W, H);

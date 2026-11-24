@@ -71,6 +71,8 @@ const SINERGIE_BASE = {
   cyborg: { tipo: "schermo", v2: 50, v3: 85, v5: 100, testo: (v, liv) => `${v}% di probabilità di respingere gli effetti nemici (bruciatura, stordimento, indebolimento, furto di energia)${liv >= 3 ? ", e l'effetto respinto torna indietro su chi l'ha lanciato" : ""}` },
   // Carte da gioco: fortuna al tavolo. v% di probabilità che un attacco faccia «Scopa!» e colpisca di nuovo a metà danni.
   carte: { tipo: "fortuna", v2: 11, v3: 24, v5: 33, testo: v => `${v}% di probabilità che un loro attacco faccia «Scopa!» e colpisca una seconda volta a metà danni` },
+  // Paesi del mondo: ospitalità. Quando una carta della serie entra in campo recupera v% dei PV massimi.
+  paesi: { tipo: "ospitalita", v2: 14, v3: 27, v5: 45, testo: v => `quando entrano in campo recuperano ${_il(v)} dei PV massimi (benvenuti a casa!)` },
   mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -178,6 +180,7 @@ class Battaglia {
         else if (s.tipo === "accumulo") x.sin.accumulo = s.val;
         else if (s.tipo === "rinascita") x.sin.rinascita = s.val;
         else if (s.tipo === "fortuna") x.sin.fortuna = s.val;
+        else if (s.tipo === "ospitalita") x.sin.ospitalita = s.val;
         else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
         else if (s.tipo === "critico") { x.sin.crit = s.val; x.sin.critX = s.liv >= 3 ? 2 : s.liv === 2 ? 1.75 : 1.5; }
@@ -367,6 +370,8 @@ class Battaglia {
     dentro.usata = true;
     this._log(`${L.nome} manda in campo ${dentro.c.nome}.`, { lato: l, entra: l });
     if (dentro.c.ruolo === "difensore") { dentro.scudo = Math.max(dentro.scudo, 30); this._log(`${dentro.c.nome} alza la guardia: scudo 30%.`, { lato: l, anim: "scudo", su: l }); }
+    // Paesi del mondo: chi entra in campo si sente a casa e recupera un po' di PV
+    if (dentro.sin && dentro.sin.ospitalita && dentro.pv < dentro.pvMax) this._cura(l, dentro, Math.max(1, Math.round(dentro.pvMax * dentro.sin.ospitalita / 100)));
   }
 
   // Sostituzione dopo un KO (non consuma il turno)

@@ -16,6 +16,7 @@ const SERIE = {
   simpson:  { nome: "Simpson", colore: "#ffd90f", simbolo: "◎", desc: "Ciambelle, Duff e la centrale nucleare: a Springfield tutti sono pronti a combattere." },
   barbapapa: { nome: "Barbapapà", colore: "#ff8fc8", simbolo: "✿", desc: "Barbatrucco! Una famiglia che cambia forma come vuole: spade, ombrelli, chitarre." },
   starwars: { nome: "Star Wars", colore: "#4fc3ff", simbolo: "☄", desc: "Jedi, Sith, ribelli e cacciatori di taglie, in una galassia lontana lontana." },
+  paesi: { nome: "Paesi del Mondo", colore: "#4fb87a", simbolo: "✈", desc: "Bandiere, costumi e monumenti: i tuoi amici fanno il giro del mondo, un paese a testa." },
   carte: { nome: "Carte da Gioco", colore: "#e8b04a", simbolo: "♣", desc: "Re, cavalli, fanti e assi delle carte napoletane: coppe, denari, spade e bastoni scendono dal mazzo e si siedono al tavolo." },
   cyborg: { nome: "Cyborg", colore: "#38e0ff", simbolo: "⌬", desc: "Metà persone e metà macchine, tra grattacieli al neon e auto volanti: il futuro è arrivato e picchia forte." },
   creature: { nome: "Creature Mistiche", colore: "#9d7bff", simbolo: "☠", desc: "Vampiri, lupi mannari, mummie e sirene: quando sorge la luna piena escono tutti allo scoperto." },
@@ -540,7 +541,37 @@ const CARTE = [
   { id: "diegallo", nome: "Diegallo", serie: "carte", rarita: "comune", stile: "DIF", ruolo: "tank", frase: "Cavallo di Coppe: in sella con un calice in mano senza versarne una goccia. Spostarlo è un'altra storia.",
     mosse: [m("Zoccolata", 0, 26), m("Coppa Scudo", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Galoppata", 5, 78)] },
   { id: "simocallo", nome: "Simocallo", serie: "carte", rarita: "comune", stile: "VEL", ruolo: "imprevedibile", frase: "Cavallo di Bastoni: non si sa mai da che parte arriva, ma si sa che arriva col bastone.",
-    mosse: [m("Randellata", 0, 28), m("Sgambetto", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Cavallo Pazzo", 5, 82)] },
+    mosse: [m("Randellata", 0, 28), m("Sgambetto", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Cavallo Pazzo", 5, 82)] },  // ---------------- Paesi del Mondo ----------------
+  { id: "aurorecia", nome: "Aurorecia", serie: "paesi", rarita: "leggendaria", stile: "DIF", ruolo: "stratega", frase: "Grecia: corona d'alloro, tunica bianca e l'Acropoli alle spalle. Ha già consultato l'oracolo: vinci tu? No.",
+    mosse: [m("Lancia di Sparta", 0, 32), m("Oracolo di Delfi", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Furia degli Dei", 5, 94, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "pipscozia", nome: "Pipscozia", serie: "paesi", rarita: "leggendaria", stile: "FOR", ruolo: "picchiatore", frase: "Scozia: kilt, pelliccia e spadone. Quando suona la cornamusa, nelle Highlands tremano anche i castelli.",
+    mosse: [m("Colpo di Claymore", 0, 34), m("Cornamusa", 2, 30, { eff: { tipo: "stordisci", val: 40 } }), m("Highlander", 5, 98)] },
+  { id: "simonusa", nome: "Simonusa", serie: "paesi", rarita: "leggendaria", stile: "VEL", ruolo: "capo", frase: "Stati Uniti: cilindro a stelle e strisce e un sorriso da campagna elettorale. Tutto in grande, anche i colpi.",
+    mosse: [m("Fuochi del 4 Luglio", 0, 34), m("Sogno Americano", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Stelle e Strisce", 5, 24, { colpi: 4 })] },
+  { id: "aleghilterra", nome: "Aleghilterra", serie: "paesi", rarita: "epica", stile: "DIF", ruolo: "difensore", frase: "Inghilterra: corona in testa, occhiali sul naso e il Big Ben che segna l'ora del tè. E della tua sconfitta.",
+    mosse: [m("Tè delle Cinque", 0, 30), m("Guardia Reale", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Corona Imperiale", 5, 90)] },
+  { id: "diegspagna", nome: "Diegspagna", serie: "paesi", rarita: "epica", stile: "VEL", ruolo: "schivatore", frase: "Spagna: giacca da torero ricamata d'oro e mantello rosso. Tu carichi, lui si sposta. Olé.",
+    mosse: [m("Banderilla", 0, 32, { penetra: 20 }), m("Olé!", 2, 0, { eff: { tipo: "nebbia" } }), m("Corrida", 5, 90, { penetra: 25 })] },
+  { id: "ritalia", nome: "Ritalia", serie: "paesi", rarita: "epica", stile: "FOR", ruolo: "imprevedibile", frase: "Italia: corona d'alloro, tricolore sulle spalle e il Colosseo dietro. Ride sempre, ma guai a toccarle la pasta.",
+    mosse: [m("Schiaffo all'Italiana", 0, 32), m("Mamma Mia!", 2, 30, { eff: { tipo: "stordisci", val: 40 } }), m("Colosseo", 5, 90)] },
+  { id: "samubrasil", nome: "Samubrasil", serie: "paesi", rarita: "epica", stile: "VEL", ruolo: "assassino", frase: "Brasile: piume, paillettes e il Cristo Redentore sullo sfondo. Balla la samba anche mentre ti mette al tappeto.",
+    mosse: [m("Passo di Samba", 0, 30, { penetra: 20 }), m("Carnevale", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Rovesciata", 5, 90)] },
+  { id: "maurigitto", nome: "Maurigitto", serie: "paesi", rarita: "rara", stile: "DIF", ruolo: "stregone", frase: "Egitto: copricapo da faraone, baffi perfetti e le piramidi alle spalle. Ti guarda come si guarda uno schiavo.",
+    mosse: [m("Scettro del Faraone", 0, 28), m("Maledizione della Piramide", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Tempesta del Deserto", 5, 84)] },
+  { id: "senesia", nome: "Senesia", serie: "paesi", rarita: "rara", stile: "FOR", ruolo: "incendiario", frase: "Tunisia: velo ricamato, orecchini d'oro e un sorriso caldo come il sole del deserto. Le spezie, poi, bruciano.",
+    mosse: [m("Harissa", 0, 28, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Vento del Sahara", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Sole di Cartagine", 5, 82, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  { id: "tizgeria", nome: "Tizgeria", serie: "paesi", rarita: "rara", stile: "FOR", ruolo: "tiratore", frase: "Algeria: turbante, giacca verde ricamata e un pugnale alla cintura. Arriva dal deserto e non sbaglia un colpo.",
+    mosse: [m("Pugnale Berbero", 0, 30), m("Raffica del Deserto", 2, 14, { colpi: 3 }), m("Casbah", 5, 84)] },
+  { id: "vikappone", nome: "Vikappone", serie: "paesi", rarita: "rara", stile: "VEL", ruolo: "guaritore", frase: "Giappone: kimono rosso, ombrellino e fiori di ciliegio. Ti offre un tè con un inchino, poi ti sistema.",
+    mosse: [m("Ventaglio", 0, 26), m("Cerimonia del Tè", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Tempesta di Ciliegi", 5, 76, { drena: 40 })] },
+  { id: "alirtogallo", nome: "Alirtogallo", serie: "paesi", rarita: "comune", stile: "VEL", ruolo: "ladro", frase: "Portogallo: foulard rosso, collana d'oro e Lisbona al tramonto. Canta il fado e intanto ti sfila l'energia.",
+    mosse: [m("Saudade", 0, 26, { eff: { tipo: "ruba", val: 1 } }), m("Fado Triste", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Onda di Nazaré", 5, 80)] },
+  { id: "giulancia", nome: "Giulancia", serie: "paesi", rarita: "comune", stile: "FOR", ruolo: "stratega", frase: "Francia: basco rosso, maglia a righe e una baguette sotto il braccio. Che non è solo per mangiare.",
+    mosse: [m("Colpo di Baguette", 0, 28), m("Croissant", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Torre Eiffel", 5, 84)] },
+  { id: "lollirlanda", nome: "Lollirlanda", serie: "paesi", rarita: "comune", stile: "DIF", ruolo: "tank", frase: "Irlanda: mantello verde, pinta di stout in mano e le scogliere alle spalle. Più lo colpisci, più ordina da bere.",
+    mosse: [m("Pugno Celtico", 0, 26), m("Pinta di Stout", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Scogliere di Moher", 5, 78)] },
+  { id: "ludormania", nome: "Ludormania", serie: "paesi", rarita: "comune", stile: "DIF", ruolo: "capo", frase: "Germania: cappello con la piuma, bretelle e un boccale enorme. All'Oktoberfest guida lui il brindisi, e la squadra.",
+    mosse: [m("Boccale di Birra", 0, 26), m("Oktoberfest", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Precisione Tedesca", 5, 78)] },
 ];
 
 
@@ -596,6 +627,9 @@ const PERSONE = {
   // Carte da Gioco
   alire: "Alice", maurire: "Maurizio", tizire: "Tiziano", giulasso: "Giulia", lollocallo: "Lorenzo", ludasso: "Ludovico", samasso: "Samuele",
   pipsante: "Pips", ritare: "Rita", senecallo: "Senè", vikante: "Viky", alessante: "Alessia", aurante: "Aurora", diegallo: "Diego", simocallo: "Simone",
+  // Paesi del Mondo
+  aurorecia: "Aurora", pipscozia: "Pips", simonusa: "Simone", aleghilterra: "Alessia", diegspagna: "Diego", ritalia: "Rita", samubrasil: "Samuele",
+  maurigitto: "Maurizio", senesia: "Senè", tizgeria: "Tiziano", vikappone: "Viky", alirtogallo: "Alice", giulancia: "Giulia", lollirlanda: "Lorenzo", ludormania: "Ludovico",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -609,7 +643,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // Una sola versione Ultra per serie, e mai due allo stesso amico.
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {

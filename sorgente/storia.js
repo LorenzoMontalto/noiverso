@@ -326,12 +326,30 @@ const STORIA = [
       { titolo: "Il torneo dei cavalli", nemici: ["lollocallo", "senecallo", "diegallo", "simocallo", "giulasso"], liv: [1, 1], abilita: 0.95, monete: 350,
         parla: "lollocallo", frase: "Quattro cavalli in pista e tu a piedi. Mi sa che parti in svantaggio." },
       { titolo: "Il tavolo dei re", boss: true, nemici: ["maurire", "alire", "tizire", "ritare", "samasso"], liv: [1, 1], abilita: 0.97, monete: 620, bustina: "leggendaria",
-        parla: "maurire", frase: "Quattro re sullo stesso tavolo. Tu che carta hai in mano?", vittoria: "I re abbassano le carte: la mano è tua. Sul tavolo resta solo una carta coperta. La giri, e non c'è disegnato nulla: riflette… mondi diversi." }
+        parla: "maurire", frase: "Quattro re sullo stesso tavolo. Tu che carta hai in mano?", vittoria: "I re abbassano le carte: la mano è tua. Sul tavolo resta solo una carta coperta. La giri: è un biglietto aereo, con scritto «Giro del mondo»." }
+    ],
+  },
+  {
+    id: "c23", campo: "pioggia", titolo: "Il giro del mondo", serie: "paesi", colore: "#4fb87a", simbolo: "✈",
+    intro: "Il biglietto ti porta su un aereo che fa il giro del mondo. A ogni scalo ti aspetta un amico vestito come il suo paese, con bandiera, costume e monumento alle spalle. E nessuno ti lascia ripartire senza una sfida.",
+    tappe: [
+      { titolo: "Londra sotto la pioggia", nemici: ["aleghilterra", "lollirlanda", "ludormania", "giulancia", "alirtogallo"], liv: [1, 1], abilita: 0.9, monete: 320,
+        parla: "aleghilterra", frase: "Benvenuto a Londra. Piove, ovviamente. E tu perdi, ovviamente." },
+      { titolo: "Il carnevale di Rio", nemici: ["samubrasil", "alirtogallo", "diegspagna", "giulancia", "ludormania"], liv: [1, 1], abilita: 0.92, monete: 330,
+        parla: "samubrasil", frase: "Al carnevale si balla fino all'alba. Tu invece cadi molto prima." },
+      { titolo: "All'ombra delle piramidi", nemici: ["maurigitto", "tizgeria", "senesia", "lollirlanda", "alirtogallo"], liv: [1, 1], abilita: 0.93, monete: 340, bustina: "epica",
+        parla: "maurigitto", frase: "Queste piramidi resistono da cinquemila anni. Tu non arrivi a cinque minuti." },
+      { titolo: "Tokyo in fiore", nemici: ["vikappone", "ritalia", "maurigitto", "ludormania", "senesia"], liv: [1, 1], abilita: 0.94, monete: 350,
+        parla: "vikappone", frase: "I ciliegi sono in fiore. Peccato che tu sia venuto qui a farti sfiorire." },
+      { titolo: "Le Highlands", nemici: ["pipscozia", "aleghilterra", "lollirlanda", "diegspagna", "tizgeria"], liv: [1, 1], abilita: 0.95, monete: 360,
+        parla: "pipscozia", frase: "Hai sentito la cornamusa? Vuol dire che sei arrivato nelle Highlands. E che è troppo tardi per scappare." },
+      { titolo: "Il vertice delle nazioni", boss: true, nemici: ["simonusa", "aurorecia", "pipscozia", "ritalia", "samubrasil"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
+        parla: "simonusa", frase: "Benvenuto al vertice: qui si decide il mondo. E il mondo ha appena deciso che perdi.", vittoria: "Le nazioni firmano la pace e il vertice finisce in festa. Al centro della sala resta un mappamondo di vetro che non riflette te… ma mondi diversi." }
     ],
   },
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
-    intro: "Tocchi la carta che riflette e la sua superficie si muove come acqua, sempre più grande. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
+    intro: "Tocchi il mappamondo di vetro e la sua superficie si muove come acqua, sempre più grande. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",
     tappe: [
       { titolo: "Il riflesso di Giulia", nemici: ["giulmai", "nikulia", "giulifleur", "giulimaah", "giudella"], liv: [1, 1], abilita: 0.9, monete: 290,
         parla: "giudella", frase: "Cinque Giulie e una sola passerella. Indovina quale è quella vera… mentre ti battiamo." },
