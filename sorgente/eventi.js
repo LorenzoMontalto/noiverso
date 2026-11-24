@@ -70,10 +70,21 @@ const Settimana = (() => {
     { id: "bustine", n: 3, testo: s => `Apri 3 bustine ${s}`, premio: { monete: 350 } },
     { id: "potenzia", n: 5, testo: s => `Potenzia 5 volte carte ${s}`, premio: { bustine: { epica: 1 } } },
   ];
+  let avvisatoAdmin = false;
   function evento(tipo, d = {}) {
-    if (S.admin) return;
+    if (S.admin) {   // nel profilo admin le missioni non avanzano: lo diciamo una volta, così non sembra un errore
+      if (tipo === "vittoria" && !avvisatoAdmin) { avvisatoAdmin = true; setTimeout(() => mostraAvviso("Profilo admin: le missioni (anche quelle della settimana) non avanzano. Provale con il profilo normale."), 1800); }
+      return;
+    }
     const st = stato(), s = st.serie, piu = id => { st.prog[id] = (st.prog[id] || 0) + 1; };
-    if (tipo === "vittoria" && (d.squadra || []).filter(id => PER_ID[id] && PER_ID[id].serie === s).length >= 3) piu("vinci");
+    // nov 2026: conta anche la squadra intera (in modalità rapida scendono solo le prime 3 carte: con i Dei al 4° e 5° posto non contava)
+    const quante = ids => (ids || []).filter(id => PER_ID[id] && PER_ID[id].serie === s).length;
+    let intera = []; try { intera = squadraAttiva().carte; } catch (e) { /* niente */ }
+    if (tipo === "vittoria" && Math.max(quante(d.squadra), quante(intera)) >= 3) {
+      piu("vinci");
+      const m = MISSIONI.find(x => x.id === "vinci"), n = st.prog.vinci;
+      if (n <= m.n) setTimeout(() => mostraAvviso(n >= m.n ? `Missione della settimana completata: ${m.n} vittorie con 3 carte ${SERIE[s].nome}! Riscuoti il premio nella Strada.` : `Missione della settimana: ${n}/${m.n} vittorie con 3 carte ${SERIE[s].nome}.`), 1800);
+    }
     if (tipo === "bustina" && d.tipo === `serie-${s}`) piu("bustine");
     if (tipo === "potenzia" && d.id && PER_ID[d.id] && PER_ID[d.id].serie === s) piu("potenzia");
   }
