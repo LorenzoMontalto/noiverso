@@ -2379,6 +2379,12 @@ const Scena3D = (() => {
   // ============================================================
   //  APERTURA BUSTINA
   // ============================================================
+  // Apertura della bustina:
+  //  1. tocchi la bustina: trema e si illumina del colore della carta migliore che c'è dentro (più è rara, più a lungo)
+  //  2. le carte escono in un mazzetto coperto: a ogni tocco se ne scopre una, la più rara è sempre l'ultima
+  //  3. leggendarie e Ultra hanno un'entrata speciale: buio, serie, ruolo e tipo, poi la carta
+  const VAL_RARITA = { comune: 0, rara: 1, epica: 2, leggendaria: 3, ultra: 4 };
+  const suono = (nome, ...a) => { try { if (typeof Suoni !== "undefined") Suoni[nome](...a); } catch (e) {} };
   class Apertura extends Base {
     constructor(contenitore, esiti, tipo, callback = {}) {
       super(contenitore);
@@ -2386,16 +2392,21 @@ const Scena3D = (() => {
       this.cb = callback;
       this.fase = "attesa";
       const s = this.scena;
-      s.add(new T.AmbientLight(0xffffff, .55));
-      const k = new T.PointLight(0xffffff, 1.3, 20); k.position.set(0, 2, 5); s.add(k);
+      this.ambiente = new T.AmbientLight(0xffffff, .55); s.add(this.ambiente);
+      const k = new T.PointLight(0xffffff, 1.3, 20); k.position.set(0, 2, 5); s.add(k); this.faro = k;
       this.luceRara = new T.PointLight(0xff2e46, 0, 10); this.luceRara.position.set(0, 0, 2); s.add(this.luceRara);
       this.guarda = new T.Vector3(0, 0, 0);
       this.n = esiti.length;
+      // rarità di ogni carta (l'Ultra conta come una rarità a parte) e ordine in cui si scoprono: dalla meno rara alla più rara
+      this.rar = esiti.map(e => e.ultra ? "ultra" : PER_ID[e.id].rarita);
+      this.mazzo = esiti.map((e, i) => i).sort((a, b) => VAL_RARITA[this.rar[a]] - VAL_RARITA[this.rar[b]] || a - b);
+      this.migliore = this.rar[this.mazzo[this.n - 1]];
       this.adattaCamera();
       // bustina: corpo + striscia da strappare
       const tex = texBustina(tipo);
       const lato = new T.MeshStandardMaterial({ color: 0x2a1218, metalness: .7, roughness: .3 });
       const fronte = new T.MeshStandardMaterial({ map: tex, metalness: .35, roughness: .3, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: .25 });
+      this.fronte = fronte;
       this.bustina = new T.Group();
       const corpo = new T.Mesh(new T.BoxGeometry(1.6, 2.0, .16), [lato, lato, lato, lato, fronte, lato]);
       const texS = tex.clone(); texS.needsUpdate = true;
@@ -2405,27 +2416,33 @@ const Scena3D = (() => {
       const striscia = new T.Mesh(new T.BoxGeometry(1.6, .2, .16), [lato, lato, lato, lato, fS, lato]);
       striscia.position.y = 1.0;
       this.bustina.add(corpo, striscia);
+      this.bustina.position.y = this.yc;
       this.striscia = striscia; this.corpo = corpo;
       s.add(this.bustina);
       this.alone = aloneSprite(tipo === "ultra" ? 0xffe9a8 : tipo === "leggendaria" ? 0xf2c14e : tipo === "epica" ? 0xb866ff : 0xff2e46, 4.5);
-      this.alone.position.z = -.5; this.alone.material.opacity = .35;
+      this.alone.position.set(0, this.yc, -.5); this.alone.material.opacity = .35;
       s.add(this.alone);
+      // velo nero per l'entrata speciale (sta tra il tavolo e la carta in primo piano)
+      this.velo = new T.Mesh(new T.PlaneGeometry(60, 60), new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthWrite: false }));
+      this.velo.position.z = 1.1; this.velo.renderOrder = 5; s.add(this.velo);
       this.carte = [];
       this.aggiornatori.push(t => {
         if (this.fase === "attesa") {
           this.bustina.rotation.y = Math.sin(t * 1.2) * .35;
           this.bustina.rotation.x = Math.sin(t * .9) * .08;
-          this.bustina.position.y = Math.sin(t * 1.6) * .08;
+          this.bustina.position.y = this.yc + Math.sin(t * 1.6) * .08;
         }
-        this.alone.material.opacity = .25 + Math.sin(t * 2) * .08;
+        if (this.fase !== "carica") this.alone.material.opacity = .25 + Math.sin(t * 2) * .08;
         this.carte.forEach((c, i) => {
-          if (!c.userData.occupata) c.position.y = c.userData.base.y + Math.sin(t * 1.8 + i) * .04;
-          if (c.userData.alone) { c.userData.alone.position.copy(c.position); c.userData.alone.position.z -= .1; c.userData.alone.material.opacity = (c.userData.girata ? .35 : .6) + Math.sin(t * 3 + i) * .15; }
+          if (c.userData.girata && !c.userData.occupata) c.position.y = c.userData.base.y + Math.sin(t * 1.8 + i) * .04;
+          if (c.userData.alone) { c.userData.alone.position.copy(c.position); c.userData.alone.position.z -= .1; c.userData.alone.material.opacity = .35 + Math.sin(t * 3 + i) * .15; }
         });
       });
       this.ray = new T.Raycaster();
-      this._click = ev => this._tocco(ev);
-      this.r.domElement.addEventListener("pointerdown", this._click);
+      this._giu = ev => { this._inizio = { x: ev.clientX, y: ev.clientY }; };
+      this._su = ev => { const a = this._inizio || { x: ev.clientX, y: ev.clientY }; this._inizio = null; this._tocco(ev, Math.hypot(ev.clientX - a.x, ev.clientY - a.y) > 30); };
+      this.r.domElement.addEventListener("pointerdown", this._giu);
+      this.r.domElement.addEventListener("pointerup", this._su);
       this.prepara();
     }
     adattaCamera() {
@@ -2433,19 +2450,28 @@ const Scena3D = (() => {
       this.righe = a < .95 ? 2 : 1;
       const perRiga = Math.ceil((this.n || 4) / this.righe);
       const largh = perRiga * 1.1 + (perRiga - 1) * .25 + .6;
-      const alt = this.righe * 1.55 + .8;
+      // sopra la griglia delle carte scoperte, sotto il mazzetto coperto
+      const h = this.righe * 1.55 + (this.righe - 1) * .1;
+      this.yMazzo = -h / 2 - 1.05;
+      const alto = h / 2 + .1, basso = this.yMazzo - .85 - 1.1;   // sotto il mazzetto resta spazio per il suggerimento e i bottoni
+      this.yc = (alto + basso) / 2;
+      const alt = alto - basso + .5;
       const tan = Math.tan(T.MathUtils.degToRad(this.cam.fov / 2));
       const d = Math.max(largh / 2 / (tan * a), alt / 2 / tan, 4.2);
-      this.camBase = new T.Vector3(0, 0, d);
+      this.camBase = new T.Vector3(0, this.yc, d);
+      this.guarda = new T.Vector3(0, this.yc, 0);
+      this.fronteCarta = new T.Vector3(0, this.yc + .05, Math.min(1.9, d * .42));
+      if (this.carte) this.carte.forEach(c => { c.userData.base = this.posizione(c.userData.i); if (c.userData.girata && !c.userData.occupata) c.position.copy(c.userData.base); });
     }
     posizione(i) {
       const perRiga = Math.ceil(this.n / this.righe);
       const riga = Math.floor(i / perRiga), col = i % perRiga;
       const inRiga = riga === this.righe - 1 ? this.n - perRiga * riga : perRiga;
       const x = (col - (inRiga - 1) / 2) * 1.35;
-      const y = this.righe === 1 ? 0 : (riga === 0 ? .82 : -.82);
+      const y = this.righe === 1 ? 0 : (riga === 0 ? .83 : -.83);
       return new T.Vector3(x, y, 0);
     }
+    posMazzo(k) { return new T.Vector3((k % 2 ? .03 : -.03), this.yMazzo + k * .025, .05 + k * .02); }
     async prepara() {
       this.carte = await Promise.all(this.esiti.map(async (e, i) => {
         const c = PER_ID[e.id];
@@ -2460,100 +2486,143 @@ const Scena3D = (() => {
       this.pronta = true;
       if (this._daAprire) this.apri();
     }
-    _tocco(ev) {
+    _tocco(ev, strisciata) {
       if (this.fase === "attesa") { this.apri(); return; }
       if (this.fase !== "carte") return;
       const r = this.r.domElement.getBoundingClientRect();
       const v = new T.Vector2(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
       this.ray.setFromCamera(v, this.cam);
-      const hit = this.ray.intersectObjects(this.carte, false)[0];
-      if (!hit) return;
-      const i = hit.object.userData.i, c = this.carte[i];
-      // già girata: un altro tocco apre le statistiche
-      if (c.userData.girata) { if (!c.userData.occupata && this.cb.onDettaglio) this.cb.onDettaglio(i); }
-      else this.gira(i);
+      const hit = this.ray.intersectObjects(this.carte.filter(c => c.userData.girata), false)[0];
+      // una carta già scoperta: un tocco apre le statistiche
+      if (hit && !strisciata && !hit.object.userData.occupata) { this.cb.onDettaglio && this.cb.onDettaglio(hit.object.userData.i); return; }
+      // altrimenti (tocco o strisciata ovunque) si scopre la prossima carta del mazzetto
+      this.prossima();
     }
     async apri() {
       if (this.fase !== "attesa") return;
       if (!this.pronta) { this._daAprire = true; return; }
-      this.fase = "apertura";
+      this.fase = "carica";
       this.cb.onApri && this.cb.onApri();
-      const b = this.bustina;
-      await this.anima(650, (t, raw) => { const f = raw * raw * .14; b.rotation.z = Math.sin(raw * 60) * f; b.position.x = Math.sin(raw * 47) * f * .6; b.rotation.y = 0; }, easing.lin);
-      this.luceRara.color.setHex(0xffffff);
-      this.anima(400, t => { this.luceRara.intensity = Math.sin(t * Math.PI) * 4; });
+      const b = this.bustina, liv = VAL_RARITA[this.migliore], col = new T.Color(COL_RARITA[this.migliore]);
+      // la bustina trema e si accende del colore della carta migliore: comune un attimo, Ultra a lungo
+      const dur = 700 + liv * 380;
+      suono("carica", dur / (imp.velocita || 1), liv);
+      this.alone.material.color.copy(col);
+      this.luceRara.color.copy(col); this.luceRara.position.set(0, this.yc, 2);
+      const emi = this.fronte.emissive.clone();
+      await this.anima(dur, (t, raw) => {
+        const f = raw * raw * (.06 + liv * .035);
+        b.rotation.z = Math.sin(raw * (40 + liv * 12)) * f; b.position.x = Math.sin(raw * 47) * f * .6; b.rotation.y = 0; b.position.y = this.yc;
+        this.fronte.emissive.copy(emi).lerp(col, raw * .9); this.fronte.emissiveIntensity = .25 + raw * (.35 + liv * .15);
+        this.alone.material.opacity = .3 + raw * .6; const k = 1 + raw * (.15 + liv * .1); this.alone.scale.set(4.5 * k, 4.5 * k, 1);
+        this.luceRara.intensity = raw * (2 + liv * 1.5);
+      }, easing.lin);
+      if (liv >= 3) { this.scossa = .2 + (liv - 3) * .15; this.esplosione(new T.Vector3(0, this.yc, .3), COL_RARITA[this.migliore], 80, { velocita: 3.5, su: 1.3 }); }
+      this.fase = "apertura";
+      suono("strappo");
+      this.anima(400, t => { this.luceRara.intensity = (1 - t) * (2 + liv * 1.5); });
       const st = this.striscia;
-      this.esplosione(new T.Vector3(0, 1, .2), 0xffffff, 50, { velocita: 2.5, su: 1.5 });
+      this.esplosione(new T.Vector3(0, this.yc + 1, .2), 0xffffff, 50, { velocita: 2.5, su: 1.5 });
       this.anima(600, t => { st.position.set(t * 2.2, 1 + t * 1.8, t * .8); st.rotation.z = -t * 2.5; st.rotation.x = t; }, easing.out).then(() => { st.visible = false; });
       await this.attendi(160);
-      // le carte escono dalla bustina
-      this.carte.forEach((c, i) => {
-        c.visible = true;
-        c.position.set(0, .2, .05);
-        c.scale.set(.85, .85, .85);
-        c.userData.occupata = true;
+      // le carte escono e si impilano coperte nel mazzetto, in basso
+      this.mazzo.forEach((i, k) => {
+        const c = this.carte[i], dove = this.posMazzo(this.n - 1 - k);   // la prima da scoprire sta in cima
+        c.visible = true; c.position.set(0, this.yc + .2, .05); c.scale.set(.85, .85, .85); c.userData.occupata = true;
         setTimeout(() => {
-          const p = c.userData.base;
-          this.anima(700, t => {
-            c.position.set(lerp(0, p.x, t), lerp(.2, p.y, t) + Math.sin(t * Math.PI) * 1.4, lerp(.05, p.z, t) + Math.sin(t * Math.PI) * .6);
-            const k = lerp(.85, 1, t); c.scale.set(k, k, k);
-            c.rotation.z = (1 - t) * (i % 2 ? .6 : -.6);
-          }, easing.out).then(() => { c.userData.occupata = false; c.userData.alone.visible = true; });
-        }, i * 120);
+          suono("esce");
+          this.anima(520, t => {
+            c.position.set(lerp(0, dove.x, t), lerp(this.yc + .2, dove.y, t) + Math.sin(t * Math.PI) * .9, lerp(.05, dove.z, t) + Math.sin(t * Math.PI) * .4);
+            const s = lerp(.85, 1, t); c.scale.set(s, s, s); c.rotation.z = (1 - t) * (k % 2 ? .5 : -.5) + (k % 2 ? .03 : -.03);
+          }, easing.out).then(() => { c.userData.occupata = false; });
+        }, k * 90);
       });
-      this.anima(700, t => { b.position.y = -t * 3.5; b.rotation.x = t * .8; this.corpo.material.forEach && this.corpo.material.forEach(m => { m.transparent = true; m.opacity = 1 - t; }); }, easing.in)
+      this.anima(700, t => { b.position.y = this.yc - t * 3.5; b.rotation.x = t * .8; this.corpo.material.forEach && this.corpo.material.forEach(m => { m.transparent = true; m.opacity = 1 - t; }); }, easing.in)
         .then(() => { b.visible = false; });
-      await this.attendi(700 + this.n * 120);
+      await this.attendi(560 + this.n * 90);
+      this.alone.material.color.setHex(COL_RARITA[this.migliore]);
       this.fase = "carte";
       this.cb.onPronte && this.cb.onPronte();
     }
-    async gira(i) {
-      const c = this.carte[i];
-      if (!c || c.userData.girata || this.fase !== "carte") return;
-      c.userData.girata = true;
+    // scopre la prossima carta del mazzetto
+    async prossima() {
+      if (this.fase !== "carte" || this._occupato || !this.mazzo.length) return;
+      this._occupato = true;
+      const i = this.mazzo.shift();
+      try { await this.rivela(i); } finally { this._occupato = false; }
+      if (this._tutte && this.mazzo.length) this.prossima();
+    }
+    async rivela(i) {
+      const c = this.carte[i], r = this.rar[i], col = COL_RARITA[r], top = r === "leggendaria" || r === "ultra", veloce = !!this._tutte;
       c.userData.occupata = true;
-      const r = c.userData.rarita, col = COL_RARITA[r];
-      const p = c.userData.base.clone();
-      const ultraV = !!(this.esiti[i] && this.esiti[i].ultra), top = r === "leggendaria" || ultraV;
-      if (ultraV) {
-        // Ultra: tutto si spegne, la carta trema a lungo e poi esplode in nero e oro
-        this.luceRara.color.setHex(0x000000);
-        this.schermo && this.fx && this.schermo("buio", 1500);
-        await this.anima(1300, (t, raw) => { c.rotation.z = Math.sin(raw * 70) * .07 * raw; c.position.z = p.z + raw * .6; const k = 1 + raw * .08; c.scale.set(k, k, k); }, easing.lin);
-      } else if (r === "leggendaria" || r === "epica") {
-        // suspense: trema prima di girarsi
-        await this.anima(r === "leggendaria" ? 700 : 400, (t, raw) => { c.rotation.z = Math.sin(raw * 50) * .05 * raw; c.position.z = p.z + raw * .3; }, easing.lin);
-      }
-      this.luceRara.color.setHex(col);
-      this.luceRara.position.set(p.x, p.y, 2);
-      this.anima(ultraV ? 1200 : 600, t => { this.luceRara.intensity = Math.sin(t * Math.PI) * (ultraV ? 10 : r === "leggendaria" ? 6 : 3); });
-      await this.anima(560, t => {
-        c.rotation.y = Math.PI * (1 - t);
-        c.rotation.z = 0;
-        c.position.z = p.z + Math.sin(t * Math.PI) * .9 + (top || r === "epica" ? .3 * (1 - t) : 0);
-        const k = 1 + Math.sin(t * Math.PI) * .12; c.scale.set(k, k, k);
+      const davanti = this.fronteCarta.clone(), scala = 1.3;
+      // la carta sale dal mazzetto e si mette davanti
+      suono("esce");
+      const da = c.position.clone();
+      await this.anima(veloce ? 220 : 320, t => { c.position.lerpVectors(da, davanti, t); c.rotation.z = 0; const s = lerp(1, scala, t); c.scale.set(s, s, s); }, easing.out);
+      if (top && !veloce) await this.entrataSpeciale(i, davanti);
+      else if (r === "epica" && !veloce) await this.anima(420, (t, raw) => { c.rotation.z = Math.sin(raw * 50) * .05 * raw; }, easing.lin);
+      // si gira
+      this.luceRara.color.setHex(col); this.luceRara.position.set(0, this.yc, 2.5);
+      this.anima(top ? 1100 : 600, t => { this.luceRara.intensity = Math.sin(t * Math.PI) * (r === "ultra" ? 10 : top ? 6 : r === "epica" ? 3.5 : 2); });
+      suono("gira", r);
+      await this.anima(veloce ? 320 : 480, t => {
+        c.rotation.y = Math.PI * (1 - t); c.rotation.z = 0;
+        c.position.z = davanti.z + Math.sin(t * Math.PI) * .4;
+        const s = scala * (1 + Math.sin(t * Math.PI) * .1); c.scale.set(s, s, s);
       }, easing.back);
-      c.rotation.y = 0; c.position.z = p.z; c.scale.set(1, 1, 1);
-      c.userData.occupata = false;
-      const n = ultraV ? 200 : { comune: 20, rara: 40, epica: 70, leggendaria: 120 }[r];
-      this.esplosione(p.clone().add(new T.Vector3(0, 0, .2)), col, n, { velocita: top ? 4 : 2.6, su: 1.2 });
-      if (ultraV) {
-        this.scossa = .45;
-        for (let k = 1; k < 7; k++) setTimeout(() => this.esplosione(p.clone().add(new T.Vector3(0, .3, .2)), [0xffe9a8, 0x111111, 0xf2c14e, 0xffffff, 0xc9a13a, 0x000000][k - 1], 60, { velocita: 4.2, su: 1.8, durata: 1500 }), k * 170);
-        this.scritta("ULTRA!", "#ffe9a8", p.clone().add(new T.Vector3(0, 1.35, .3)), .5, 2600);
-      }
-      if (r === "leggendaria" && !ultraV) {
-        this.scossa = .25;
-        for (let k = 1; k < 4; k++) setTimeout(() => this.esplosione(p.clone().add(new T.Vector3(0, .3, .2)), [0xf2c14e, 0xffffff, 0xff2e46][k - 1], 50, { velocita: 3.5, su: 1.6, durata: 1300 }), k * 200);
+      c.rotation.y = 0; c.userData.girata = true;
+      const n = { comune: 20, rara: 40, epica: 70, leggendaria: 130, ultra: 220 }[r];
+      this.esplosione(davanti.clone().add(new T.Vector3(0, 0, .2)), col, n, { velocita: top ? 4 : 2.6, su: 1.2 });
+      if (top) {
+        this.scossa = r === "ultra" ? .45 : .25;
+        const colori = r === "ultra" ? [0xffe9a8, 0x111111, 0xf2c14e, 0xffffff, 0xc9a13a, 0x000000] : [0xf2c14e, 0xffffff, 0xff2e46];
+        colori.forEach((cc, k) => setTimeout(() => this.esplosione(davanti.clone().add(new T.Vector3(0, .3, .2)), cc, 50, { velocita: 3.8, su: 1.6, durata: 1300 }), (k + 1) * 180));
+        if (r === "ultra") this.scritta("ULTRA!", "#ffe9a8", davanti.clone().add(new T.Vector3(0, 1.2, .3)), .45, 2400);
       }
       const e = this.esiti[i];
       const etichetta = e.ultra ? "" : e.olo ? "Olografica!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : "";
-      if (etichetta) this.scritta(etichetta, e.olo ? "#c86eff" : e.nuova ? "#ff2e46" : "#f2c14e", p.clone().add(new T.Vector3(0, .95, .3)), .3, e.olo ? 2600 : 1800);
-      if (e.olo) { this.scossa = Math.max(this.scossa || 0, .2); [0xff5078, 0xffd25a, 0x5affaa, 0x50beff, 0xc86eff].forEach((col, k) => setTimeout(() => this.esplosione(p.clone().add(new T.Vector3(0, .2, .2)), col, 40, { velocita: 3.2, su: 1.4, durata: 1400 }), k * 140)); }
-      this.cb.onGira && this.cb.onGira(i, this.carte.every(x => x.userData.girata));
+      if (etichetta) this.scritta(etichetta, e.olo ? "#c86eff" : e.nuova ? "#ff2e46" : "#f2c14e", davanti.clone().add(new T.Vector3(0, 1.05, .3)), .28, e.olo ? 2200 : 1500);
+      if (e.olo) [0xff5078, 0xffd25a, 0x5affaa, 0x50beff, 0xc86eff].forEach((cc, k) => setTimeout(() => this.esplosione(davanti.clone().add(new T.Vector3(0, .2, .2)), cc, 40, { velocita: 3, su: 1.4 }), k * 140));
+      this.velo.material.opacity > 0 && this.anima(500, t => { this.velo.material.opacity = (1 - t) * .82; this.ambiente.intensity = lerp(.1, .55, t); this.faro.intensity = lerp(.3, 1.3, t); });
+      // un attimo per guardarla, poi va al suo posto
+      await this.attendi(veloce ? 140 : top ? 1100 : 520);
+      const base = c.userData.base;
+      await this.anima(veloce ? 240 : 360, t => { c.position.lerpVectors(davanti, base, t); const s = lerp(scala, 1, t); c.scale.set(s, s, s); }, easing.inOut);
+      c.position.copy(base); c.scale.set(1, 1, 1);
+      c.userData.occupata = false; c.userData.alone.visible = true;
+      this.cb.onGira && this.cb.onGira(i, !this.mazzo.length);
     }
-    giraTutte() { this.carte.forEach((c, i) => setTimeout(() => this.gira(i), i * 260)); }
-    distruggi() { this.r.domElement.removeEventListener("pointerdown", this._click); super.distruggi(); }
+    // leggendaria o Ultra: si spegne tutto e arrivano, uno alla volta, serie, ruolo e tipo
+    async entrataSpeciale(i, davanti) {
+      const c = this.carte[i], carta = PER_ID[this.esiti[i].id], ultra = this.rar[i] === "ultra";
+      await this.anima(450, t => { this.velo.material.opacity = t * .82; this.ambiente.intensity = lerp(.55, .1, t); this.faro.intensity = lerp(1.3, .3, t); });
+      const serie = SERIE[carta.serie] || { nome: carta.serie, simbolo: "★", colore: "#f2c14e" };
+      const ruolo = (RUOLI[carta.ruolo] || {}).nome || carta.ruolo;
+      const stile = { FOR: "Forza", DIF: "Difesa", VEL: "Velocità" }[carta.stile] || carta.stile;
+      const passi = [[`${serie.simbolo} ${serie.nome}`, serie.colore], [ruolo, "#ffffff"], [stile, carta.stile === "FOR" ? "#ff6a5a" : carta.stile === "DIF" ? "#6ab8ff" : "#7dff9a"]];
+      if (ultra) passi.push(["ULTRA", "#ffe9a8"]);
+      for (const [testo, colore] of passi) {
+        suono("rullo");
+        this.cartello(testo, colore, davanti.clone().add(new T.Vector3(0, 1.3, .3)), .34, 560);
+        this.esplosione(davanti.clone().add(new T.Vector3(0, 1.2, .1)), new T.Color(colore).getHex(), 18, { velocita: 1.6, su: 1 });
+        await this.anima(520, (t, raw) => { c.rotation.z = Math.sin(raw * 60) * .03 * raw; c.position.z = davanti.z + raw * .08; }, easing.lin);
+      }
+      c.rotation.z = 0;
+    }
+    // una scritta ferma sotto la carta (compare con un piccolo rimbalzo e sparisce): per l'entrata speciale
+    cartello(testo, colore, pos, scala, durata) {
+      const { tex, aspect } = texTesto(testo, colore);
+      const sp = new T.Sprite(new T.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+      sp.position.copy(pos); sp.renderOrder = 11; this.scena.add(sp);
+      this.anima(durata, t => {
+        const k = t < .25 ? easing.back(t / .25) : 1;
+        sp.scale.set(scala * aspect * k, scala * k, 1);
+        sp.material.opacity = t < .8 ? 1 : 1 - (t - .8) / .2;
+      }, easing.lin).then(() => { this.scena.remove(sp); tex.dispose(); sp.material.dispose(); });
+    }
+    giraTutte() { this._tutte = true; this.prossima(); }
+    distruggi() { this.r.domElement.removeEventListener("pointerdown", this._giu); this.r.domElement.removeEventListener("pointerup", this._su); super.distruggi(); }
   }
 
   return { get disponibile() { return disponibile; }, Arena, Apertura, texFronte, imposta(o) { Object.assign(imp, o); }, get impostazioni() { return { ...imp }; }, _mosse: MOSSE_FX, svuotaCache() { for (const k in cacheFronte) { cacheFronte[k].dispose(); delete cacheFronte[k]; } } };

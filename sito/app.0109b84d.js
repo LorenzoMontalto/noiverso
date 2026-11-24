@@ -93,7 +93,7 @@ const attesa = ms => new Promise(r => setTimeout(r, ms));
 const ridotto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---------------- Stato del giocatore ----------------
-const IMPOSTAZIONI_BASE = { modalita: "classica", velocita: "normale", effetti: true, consigli: true, grafica: "alta" };
+const IMPOSTAZIONI_BASE = { modalita: "classica", velocita: "normale", effetti: true, consigli: true, grafica: "alta", musica: "60", suoni: "80" };
 function statoNuovo() {
   return {
     v: 2, monete: MONETE_INIZIALI, carte: {},
@@ -1037,16 +1037,16 @@ function mostraApertura(esiti, tipo, livelloSu, graffito) {
         <p class="suggerimento" id="sugg">Tocca la bustina per aprirla</p>
         ${htmlBombolettaBustina(graffito)}
         <div class="azioni centro">
-          <button class="btn" data-fx="gelatina" data-azione="gira-tutte" hidden>Gira tutte</button>
+          <button class="btn" data-fx="gelatina" data-azione="gira-tutte" hidden>Salta</button>
           <button class="btn primario" data-fx="onda" data-azione="chiudi-apertura" hidden>Continua</button>
         </div>
       </div>`;
     try {
       apertura = new Scena3D.Apertura($("#tela-bustina"), esiti, tipo, {
         onApri: () => { $("#sugg").textContent = ""; },
-        onPronte: () => { $("#sugg").textContent = graffito ? "Tocca le carte per girarle: c'è anche una bomboletta!" : "Tocca le carte per girarle"; $('[data-azione="gira-tutte"]').hidden = false; $('[data-azione="chiudi-apertura"]').hidden = false; const bb = $(".bomboletta-bustina"); if (bb) bb.hidden = false; },
+        onPronte: () => { $("#sugg").textContent = graffito ? "Tocca il mazzetto per scoprire le carte (la più rara è l'ultima): c'è anche una bomboletta!" : "Tocca il mazzetto per scoprire le carte: la più rara è sempre l'ultima"; $('[data-azione="gira-tutte"]').hidden = false; $('[data-azione="chiudi-apertura"]').hidden = false; const bb = $(".bomboletta-bustina"); if (bb) bb.hidden = false; },
         onGira: (i, tutte) => {
-          $("#sugg").textContent = tutte ? `${livelloSu ? `Pass: livello ${livelloSu} raggiunto! · ` : ""}Tocca una carta per vedere le statistiche` : "Tocca di nuovo una carta girata per vedere le statistiche";
+          $("#sugg").textContent = tutte ? `${livelloSu ? `Pass: livello ${livelloSu} raggiunto! · ` : ""}Tocca una carta per vedere le statistiche` : "Tocca per la prossima · le carte scoperte si aprono con un tocco";
           if (tutte) $('[data-azione="gira-tutte"]').hidden = true;
         },
         onDettaglio: i => apriSchedaCarta(esiti[i]),
@@ -1108,7 +1108,7 @@ function mostraApertura2D(esiti, graffito) {
       <h2>Tocca le carte per girarle</h2>
       <p class="nota centro">Tocca di nuovo una carta girata per vedere le statistiche.</p>
       <div class="apertura-carte">
-        ${esiti.map((e, i) => `
+        ${esiti.map((e, i) => ({ e, i, v: e.ultra ? 4 : ORDINE_RARITA.indexOf(PER_ID[e.id].rarita) })).sort((a, b) => a.v - b.v || a.i - b.i).map(({ e, i }) => `
           <button class="gira r-${PER_ID[e.id].rarita}" data-i="${i}" aria-label="Gira la carta ${i + 1}">
             <div class="faccia retro"><span class="neon">NV</span></div>
             <div class="faccia fronte">
@@ -1836,6 +1836,7 @@ function premiSfida(L) {
 function applicaImpostazioni() {
   const i = imp();
   Scena3D.imposta({ velocita: VELOCITA[i.velocita] || 1, effetti: i.effetti, qualita: i.grafica === "bassa" ? "bassa" : "alta" });
+  Suoni.imposta({ musica: i.musica, effetti: i.suoni });
   document.body.classList.toggle("modo-admin", !!S.admin);
 }
 
@@ -1984,6 +1985,8 @@ function apriProfilo() {
       ${segmento("consigli", "Mossa consigliata", [["true", "Sì"], ["false", "No"]], "Solo contro il computer: nelle sfide dal vivo con gli amici è sempre spenta.")}
       ${segmento("effetti", "Effetti delle mosse finali", [["true", "Sì"], ["false", "No"]], "Fascia con il nome della mossa ed effetti su tutto lo schermo.")}
       ${segmento("grafica", "Grafica", [["alta", "3D alta"], ["bassa", "3D leggera"], ["2d", "2D"]], "Se il telefono scalda o va a scatti, prova la leggera o il 2D.")}
+      ${segmento("musica", "Musica", [["0", "No"], ["30", "Bassa"], ["60", "Media"], ["100", "Alta"]], "Tre brani originali nei menu; in battaglia si spegne e restano i suoni.")}
+      ${segmento("suoni", "Suoni", [["0", "No"], ["40", "Bassi"], ["80", "Medi"], ["100", "Alti"]], "Bottoni, mosse, colpi e bustine.")}
       <h3>Account</h3>
       <div class="azioni">
         ${Archivio.proprietario && Archivio.modo === "cloud" ? (S.admin ? `<button class="btn" data-fx="onda" data-azione="esci-admin">Torna al tuo profilo</button>` : `<button class="btn oro" data-fx="coriandoli" data-azione="entra-admin">Passa ad admin</button>`) : ""}
@@ -3025,6 +3028,33 @@ function applicaFoto(f) {
   B.lati.forEach((L, l) => { L.squadra.forEach((x, i) => { x.pv = f.pv[l][i]; }); L.energia = f.en[l]; L.attivo = f.att[l]; });
 }
 
+// ---------- Suoni e musica ----------
+// il browser accende l'audio solo dopo un gesto: al primo tocco (o tasto) si sblocca tutto
+["pointerdown", "keydown", "touchend"].forEach(t => document.addEventListener(t, () => Suoni.sblocca(), { capture: true, passive: true }));
+// un "tic" per i bottoni (più squillante per quelli importanti); le mosse in battaglia hanno già il loro suono
+document.addEventListener("click", e => {
+  const b = e.target.closest && e.target.closest("button, a.btn, [role=button]");
+  if (!b || b.disabled || b.classList.contains("mossa")) return;
+  Suoni.tocco(b.classList.contains("primario") || b.classList.contains("oro"));
+}, true);
+// musica nei menu, silenzio in battaglia e mentre si apre una bustina
+setInterval(() => {
+  const ap = $("#apertura");
+  if (B || (ap && !ap.hidden)) { if (Musica.attiva) Musica.ferma(); }
+  else if (!Musica.attiva) Musica.avvia();
+}, 700);
+// Il suono di ogni momento della battaglia (mossa, colpo, cura, KO…)
+function suonoEvento(e) {
+  try {
+    if (e.anim === "attacco") Suoni.mossa(e);
+    else if (e.colpo !== undefined) Suoni.colpo(e);
+    else if (e.cura !== undefined) Suoni.cura();
+    else if (e.anim === "schiva") Suoni.schiva();
+    else if (e.entra !== undefined) Suoni.entra();
+    else if (e.ko !== undefined) Suoni.ko();
+    else if (e.su !== undefined) Suoni.effetto(e.anim);
+  } catch (err) { /* i suoni non devono mai bloccare la battaglia */ }
+}
 // Riproduce gli eventi del turno uno alla volta, con le animazioni 3D
 async function riproduci(eventi) {
   animazione = true;
@@ -3038,6 +3068,7 @@ async function riproduci(eventi) {
       if (e.anim === "attacco") segnaTurno(e.lato, chi.c.nome, e.lato ? `Attacco nemico · ${e.nome}` : `Il tuo attacco · ${e.nome}`);
       else if (e.anim === "energia") segnaTurno(e.lato, chi.c.nome, "Carica energia");
     }
+    suonoEvento(e);
     if (arena) {
       try {
         if (e.anim === "attacco") { await arena.attacco(e.lato, e); applicaFoto(e.foto); }
@@ -3057,7 +3088,7 @@ async function riproduci(eventi) {
   }
   applicaFoto(finale);
   if (arena) await arena.sincronizza(B);
-  if (B.vincitore >= 0) await attesa(ridotto ? 100 : 700);   // un attimo di pausa prima del risultato
+  if (B.vincitore >= 0) { Suoni.fine(B.vincitore === 0); await attesa(ridotto ? 100 : 700); }   // un attimo di pausa prima del risultato
   animazione = false;
   aggiornaBattaglia();
 }
@@ -3272,7 +3303,7 @@ document.addEventListener("click", e => {
   if (t.dataset.sostituisci !== undefined) { sostituisciGiocatore(+t.dataset.sostituisci); return; }
   if (t.dataset.sfidaVivo !== undefined) { const id = t.dataset.sfidaVivo; if (B) { Online.esci(); esciBattaglia(); } scegliSquadra(() => Online.sfida(id), "Con quale squadra sfidi il tuo amico?"); return; }
   if (t.dataset.scegliSquadra !== undefined) { S.attiva = +t.dataset.scegliSquadra; salva(); const f = scegliSquadra.poi; scegliSquadra.poi = null; chiudiModale(); if (f) f(); return; }
-  if (t.classList.contains("gira")) { if (t.classList.contains("girata")) apriSchedaCarta(esitiAperti[+t.dataset.i]); else t.classList.add("girata"); return; }
+  if (t.classList.contains("gira")) { if (t.classList.contains("girata")) apriSchedaCarta(esitiAperti[+t.dataset.i]); else { t.classList.add("girata"); const e = esitiAperti[+t.dataset.i]; Suoni.gira(e.ultra ? "ultra" : PER_ID[e.id].rarita); } return; }
   if (t.matches(".carta[role=button]")) { apriDettaglio(t.dataset.id); return; }
   if (t.dataset.dettaglio) { apriDettaglio(t.dataset.dettaglio); return; }
   switch (t.dataset.azione) {
