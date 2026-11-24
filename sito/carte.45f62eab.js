@@ -765,8 +765,8 @@ const fattoreLivello = (liv = 1, lode = false) => (1 + 0.02 * (liv - 1)) * (lode
 // ---------------- Potenziamento a mano ----------------
 // Le carte salgono di livello solo quando le potenzi tu. Ogni doppione dà potenziatori per QUELLA carta
 // (di più se è rara, perché i suoi doppioni escono meno). Per ogni livello servono potenziatori + monete.
-// Esempio: Lv1→2 costa 3 potenziatori e 10 monete; Lv10→11: 8 e 35; Lv29→30: 17 e 220.
-// In tutto, dal 1 al 30: 297 potenziatori e 2410 monete (circa 30 doppioni di una comune).
+// Esempio: Lv1→2 costa 3 potenziatori e 5 monete; Lv10→11: 8 e 20; Lv29→30: 17 e 110.
+// In tutto, dal 1 al 30: 297 potenziatori e 1205 monete (nov 2026: le monete erano il doppio).
 const POT_DOPPIONE = { comune: 10, rara: 12, epica: 24, leggendaria: 60 };   // nov 2026: epica 30→24, leggendaria 100→60 (un doppione fortunato non porta più una carta al 16 in un colpo)
 // Doppione di una carta già al 30 (nov 2026: prima 15 / 20 / 40 / 100).
 // Tetto: anche con TUTTE le carte di una bustina al 30, una bustina da 150 restituisce in media circa 138 monete,
@@ -776,13 +776,15 @@ const potPerLivello = L => 3 + Math.floor(L / 2);
 
 // ---------------- Ascesa ----------------
 // Una carta comune, rara o epica arrivata al 30 può salire alla rarità successiva pagando monete:
-// riparte dal livello 1 ma con la forza della nuova rarità, e così via fino a leggendaria.
-// Esempio: una comune al 30 ha forza 1,00 × 1,58 = 1,58; diventata rara riparte da 1,10 e al 30 arriva a 1,10 × 1,58 = 1,74;
+// nov 2026: resta al livello che ha (30) con la forza della nuova rarità, e può salire ancora subito, fino a leggendaria.
+// (Prima ripartiva dal livello 1 e andava ripotenziata ogni volta: quasi metà delle monete del gioco servivano a questo.)
+// Esempio: una comune al 30 ha forza 1,00 × 1,58 = 1,58; diventata rara resta al 30 e vale 1,10 × 1,58 = 1,74;
 // salita fino a leggendaria, al 30 vale 1,30 × 1,58 = 2,05 come una leggendaria trovata nelle bustine.
 // I doppioni continuano a dare i potenziatori della rarità di partenza (una comune dà sempre 10 potenziatori).
 const ASCESA_MONETE = { comune: 500, rara: 1000, epica: 2000 };   // costo per salire DA questa rarità
 const rarDopo = (base, passi) => ORDINE_RARITA[Math.min(ORDINE_RARITA.length - 1, Math.max(0, ORDINE_RARITA.indexOf(base)) + Math.max(0, Math.min(3, passi | 0)))] || base;
-const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 5);
+// nov 2026: costo in monete dimezzato (prima 5 · arrotonda((10 + L²/4) / 5): dal 1 al 30 servivano 2410 monete, ora 1205)
+const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 10);
 
 // Statistiche reali di una carta.
 // Potenziare fa salire PV, attacco, difesa e velocità di tutte le carte (+2% a livello: al 30 è +58%),

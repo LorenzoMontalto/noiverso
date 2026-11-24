@@ -590,7 +590,7 @@ const StatCarte = (() => {
 })();
 
 // ---------------- Ascesa ----------------
-// Al 30 una comune, rara o epica può salire di rarità: riparte dal livello 1 con la forza della rarità nuova.
+// Al 30 una comune, rara o epica può salire di rarità: resta al livello 30 (e con la lode, se ce l'ha) con la forza della rarità nuova.
 function htmlAscesa(id) {
   const c = PER_ID[id], inf = infoCarta(id), ora = rarCarta(id);
   if (!S.carte[id] || ora === "leggendaria") return "";
@@ -598,7 +598,7 @@ function htmlAscesa(id) {
   if (inf.liv < LIVELLO_MAX) return `<p class="nota piccola">⬆ <b>Ascesa</b>: al livello 30 questa carta potrà diventare ${esc(RARITA[dopo].nome.toLowerCase())} (${costo} monete).</p>`;
   const ok = S.admin || S.monete >= costo;
   return `<div class="ascesa-box r-${dopo}"><b>⬆ Ascesa: può diventare ${esc(RARITA[dopo].nome)}</b>
-    <p>Riparte dal livello 1, ma con la forza di una ${esc(RARITA[dopo].nome.toLowerCase())}: arrivata di nuovo al 30 sarà più forte di adesso.</p>
+    <p>Resta al livello 30, ma con la forza di una ${esc(RARITA[dopo].nome.toLowerCase())}: diventa subito più forte di adesso.</p>
     <div class="potenzia-riga"><span class="costi"><span class="${ok ? "ok" : "manca"}">${costo} monete</span></span><button class="btn primario" data-azione="ascesa" data-id="${id}" ${ok ? "" : "disabled"}>Fai salire</button></div></div>`;
 }
 function ascendiCarta(id, conferma, el) {
@@ -606,12 +606,12 @@ function ascendiCarta(id, conferma, el) {
   if (!c || !S.carte[id] || inf.liv < LIVELLO_MAX || ora === "leggendaria") return;
   const passi = ((S.asc || {})[id] || 0) + 1, dopo = rarDopo(c.rarita, passi), costo = ASCESA_MONETE[ora];
   if (!conferma) {
-    const a = statistiche(c, LIVELLO_MAX, inf.lode, ora), b1 = statistiche(c, 1, false, dopo), b30 = statistiche(c, LIVELLO_MAX, false, dopo);
+    const a = statistiche(c, LIVELLO_MAX, inf.lode, ora), b30 = statistiche(c, LIVELLO_MAX, inf.lode, dopo);
     apriModale(`<div class="codice-modale ascesa-conferma"><span class="codice-tag">Ascesa</span><h2>${esc(c.nome)} diventa ${esc(RARITA[dopo].nome.toLowerCase())}?</h2>
-      <div class="ascesa-carte">${htmlCarta(c, { liv: LIVELLO_MAX, lode: inf.lode, olo: haOlo(id), ultra: haUltra(id), rar: ora })}<span class="scambio-freccia">→</span>${htmlCarta(c, { liv: 1, olo: haOlo(id), ultra: haUltra(id), rar: dopo })}</div>
-      <table class="ascesa-tab"><tr><th></th><th>Adesso (Lv 30)</th><th>Dopo (Lv 1)</th><th>Dopo, di nuovo al 30</th></tr>
-        ${[["PV", "pv"], ["Attacco", "att"], ["Difesa", "dif"], ["Velocità", "vel"]].map(([n, k]) => `<tr><td>${n}</td><td>${a[k]}</td><td>${b1[k]}</td><td><b>${b30[k]}</b></td></tr>`).join("")}</table>
-      <p class="nota">Costa <b>${costo} monete</b>. Torna al livello 1${inf.lode ? " e perde la lode" : ""}: per riportarla su servono di nuovo potenziatori e monete. I potenziatori che hai già restano.</p>
+      <div class="ascesa-carte">${htmlCarta(c, { liv: LIVELLO_MAX, lode: inf.lode, olo: haOlo(id), ultra: haUltra(id), rar: ora })}<span class="scambio-freccia">→</span>${htmlCarta(c, { liv: LIVELLO_MAX, lode: inf.lode, olo: haOlo(id), ultra: haUltra(id), rar: dopo })}</div>
+      <table class="ascesa-tab"><tr><th></th><th>Adesso</th><th>Dopo l'ascesa</th></tr>
+        ${[["PV", "pv"], ["Attacco", "att"], ["Difesa", "dif"], ["Velocità", "vel"]].map(([n, k]) => `<tr><td>${n}</td><td>${a[k]}</td><td><b>${b30[k]}</b></td></tr>`).join("")}</table>
+      <p class="nota">Costa <b>${costo} monete</b>. Resta al livello 30${inf.lode ? " con la lode" : ""}: non devi ripotenziarla.${dopo !== "leggendaria" ? " Poi può salire ancora di rarità." : ""}</p>
       <div class="azioni centro"><button class="btn" data-azione="chiudi">Non ancora</button><button class="btn primario" data-fx="stelle" data-azione="ascesa-ok" data-id="${id}" ${S.admin || S.monete >= costo ? "" : "disabled"}>Fai salire (${costo} 🪙)</button></div></div>`);
     return;
   }
@@ -619,12 +619,12 @@ function ascendiCarta(id, conferma, el) {
   if (!S.admin) S.monete -= costo;
   S.asc = Object.assign({}, S.asc, { [id]: passi });
   S.rarNov26 = true;   // questa Ascesa parte già dalle rarità nuove: non va mai "sistemata"
-  S.liv[id] = 1; if (S.lodeXp) S.lodeXp[id] = 0;
+  // nov 2026: la carta resta al livello che ha (prima tornava al livello 1 e perdeva la lode)
   S.stats.ascese = (S.stats.ascese || 0) + 1;
   salva(); aggiornaTesta();
   if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 70, forma: "stella", colori: ["#ffd76a", "#ff9bd2", "#ffffff"], velocita: 9, dimensione: 6, durata: 1400 }); }
   chiudiModale(); disegna(); apriDettaglio(id);
-  mostraAvviso(`${c.nome} ora è ${RARITA[dopo].nome.toLowerCase()}! Riparte dal livello 1.`);
+  mostraAvviso(`${c.nome} ora è ${RARITA[dopo].nome.toLowerCase()}! Resta al livello 30.`);
 }
 
 // ---------------- Modale e avvisi ----------------
