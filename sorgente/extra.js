@@ -37,6 +37,23 @@ const Cosmetici = (() => {
     "cc-ghiaccio":       { tipo: "carta", nome: "Cornice carta di Ghiaccio", prezzo: 1000 },
     "cc-sakura":         { tipo: "carta", nome: "Cornice carta Sakura", prezzo: 1200 },
     "cc-oro":            { tipo: "carta", nome: "Cornice carta d'Oro", prezzo: 1600 },
+    // nov 2026: tante cornici nuove nel negozio (Cosmetici.htmlNegozio)
+    "cc-legno":          { tipo: "carta", nome: "Cornice carta di Legno", prezzo: 500, desc: "Legno scuro con i chiodini agli angoli." },
+    "cc-argento":        { tipo: "carta", nome: "Cornice carta d'Argento", prezzo: 800, desc: "Argento lucidato che luccica." },
+    "cc-caramella":      { tipo: "carta", nome: "Cornice carta Caramella", prezzo: 900, desc: "Strisce bianche e rosse che girano." },
+    "cc-pixel":          { tipo: "carta", nome: "Cornice carta Pixel", prezzo: 1000, desc: "A scacchi come un videogioco a 8 bit." },
+    "cc-smeraldo":       { tipo: "carta", nome: "Cornice carta Smeraldo", prezzo: 1100, desc: "Verde gemma, con due smeraldi incastonati." },
+    "cc-rubino":         { tipo: "carta", nome: "Cornice carta Rubino", prezzo: 1100, desc: "Rosso gemma, con due rubini incastonati." },
+    "cc-zaffiro":        { tipo: "carta", nome: "Cornice carta Zaffiro", prezzo: 1100, desc: "Blu gemma, con due zaffiri incastonati." },
+    "cc-veleno":         { tipo: "carta", nome: "Cornice carta Veleno", prezzo: 1200, desc: "Verde tossico che cola dall'alto." },
+    "cc-oceano":         { tipo: "carta", nome: "Cornice carta Oceano", prezzo: 1300, desc: "Onde che scorrono tutto intorno." },
+    "cc-notte":          { tipo: "carta", nome: "Cornice carta Notte stellata", prezzo: 1300, desc: "Blu notte con le stelline che brillano." },
+    "cc-lava":           { tipo: "carta", nome: "Cornice carta di Lava", prezzo: 1400, desc: "Roccia scura e lava che pulsa." },
+    "cc-tempesta":       { tipo: "carta", nome: "Cornice carta Tempesta", prezzo: 1500, desc: "Scariche elettriche e fulmini agli angoli." },
+    "cc-ombra":          { tipo: "carta", nome: "Cornice carta Ombra", prezzo: 1700, desc: "Fumo viola e nero che respira." },
+    "cc-aurora":         { tipo: "carta", nome: "Cornice carta Aurora boreale", prezzo: 2000, desc: "Verde e viola che girano come l'aurora." },
+    "cc-prisma":         { tipo: "carta", nome: "Cornice carta Prisma", prezzo: 2400, desc: "Arcobaleno che gira e un riflesso che attraversa la carta." },
+    "cc-reale":          { tipo: "carta", nome: "Cornice carta Reale", prezzo: 3000, desc: "Velluto viola, filo d'oro e la corona in cima." },
     "cc-fiamme":         { tipo: "carta", nome: "Cornice carta di Fiamme", da: "Livello giocatore 35" },
     "cc-galassia":       { tipo: "carta", nome: "Cornice carta Galassia", da: "Livello giocatore 55" },
     "cc-arcobaleno":     { tipo: "carta", nome: "Cornice carta Arcobaleno", da: "Livello giocatore 80" },
@@ -69,7 +86,7 @@ const Cosmetici = (() => {
     S.cosm = Object.assign({}, s, { carte }); salva(); apriDettaglio(cartaId); disegnaQuieto();
   }
   // il "telaio" sopra l'immagine della carta (anche per le carte degli amici, con la loro cornice)
-  const htmlTelaio = cc => cc && NOMI_CARTA[cc] ? `<i class="cc-telaio ${cc}" aria-hidden="true"></i>${cc === MAESTRO ? `<i class="cc-deco" aria-hidden="true"><b>★</b><b>★</b><b>★</b><b>★</b><span>MAESTRO</span></i>` : ""}` : "";
+  const htmlTelaio = cc => cc && NOMI_CARTA[cc] ? `<i class="cc-telaio ${cc}" aria-hidden="true"></i>${cc === MAESTRO ? `<i class="cc-deco" aria-hidden="true"><b>★</b><b>★</b><b>★</b><b>★</b><span>MAESTRO</span></i>` : `<i class="cc-orn ${cc}" aria-hidden="true"></i>`}` : "";
   function htmlSceltaCarta(cartaId) {
     if (S.admin || !S.carte[cartaId]) return "";
     const attuale = corniceCarta(cartaId), maestro = valida(cartaId, MAESTRO);
@@ -79,6 +96,34 @@ const Cosmetici = (() => {
       ${maestro ? `<button class="chip cc-chip-maestro" data-cc-usa="${cartaId}:${MAESTRO}" aria-pressed="${attuale === MAESTRO}">★ Maestro</button>` : ""}
       ${mie.map(id => `<button class="chip" data-cc-usa="${cartaId}:${id}" aria-pressed="${attuale === id}">${esc(NOMI_CARTA[id])}</button>`).join("")}</div>
       <p class="nota">${maestro ? "La Cornice del Maestro è solo di questa carta: l'ha guadagnata con 5 stelle di maestria." : "La Cornice del Maestro si sblocca solo per la carta che arriva a 5 stelle di maestria."}${mie.length ? "" : " Le altre cornici si trovano nel negozio e salendo di livello."}</p></div>`;
+  }
+  // ---- negozio: tutte le cornici delle carte (e gli altri cosmetici in vendita), sempre lì ----
+  function compra(id, el) {
+    const x = CAT[id]; if (!attivoExtra() || !x || !x.prezzo || ha(id) || S.monete < x.prezzo) return;
+    S.monete -= x.prezzo; sblocca(id, false); salva(); aggiornaTesta(); Archivio.pubblicaClassifica(); disegna();
+    if (el) { const [px, py] = FX.centro(el); FX.esplosione(px, py, { n: 40, forma: "moneta", colori: ["#f2c14e", "#fff3c4"], velocita: 7, dimensione: 6 }); }
+    mostraAvviso(x.tipo === "carta" ? `Comprata: ${x.nome}! La metti dal dettaglio di ogni carta.` : `Comprato: ${x.nome}! Lo metti dal tuo profilo.`);
+  }
+  function htmlNegozio() {
+    if (!attivoExtra()) return "";
+    const sq = squadraAttiva().carte.filter(Boolean), prova = PER_ID[sq[0]] || possedute()[0] || CARTE[0];
+    const carte = Object.keys(CAT).filter(id => CAT[id].tipo === "carta"), inVendita = carte.filter(id => CAT[id].prezzo).sort((a, b) => CAT[a].prezzo - CAT[b].prezzo), altre = carte.filter(id => !CAT[id].prezzo);
+    const bottone = id => ha(id) ? `<span class="cc-tua">✓ Già tua</span>` : `<button class="btn primario" data-fx="monete" data-cosm-compra="${id}" ${S.monete >= CAT[id].prezzo ? "" : "disabled"}>${CAT[id].prezzo} <i class="moneta-ico"></i></button>`;
+    const profilo = Object.keys(CAT).filter(id => CAT[id].prezzo && CAT[id].tipo !== "carta");
+    const anteprima = id => CAT[id].tipo === "cornice" ? avatar(S.profilo.avatar, id, "grande") : CAT[id].tipo === "nome" ? `<b class="cosm-prova-nome ${classeNome(id)}">${esc(S.profilo.nome || "Nome")}</b>` : `<i class="cosm-prova-sfondo ${classeSfondo(id)}"></i>`;
+    return `<div class="titolo-riga piccola"><h3>Cornici delle carte</h3><p class="nota">Le compri una volta e le metti su tutte le carte che vuoi, dal dettaglio della carta. Le vedono anche gli amici, in classifica e in battaglia. Non cambiano la forza.</p></div>
+      <div class="vetrina cc-vetrina">${inVendita.map(id => `<div class="prodotto cc-prodotto ${ha(id) ? "cc-mia" : ""}">
+          ${htmlCarta(prova, { piccola: true, cc: id })}
+          <b>${esc(NOMI_CARTA[id])}</b><span class="nota">${esc(CAT[id].desc || "")}</span>
+          <div class="prodotto-prezzi">${bottone(id)}</div></div>`).join("")}</div>
+      <details class="cc-altre"><summary>Cornici che non si comprano (${altre.length + 1})</summary><div class="vetrina cc-vetrina">
+        ${altre.map(id => `<div class="prodotto cc-prodotto ${ha(id) ? "cc-mia" : "cc-chiusa"}">${htmlCarta(prova, { piccola: true, cc: id })}<b>${esc(NOMI_CARTA[id])}</b><span class="nota">${ha(id) ? "✓ Già tua" : "🔒 " + esc(CAT[id].da)}</span></div>`).join("")}
+        <div class="prodotto cc-prodotto cc-chiusa">${htmlCarta(prova, { piccola: true, cc: MAESTRO })}<b>Maestro</b><span class="nota">🔒 Solo sulla carta che arriva a 5 stelle di maestria (una per carta)</span></div>
+      </div></details>
+      <div class="titolo-riga piccola"><h3>Per il tuo profilo</h3><p class="nota">Cornice dell'avatar, colore del nome e sfondo della vetrina: li scegli dal tuo profilo e li vedono tutti in classifica.</p></div>
+      <div class="vetrina cosm-vetrina">${profilo.map(id => `<div class="prodotto cosm-prodotto ${ha(id) ? "cc-mia" : ""}">
+          <div class="cosm-prova">${anteprima(id)}</div><b>${esc(CAT[id].nome)}</b><span class="nota">${TIPI[CAT[id].tipo]}</span>
+          <div class="prodotto-prezzi">${bottone(id)}</div></div>`).join("")}</div>`;
   }
   const avatar = (avatarId, corniceId, cls = "") => `<span class="cornice-avatar ${classeCornice(corniceId)}">${htmlAvatar(avatarId, cls)}</span>`;
   function htmlProfilo() {
@@ -92,7 +137,7 @@ const Cosmetici = (() => {
     }).join("") + (() => { const n = Object.keys(CAT).filter(id => CAT[id].tipo === "carta" && ha(id)).length, m = possedute().filter(c => Maestria.stelle(c.id) >= 5).length;
       return `<div class="cosm-riga"><b>Cornici delle carte</b><p class="nota">Ne hai ${n}${m ? `, più ${m} ${m === 1 ? "Cornice del Maestro" : "Cornici del Maestro"} (una per ogni carta con 5 stelle)` : ""}. Si mettono dal dettaglio di ogni carta.</p></div>`; })();
   }
-  return { CAT, MAESTRO, corniceCarta, usaCarta, htmlTelaio, htmlSceltaCarta, ha, sblocca, usa, stato, classeCornice, classeNome, classeSfondo, avatar, htmlProfilo };
+  return { CAT, MAESTRO, compra, htmlNegozio, corniceCarta, usaCarta, htmlTelaio, htmlSceltaCarta, ha, sblocca, usa, stato, classeCornice, classeNome, classeSfondo, avatar, htmlProfilo };
 })();
 
 // ---------------- Maestria delle carte ----------------

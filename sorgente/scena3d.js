@@ -85,12 +85,32 @@ const Scena3D = (() => {
     }
     // cornice della carta (cosmetico): sopra il bordo della rarità
     const TELAI = { "cc-neon": ["#39f3ff", "#a8fbff"], "cc-ghiaccio": ["#bfeaff", "#ffffff"], "cc-sakura": ["#ff9ab8", "#ffe0ea"], "cc-oro": ["#c9a13a", "#fff3c4"],
-      "cc-fiamme": ["#ff4a1a", "#ffd24d"], "cc-galassia": ["#6a2aff", "#e0c8ff"], "cc-arcobaleno": ["#ff2e46", "#3fd8ff"], "cc-diamante": ["#9ad8ff", "#ffffff"], "cc-maestro": ["#f2c14e", "#ffffff"] };
+      "cc-fiamme": ["#ff4a1a", "#ffd24d"], "cc-galassia": ["#6a2aff", "#e0c8ff"], "cc-arcobaleno": ["#ff2e46", "#3fd8ff"], "cc-diamante": ["#9ad8ff", "#ffffff"], "cc-maestro": ["#f2c14e", "#ffffff"],
+      // nov 2026: cornici nuove del negozio (più di 2 colori = gradiente a più tappe)
+      "cc-legno": ["#6a3e1a", "#a06a35"], "cc-argento": ["#8a939d", "#ffffff", "#a7b0ba", "#ffffff", "#8a939d"], "cc-caramella": ["#ff2e46", "#ffffff"], "cc-pixel": ["#39f3ff", "#ff4ad8"],
+      "cc-smeraldo": ["#2ad87a", "#b8ffd8"], "cc-rubino": ["#ff2e56", "#ffc8d2"], "cc-zaffiro": ["#2a6aff", "#c8e0ff"], "cc-veleno": ["#5ad81a", "#d6ff5a"],
+      "cc-oceano": ["#0a3a8a", "#2a8adf", "#9ae4ff", "#2a8adf", "#0a3a8a"], "cc-notte": ["#0a0f2a", "#3a4a9a"], "cc-lava": ["#3a1006", "#ff5a1a", "#ffb02a", "#ff5a1a", "#3a1006"],
+      "cc-tempesta": ["#3fa8ff", "#e8f6ff"], "cc-ombra": ["#0a0410", "#7a3ac8", "#0a0410", "#4a1a7a"], "cc-aurora": ["#3affa0", "#2ad8ff", "#a84aff", "#ff6ad8", "#3affa0"],
+      "cc-prisma": ["#ff2e46", "#f2c14e", "#5adc8c", "#39f3ff", "#8a6aff", "#ff6ad8"], "cc-reale": ["#5a1a8a", "#a85ae8", "#3a0a5a", "#a85ae8", "#5a1a8a"] };
     if (TELAI[cc]) {
       const [c1, c2] = TELAI[cc], gt = g.createLinearGradient(0, 0, W, H);
       if (cc === "cc-arcobaleno") ["#ff2e46", "#f2c14e", "#5adc8c", "#39f3ff", "#c9a4ff"].forEach((x, i, a) => gt.addColorStop(i / (a.length - 1), x));
+      else if (TELAI[cc].length > 2) TELAI[cc].forEach((x, i, a) => gt.addColorStop(i / (a.length - 1), x));
       else { gt.addColorStop(0, c2); gt.addColorStop(.5, c1); gt.addColorStop(1, c2); }
       g.save(); g.shadowColor = c1; g.shadowBlur = 18; g.lineWidth = cc === "cc-maestro" ? 22 : 16; g.strokeStyle = gt; g.strokeRect(10, 10, W - 20, H - 20); g.restore();
+      // ornamenti delle cornici nuove
+      g.save();
+      if (cc === "cc-caramella" || cc === "cc-pixel") { g.lineWidth = 16; g.strokeStyle = c2; g.setLineDash(cc === "cc-pixel" ? [12, 12] : [16, 16]); g.strokeRect(10, 10, W - 20, H - 20); }
+      if (cc === "cc-legno") { g.fillStyle = "#efe6d6"; g.strokeStyle = "#5a4a3a"; g.lineWidth = 3; for (const [x, y] of [[26, 26], [W - 26, 26], [26, H - 26], [W - 26, H - 26]]) { g.beginPath(); g.arc(x, y, 7, 0, 7); g.fill(); g.stroke(); } }
+      if (cc === "cc-smeraldo" || cc === "cc-rubino" || cc === "cc-zaffiro") for (const x of [24, W - 24]) {
+        g.save(); g.translate(x, H / 2); g.rotate(Math.PI / 4); const gg = g.createLinearGradient(-16, -16, 16, 16); gg.addColorStop(0, "#ffffff"); gg.addColorStop(.25, c2); gg.addColorStop(.7, c1); gg.addColorStop(1, "#000");
+        g.shadowColor = c1; g.shadowBlur = 16; g.fillStyle = gg; g.fillRect(-15, -15, 30, 30); g.shadowBlur = 0; g.lineWidth = 4; g.strokeStyle = "#f2e2a0"; g.strokeRect(-15, -15, 30, 30); g.restore(); }
+      if (cc === "cc-veleno") { g.fillStyle = "#b6ff3a"; g.shadowColor = "#8aff3a"; g.shadowBlur = 10; for (const [x, h] of [[.16, 50], [.38, 74], [.6, 40], [.84, 62]]) { g.beginPath(); g.ellipse(W * x, 14, 11, h, 0, 0, Math.PI); g.fill(); } }
+      if (cc === "cc-notte") { g.fillStyle = "#ffffff"; g.shadowColor = "#c8d8ff"; g.shadowBlur = 8; for (const [x, y, r] of [[.12, .02, 3], [.7, .02, 2.5], [.97, .3, 3], [.03, .62, 2.5], [.55, .98, 3], [.4, .015, 2], [.97, .7, 2.5], [.03, .25, 2.5], [.2, .98, 2.5]]) { g.beginPath(); g.arc(W * x, H * y, r, 0, 7); g.fill(); } }
+      if (cc === "cc-tempesta") { g.fillStyle = "#ffffff"; g.shadowColor = "#3fa8ff"; g.shadowBlur = 14; g.font = 'bold 54px sans-serif'; g.fillText("ϟ", 20, 70); g.fillText("ϟ", W - 52, H - 26); }
+      if (cc === "cc-reale") { g.strokeStyle = "#f2c14e"; g.lineWidth = 4; g.shadowColor = "#f2c14e"; g.shadowBlur = 8; g.strokeRect(30, 30, W - 60, H - 60);
+        g.shadowBlur = 0; g.fillStyle = "#3a0a5a"; g.fillRect(W / 2 - 36, 6, 72, 46); g.strokeRect(W / 2 - 36, 6, 72, 46); g.fillStyle = "#f2c14e"; g.font = '40px sans-serif'; g.textAlign = "center"; g.fillText("♛", W / 2, 44); }
+      g.restore();
       if (cc === "cc-maestro") {
         g.save(); g.fillStyle = "#fff3c4"; g.font = '40px sans-serif'; g.shadowColor = "#f2c14e"; g.shadowBlur = 12;
         for (const [x, y] of [[8, 46], [W - 46, 46], [8, H - 10], [W - 46, H - 10]]) g.fillText("★", x, y);
