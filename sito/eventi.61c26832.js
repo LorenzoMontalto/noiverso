@@ -92,6 +92,7 @@ const Settimana = (() => {
     const st = stato(), m = MISSIONI.find(x => x.id === id);
     if (!m || st.riscosse[id] || (st.prog[id] || 0) < m.n) return;
     st.riscosse[id] = true;
+    Livello.guadagna(Livello.PUNTI.missioneSett);
     const p = JSON.parse(JSON.stringify(m.premio)); daiPremio(p);
     salva(); aggiornaTesta(); disegna();
     mostraAvviso(`Missione della settimana completata: ${testoPremio(p)}!`);

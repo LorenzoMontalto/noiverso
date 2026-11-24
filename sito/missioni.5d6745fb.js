@@ -6,7 +6,7 @@
 //  così se ricarichi la pagina non cambiano.
 // ============================================================
 const Missioni = (() => {
-  const XP_GIORNO = 40, XP_SETT = 150;
+  const XP_GIORNO = 8, XP_SETT = 30;   // nov 2026: un quinto di prima (il pass sale con le Sfide del pass)
   const POOL = {
     vinci:        { n: 2, testo: m => `Vinci ${m.n} battaglie`, premio: { monete: 80 } },
     serie:        { n: 1, testo: m => `Vinci con almeno 2 carte ${SERIE[m.serie] ? SERIE[m.serie].nome : ""} in squadra`, premio: { monete: 100 } },
@@ -101,6 +101,7 @@ const Missioni = (() => {
       const [l, i] = chi.split(":"), sett = l === "s", m = (sett ? M.sett : M.lista)[+i];
       if (!m || m.prog < m.n || m.riscossa) return;
       m.riscossa = true; p = premio(m, sett); xp = sett ? XP_SETT : XP_GIORNO; nome = testo(m, sett);
+      Livello.guadagna(sett ? Livello.PUNTI.missioneSett : Livello.PUNTI.missione);
     }
     const dato = dai(p);
     const su = xp ? aggiungiXP(xp) : 0;
@@ -121,6 +122,7 @@ const Missioni = (() => {
     const daFinestra = !!(el && el.closest && el.closest("#modale"));
     S.accessi = { ultimo: giorno(), riscosso: giorno(), serie: a.giorno };
     S.stats.serieMax = Math.max(S.stats.serieMax || 0, a.giorno);
+    Livello.guadagna(Livello.PUNTI.accesso);
     const dato = dai(ACCESSI[a.giorno - 1]);
     salva(); aggiornaTesta();
     if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 50, forma: "stella", colori: ["#f2c14e", "#fff3c4", "#ff2e46"], velocita: 7, dimensione: 6 }); }

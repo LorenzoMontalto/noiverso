@@ -976,7 +976,7 @@ body.in-accesso { overflow: hidden; }
 #ed-cerca { background: var(--notte); border: 1px solid var(--linea); border-radius: 10px; padding: 8px 12px; min-width: 220px; color: var(--testo); font: inherit; }
 .ed-azioni { margin-top: 10px; }
 .ed-righe { display: grid; gap: 6px; max-height: 70vh; overflow-y: auto; padding-right: 4px; }
-.ed-riga { display: grid; grid-template-columns: 40px minmax(110px, 1fr) minmax(140px, 1.2fr) minmax(120px, 1fr) minmax(110px, 1fr) minmax(110px, 1fr) auto; gap: 10px; align-items: center; background: var(--muro); border: 1px solid transparent; border-radius: 10px; padding: 6px 10px; }
+.ed-riga { display: grid; grid-template-columns: 40px minmax(100px, 1fr) minmax(130px, 1.2fr) minmax(115px, 1fr) minmax(105px, 1fr) minmax(100px, 1fr) minmax(110px, 1fr) auto; gap: 10px; align-items: center; background: var(--muro); border: 1px solid transparent; border-radius: 10px; padding: 6px 10px; }
 .ed-riga img { width: 40px; aspect-ratio: 5 / 7; object-fit: cover; border-radius: 5px; }
 .ed-riga label { display: grid; gap: 2px; }
 .ed-riga label span { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--spento); font-weight: 700; }
@@ -1882,6 +1882,30 @@ body.in-accesso { overflow: hidden; }
 .ss-punti { font-size: .75rem; font-weight: 800; padding: 1px 8px; border-radius: 9px; background: #6fe3a022; color: #6fe3a0; } .ss-punti.oltre { background: #ff334422; color: #ff8a8a; }
 .ss-carte { display: flex; gap: 4px; } .ss-carte img { width: 46px; aspect-ratio: 5 / 7; object-fit: cover; border-radius: 6px; border: 1px solid var(--linea); }
 .ss-no { color: #ff8a8a; }
+
+/* ---------- Livello giocatore e sfide del pass (nov 2026) ---------- */
+.lv-badge { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 5px; border-radius: 7px; font-family: var(--display); font-weight: 800; font-size: .74rem; color: #0b1420;
+  background: linear-gradient(135deg, #bfe8ff, #6fb8ff 55%, #f2c14e); box-shadow: 0 0 10px rgba(111, 184, 255, .45); vertical-align: middle; margin-right: 6px; }
+.lv-badge.mini { min-width: 18px; height: 18px; font-size: .62rem; border-radius: 5px; margin: 0 5px 0 2px; }
+.lv-badge.testa { margin: 0 0 0 -8px; transform: translateY(8px); min-width: 18px; height: 18px; font-size: .62rem; position: relative; z-index: 1; }
+.lv-badge.grande { min-width: 62px; height: 62px; font-size: 1.7rem; border-radius: 16px; margin: 0; box-shadow: 0 0 24px rgba(111, 184, 255, .55); }
+.livello-giocatore { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; background: linear-gradient(120deg, rgba(111, 184, 255, .12), rgba(242, 193, 78, .08)); border: 1px solid rgba(111, 184, 255, .35); border-radius: 16px; padding: 12px 16px; margin-bottom: 14px; }
+.livello-giocatore .serie-nome { margin: 0 0 4px; }
+.lg-barra i { background: linear-gradient(90deg, #6fb8ff, #bfe8ff, #f2c14e) !important; }
+.lg-azioni { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 640px) { .livello-giocatore { grid-template-columns: auto 1fr; } .lg-azioni { grid-column: 1 / -1; justify-content: stretch; } .lg-azioni .btn { flex: 1; } }
+.lg-tab { width: 100%; border-collapse: collapse; font-size: .86rem; margin: 6px 0 12px; } .lg-tab td { padding: 5px 6px; border-bottom: 1px solid var(--linea); } .lg-tab td:last-child { color: #9ad8ff; font-weight: 700; }
+.lg-premi { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 5px; font-size: .86rem; } .lg-premi li.preso { opacity: .55; } .lg-premi li.pronto b { color: var(--oro); }
+.sfide-pass { margin: 6px 0 16px; }
+.sp-colonne { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } @media (max-width: 720px) { .sp-colonne { grid-template-columns: 1fr; } }
+.sp-tit { font-weight: 800; margin: 0 0 6px; } .sp-tit small { color: var(--spento); font-weight: 600; }
+.sp-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sp-lista li { display: grid; grid-template-columns: 1fr auto; gap: 3px 10px; background: var(--muro); border: 1px solid var(--linea); border-radius: 10px; padding: 8px 10px; }
+.sp-lista li.fatta { border-color: rgba(90, 220, 140, .5); opacity: .75; }
+.sp-testo { font-size: .88rem; } .sp-xp { color: var(--oro); font-weight: 800; font-size: .85rem; }
+.sp-barra { grid-column: 1 / -1; height: 6px; border-radius: 4px; background: var(--notte); overflow: hidden; } .sp-barra i { display: block; height: 100%; width: var(--p); background: linear-gradient(90deg, #f2c14e, #ffe9a8); }
+.sp-lista li.fatta .sp-barra i { background: #5adc8c; }
+.sp-lista small { grid-column: 1 / -1; color: var(--spento); font-size: .72rem; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.8816af04.js"></script>
@@ -1924,23 +1948,24 @@ body.in-accesso { overflow: hidden; }
 <div id="avviso" role="status" hidden></div>
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
-<script src="carte.eddb21d5.js"></script>
-<script src="motore.63097f67.js"></script>
+<script src="carte.6334b81d.js"></script>
+<script src="motore.d8ca781b.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
 <script src="suoni.75417e9f.js"></script>
 <script src="scena3d.678d4420.js"></script>
 <script src="mappe.fdef3ac5.js"></script>
 <script src="storia.761df425.js"></script>
 <script src="tutorial.3983f920.js"></script>
-<script src="missioni.80068fac.js"></script>
-<script src="sociale.8be65ec1.js"></script>
-<script src="collezione.62c8eb4a.js"></script>
+<script src="missioni.5d6745fb.js"></script>
+<script src="sociale.250f8d4a.js"></script>
+<script src="collezione.b3a78d60.js"></script>
 <script src="graffiti.87ba5b2f.js"></script>
 <script src="zaino.f42c2817.js"></script>
-<script src="online.48770847.js"></script>
+<script src="online.5ed82701.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
-<script src="eventi.ebb64e99.js"></script>
-<script src="app.43302fc7.js"></script>
+<script src="eventi.61c26832.js"></script>
+<script src="progressi.31386aa2.js"></script>
+<script src="app.7ea1d43b.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

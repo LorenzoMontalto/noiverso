@@ -18,7 +18,9 @@ const LIVELLI_SFIDA = [
   { id: "leggenda", nome: "Leggenda", rarita: ["leggendaria", "epica"], liv: [25, 30], abilita: 1.0,  premio: 200, punti: 8, xp: 200, xpCarte: 2.6, lode: true,
     desc: "Il meglio del mazzo al livello 25–30, con la lode. Il massimo." },
 ];
-const XP_SCONFITTA = 20, XP_BUSTINA = 15;
+// nov 2026: gli XP del pass da battaglie, bustine e missioni sono un quinto di prima (il pass sale soprattutto con le Sfide del pass)
+const XP_RIDUZIONE = 0.2, ridXP = n => Math.max(1, Math.round(n * XP_RIDUZIONE));
+const XP_SCONFITTA = 4, XP_BUSTINA = 3;
 
 // Tipi di bustina: quante carte e con che probabilità esce l'ultima
 const TIPI_BUSTINA = {
@@ -280,7 +282,7 @@ const Archivio = {
   async pubblicaClassifica() {
     if (this.modo !== "cloud" || this.admin) return; // l'admin non entra in classifica
     const voce = { punti: S.stats.punti, vittorie: S.stats.vittorie, sconfitte: S.stats.sconfitte,
-      carte: possedute().length, pass: livelloPass(), nome: (S.profilo.nome || "").slice(0, 22), avatar: S.profilo.avatar || "", titolo_id: Trofei.titoloId(),
+      carte: possedute().length, pass: livelloPass(), livello: S.lv ? Livello.info().liv : 1, nome: (S.profilo.nome || "").slice(0, 22), avatar: S.profilo.avatar || "", titolo_id: Trofei.titoloId(),
       aggiornato: new Date().toISOString() };
     const firma = JSON.stringify(Object.assign({}, voce, { aggiornato: 0 }));
     if (firma === this._ultimaVoce) return;
@@ -369,13 +371,14 @@ function aggiornaSalvataggio(fase) {
 }
 
 function aggiornaTesta() {
+  Livello.controlla();
   if (S.admin) { const m = $("#monete"); m.textContent = "∞"; m.dataset.valore = S.monete; }
   else FX.contatore($("#monete"), S.monete);
   const pb = $("#profilo-btn");
-  if (pb) { pb.hidden = !S.profilo.nome; pb.innerHTML = `${htmlAvatar(S.profilo.avatar)}<span>${esc(S.profilo.nome || "")}</span>${S.admin ? `<em>Admin</em>` : ""}`; }
+  if (pb) { pb.hidden = !S.profilo.nome; pb.innerHTML = `${htmlAvatar(S.profilo.avatar)}${!S.admin && S.lv ? Livello.badge(Livello.info().liv, "testa") : ""}<span>${esc(S.profilo.nome || "")}</span>${S.admin ? `<em>Admin</em>` : ""}`; }
   const na = $('[data-vista="admin"]'); if (na) na.hidden = !S.admin;
   Trofei.controlla();
-  const nst = $('[data-vista="strada"] .badge'); if (nst) { const q = Missioni.pronte(); nst.textContent = q; nst.hidden = !q; }
+  const nst = $('[data-vista="strada"] .badge'); if (nst) { const q = Missioni.pronte() + Livello.daRiscuotere().length; nst.textContent = q; nst.hidden = !q; }
   const ns = $('[data-vista="storia"] .badge'); if (ns) { const q = scrigniPronti(); ns.textContent = q; ns.hidden = !q; }
   const nal = $('[data-vista="album"] .badge'); if (nal) { const q = potenziabili() + Trofei.pronti() + Scambi.inArrivo; nal.textContent = q; nal.hidden = !q; }
   const b = bustineTotali(), r = daRiscuotere();
@@ -621,6 +624,7 @@ function ascendiCarta(id, conferma, el) {
   S.rarNov26 = true;   // questa Ascesa parte già dalle rarità nuove: non va mai "sistemata"
   // nov 2026: la carta resta al livello che ha (prima tornava al livello 1 e perdeva la lode)
   S.stats.ascese = (S.stats.ascese || 0) + 1;
+  Livello.guadagna(Livello.PUNTI.ascesa);
   salva(); aggiornaTesta();
   if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 70, forma: "stella", colori: ["#ffd76a", "#ff9bd2", "#ffffff"], velocita: 9, dimensione: 6, durata: 1400 }); }
   chiudiModale(); disegna(); apriDettaglio(id);
@@ -727,6 +731,7 @@ function vistaStrada() {
   return `${Online.htmlStrada()}
   ${Torneo.htmlStrada()}
   ${Settimana.htmlStrada()}
+  ${Livello.htmlStrada()}
   <section class="eroe">
     <div class="eroe-testo">
       <h1 class="neon">Noiverso</h1>
@@ -1024,6 +1029,7 @@ function usaBustina(tipo, pagando) {
     S.inventario[tipo]--;
   }
   const esiti = apriBustina(tipo);
+  Livello.carteNuove(esiti);
   const su = aggiungiXP(XP_BUSTINA);
   Missioni.evento("bustina", { tipo });
   const graffito = Graffiti.forseInBustina(tipo);
@@ -1574,8 +1580,9 @@ function vistaPass() {
       </div>
       <button class="btn oro" data-fx="coriandoli" data-azione="riscuoti-tutto" ${r - bonus - daScegliere.length > 0 ? "" : "disabled"}>${r - bonus - daScegliere.length > 0 ? `Riscuoti tutto (${r - bonus - daScegliere.length})` : "Niente da riscuotere"}</button>
     </div>
-    <p class="nota">Vittorie: da 60 a 200 XP in base all'avversario · Sconfitta: ${XP_SCONFITTA} XP · Bustina aperta: ${XP_BUSTINA} XP · Ogni 10 livelli scegli tu il premio.
+    <p class="nota">Vittorie: da ${ridXP(60)} a ${ridXP(200)} XP in base all'avversario · Sconfitta: ${XP_SCONFITTA} XP · Bustina aperta: ${XP_BUSTINA} XP · Le <b>sfide del pass</b> qui sotto danno molti più XP · Ogni 10 livelli scegli tu il premio.
       ${daScegliere.length ? `<b class="oro-testo">Hai ${daScegliere.length === 1 ? "un premio" : daScegliere.length + " premi"} da scegliere (livello ${daScegliere.join(", ")}).</b>` : ""}</p>
+    ${SfidePass.htmlPass()}
     <div class="pass-pista" id="pass-pista">
       <div class="pista-cielo" id="pista-cielo">${skyline()}</div>
       <div class="pista">
@@ -1811,7 +1818,7 @@ function vistaClassifica() {
     <table class="classifica">
       <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vinte / giocate</th><th>Carte</th><th>Pass</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
       <tbody>${classificaDati.map((r, i) => `
-        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${r.id !== Archivio.uid && Online.eOnline(r.id) ? `<span class="pallino-online" title="Online adesso"></span>` : ""}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
+        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${r.id !== Archivio.uid && Online.eOnline(r.id) ? `<span class="pallino-online" title="Online adesso"></span>` : ""}${Number(r.livello) > 0 ? Livello.badge(Number(r.livello), "mini") : ""}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
         <td>${Number(r.punti) || 0}</td><td>${Number(r.vinte_vivo) || 0}/${Number(r.giocate_vivo) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>Lv ${Number(r.pass) || 0}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<span class="sfida-celle"><button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>${Online.eOnline(r.id) ? `<button class="btn piccolo primario" data-fx="spinta" data-sfida-vivo="${esc(r.id)}">Dal vivo</button>` : ""}</span>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
     </table>
   </section>`;
@@ -1824,7 +1831,7 @@ function avviaClassifica() {
   Archivio.ascoltaClassifica(async righe => {
     clearTimeout(classificaTimer); classificaErrore = false;
     // ogni salvataggio di un amico tocca la sua riga (anche solo l'ora): ridisegno solo se cambia qualcosa che si vede
-    const firma = JSON.stringify(righe.map(r => [r.id, r.punti, r.vinte_vivo, r.giocate_vivo, r.carte, r.pass, r.nome, r.avatar, r.titolo_id]));
+    const firma = JSON.stringify(righe.map(r => [r.id, r.punti, r.vinte_vivo, r.giocate_vivo, r.carte, r.pass, r.livello, r.nome, r.avatar, r.titolo_id]));
     const uguale = classificaDati && firma === avviaClassifica._firma;
     avviaClassifica._firma = firma;
     classificaDati = righe;
@@ -1851,7 +1858,7 @@ const usa3D = () => Scena3D.disponibile && imp().grafica !== "2d";
 const carteBattaglia = () => imp().modalita === "rapida" ? 3 : CARTE_SQUADRA;
 function premiSfida(L) {
   const r = imp().modalita === "rapida";
-  return { monete: r ? Math.round(L.premio * .6) : L.premio, punti: r ? Math.max(1, Math.round(L.punti / 2)) : L.punti, xp: r ? Math.round(L.xp * .6) : L.xp };
+  return { monete: r ? Math.round(L.premio * .6) : L.premio, punti: r ? Math.max(1, Math.round(L.punti / 2)) : L.punti, xp: ridXP(r ? Math.round(L.xp * .6) : L.xp) };
 }
 function applicaImpostazioni() {
   const i = imp();
@@ -2309,10 +2316,10 @@ document.addEventListener("change", async e => {
 
 // ---------- Editor carte: persona, serie e rarità (solo admin) ----------
 let bozza = null, edFiltro = "tutte", edCerca = "", ultimaRegola = null;
-function nuovaBozza() { return Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: !!c.ultra, m0: c.mosse[0].nome, m1: c.mosse[1].nome, m2: c.mosse[2].nome }])); }
+function nuovaBozza() { return Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, ruolo: c.ruolo, persona: c.persona, ultra: !!c.ultra, m0: c.mosse[0].nome, m1: c.mosse[1].nome, m2: c.mosse[2].nome }])); }
 // una carta della bozza è diversa da com'è adesso? (persona, serie, rarità, tipo, Ultra o nomi delle mosse)
 const nomeMossaBozza = (c, b, i) => (b["m" + i] || "").trim() || CARTE_ORIGINALI[c.id].mosse[i];
-const bozzaCambiata = (c, b) => b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || !!b.ultra !== !!c.ultra || b.persona.trim() !== c.persona || [0, 1, 2].some(i => nomeMossaBozza(c, b, i) !== c.mosse[i].nome);
+const bozzaCambiata = (c, b) => b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || (b.ruolo || c.ruolo) !== c.ruolo || !!b.ultra !== !!c.ultra || b.persona.trim() !== c.persona || [0, 1, 2].some(i => nomeMossaBozza(c, b, i) !== c.mosse[i].nome);
 function regolaBozza() {
   const gruppi = {};
   for (const c of CARTE) { const b = bozza[c.id]; const p = b.persona.trim(); if (p) (gruppi[p] = gruppi[p] || []).push(c); }
@@ -2376,7 +2383,7 @@ function htmlEditorCarte() {
   const q = edCerca.trim().toLowerCase();
   const elenco = CARTE.filter(c => (edFiltro === "tutte" || (edFiltro === "senza" ? !bozza[c.id].persona.trim() : bozza[c.id].serie === edFiltro)) && (!q || c.nome.toLowerCase().includes(q) || bozza[c.id].persona.toLowerCase().includes(q) || [0, 1, 2].some(i => nomeMossaBozza(c, bozza[c.id], i).toLowerCase().includes(q))));
   return `
-    <h3>Persone, serie, rarità, tipo, versione Ultra e nomi delle mosse</h3>
+    <h3>Persone, serie, rarità, tipo, ruolo, versione Ultra e nomi delle mosse</h3>
     <p class="nota">Scegli per ogni carta chi è la persona, in che serie va e la rarità, e se vuoi cambia il nome delle sue mosse (solo il nome: costo, danni ed effetti restano uguali; vuoto = nome di partenza). Puoi cercare anche per nome di mossa. Quando salvi, vale per tutti i giocatori. Regola: al massimo una leggendaria a persona in ogni serie (una persona può averne in più serie).</p>
     ${Archivio.modo !== "cloud" ? `<p class="nota"><b class="errore">Serve la pagina online: senza account le modifiche non si possono salvare per tutti.</b></p>` : ""}
     <div id="ed-regola">${htmlRegola()}</div>
@@ -2395,6 +2402,7 @@ function htmlEditorCarte() {
           <label><span>Serie</span><select data-ed="${c.id}" data-campo="serie">${Object.keys(SERIE).map(id => `<option value="${id}" ${b.serie === id ? "selected" : ""}>${esc(SERIE[id].nome)}</option>`).join("")}</select></label>
           <label><span>Rarità</span><select data-ed="${c.id}" data-campo="rarita" class="sel-r-${b.rarita}">${ORDINE_RARITA.map(id => `<option value="${id}" ${b.rarita === id ? "selected" : ""}>${RARITA[id].nome}</option>`).join("")}</select></label>
           <label><span>Tipo</span><select data-ed="${c.id}" data-campo="stile">${Object.keys(STILI).map(id => `<option value="${id}" ${b.stile === id ? "selected" : ""}>${STILI[id].icona} ${esc(STILI[id].nome)}</option>`).join("")}</select></label>
+          <label><span>Ruolo</span><select data-ed="${c.id}" data-campo="ruolo" title="${esc(RUOLI[b.ruolo || c.ruolo].passiva)}">${Object.keys(RUOLI).map(id => `<option value="${id}" ${(b.ruolo || c.ruolo) === id ? "selected" : ""}>${esc(RUOLI[id].nome)}</option>`).join("")}</select></label>
           <label class="ed-ultra" title="Ha anche una versione Ultra da trovare"><input type="checkbox" data-ed="${c.id}" data-campo="ultra" ${b.ultra ? "checked" : ""}><span>Ultra</span></label>
           <div class="ed-mosse">${c.mosse.map((mo, i) => `<label><span>Mossa ${i + 1} · ${mo.costo ? "◆".repeat(mo.costo) : "gratis"}</span><input maxlength="40" data-ed="${c.id}" data-campo="m${i}" value="${esc(b["m" + i])}" placeholder="${esc(CARTE_ORIGINALI[c.id].mosse[i])}"></label>`).join("")}</div>
         </div>`; }).join("") || `<p class="nota">Nessuna carta corrisponde.</p>`}
@@ -2425,6 +2433,7 @@ async function salvaEditor(el) {
     if (b.serie !== o.serie) d.serie = b.serie;
     if (b.rarita !== o.rarita) d.rarita = b.rarita;
     if (b.stile !== o.stile) d.stile = b.stile;
+    if (b.ruolo && b.ruolo !== o.ruolo) d.ruolo = b.ruolo;
     if (!!b.ultra !== !!o.ultra) d.ultra = !!b.ultra;
     if (b.persona.trim() !== o.persona) d.persona = b.persona.trim();
     const mosse = [0, 1, 2].map(i => { const v = (b["m" + i] || "").trim().slice(0, 40); return v && v !== o.mosse[i] ? v : null; });
@@ -2470,7 +2479,7 @@ async function azioneAdmin(cosa, el) {
   }
   if (cosa.startsWith("graffit")) { Graffiti.azioneAdmin(cosa, el); return; }
   if (cosa === "ed-annulla") { bozza = nuovaBozza(); aggiornaEditor(true); return; }
-  if (cosa === "ed-originali") { bozza = Object.fromEntries(CARTE.map(c => { const o = CARTE_ORIGINALI[c.id]; return [c.id, { serie: o.serie, rarita: o.rarita, stile: o.stile, persona: o.persona, ultra: o.ultra, m0: o.mosse[0], m1: o.mosse[1], m2: o.mosse[2] }]; })); aggiornaEditor(true); mostraAvviso("Valori di partenza caricati: premi Salva per applicarli a tutti."); return; }
+  if (cosa === "ed-originali") { bozza = Object.fromEntries(CARTE.map(c => { const o = CARTE_ORIGINALI[c.id]; return [c.id, { serie: o.serie, rarita: o.rarita, stile: o.stile, ruolo: o.ruolo, persona: o.persona, ultra: o.ultra, m0: o.mosse[0], m1: o.mosse[1], m2: o.mosse[2] }]; })); aggiornaEditor(true); mostraAvviso("Valori di partenza caricati: premi Salva per applicarli a tutti."); return; }
   const metti = (L, lx = 0) => CARTE.forEach(c => { S.carte[c.id] = Math.max(1, S.carte[c.id] || 0); S.liv[c.id] = L; S.lodeXp[c.id] = lx; });
   if (cosa === "carte-lode") metti(LIVELLO_MAX, XP_LODE);
   if (cosa === "carte-max") metti(LIVELLO_MAX);
@@ -2686,10 +2695,10 @@ function chiudiStoria() {
     const n = B.lati[0].squadra.length, vivi = B.vivi(0).length;
     esito.stelle = vivi === n ? 3 : vivi >= Math.ceil(n * .6) ? 2 : 1;
     if (prima) {
-      esito.monete = t.monete; esito.xp = Math.round(t.monete * .8);
+      esito.monete = t.monete; esito.xp = ridXP(Math.round(t.monete * .8));
       if (t.bustina) { S.inventario[t.bustina] += t.bustine || 1; esito.bustina = `${t.bustine > 1 ? t.bustine + " × " : ""}${TIPI_BUSTINA[t.bustina].nome}`; }
       S.stats.punti += t.boss ? 3 : 1;
-    } else { esito.monete = Math.round(t.monete * .25); esito.xp = 20; }
+    } else { esito.monete = Math.round(t.monete * .25); esito.xp = ridXP(20); }
     const nuove = Math.max(0, esito.stelle - (S.storia.stelle[key] || 0));
     S.storia.stelle[key] = Math.max(S.storia.stelle[key] || 0, esito.stelle);
     S.stats.vittorie++;
@@ -2697,7 +2706,7 @@ function chiudiStoria() {
     Missioni.evento("storia", { tre: esito.stelle === 3, nuove });
     if (arena) arena.vittoria(0);
     setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 70, forma: "stella", colori: ["#f2c14e", "#fff3c4", STORIA[k].colore], velocita: 8, dimensione: 7, durata: 1600 }); } }, 50);
-  } else { esito.xp = 10; S.stats.sconfitte++; }
+  } else { esito.xp = ridXP(10); S.stats.sconfitte++; }
   S.monete += esito.monete;
   const su = aggiungiXP(esito.xp);
   livelloAttuale.esito = esito;
@@ -3192,7 +3201,7 @@ function premiaCarte(mult, vinto, potSempre) {
   // (così non si possono fare potenziatori arrendendosi subito una battaglia dopo l'altra)
   const perso = !vinto && !potSempre ? (B.turno >= 3 && !(livelloAttuale && livelloAttuale.resa) ? 1 : 0) : 0;
   const potV = vinto || potSempre ? potVittoria(mult) : perso;
-  return B.lati[0].squadra.map(x => {
+  const risultati = B.lati[0].squadra.map(x => {
     if (!S.carte[x.id]) return null;
     const prima = infoCarta(x.id), verso = prima.liv >= LIVELLO_MAX && !prima.lode;
     if (verso) S.lodeXp[x.id] = (S.lodeXp[x.id] || 0) + xp;
@@ -3201,6 +3210,8 @@ function premiaCarte(mult, vinto, potSempre) {
     const dopo = infoCarta(x.id);
     return { id: x.id, xp: verso ? xp : 0, pot, prontaNuova: !prima.pronta && dopo.pronta, liv: dopo.liv, lode: dopo.lode, lodeNuova: !prima.lode && dopo.lode };
   }).filter(Boolean);
+  try { Livello.fineBattaglia(vinto, risultati); SfidePass.fineBattaglia(vinto); } catch (e) { /* i progressi sono un extra */ }
+  return risultati;
 }
 function htmlEspCarte() {
   const lista = livelloAttuale && livelloAttuale.espCarte;
@@ -3395,6 +3406,8 @@ document.addEventListener("click", e => {
     case "vai-classifica": vai("classifica"); break;
     case "vai-squadra": vai("squadra"); break;
     case "vai-pass": vai("pass"); break;
+    case "livello-riscuoti": Livello.riscuoti(t); break;
+    case "livello-info": Livello.apriInfo(); break;
     case "vai-negozio": vai("negozio"); break;
     case "vai-amici": Amici.apriElenco(); break;
     case "graffiti-collezione": Graffiti.apriCollezione(); break;

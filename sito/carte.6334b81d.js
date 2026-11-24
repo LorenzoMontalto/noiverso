@@ -716,7 +716,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
 const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
-const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra, mosse: c.mosse.map(m => m.nome) }]));
+const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, ruolo: c.ruolo, persona: c.persona, ultra: c.ultra, mosse: c.mosse.map(m => m.nome) }]));
 function applicaConfigCarte(cfg) {
   const mappa = (cfg && cfg.carte) || {};
   CARTE.forEach(c => {
@@ -724,6 +724,7 @@ function applicaConfigCarte(cfg) {
     c.serie = SERIE[m.serie] ? m.serie : o.serie;
     c.rarita = RARITA[m.rarita] ? m.rarita : o.rarita;
     c.stile = STILI[m.stile] ? m.stile : o.stile;
+    c.ruolo = RUOLI[m.ruolo] ? m.ruolo : o.ruolo;   // nov 2026: il ruolo (stregone, capo, assassino...) si cambia dall'admin
     c.ultra = typeof m.ultra === "boolean" ? m.ultra : o.ultra;
     c.persona = typeof m.persona === "string" ? m.persona.trim().slice(0, 30) : o.persona;
     // nomi delle mosse cambiati dall'admin (solo il nome: costo, potenza ed effetti restano quelli)

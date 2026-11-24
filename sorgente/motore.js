@@ -405,6 +405,7 @@ class Battaglia {
     const L = this.lati[l], O = this.lati[1 - l], a = this.attivo(l), d = this.attivo(1 - l);
     this.ultimoAttacco = l;
     if (!giaPagata) L.energia -= m.costo;
+    if (m.costo >= 5) { this.finali = this.finali || [0, 0]; this.finali[l]++; }   // per le sfide del pass
     this._log(`${a.c.nome} usa ${m.nome}!`, { lato: l, anim: "attacco", id: a.id, mossa: a.c.mosse.indexOf(m), nome: m.nome, costo: m.costo, stile: a.c.stile, pot: m.pot, colpi: m.colpi || 1, eff: (m.eff || {}).tipo || "" });
     const e = m.eff || {};
     const SUL_BERSAGLIO = ["brucia", "stordisci", "indebolisci", "ruba"];
