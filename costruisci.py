@@ -43,3 +43,13 @@ schema = open(schema_p, encoding="utf-8").read()
 nuovo_schema = re.sub(r"-- INIZIO RARITA.*?-- FINE RARITA", lambda m: blocco, schema, flags=re.S)
 if nuovo_schema != schema: open(schema_p, "w", encoding="utf-8").write(nuovo_schema)
 print("sito/ pronto · versione", versione)
+
+# Controllo (nov 2026): ogni serie nuova deve avere la data di uscita in USCITA_SERIE (eventi.js),
+# altrimenti entra subito nella rotazione e sposta le prossime settimane in evidenza e i boss.
+import re as _re
+_carte = open("sorgente/carte.js", encoding="utf8").read()
+_serie = _re.findall(r"^  (\w+):\s+\{ nome:", _carte[_carte.index("const SERIE = {"):_carte.index("};", _carte.index("const SERIE = {"))], _re.M)
+_ev = open("sorgente/eventi.js", encoding="utf8").read()
+_usc = _ev[_ev.index("const USCITA_SERIE = {"):]; _usc = _usc[:_usc.index("};") + 2]
+_senza = [x for x in _serie[17:] if x + ":" not in _usc.replace(" ", "")]
+if _senza: print("ATTENZIONE: serie senza data di uscita in USCITA_SERIE (eventi.js):", ", ".join(_senza))

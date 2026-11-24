@@ -13,6 +13,29 @@ const chiaveGiorno = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStar
 // numero "a caso" ma sempre uguale per la stessa stringa (stesso giorno = stesso boss per tutti)
 function hashTesto(t) { let h = 2166136261; for (const ch of String(t)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
 
+// ---------- Rotazione stabile delle serie (nov 2026) ----------
+// Prima la serie della settimana era «numero della settimana % numero di serie» e il boss «numero a caso % numero di serie»:
+// ogni serie nuova cambiava il divisore e spostava la serie della settimana in corso e il boss del giorno.
+// Ora: le serie girano a «giri» (un giro = tutte le serie in ordine, una a settimana). Una serie nuova entra solo
+// nel giro che comincia dopo la sua uscita, quindi la settimana in corso e le altre del giro non cambiano mai.
+// Il boss del giorno si sceglie tra le serie uscite prima di quel giorno, con un sorteggio che non dipende da quante sono.
+const INIZIO_GIRI = new Date(2026, 10, 9);   // lunedì 9 novembre 2026: così la settimana del 23 novembre è quella degli Dei
+// Serie nuove: giorno di uscita ("AAAA-MM-GG"). Entrano nel giro successivo e tra i boss dal giorno dopo. Le altre ci sono da sempre.
+const USCITA_SERIE = {};
+const uscitaPrima = (s, d) => { const u = USCITA_SERIE[s]; if (!u) return true; const [a, m, g] = u.split("-").map(Number); return new Date(a, m - 1, g) < d; };
+const piuSettimane = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7 * n);
+function serieDellaSettimana(lun) {
+  const n = Math.round((lun - INIZIO_GIRI) / (7 * 864e5));
+  if (n < 0) { const v = Math.round((lun - new Date(2026, 0, 5)) / (7 * 864e5)); return ORDINE_SERIE[((v % ORDINE_SERIE.length) + ORDINE_SERIE.length) % ORDINE_SERIE.length]; }
+  for (let inizio = 0; ;) {
+    const giro = ORDINE_SERIE.filter(s => uscitaPrima(s, piuSettimane(INIZIO_GIRI, inizio)));
+    if (n < inizio + giro.length) return giro[n - inizio];
+    inizio += giro.length;
+  }
+}
+// sorteggio stabile: vince la serie con il numero più alto per quel giorno (aggiungerne una non cambia le altre)
+const sorteggio = (lista, k) => lista.reduce((best, s) => hashTesto(k + ":" + s) > hashTesto(k + ":" + best) ? s : best, lista[0]);
+
 const Settimana = (() => {
   const SCONTO = .3;
   let scelta = null;   // { settimana, serie } dall'admin
@@ -20,8 +43,7 @@ const Settimana = (() => {
   function serie() {
     const k = chiave();
     if (scelta && scelta.settimana === k && SERIE[scelta.serie]) return scelta.serie;
-    const n = Math.round((lunediDi() - new Date(2026, 0, 5)) / (7 * 864e5));   // 5 gennaio 2026 era lunedì
-    return ORDINE_SERIE[((n % ORDINE_SERIE.length) + ORDINE_SERIE.length) % ORDINE_SERIE.length];
+    return serieDellaSettimana(lunediDi());
   }
   const fineSettimana = () => { const x = lunediDi(); x.setDate(x.getDate() + 7); return x; };
   function prezzo(t) { const T = TIPI_BUSTINA[t]; if (!T || !T.prezzo) return 0; return T.serie && T.serie === serie() ? Math.round(T.prezzo * (1 - SCONTO) / 10) * 10 : T.prezzo; }
@@ -156,12 +178,14 @@ const BossGiorno = (() => {
   const PV_X = 2.2, GUARDIE = 3, LIV_GUARDIE = 25;   // PV del boss rispetto a una leggendaria al 30, guardie e loro livello (provati con le simulazioni)
   function oggi(data = new Date()) {
     const k = chiaveGiorno(data), h = n => hashTesto(k + ":" + n);
-    const s = ORDINE_SERIE[h("serie") % ORDINE_SERIE.length], id = BOSS[s] && PER_ID[BOSS[s]] ? BOSS[s] : CARTE.find(c => c.serie === s && c.rarita === "leggendaria").id;
+    // fino al 24 novembre 2026 il boss resta quello calcolato col sistema vecchio (con le 17 serie di allora); dal 25 il sorteggio stabile
+    const vecchio = k <= "2026-11-24", VECCHIE = ORDINE_SERIE.slice(0, 17), pool = ORDINE_SERIE.filter(x => uscitaPrima(x, new Date(data.getFullYear(), data.getMonth(), data.getDate())));
+    const s = vecchio ? VECCHIE[h("serie") % VECCHIE.length] : sorteggio(pool, k + ":boss"), id = BOSS[s] && PER_ID[BOSS[s]] ? BOSS[s] : CARTE.find(c => c.serie === s && c.rarita === "leggendaria").id;
     const c = PER_ID[id], kc = Object.keys(CORAZZE), kd = Object.keys(DEBOLEZZE);
     const corazza = kc[h("cor") % kc.length];
     let debolezza = kd[h("deb") % kd.length];
     if (corazza === "rigenera" && debolezza === "fuoco") debolezza = "fuoco";   // combinazione bella: brucialo per fermarlo
-    const altre = ORDINE_SERIE.filter(x => x !== s), serieDebole = altre[h("sd") % altre.length];
+    const altre = (vecchio ? VECCHIE : pool).filter(x => x !== s), serieDebole = vecchio ? altre[h("sd") % altre.length] : sorteggio(altre, k + ":debole");
     const tipoForte = Object.keys(STILI).find(t => STILI[t].batte === c.stile);   // il tipo che lo batte
     const campo = ORDINE_CAMPI[h("campo") % ORDINE_CAMPI.length];
     return { chiave: k, serie: s, id, corazza, debolezza, serieDebole, tipoForte, campo };
