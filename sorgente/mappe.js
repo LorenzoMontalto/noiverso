@@ -33,6 +33,7 @@ const MappeStoria = (() => {
     [[200, 1060], [600, 900], [1000, 1000], [1420, 900], [1265, 580], [625, 410]],    // zona rossa (Apocalisse)
     [[240, 1000], [620, 860], [1020, 980], [1480, 760], [1150, 540], [640, 300]],     // santuario della luna rossa (Mitologia Giapponese)
     [[220, 1040], [560, 840], [980, 1000], [1440, 820], [1300, 480], [880, 600]],     // circo tra le stelle (Circo Intergalattico)
+    [[200, 1040], [560, 860], [1000, 1000], [1440, 860], [1360, 500], [820, 380]],     // Olimpo degli inutili (Dei Inutili)
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -103,6 +104,9 @@ const MappeStoria = (() => {
     [[100, 1140, "✦", "Biglietteria"], [430, 640, "◯", "Trapezio Orbitale"], [820, 1150, "♞", "Serraglio Alieno"], [1640, 690, "♠", "Tenda della Magia"],
      [1500, 360, "♛", "Trono della Regina"], [880, 420, "✪", "Pista Centrale"], [1660, 1110, "🛸", "Parcheggio dei Dischi"], [260, 210, "♄", "Saturno"],
      [1180, 150, "☄", "Cometa"], [560, 1080, "♫", "Banda Spaziale"]],
+    [[150, 1150, "☁", "Ingresso tra le Nuvole"], [330, 560, "☾", "Gregge che Dorme"], [700, 1110, "♨", "Montagna di Panni"], [1180, 1180, "♨", "Tavola Imbandita"],
+     [1690, 850, "✕", "Router Rotto"], [1630, 520, "≋", "Doccia Infinita"], [1180, 40, "⌛", "Orologio in Ritardo"], [300, 110, "✉", "Chat Ignorate"],
+     [820, 160, "♛", "Il Divano del Re"], [570, 520, "⚑", "Panni Stesi"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -854,6 +858,61 @@ const MappeStoria = (() => {
     for (const [x, y] of [[520, 1060], [600, 1090]]) s += `<text x="${x}" y="${y}" font-size="40" fill="#ffe08a" opacity=".8">♫</text>`;
     return s;
   }
+  function inutili(r) {
+    // l'Olimpo degli inutili: tramonto pesca e lilla, mare di nuvole, colonne con i panni stesi, pecorelle che dormono,
+    // banchetto infinito, router rotto, doccia-cascata con la paperella, orologio in ritardo e il grande divano del re
+    let s = `<defs><linearGradient id="cieloIn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a4a8a"/><stop offset=".45" stop-color="#d98aa8"/><stop offset=".8" stop-color="#ffc49a"/><stop offset="1" stop-color="#ffe2c0"/></linearGradient>
+      <radialGradient id="soleIn"><stop offset="0" stop-color="#fff4d0" stop-opacity=".95"/><stop offset=".5" stop-color="#ffd08a" stop-opacity=".4"/><stop offset="1" stop-color="#ffb070" stop-opacity="0"/></radialGradient>
+      <linearGradient id="divanoIn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a3aa8"/><stop offset="1" stop-color="#4a1a6a"/></linearGradient>
+      <linearGradient id="marmoIn" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e8dccc"/><stop offset=".5" stop-color="#fffaf0"/><stop offset="1" stop-color="#d8c8b4"/></linearGradient></defs>
+      <rect width="${W}" height="${H}" fill="url(#cieloIn)"/><circle cx="1400" cy="560" r="420" fill="url(#soleIn)"/>`;
+    // qualche stella ancora accesa in alto
+    for (let k = 0; k < 70; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * 260)}" r="${(.6 + r() * 1.4).toFixed(1)}" fill="#fff" opacity="${(.3 + r() * .5).toFixed(2)}"/>`;
+    // tempio lontano, in silhouette
+    s += `<g opacity=".35" fill="#7a5a8a"><path d="M1180,470 L1420,400 L1660,470Z"/><rect x="1190" y="470" width="460" height="14"/>${[0, 1, 2, 3, 4, 5].map(k => `<rect x="${1205 + k * 80}" y="484" width="26" height="130"/>`).join("")}<rect x="1180" y="612" width="480" height="16"/></g>`;
+    // banchi di nuvole: dietro, in mezzo, davanti
+    for (let k = 0; k < 14; k++) s += `<path d="${blob(r() * W, 540 + r() * 160, 160 + r() * 120, 50 + r() * 30, r, 16, .5)}" fill="#ffe8f0" opacity="${(.35 + r() * .25).toFixed(2)}"/>`;
+    for (let k = 0; k < 18; k++) s += `<path d="${blob(r() * W, 760 + r() * 200, 180 + r() * 140, 60 + r() * 40, r, 16, .45)}" fill="#fff4f8" opacity="${(.55 + r() * .25).toFixed(2)}"/>`;
+    for (let k = 0; k < 16; k++) s += `<path d="${blob(k / 15 * W + r() * 60, 1110 + r() * 80, 170 + r() * 90, 80 + r() * 30, r, 16, .4)}" fill="#ffffff" opacity=".92"/>`;
+    // il sentiero dorato che collega le tappe
+    const via = [[100, 1140], [200, 1040], [560, 860], [1000, 1000], [1440, 860], [1360, 500], [820, 380]];
+    s += `<path d="${curva(via)}" stroke="#ffe08a" stroke-width="38" fill="none" opacity=".25" stroke-linecap="round"/><path d="${curva(via)}" stroke="#f2c14e" stroke-width="6" stroke-dasharray="4 18" stroke-linecap="round" fill="none"/>`;
+    // colonne con i panni stesi (la lavanderia divina)
+    const colonna = (x, y, h, rotta) => `<g transform="translate(${x} ${y})"><rect x="-26" y="-12" width="52" height="14" fill="#f6ecdc"/><rect x="-18" y="${-h}" width="36" height="${h - 12}" fill="url(#marmoIn)"/>${[-9, 0, 9].map(c => `<path d="M${c},${-h} v${h - 12}" stroke="#cbb89e" stroke-width="2"/>`).join("")}${rotta ? `<path d="M-20,${-h} l12,-18 l10,12 l8,-16 l10,22Z" fill="#f6ecdc"/>` : `<rect x="-26" y="${-h - 14}" width="52" height="14" fill="#f6ecdc"/>`}</g>`;
+    s += colonna(420, 800, 230, false) + colonna(720, 800, 260, true) + colonna(1700, 1020, 200, true) + colonna(120, 900, 180, false);
+    s += `<path d="M420,590 Q570,640 720,560" stroke="#8a7a6a" stroke-width="3" fill="none"/>`;
+    for (const [x, y, c, w] of [[460, 600, "#ff7ab8", 40], [510, 612, "#4fc3ff", 34], [560, 618, "#ffe08a", 46], [618, 610, "#7dffb0", 30], [665, 590, "#ffffff", 38]]) s += `<path d="M${x},${y} h${w} l-6,${50 + (w % 3) * 6} h${-w + 12}Z" fill="${c}" stroke="#5a4a5a" stroke-width="2"/>`;
+    // montagna di panni sporchi
+    s += `<g transform="translate(700 960)">${[["#ff7ab8", -40, 0], ["#4fc3ff", 10, -6], ["#a88aff", -10, -30], ["#ffe08a", 30, -36], ["#7dffb0", -30, -52], ["#ffffff", 4, -66]].map(([c, x, y]) => `<ellipse cx="${x}" cy="${y}" rx="44" ry="20" fill="${c}" stroke="#5a4a5a" stroke-width="2"/>`).join("")}</g>`;
+    // pecorelle che dormono (nuvole del dormiveglia)
+    for (const [x, y, sc] of [[330, 640, 1], [450, 690, .8], [250, 720, .7]]) s += `<g transform="translate(${x} ${y}) scale(${sc})">${[[-22, 0], [0, -10], [22, 0], [0, 8], [-12, -4], [12, -4]].map(([a, b]) => `<circle cx="${a}" cy="${b}" r="20" fill="#ffffff" stroke="#d8c8d8" stroke-width="2"/>`).join("")}<ellipse cx="38" cy="4" rx="14" ry="11" fill="#4a3a4a"/><path d="M33,2 q5,4 10,0" stroke="#fff" stroke-width="2" fill="none"/><text x="44" y="-26" font-size="26" font-weight="900" fill="#ffffff" opacity=".85">z</text><text x="60" y="-44" font-size="18" font-weight="900" fill="#ffffff" opacity=".7">z</text></g>`;
+    // il banchetto infinito
+    s += `<g transform="translate(1180 1090)"><rect x="-200" y="-30" width="400" height="22" rx="6" fill="#9a6a3a" stroke="#5a3a1a" stroke-width="3"/><rect x="-190" y="-8" width="14" height="60" fill="#7a4a2a"/><rect x="176" y="-8" width="14" height="60" fill="#7a4a2a"/><rect x="-200" y="-36" width="400" height="10" fill="#fff4f8"/>`;
+    s += `<rect x="-170" y="-66" width="70" height="30" fill="#e0b070" stroke="#8a5a2a" stroke-width="2"/><rect x="-160" y="-92" width="70" height="26" fill="#e8c080" stroke="#8a5a2a" stroke-width="2"/><circle cx="-10" cy="-52" r="26" fill="#f2c14e" stroke="#c84a2a" stroke-width="5"/>${[[-18, -58], [-2, -46], [-6, -62]].map(([a, b]) => `<circle cx="${a}" cy="${b}" r="5" fill="#c84a2a"/>`).join("")}`;
+    s += `<path d="M60,-40 q20,-40 50,-10 q10,16 -10,20Z" fill="#c8843a"/><rect x="130" y="-80" width="26" height="44" rx="4" fill="#ffe08a" opacity=".85" stroke="#fff" stroke-width="2"/><ellipse cx="143" cy="-82" rx="15" ry="6" fill="#ffffff"/></g>`;
+    // il router rotto con il Wi-Fi che non va
+    s += `<g transform="translate(1690 720)"><rect x="-60" y="-26" width="120" height="40" rx="8" fill="#3a3a4a" stroke="#1a1a2a" stroke-width="3"/>${[-30, 0, 30].map(x => `<path d="M${x},-26 v-50" stroke="#2a2a3a" stroke-width="6" stroke-linecap="round"/>`).join("")}${[-36, -18, 0, 18, 36].map((x, k) => `<circle cx="${x}" cy="-4" r="4" fill="${k < 2 ? "#ff2e46" : "#5a5a6a"}"/>`).join("")}`;
+    for (const rr of [40, 70, 100]) s += `<path d="M${-rr * .7},${-90 - rr * .2} Q0,${-90 - rr} ${rr * .7},${-90 - rr * .2}" stroke="#4fc3ff" stroke-width="7" fill="none" opacity=".35" stroke-linecap="round"/>`;
+    s += `<path d="M-30,-150 l60,60 M30,-150 l-60,60" stroke="#ff2e46" stroke-width="10" stroke-linecap="round"/>${[[-50, -40], [60, -60]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="14" fill="#8a8a9a" opacity=".5"/>`).join("")}</g>`;
+    // la doccia-cascata di Pipposeidon, con la piscina e la paperella
+    s += `<g transform="translate(1630 260)"><path d="M0,-200 v80 q0,40 -60,40" stroke="#d8d8e8" stroke-width="12" fill="none" stroke-linecap="round"/><ellipse cx="-80" cy="-74" rx="44" ry="18" fill="#c8c8d8" stroke="#8a8a9a" stroke-width="3"/>`;
+    for (let k = 0; k < 22; k++) { const x = -118 + k * 3.6 + r() * 4; s += `<path d="M${f(x)},-60 l${f((x + 80) * .35)},${f(240 + r() * 40)}" stroke="#bfe8ff" stroke-width="3" opacity="${(.4 + r() * .4).toFixed(2)}"/>`; }
+    s += `<ellipse cx="-80" cy="200" rx="200" ry="50" fill="#6ac8ff" opacity=".8" stroke="#ffffff" stroke-width="5"/><ellipse cx="-80" cy="196" rx="150" ry="30" fill="#bfe8ff" opacity=".5"/>`;
+    s += `<g transform="translate(-10 186)"><ellipse cx="0" cy="0" rx="26" ry="16" fill="#ffd21a"/><circle cx="16" cy="-16" r="12" fill="#ffd21a"/><path d="M26,-16 l12,4 l-12,4Z" fill="#ff8a1a"/><rect x="8" y="-22" width="18" height="7" rx="3" fill="#1a1a2a"/></g></g>`;
+    // l'orologio in ritardo con la clessidra
+    s += `<g transform="translate(1180 160)"><circle r="78" fill="#fff4dc" stroke="#d8a84a" stroke-width="10"/>${Array.from({ length: 12 }, (_, k) => { const a = k / 12 * Math.PI * 2; return `<circle cx="${f(Math.sin(a) * 60)}" cy="${f(-Math.cos(a) * 60)}" r="4" fill="#8a6a2a"/>`; }).join("")}<path d="M0,0 L-30,-24 M0,0 L8,-52" stroke="#4a3a2a" stroke-width="6" stroke-linecap="round"/>`;
+    s += `<g transform="translate(110 30)"><path d="M-22,-40 h44 l-22,40 l22,40 h-44 l22,-40Z" fill="#fff8e8" stroke="#d8a84a" stroke-width="5"/><path d="M-12,-30 h24 l-12,22Z M-14,36 h28 l-14,-18Z" fill="#f2c14e"/></g></g>`;
+    // telefoni e chat ignorate che fluttuano
+    for (const [x, y, rot] of [[230, 230, -12], [360, 170, 10], [300, 330, -4]]) s += `<g transform="translate(${x} ${y}) rotate(${rot})"><rect x="-60" y="-24" width="120" height="44" rx="14" fill="#ffffff" opacity=".9"/><path d="M-40,20 l-8,16 l22,-16Z" fill="#ffffff" opacity=".9"/><rect x="-44" y="-10" width="70" height="8" rx="4" fill="#b8a8c8"/><text x="34" y="8" font-size="18" font-weight="900" fill="#3fa8ff">✓✓</text></g>`;
+    // il grande divano del re, su una nuvola tutta sua
+    s += `<path d="${blob(820, 440, 330, 80, r, 18, .3)}" fill="#ffffff"/>`;
+    s += `<g transform="translate(820 360)"><rect x="-250" y="-120" width="500" height="110" rx="40" fill="url(#divanoIn)" stroke="#f2c14e" stroke-width="6"/><rect x="-280" y="-70" width="80" height="110" rx="30" fill="#5a2a80" stroke="#f2c14e" stroke-width="6"/><rect x="200" y="-70" width="80" height="110" rx="30" fill="#5a2a80" stroke="#f2c14e" stroke-width="6"/>`;
+    s += `<rect x="-210" y="-30" width="420" height="60" rx="20" fill="#8a4ac0" stroke="#f2c14e" stroke-width="4"/><path d="M-70,-30 v60 M70,-30 v60" stroke="#5a2a80" stroke-width="4"/><rect x="-230" y="30" width="16" height="30" fill="#f2c14e"/><rect x="214" y="30" width="16" height="30" fill="#f2c14e"/>`;
+    s += `<path d="M-60,-150 L-40,-190 L-20,-160 L0,-200 L20,-160 L40,-190 L60,-150Z" fill="#f2c14e" stroke="#c8902a" stroke-width="3"/><rect x="130" y="-58" width="50" height="22" rx="6" fill="#1a1a2a"/>${[0, 1, 2].map(k => `<circle cx="${142 + k * 13}" cy="-47" r="3" fill="#ff7a7a"/>`).join("")}<ellipse cx="-150" cy="-46" rx="22" ry="12" fill="#ffffff" opacity=".85"/></g>`;
+    // cartoni di pizza e calzini spaiati sparsi tra le nuvole
+    for (let k = 0; k < 14; k++) { const x = 80 + r() * (W - 160), y = 820 + r() * 330, a = f(r() * 60 - 30); s += k % 2 ? `<rect x="${f(x)}" y="${f(y)}" width="40" height="40" fill="#e0b070" stroke="#8a5a2a" stroke-width="2" opacity=".8" transform="rotate(${a} ${f(x + 20)} ${f(y + 20)})"/>` : `<path d="M${f(x)},${f(y)} v26 q0,12 14,12 h14 v-10 h-12 v-28Z" fill="${["#ff7ab8", "#4fc3ff", "#ffe08a", "#a88aff"][k % 4]}" opacity=".85" transform="rotate(${a} ${f(x)} ${f(y)})"/>`; }
+    return s;
+  }
   function sakura(r) {
     // la valle dei kami: luna rossa, Fuji, ciliegi in fiore, torii, pagoda, dojo, lago dell'Orochi, vetta del tengu e santuario
     let s = `<defs><linearGradient id="cieloJp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#140a1e"/><stop offset=".6" stop-color="#4a1a3a"/><stop offset="1" stop-color="#b24a5a"/></linearGradient>
@@ -1020,7 +1079,7 @@ const MappeStoria = (() => {
     s += `<g transform="translate(1660 1060)"><circle r="70" fill="#0d2c4a" stroke="#d8c890" stroke-width="4"/><path d="M0,-62 L12,0 L0,62 L-12,0Z M-62,0 L0,-12 L62,0 L0,12Z" fill="#d8c890"/><text y="-74" text-anchor="middle" font-size="26" fill="#d8c890">N</text></g>`;
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, farwest, rovine, sakura, circo, specchi, treno, torre, dimensione];
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, farwest, rovine, sakura, circo, inutili, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -1048,7 +1107,7 @@ const MappeStoria = (() => {
     // colore di base e colore delle nuvole per ogni capitolo
     const NEBBIE = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
       ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"],
-      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"], ["#3a1c10", "255,214,170"], ["#1c0c08", "255,170,130"], ["#1a0a1e", "255,200,220"], ["#12082a", "220,190,255"],
+      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"], ["#3a1c10", "255,214,170"], ["#1c0c08", "255,170,130"], ["#1a0a1e", "255,200,220"], ["#12082a", "220,190,255"], ["#d98aa8", "255,240,245"],
       ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]];
     const [base, nuv] = NEBBIE[k] || NEBBIE[0];
     g.fillStyle = base; g.fillRect(0, 0, W, H);

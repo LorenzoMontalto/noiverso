@@ -25,6 +25,7 @@ const SERIE = {
   apocalisse: { nome: "Apocalisse", colore: "#e0552e", simbolo: "☣", desc: "Città in rovina, orde di infetti e un virus che non perdona: sopravvive solo chi resta in piedi fino all'ultimo." },
   giappone: { nome: "Mitologia Giapponese", colore: "#e84a7f", simbolo: "⛩", desc: "Torii rossi, ciliegi in fiore e una luna di sangue: tra samurai, kami, volpi a nove code e demoni oni, l'onore vale più della vita." },
   circo: { nome: "Circo Intergalattico", colore: "#9b4dff", simbolo: "✪", desc: "Tendoni tra le galassie, acrobati in orbita, alieni domati e un direttore col cilindro: lo spettacolo più grande dell'universo sta per cominciare." },
+  inutili: { nome: "Dei Inutili", colore: "#ffa07a", simbolo: "☁", desc: "Un Olimpo tra le nuvole dove nessuno ha voglia di fare niente: dei del divano, del ritardo, delle docce infinite e del Wi-Fi che non va. Inutili sì, ma guai a svegliarli." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -701,6 +702,37 @@ const CARTE = [
     mosse: [m("Capriola", 0, 26), m("Salto Mortale", 2, 0, { eff: { tipo: "nebbia" } }), m("Triplo Avvitamento", 5, 13, { colpi: 6 })] },
   { id: "vikyrobata", nome: "Vikyrobata", serie: "circo", rarita: "comune", stile: "FOR", ruolo: "tiratore", frase: "L'acrobata delle galassie: lancia il suo cerchio come un anello di Saturno, e lo riprende al volo senza neanche guardare.",
     mosse: [m("Cerchio Lanciato", 0, 28, { penetra: 20 }), m("Anello di Saturno", 2, 22, { eff: { tipo: "stordisci", val: 30 } }), m("Volo tra le Stelle", 5, 78, { penetra: 25 })] },
+  // ---------------- Dei Inutili ----------------
+  { id: "lollimpo", nome: "Lollimpo", serie: "inutili", rarita: "leggendaria", stile: "DIF", ruolo: "tank", frase: "Il re dell'Olimpo degli inutili: telecomando in una mano, caffè nell'altra e il cane che dorme ai suoi piedi. Non si alza dal divano da tre secoli, e non ha intenzione di farlo per te.",
+    mosse: [m("Telecomando Volante", 0, 32), m("Cinque Minuti Ancora", 2, 0, { eff: { tipo: "scudo", val: 55 } }), m("Il Divano Ti Inghiotte", 5, 94, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "vikyber", nome: "Vikyber", serie: "inutili", rarita: "leggendaria", stile: "VEL", ruolo: "imprevedibile", frase: "La regina del multitasking: telefono in mano, tazza «Wi-Fi sempre» nell'altra e dieci notifiche al secondo. Non sa mai cosa sta facendo, ma lo fa benissimo.",
+    mosse: [m("Notifica Molesta", 0, 32), m("Cento Schede Aperte", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Crash di Sistema", 5, 20, { colpi: 5 })] },
+  { id: "pipposeidon", nome: "Pipposeidon", serie: "inutili", rarita: "leggendaria", stile: "FOR", ruolo: "tiratore", frase: "Il dio delle docce infinite: tridente-soffione in mano, paperella con gli occhiali al fianco e l'acqua calda di tutta la casa già finita. Chi aspetta il bagno, aspetta per sempre.",
+    mosse: [m("Getto del Soffione", 0, 32, { penetra: 20 }), m("Acqua Gelata", 2, 26, { eff: { tipo: "stordisci", val: 35 } }), m("Doccia di Tre Ore", 5, 96, { penetra: 25 })] },
+  { id: "alicronos", nome: "Alicronos", serie: "inutili", rarita: "epica", stile: "DIF", ruolo: "stregone", frase: "La dea del ritardo e del tempo dilatato: clessidra in mano e un orologio gigante alle spalle che va sempre un'ora indietro. «Sto arrivando» vuol dire che deve ancora uscire di casa.",
+    mosse: [m("Colpo di Clessidra", 0, 30), m("Arrivo tra Cinque Minuti", 2, 24, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Tempo Dilatato", 5, 86, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "maurizap", nome: "Maurizap", serie: "inutili", rarita: "epica", stile: "FOR", ruolo: "incendiario", frase: "Il dio dei rutti e dei rumori molesti: boccale di birra in mano, nuvoletta verde intorno e un'espressione fiera. Quando apre bocca, l'Olimpo si svuota.",
+    mosse: [m("Boccale in Testa", 0, 28, { eff: { tipo: "brucia", val: 3, turni: 2 } }), m("Rutto Infuocato", 2, 26, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Concerto di Rutti", 5, 82, { eff: { tipo: "brucia", val: 5, turni: 3 } })] },
+  { id: "diegigante", nome: "Diegigante", serie: "inutili", rarita: "epica", stile: "FOR", ruolo: "capo", frase: "Il dio delle figuracce epiche: maschera della tragedia in mano e una pergamena con l'elenco delle sue imprese (cadute, messaggi al contatto sbagliato, gaffe in pubblico…). La lista è ancora aperta.",
+    mosse: [m("Gaffe", 0, 32), m("Applausi Ironici", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Figuraccia Epica", 5, 90)] },
+  { id: "samufi", nome: "Samufi", serie: "inutili", rarita: "epica", stile: "VEL", ruolo: "ladro", frase: "Il dio del Wi-Fi che non funziona: scettro con l'antenna, router fumante alle spalle e il sorriso di chi ti ha appena rubato la connessione. «Download: 1%. Tempo stimato: per sempre.»",
+    mosse: [m("Segnale Rubato", 0, 30, { eff: { tipo: "ruba", val: 1 } }), m("Lag", 2, 24, { eff: { tipo: "stordisci", val: 30 } }), m("Connessione Persa", 5, 84, { eff: { tipo: "ruba", val: 1 } })] },
+  { id: "alessietra", nome: "Alessietra", serie: "inutili", rarita: "rara", stile: "VEL", ruolo: "schivatore", frase: "La dea delle chat ignorate: occhiali sul naso, telefono in mano e cento messaggi «Visualizzato» che le girano intorno. Ti ha letto. Non ti risponderà.",
+    mosse: [m("Chiamata Rifiutata", 0, 28), m("Visualizzato", 2, 0, { eff: { tipo: "nebbia" } }), m("Doppia Spunta Blu", 5, 82)] },
+  { id: "simondo", nome: "Simondo", serie: "inutili", rarita: "rara", stile: "DIF", ruolo: "guaritore", frase: "Il dio del cibo e delle abbuffate: bicchiere in una mano, panino nell'altra e una tavola apparecchiata che non finisce mai. Combatte solo tra un pasto e l'altro, cioè mai.",
+    mosse: [m("Morso di Panino", 0, 26), m("Abbuffata", 2, 0, { eff: { tipo: "cura", val: 32 } }), m("Indigestione", 5, 80, { eff: { tipo: "indebolisci", val: 25, turni: 2 } })] },
+  { id: "giulimbuto", nome: "Giulimbuto", serie: "inutili", rarita: "rara", stile: "VEL", ruolo: "stregone", frase: "La dea delle cose che spariscono: chiavi, cuffie, telecomandi e calzini vorticano intorno al suo scettro a spirale. Se non trovi qualcosa, chiedi a lei. Non te lo ridarà.",
+    mosse: [m("Dov'è Finito?", 0, 28), m("Sparito nel Nulla", 2, 22, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Vortice del Limbo", 5, 13, { colpi: 6 })] },
+  { id: "tizifone", nome: "Tizifone", serie: "inutili", rarita: "rara", stile: "DIF", ruolo: "difensore", frase: "Il dio delle scuse improbabili: una pergamena lunghissima in mano («Era tardi», «Mi scadeva il telefono», «Domani vado»…). Qualunque cosa succeda, non è mai colpa sua.",
+    mosse: [m("Rotolo di Scuse", 0, 28), m("Non Ho Sentito", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("È Colpa del Wi-Fi", 5, 80)] },
+  { id: "auroronfla", nome: "Auroronfla", serie: "inutili", rarita: "comune", stile: "DIF", ruolo: "stratega", frase: "La dea del sonno eterno: appoggiata a una pecorella che dorme, luna sullo sfondo e mezzo sbadiglio già pronto. Si sveglia solo per dire «altri cinque minuti».",
+    mosse: [m("Cuscinata", 0, 26), m("Pisolino", 0, 0, { eff: { tipo: "energia", val: 3 } }), m("Sonno Eterno", 5, 76, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "ludosbadiglio", nome: "Ludosbadiglio", serie: "inutili", rarita: "comune", stile: "FOR", ruolo: "tank", frase: "Il dio dello sbadiglio perenne: cuscino sotto il braccio, scettro con la luna che dorme e la bocca sempre spalancata. Ti guarda e sbadiglia. Tu lo guardi e sbadigli anche tu.",
+    mosse: [m("Stiracchiata", 0, 26), m("Sbadiglio Contagioso", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Letargo", 5, 76)] },
+  { id: "ricaos", nome: "Ricaos", serie: "inutili", rarita: "comune", stile: "FOR", ruolo: "assassino", frase: "La dea del caos domestico: scopa in una mano, cesto di panni stropicciati nell'altra e una casa intorno che sembra passata sotto un uragano. Sorride: per lei è tutto in ordine.",
+    mosse: [m("Colpo di Scopa", 0, 28), m("Cesto dei Panni", 2, 22, { eff: { tipo: "stordisci", val: 30 } }), m("Caos Totale", 5, 13, { colpi: 6 })] },
+  { id: "senevolta", nome: "Senevolta", serie: "inutili", rarita: "comune", stile: "VEL", ruolo: "picchiatore", frase: "La dea delle lamentele e dei drammi: mano sulla guancia, fazzoletti ovunque e la lista dei lamenti del giorno sempre aggiornata («troppo stress», «non è giusto», «uffa!»). Più si lamenta, più picchia.",
+    mosse: [m("Sospiro", 0, 26), m("Che Dramma!", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Lamentela Infinita", 5, 78)] },
 ];
 
 
@@ -771,6 +803,9 @@ const PERSONE = {
   // Circo Intergalattico
   simoonauta: "Simone", aliena: "Alice", mauriziano: "Maurizio", lollovni: "Lorenzo", samufo: "Samuele", senebula: "Senè", alessiastro: "Alessia",
   aurorbit: "Aurora", ludovolo: "Ludovico", diegolo: "Diego", pipstronauta: "Pips", giullia: "Giulia", tiziclown: "Tiziano", ritacrobata: "Rita", vikyrobata: "Viky",
+  // Dei Inutili
+  lollimpo: "Lorenzo", vikyber: "Viky", pipposeidon: "Pips", alicronos: "Alice", maurizap: "Maurizio", diegigante: "Diego", samufi: "Samuele",
+  alessietra: "Alessia", simondo: "Simone", giulimbuto: "Giulia", tizifone: "Tiziano", auroronfla: "Aurora", ludosbadiglio: "Ludovico", ricaos: "Rita", senevolta: "Senè",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -785,7 +820,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // (ma conviene darla prima a chi ne ha meno: lo mostra il riquadro «Versioni Ultra» nel pannello admin).
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta", "lollimpo"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, ruolo: c.ruolo, persona: c.persona, ultra: c.ultra, mosse: c.mosse.map(m => m.nome) }]));
 function applicaConfigCarte(cfg) {
@@ -882,6 +917,8 @@ function impronta(id) {
 // Bilanciamento per carta (nov 2026): un piccolo correttivo a PV, attacco e difesa, calcolato con migliaia di partite simulate,
 // perché ogni carta valga quanto le altre della sua rarità (le mosse e i ruoli non sono tutti uguali). 1 = nessuna correzione.
 const BILANCIO = {
+  // Dei Inutili (nov 2026), dalle simulazioni
+  lollimpo: 0.985, vikyber: 1.04, pipposeidon: 1.02, alicronos: 1.135, maurizap: 0.95, diegigante: 0.945, alessietra: 0.985, simondo: 0.955, giulimbuto: 1.085, tizifone: 1.02, auroronfla: 1.04, ludosbadiglio: 1.045, ricaos: 1.01, senevolta: 1.035,
   // Circo Intergalattico (nov 2026), dalle simulazioni
   simoonauta: 1.02, aliena: 1.12, mauriziano: 0.96, senebula: 0.94, alessiastro: 0.98, aurorbit: 0.97, ludovolo: 1.05, diegolo: 0.96, tiziclown: 1.05, vikyrobata: 0.97,
   // Mitologia Giapponese (nov 2026), dalle simulazioni

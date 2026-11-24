@@ -416,7 +416,25 @@ const STORIA = [
       { titolo: "La regina degli alieni", nemici: ["aliena", "lollovni", "senebula", "alessiastro", "mauriziano"], liv: [1, 1], abilita: 0.95, monete: 360,
         parla: "aliena", frase: "Tutti questi alieni lavorano per me. E da stasera, anche tu." },
       { titolo: "Il gran finale", boss: true, nemici: ["simoonauta", "aliena", "mauriziano", "lollovni", "samufo"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
-        parla: "simoonauta", frase: "Tre, due, uno… accensione! Sono l'uomo cannone del circo, e il prossimo bersaglio sei tu.", vittoria: "Il pubblico alieno si alza in piedi e il tendone trema di applausi: il gran finale è tuo. Simoonauta ti stringe la mano con il guanto della tuta e ti lascia il premio dello spettacolo: un mappamondo di vetro che non riflette le stelle… ma mondi diversi." }
+        parla: "simoonauta", frase: "Tre, due, uno… accensione! Sono l'uomo cannone del circo, e il prossimo bersaglio sei tu.", vittoria: "Il pubblico alieno si alza in piedi e il tendone trema di applausi: il gran finale è tuo. Simoonauta ti stringe la mano con il guanto della tuta e ti lascia il premio dello spettacolo: un telecomando d'oro con un solo tasto, «OLIMPO». Lo premi, ovviamente." }
+    ],
+  },
+  {
+    id: "c28", campo: "pioggia", titolo: "L'Olimpo degli inutili", serie: "inutili", colore: "#ffa07a", simbolo: "☁",
+    intro: "Il telecomando d'oro ti spedisce su una nuvola, tra colonne di marmo, panni da stendere e cartoni di pizza. È l'Olimpo degli Dei Inutili: i tuoi amici sono diventati divinità del niente e non hanno nessuna voglia di essere disturbati. Per tornare indietro devi arrivare fino al divano del loro re.",
+    tappe: [
+      { titolo: "Le nuvole del dormiveglia", nemici: ["auroronfla", "ludosbadiglio", "senevolta", "ricaos", "tizifone"], liv: [1, 1], abilita: 0.9, monete: 320,
+        parla: "auroronfla", frase: "Shh… qui si dorme. Se proprio vuoi passare, fallo senza fare rumore. Anzi, non farlo proprio." },
+      { titolo: "La lavanderia divina", nemici: ["ricaos", "senevolta", "giulimbuto", "ludosbadiglio", "simondo"], liv: [1, 1], abilita: 0.92, monete: 330,
+        parla: "ricaos", frase: "Non pestare quella pila di panni: sono puliti. O sporchi, non me lo ricordo più." },
+      { titolo: "Il banchetto infinito", nemici: ["simondo", "maurizap", "diegigante", "tizifone", "alessietra"], liv: [1, 1], abilita: 0.93, monete: 340, bustina: "epica",
+        parla: "simondo", frase: "Hai interrotto il mio quarto pranzo. Il quinto lo faccio dopo averti battuto." },
+      { titolo: "La sala del Wi-Fi", nemici: ["samufi", "alessietra", "giulimbuto", "alicronos", "maurizap"], liv: [1, 1], abilita: 0.94, monete: 350,
+        parla: "samufi", frase: "Vuoi la password del Wi-Fi? Battimi. Tanto non funziona lo stesso." },
+      { titolo: "Le terme di Pipposeidon", nemici: ["pipposeidon", "vikyber", "alicronos", "diegigante", "samufi"], liv: [1, 1], abilita: 0.95, monete: 360,
+        parla: "pipposeidon", frase: "Sono sotto la doccia da tre ore e ne ho ancora per due. Tu aspetti fuori, come tutti." },
+      { titolo: "Il divano dell'Olimpo", boss: true, nemici: ["lollimpo", "pipposeidon", "vikyber", "maurizap", "diegigante"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
+        parla: "lollimpo", frase: "Ero così comodo… Va bene, combatto. Ma dal divano: alzarmi non è previsto.", vittoria: "Lollimpo sbadiglia, si gira dall'altra parte e ti lancia il telecomando: «Hai vinto, ora lasciami dormire». Sotto un cuscino del divano, tra briciole e monetine, trovi un mappamondo di vetro che non riflette le nuvole… ma mondi diversi." }
     ],
   },
   {

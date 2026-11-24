@@ -83,6 +83,8 @@ const SINERGIE_BASE = {
   giappone: { tipo: "onore", v2: 5, v3: 7, v5: 9, testo: v => `spirito del Bushidō: per ogni compagno di squadra già KO fanno +${v}% di danni (fino a 4 compagni)` },
   // Circo Intergalattico: il gran finale. Le loro mosse finali (5 energia) fanno +v% di danni.
   circo: { tipo: "finale", v2: 10, v3: 14, v5: 24, testo: v => `gran finale: le loro mosse da 5 energia fanno +${v}% di danni` },
+  // Dei Inutili: fortuna sfacciata. Quando un colpo li manderebbe KO, v% di probabilità di restare in piedi con 1 PV (al massimo una volta per turno).
+  inutili: { tipo: "miracolo", v2: 10, v3: 22, v5: 32, testo: v => `fortuna sfacciata: quando un colpo li manderebbe KO hanno ${_il(v)} di probabilità di restare in piedi con 1 PV (al massimo una volta per turno)` },
   mestieri: { tipo: "vel",      v2: 6, v3: 18, v5: 37, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -199,6 +201,7 @@ class Battaglia {
         else if (s.tipo === "sopravvivenza") x.sin.sopravvive = s.val;
         else if (s.tipo === "onore") x.sin.onore = s.val;
         else if (s.tipo === "finale") x.sin.finale = s.val;
+        else if (s.tipo === "miracolo") x.sin.miracolo = s.val;
         else if (s.tipo === "duello") { x.sin.duello = s.val; x.pronta = true; }
         else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
@@ -523,7 +526,14 @@ class Battaglia {
 
   // Creature mistiche: alla prima caduta si rialzano (non conta come cura: niente tempio né sirene)
   _rialza(l, x) {
-    if (x.pv > 0 || !x.sin || !x.sin.rinascita || x.rialzato) return;
+    if (x.pv > 0 || !x.sin) return;
+    // Dei Inutili: per pura fortuna restano in piedi con 1 PV (una volta per turno al massimo)
+    if (x.sin.miracolo && x.miracoloTurno !== this.turno && this.rng() < x.sin.miracolo / 100) {
+      x.miracoloTurno = this.turno; x.pv = 1;
+      this._log(`Per pura fortuna ${x.c.nome} resta in piedi con 1 PV!`, { lato: l, cura: l, quanto: 1 });
+      return;
+    }
+    if (!x.sin.rinascita || x.rialzato) return;
     x.rialzato = true;
     if (this.rng() >= x.sin.rinascita / 100) return;
     x.pv = Math.max(1, Math.round(x.pvMax * .2));
