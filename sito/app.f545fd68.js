@@ -1816,10 +1816,10 @@ function vistaClassifica() {
     ${htmlAlbo()}
     ${Torneo.htmlTabellone()}
     <table class="classifica">
-      <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vinte / giocate</th><th>Carte</th><th>Pass</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
+      <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vinte / giocate</th><th>Carte</th><th>Livello</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
       <tbody>${classificaDati.map((r, i) => `
-        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${r.id !== Archivio.uid && Online.eOnline(r.id) ? `<span class="pallino-online" title="Online adesso"></span>` : ""}${Number(r.livello) > 0 ? Livello.badge(Number(r.livello), "mini") : ""}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
-        <td>${Number(r.punti) || 0}</td><td>${Number(r.vinte_vivo) || 0}/${Number(r.giocate_vivo) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>Lv ${Number(r.pass) || 0}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<span class="sfida-celle"><button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>${Online.eOnline(r.id) ? `<button class="btn piccolo primario" data-fx="spinta" data-sfida-vivo="${esc(r.id)}">Dal vivo</button>` : ""}</span>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
+        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi">${htmlAvatar(String(r.avatar || ""), "mini")}${r.id !== Archivio.uid && Online.eOnline(r.id) ? `<span class="pallino-online" title="Online adesso"></span>` : ""}${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
+        <td>${Number(r.punti) || 0}</td><td>${Number(r.vinte_vivo) || 0}/${Number(r.giocate_vivo) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>${Number(r.livello) > 0 ? Livello.badge(Number(r.livello), "mini") : "–"}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<span class="sfida-celle"><button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>${Online.eOnline(r.id) ? `<button class="btn piccolo primario" data-fx="spinta" data-sfida-vivo="${esc(r.id)}">Dal vivo</button>` : ""}</span>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
     </table>
   </section>`;
 }
@@ -1998,7 +1998,8 @@ function apriProfilo() {
   apriModale(`
     <div class="profilo-modale">
       <div class="profilo-testa">${htmlAvatar(S.profilo.avatar, "grande")}<div><small>${tipo}</small><h2>${esc(S.profilo.nome || "Giocatore")}</h2>
-        <span class="nota">${S.admin ? "Monete infinite · tutte le carte · fuori classifica" : `${S.stats.vittorie} vittorie · ${possedute().length}/${CARTE.length} carte · pass Lv ${livelloPass()}`}</span></div></div>
+        <span class="nota">${S.admin ? "Monete infinite · tutte le carte · fuori classifica" : `${S.stats.vittorie} vittorie · ${possedute().length}/${CARTE.length} carte · pass Lv ${livelloPass()}`}</span>
+        ${!S.admin && S.lv ? `<button class="btn piccolo lv-profilo" data-azione="livello-pagina">${Livello.badge(Livello.info().liv, "mini")} Livello giocatore ${Livello.info().liv} · vedi livelli e premi${Livello.daRiscuotere().length ? ` (${Livello.daRiscuotere().length} da riscuotere)` : ""}</button>` : ""}</div></div>
       <details class="profilo-modifica" ${!S.profilo.avatar && possedute().length ? "open" : ""}>
         <summary>${S.profilo.avatar ? "Cambia nome e avatar" : "Scegli il tuo avatar"}</summary>
         <form id="form-modifica">
@@ -3408,6 +3409,7 @@ document.addEventListener("click", e => {
     case "vai-pass": vai("pass"); break;
     case "livello-riscuoti": Livello.riscuoti(t); break;
     case "livello-info": Livello.apriInfo(); break;
+    case "livello-pagina": Livello.apriLivelli(); break;
     case "vai-negozio": vai("negozio"); break;
     case "vai-amici": Amici.apriElenco(); break;
     case "graffiti-collezione": Graffiti.apriCollezione(); break;

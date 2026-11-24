@@ -85,6 +85,7 @@ const Livello = (() => {
     daiPremio(tot);
     S.lv = Object.assign({}, S.lv, { riscossi: S.lv.riscossi.concat(lista) });
     salva(); aggiornaTesta(); Trofei.controlla(); disegna();
+    if (document.querySelector(".lv-pagina")) apriLivelli();
     if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 70, forma: "stella", colori: ["#9ad8ff", "#f2c14e", "#ffffff"], velocita: 8, dimensione: 6 }); }
     const titoli = lista.filter(L => TITOLI[L]).map(L => `«${TITOLI[L]}»`);
     mostraAvviso(`Livello giocatore: ${testoPremio(tot)}${titoli.length ? `. Nuovi titoli nei trofei: ${titoli.join(", ")}` : ""}!`);
@@ -123,8 +124,34 @@ const Livello = (() => {
         <div class="xp"><div class="xp-barra lg-barra"><i style="--p:${i.max ? 100 : i.dentro / i.serve * 100}%"></i></div>
           <small>${i.max ? "Livello massimo raggiunto (per ora)!" : `${i.dentro} / ${i.serve} ✦ al livello ${prossimo} · premio: ${esc(testoPremioLv(prossimo))}`}</small></div></div>
       <div class="lg-azioni">${r.length ? `<button class="btn oro" data-fx="coriandoli" data-azione="livello-riscuoti">Riscuoti ${r.length === 1 ? "il premio" : `${r.length} premi`}</button>` : ""}
-        <button class="btn piccolo" data-azione="livello-info">Come si sale</button></div>
+        <button class="btn piccolo" data-azione="livello-pagina">Tutti i livelli e premi</button></div>
     </section>`;
+  }
+  // Tutti i livelli in una pagina: premi già presi, da riscuotere, il livello attuale e quelli futuri
+  function apriLivelli() {
+    if (!S.lv) controlla();
+    const i = info(), r = daRiscuotere();
+    const icona = L => { const p = premio(L); return p.bustine && p.bustine.ultra ? "🌟" : p.bustine && p.bustine.leggendaria ? "👑" : p.bustine && p.bustine.epica ? "🎁" : "🪙"; };
+    const tessere = Array.from({ length: MAX }, (_, k) => {
+      const L = k + 1, preso = S.lv.riscossi.includes(L), raggiunto = L <= i.liv, attuale = L === i.liv;
+      if (L === 1) return `<div class="lvt preso inizio"><span class="lvt-num">${badge(1)}</span><span class="lvt-premio">Inizio</span></div>`;
+      const stato = preso ? "preso" : raggiunto ? "pronto" : "futuro";
+      const mancano = raggiunto ? 0 : totaleA(L) - i.punti;
+      return `<div class="lvt ${stato}${attuale ? " attuale" : ""}${TITOLI[L] ? " titolo" : ""}${premio(L).bustine ? " grande" : ""}" id="lvt-${L}">
+        <span class="lvt-num">${badge(L)}</span>
+        <span class="lvt-ico" aria-hidden="true">${icona(L)}</span>
+        <span class="lvt-premio">${esc(testoPremio(premio(L)))}${TITOLI[L] ? `<b class="lvt-titolo">Titolo «${esc(TITOLI[L])}»</b>` : ""}</span>
+        <span class="lvt-stato">${preso ? "Riscosso ✓" : raggiunto ? "Da riscuotere" : `mancano ${mancano.toLocaleString("it-IT")} ✦`}</span>
+      </div>`;
+    }).join("");
+    apriModale(`<div class="lv-pagina">
+      <div class="lv-testa">${badge(i.liv, "grande")}<div><span class="codice-tag">Livello giocatore</span><h2>Livello ${i.liv}${i.max ? " · massimo" : ""}</h2>
+        <div class="xp"><div class="xp-barra lg-barra"><i style="--p:${i.max ? 100 : i.dentro / i.serve * 100}%"></i></div>
+        <small>${i.max ? "Hai raggiunto il livello più alto (per ora)." : `${i.dentro} / ${i.serve} ✦ al livello ${i.liv + 1}`} · ${i.punti.toLocaleString("it-IT")} ✦ in tutto</small></div></div></div>
+      <div class="azioni">${r.length ? `<button class="btn oro" data-fx="coriandoli" data-azione="livello-riscuoti">Riscuoti ${r.length === 1 ? "il premio" : `${r.length} premi`}</button>` : ""}<button class="btn" data-azione="livello-info">Come si sale</button><button class="btn" data-azione="chiudi">Chiudi</button></div>
+      <div class="lv-griglia">${tessere}</div>
+    </div>`);
+    setTimeout(() => { const el = document.getElementById(`lvt-${Math.min(MAX, i.liv + 1)}`); if (el) el.scrollIntoView({ block: "center", behavior: "smooth" }); }, 150);
   }
   function apriInfo() {
     const i = info();
@@ -136,9 +163,9 @@ const Livello = (() => {
       <h3>Premi</h3>
       <p class="nota">Ogni livello: monete (50 + 10 × il livello). Ogni 5 livelli anche una bustina epica, ogni 10 una leggendaria e un titolo, al 25 e al 50 una Bustina Ultra.</p>
       <ul class="lg-premi">${prossimi.map(L => `<li class="${L <= i.liv ? (S.lv.riscossi.includes(L) ? "preso" : "pronto") : ""}">${badge(L)} ${esc(testoPremioLv(L))}${L <= i.liv && !S.lv.riscossi.includes(L) ? " · <b>da riscuotere</b>" : L <= i.liv ? " ✓" : ""}</li>`).join("")}</ul>
-      <div class="azioni centro"><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
+      <div class="azioni centro"><button class="btn" data-azione="livello-pagina">Tutti i livelli e premi</button><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }
-  return { MAX, TITOLI, PUNTI, info, controlla, guadagna, riscuoti, daRiscuotere, fineBattaglia, carteNuove, htmlStrada, apriInfo, badge, totaleA };
+  return { apriLivelli, MAX, TITOLI, PUNTI, info, controlla, guadagna, riscuoti, daRiscuotere, fineBattaglia, carteNuove, htmlStrada, apriInfo, badge, totaleA };
 })();
 
 // ---------------- Sfide del pass ----------------

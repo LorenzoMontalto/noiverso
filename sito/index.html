@@ -1906,6 +1906,21 @@ body.in-accesso { overflow: hidden; }
 .sp-barra { grid-column: 1 / -1; height: 6px; border-radius: 4px; background: var(--notte); overflow: hidden; } .sp-barra i { display: block; height: 100%; width: var(--p); background: linear-gradient(90deg, #f2c14e, #ffe9a8); }
 .sp-lista li.fatta .sp-barra i { background: #5adc8c; }
 .sp-lista small { grid-column: 1 / -1; color: var(--spento); font-size: .72rem; }
+
+.lv-pagina { max-width: 880px; }
+.lv-testa { display: flex; gap: 14px; align-items: center; margin-bottom: 10px; } .lv-testa h2 { margin: 2px 0 6px; } .lv-testa > div { flex: 1; }
+.lv-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 8px; max-height: 58vh; overflow-y: auto; padding: 4px; margin-top: 10px; }
+.lvt { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto auto; gap: 2px 8px; align-items: center; background: var(--muro); border: 1px solid var(--linea); border-radius: 12px; padding: 8px 10px; position: relative; }
+.lvt-num { grid-row: 1; } .lvt-ico { grid-row: 1; justify-self: end; font-size: 1.15rem; }
+.lvt-premio { grid-column: 1 / -1; font-size: .82rem; font-weight: 700; line-height: 1.25; }
+.lvt-titolo { display: block; color: #ffe9a8; font-size: .74rem; }
+.lvt-stato { grid-column: 1 / -1; font-size: .7rem; color: var(--spento); }
+.lvt.preso { opacity: .55; } .lvt.preso .lvt-stato { color: #5adc8c; }
+.lvt.pronto { border-color: var(--oro); box-shadow: 0 0 14px rgba(242, 193, 78, .35); } .lvt.pronto .lvt-stato { color: var(--oro); font-weight: 800; }
+.lvt.attuale { outline: 2px solid #6fb8ff; outline-offset: 2px; } .lvt.attuale::after { content: "Sei qui"; position: absolute; top: -9px; right: 8px; font-size: .62rem; font-weight: 800; background: #6fb8ff; color: #0b1420; padding: 1px 6px; border-radius: 6px; }
+.lvt.futuro { background: rgba(255, 255, 255, .02); }
+.lvt.grande .lvt-premio { color: #bfe8ff; } .lvt.titolo { border-style: dashed; border-color: rgba(255, 233, 168, .6); }
+.lv-profilo { margin-top: 8px; }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.8816af04.js"></script>
@@ -1964,8 +1979,8 @@ body.in-accesso { overflow: hidden; }
 <script src="online.5ed82701.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
 <script src="eventi.61c26832.js"></script>
-<script src="progressi.31386aa2.js"></script>
-<script src="app.7ea1d43b.js"></script>
+<script src="progressi.fef439f5.js"></script>
+<script src="app.f545fd68.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
