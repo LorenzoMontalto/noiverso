@@ -362,7 +362,25 @@ const STORIA = [
       { titolo: "La rapina al treno", nemici: ["alessoutlaw", "mauribandit", "lollawless", "auroraider", "ludobunty"], liv: [1, 1], abilita: 0.95, monete: 360,
         parla: "mauribandit", frase: "La miccia è accesa e il treno sta arrivando. Tu sei proprio in mezzo ai binari." },
       { titolo: "Mezzogiorno di fuoco", boss: true, nemici: ["seneloon", "giuvlass", "ludobunty", "simarshal", "alicolt"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
-        parla: "seneloon", frase: "Questo è il mio saloon e la mia città, straniero. Qui si beve, si balla e, a mezzogiorno, si spara.", vittoria: "Il fumo si dirada e la città intera ti applaude: da oggi lo sceriffo sei tu. Seneloon ti lascia la ricompensa sul bancone: un mappamondo di vetro, che non riflette il deserto… ma mondi diversi." }
+        parla: "seneloon", frase: "Questo è il mio saloon e la mia città, straniero. Qui si beve, si balla e, a mezzogiorno, si spara.", vittoria: "Il fumo si dirada e la città intera ti applaude: da oggi lo sceriffo sei tu. Seneloon ti lascia la ricompensa sul bancone: una vecchia radio. La accendi e, tra i fruscii, una voce chiede aiuto: «Qui zona rossa… c'è ancora qualcuno vivo?»" }
+    ],
+  },
+  {
+    id: "c25", campo: "notte", titolo: "La zona rossa", serie: "apocalisse", colore: "#e0552e", simbolo: "☣",
+    intro: "Segui la voce della radio fino a una città in rovina, recintata dai cartelli di quarantena. Il virus ha trasformato quasi tutti: i pochi sopravvissuti sono i tuoi amici, armati fino ai denti e convinti che l'infetto sia tu.",
+    tappe: [
+      { titolo: "Il posto di blocco", nemici: ["senemune", "giulimort", "ludovirus", "samudead", "auroravive"], liv: [1, 1], abilita: 0.9, monete: 320,
+        parla: "senemune", frase: "Fermo lì! Prima il controllo: se sei infetto, qui non entri. Se non lo sei… non entri lo stesso." },
+      { titolo: "L'ospedale abbandonato", nemici: ["auroravive", "alizombie", "senemune", "simopter", "giulimort"], liv: [1, 1], abilita: 0.92, monete: 330,
+        parla: "auroravive", frase: "Le medicine sono finite da un pezzo. Però le bende ce le ho ancora: ti serviranno." },
+      { titolo: "L'orda", nemici: ["alizombie", "maurizomb", "lollivor", "samudead", "ludovirus"], liv: [1, 1], abilita: 0.93, monete: 340, bustina: "epica",
+        parla: "alizombie", frase: "Ho solo un graffietto, giuro. Però adesso che ti guardo… hai un'aria così appetitosa." },
+      { titolo: "La torre radio", nemici: ["alesshack", "simopter", "vikydead", "tizianator", "lollivor"], liv: [1, 1], abilita: 0.94, monete: 350,
+        parla: "alesshack", frase: "La voce alla radio? Ero io. Avevo bisogno di qualcuno che facesse da esca all'orda." },
+      { titolo: "Il laboratorio", nemici: ["pipscience", "alesshack", "tizianator", "maurizomb", "vikydead"], liv: [1, 1], abilita: 0.95, monete: 360,
+        parla: "pipscience", frase: "Questa provetta può salvare il mondo. O finirlo. Facciamo una prova su di te?" },
+      { titolo: "L'ultimo rifugio", boss: true, nemici: ["dieghunter", "ritageddon", "pipscience", "vikydead", "maurizomb"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
+        parla: "dieghunter", frase: "Ho contato ogni infetto che ho abbattuto. Tu saresti il numero mille: un bel numero tondo.", vittoria: "Dieghunter abbassa la balestra: non sei infetto, sei solo ostinato. All'alba arriva l'elicottero e, tra le scorte del rifugio, trovi un mappamondo di vetro che non riflette la città in rovina… ma mondi diversi." }
     ],
   },
   {

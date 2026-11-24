@@ -75,6 +75,8 @@ const SINERGIE_BASE = {
   paesi: { tipo: "ospitalita", v2: 14, v3: 27, v5: 45, testo: v => `quando entrano in campo recuperano ${_il(v)} dei PV massimi (benvenuti a casa!)` },
   // Far West: estrazione rapida. La prima mossa d'attacco dopo essere entrate in campo fa +v% di danni (tutti i colpi di quella mossa).
   farwest: { tipo: "duello", v2: 15, v3: 26, v5: 34, testo: v => `estrazione rapida: la prima mossa d'attacco dopo che entrano in campo fa +${v}% di danni` },
+  // Apocalisse: istinto di sopravvivenza. Sotto il 35% dei PV subiscono v% di danni in meno.
+  apocalisse: { tipo: "sopravvivenza", v2: 25, v3: 44, v5: 48, testo: v => `istinto di sopravvivenza: quando hanno meno del 35% dei PV subiscono ${_il(v)} di danni in meno` },
   mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -183,6 +185,7 @@ class Battaglia {
         else if (s.tipo === "rinascita") x.sin.rinascita = s.val;
         else if (s.tipo === "fortuna") x.sin.fortuna = s.val;
         else if (s.tipo === "ospitalita") x.sin.ospitalita = s.val;
+        else if (s.tipo === "sopravvivenza") x.sin.sopravvive = s.val;
         else if (s.tipo === "duello") { x.sin.duello = s.val; x.pronta = true; }
         else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
@@ -313,6 +316,7 @@ class Battaglia {
     if (d.dannoDa) dmg *= d.dannoDa(a);
     if (a.furia && a.pv < a.pvMax * .5) dmg *= 1 + a.furia / 100;
     if (d.c.ruolo === "tank") dmg *= 0.9;
+    if (d.sin && d.sin.sopravvive && d.pv < d.pvMax * .35) dmg *= 1 - d.sin.sopravvive / 100;   // sinergia Apocalisse
     if (a.pronta && a.sin && a.sin.duello) dmg *= 1 + a.sin.duello / 100;   // sinergia Far West: estrazione rapida
     if (d.carica) dmg *= 0.7;
     return { danno: Math.max(1, Math.round(dmg)), crit, stile, parato };

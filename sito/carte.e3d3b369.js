@@ -22,6 +22,7 @@ const SERIE = {
   carte: { nome: "Carte da Gioco", colore: "#e8b04a", simbolo: "♣", desc: "Re, cavalli, fanti e assi delle carte napoletane: coppe, denari, spade e bastoni scendono dal mazzo e si siedono al tavolo." },
   paesi: { nome: "Paesi del Mondo", colore: "#4fb87a", simbolo: "✈", desc: "Bandiere, costumi e monumenti: i tuoi amici fanno il giro del mondo, un paese a testa." },
   farwest: { nome: "Far West", colore: "#d9893b", simbolo: "✶", desc: "Saloon, sceriffi e fuorilegge: al tramonto, nel deserto, vince chi estrae per primo." },
+  apocalisse: { nome: "Apocalisse", colore: "#e0552e", simbolo: "☣", desc: "Città in rovina, orde di infetti e un virus che non perdona: sopravvive solo chi resta in piedi fino all'ultimo." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -604,6 +605,37 @@ const CARTE = [
     mosse: [m("Manette", 0, 26), m("Distintivo", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("In Nome della Legge", 5, 78)] },
   { id: "vikylasso", nome: "Vikylasso", serie: "farwest", rarita: "comune", stile: "FOR", ruolo: "stratega", frase: "Cowgirl dal sorriso dolce e dal lazo infallibile: il bestiame lo prende al primo lancio. E tu non sei più veloce di un vitello.",
     mosse: [m("Frustata di Lazo", 0, 26), m("Giro di Lazo", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Lazo Stretto", 5, 76, { eff: { tipo: "stordisci", val: 40 } })] },
+  // ---------------- Apocalisse ----------------
+  { id: "dieghunter", nome: "Dieghunter", serie: "apocalisse", rarita: "leggendaria", stile: "VEL", ruolo: "tiratore", frase: "Cacciatore di infetti: balestra in spalla, cartucce sul petto e un graffio sulla guancia. Gli infetti li conta a tacche, e ha finito il posto.",
+    mosse: [m("Dardo di Balestra", 0, 34, { penetra: 20 }), m("Trappola", 2, 28, { eff: { tipo: "stordisci", val: 40 } }), m("Caccia Grossa", 5, 24, { colpi: 4 })] },
+  { id: "pipscience", nome: "Pipscience", serie: "apocalisse", rarita: "leggendaria", stile: "DIF", ruolo: "stregone", frase: "Lo scienziato che forse ha creato il virus, forse la cura. Tiene in mano una provetta verde e non ti dice quale delle due.",
+    mosse: [m("Provetta Verde", 0, 32, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Siero Sperimentale", 2, 26, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Paziente Zero", 5, 94, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "ritageddon", nome: "Ritageddon", serie: "apocalisse", rarita: "leggendaria", stile: "FOR", ruolo: "picchiatore", frase: "Il mondo è finito e lei ride lo stesso. Corona di filo spinato, balestra in mano: l'Armageddon è arrivato, e ha il suo sorriso.",
+    mosse: [m("Calcio di Balestra", 0, 34), m("Raffica di Dardi", 2, 14, { colpi: 3 }), m("Armageddon", 5, 98)] },
+  { id: "alesshack", nome: "Alesshack", serie: "apocalisse", rarita: "epica", stile: "VEL", ruolo: "ladro", frase: "Nel bunker, tra schermi e mappe del contagio, è l'unica che sa ancora dove sono le scorte. E come prendersi le tue.",
+    mosse: [m("Intrusione", 0, 30, { eff: { tipo: "ruba", val: 1 } }), m("Blackout", 2, 28, { eff: { tipo: "stordisci", val: 40 } }), m("Virus nel Sistema", 5, 88, { eff: { tipo: "ruba", val: 1 } })] },
+  { id: "maurizomb", nome: "Maurizomb", serie: "apocalisse", rarita: "epica", stile: "DIF", ruolo: "tank", frase: "Corazza fatta a mano, mazza da demolizione in spalla e lo sguardo di chi ha già abbattuto mezza orda. L'altra metà sta arrivando.",
+    mosse: [m("Mazzata", 0, 32), m("Pelle Dura", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Terremoto di Mazza", 5, 90)] },
+  { id: "tizianator", nome: "Tizianator", serie: "apocalisse", rarita: "epica", stile: "FOR", ruolo: "incendiario", frase: "Lo sterminatore della zona rossa: giubbotto tattico, teschio sul braccio e un lanciafiamme. Dove passa lui, gli infetti non tornano.",
+    mosse: [m("Fiammata", 0, 30, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Lanciafiamme", 2, 28, { eff: { tipo: "brucia", val: 5, turni: 2 } }), m("Sterminio", 5, 86, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  { id: "vikydead", nome: "Vikydead", serie: "apocalisse", rarita: "epica", stile: "VEL", ruolo: "tiratore", frase: "Cappuccio, maschera antigas al collo e un fucile in spalla. Si muove nella nebbia tossica senza fare rumore, e senza sbagliare.",
+    mosse: [m("Colpo Silenzioso", 0, 30, { penetra: 20 }), m("Maschera Antigas", 2, 0, { eff: { tipo: "nebbia" } }), m("Cecchino", 5, 92, { penetra: 25 })] },
+  { id: "alizombie", nome: "Alizombie", serie: "apocalisse", rarita: "rara", stile: "FOR", ruolo: "imprevedibile", frase: "Un graffio sulla guancia e quel sorriso un po' strano. È ancora dei nostri? Mezza sì. Mezza ha fame.",
+    mosse: [m("Morso", 0, 28, { drena: 20 }), m("Contagio", 2, 24, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Orda", 5, 16, { colpi: 5 })] },
+  { id: "auroravive", nome: "Auroravive", serie: "apocalisse", rarita: "rara", stile: "DIF", ruolo: "guaritore", frase: "Il medico del campo: stetoscopio al collo, borsa con la croce rossa e nessuna voglia di arrendersi. Finché c'è lei, nessuno resta a terra.",
+    mosse: [m("Bisturi", 0, 26), m("Kit di Pronto Soccorso", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Defibrillatore", 5, 78, { eff: { tipo: "stordisci", val: 40 } })] },
+  { id: "lollivor", nome: "Lollivor", serie: "apocalisse", rarita: "rara", stile: "FOR", ruolo: "capo", frase: "Il sopravvissuto: mazza chiodata in spalla, radio alla cintura e un gruppo che lo segue ovunque. Anche dentro l'orda.",
+    mosse: [m("Mazza Chiodata", 0, 30), m("Grido di Raduno", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Ultimo Sopravvissuto", 5, 84)] },
+  { id: "simopter", nome: "Simopter", serie: "apocalisse", rarita: "rara", stile: "DIF", ruolo: "stratega", frase: "Il pilota dell'elicottero: cuffie in testa, braccia incrociate e l'unico passaggio per uscire dalla zona rossa. Se ti sta simpatico.",
+    mosse: [m("Raffica dal Cielo", 0, 28), m("Rifornimento", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Evacuazione", 5, 82)] },
+  { id: "giulimort", nome: "Giulimort", serie: "apocalisse", rarita: "comune", stile: "VEL", ruolo: "schivatore", frase: "Zaino in spalla e un sorriso che l'apocalisse non è riuscita a spegnere. Quando l'orda arriva, lei è già dall'altra parte della strada.",
+    mosse: [m("Coltello da Caccia", 0, 26, { penetra: 20 }), m("Corri!", 2, 0, { eff: { tipo: "nebbia" } }), m("Fuga tra le Rovine", 5, 78)] },
+  { id: "ludovirus", nome: "Ludovirus", serie: "apocalisse", rarita: "comune", stile: "FOR", ruolo: "stratega", frase: "Il meccanico del rifugio: occhialoni sulla fronte, chiavi inglesi in tasca e uno sciame di droni fatti con i rottami.",
+    mosse: [m("Chiave Inglese", 0, 26), m("Drone Spia", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Sciame di Droni", 5, 13, { colpi: 6 })] },
+  { id: "samudead", nome: "Samudead", serie: "apocalisse", rarita: "comune", stile: "VEL", ruolo: "assassino", frase: "Fucile tra le mani, teschio sulla spalla e un sorriso da incoscienza pura. Dietro di lui la torre di guardia: lassù non manca un colpo.",
+    mosse: [m("Colpo di Fucile", 0, 28, { penetra: 20 }), m("Mirino", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Colpo alla Testa", 5, 80, { penetra: 25 })] },
+  { id: "senemune", nome: "Senemune", serie: "apocalisse", rarita: "comune", stile: "DIF", ruolo: "difensore", frase: "L'unica immune: il virus la morde e si arrende. Sorride tra i cartelli di quarantena, perché il suo sangue è la speranza di tutti.",
+    mosse: [m("Spallata", 0, 26), m("Anticorpi", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Sangue Immune", 5, 76, { drena: 40 })] },
 ];
 
 
@@ -665,6 +697,9 @@ const PERSONE = {
   // Far West
   seneloon: "Senè", giuvlass: "Giulia", ludobunty: "Ludovico", alicolt: "Alice", auroraider: "Aurora", lollawless: "Lorenzo", simarshal: "Simone",
   alessoutlaw: "Alessia", dieganger: "Diego", mauribandit: "Maurizio", samuero: "Samuele", pipstolero: "Pips", ritaloon: "Rita", tiziariffo: "Tiziano", vikylasso: "Viky",
+  // Apocalisse
+  dieghunter: "Diego", pipscience: "Pips", ritageddon: "Rita", alesshack: "Alessia", maurizomb: "Maurizio", tizianator: "Tiziano", vikydead: "Viky",
+  alizombie: "Alice", auroravive: "Aurora", lollivor: "Lorenzo", simopter: "Simone", giulimort: "Giulia", ludovirus: "Ludovico", samudead: "Samuele", senemune: "Senè",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -679,7 +714,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // (ma conviene darla prima a chi ne ha meno: lo mostra il riquadro «Versioni Ultra» nel pannello admin).
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {

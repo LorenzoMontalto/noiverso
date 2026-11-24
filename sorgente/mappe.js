@@ -30,6 +30,7 @@ const MappeStoria = (() => {
     [[300, 900], [620, 1000], [1060, 980], [1440, 760], [1020, 420], [520, 300]],     // tavolo da gioco
     [[900, 228], [685, 824], [1055, 400], [1600, 352], [880, 150], [515, 328]],       // giro del mondo
     [[250, 980], [640, 920], [1040, 1000], [1440, 890], [1250, 560], [610, 236]],     // Far West
+    [[200, 1060], [600, 900], [1000, 1000], [1420, 900], [1265, 580], [625, 410]],    // zona rossa (Apocalisse)
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -91,6 +92,9 @@ const MappeStoria = (() => {
     [[120, 1130, "♠", "Saloon"], [540, 690, "★", "Ufficio dello Sceriffo"], [740, 1130, "$", "Banca"], [1640, 600, "⚙", "Stazione"],
      [1700, 1060, "◎", "Recinto del Rodeo"], [1650, 220, "⛏", "Miniera d'Oro"], [460, 600, "✝", "Chiesetta"], [1060, 250, "▲", "Canyon"],
      [240, 360, "☠", "Cimitero"], [1190, 680, "◉", "Pozzo"], [610, 130, "☀", "Mesa del Duello"]],
+    [[110, 1140, "⚠", "Quarantena"], [400, 640, "✚", "Ospedale"], [1000, 1150, "☠", "L'Orda"], [1680, 520, "⌁", "Torre Radio"],
+     [1060, 470, "☣", "Laboratorio"], [330, 170, "⌂", "Ultimo Rifugio"], [880, 560, "☢", "Pozza Tossica"], [1700, 1130, "▣", "Cimitero d'Auto"],
+     [180, 520, "♨", "Incendio"], [1000, 300, "▲", "Grattacieli Crollati"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -791,6 +795,71 @@ const MappeStoria = (() => {
     for (const [x, y] of [[700, 120], [760, 150], [1050, 90]]) s += `<path d="M${x - 22},${y} q11,-12 22,0 q11,-12 22,0" stroke="#2a1420" stroke-width="5" fill="none"/>`;
     return s;
   }
+  function rovine(r) {
+    // la zona rossa: città in rovina al tramonto, recinzione di quarantena, ospedale, orda, torre radio, laboratorio e rifugio
+    let s = `<defs><linearGradient id="cieloRosso" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a0a14"/><stop offset=".55" stop-color="#8a2a14"/><stop offset="1" stop-color="#e0702e"/></linearGradient>
+      <radialGradient id="fuocoAp"><stop offset="0" stop-color="#ffb040" stop-opacity=".9"/><stop offset="1" stop-color="#ff4a10" stop-opacity="0"/></radialGradient>
+      <radialGradient id="tossico"><stop offset="0" stop-color="#9aff3a" stop-opacity=".8"/><stop offset="1" stop-color="#3a8a10" stop-opacity="0"/></radialGradient></defs>
+      <rect width="${W}" height="${H}" fill="#3a3430"/><rect width="${W}" height="380" fill="url(#cieloRosso)"/>`;
+    // skyline in rovina
+    for (let x = -20; x < W; x += 60 + r() * 50) {
+      const w = 50 + r() * 70, h = 90 + r() * 200, top = 380 - h;
+      let d = `M${f(x)},380 V${f(top + 20)}`;
+      for (let k = 0; k < 4; k++) d += ` L${f(x + w * (k + .5) / 4)},${f(top + r() * 40)}`;
+      d += ` L${f(x + w)},${f(top + 10 + r() * 30)} V380Z`;
+      s += `<path d="${d}" fill="#1c1418"/>`;
+      for (let k = 0; k < 6; k++) if (r() < .25) s += `<rect x="${f(x + 8 + r() * (w - 20))}" y="${f(top + 40 + r() * (h - 60))}" width="8" height="10" fill="#ff9a40" opacity=".7"/>`;
+    }
+    // fumo all'orizzonte
+    for (const [x, y] of [[300, 260], [980, 220], [1500, 280]]) for (let k = 0; k < 6; k++) s += `<circle cx="${f(x + k * 30 + r() * 20)}" cy="${f(y - k * 45)}" r="${f(30 + k * 14)}" fill="#2a2024" opacity="${(.55 - k * .07).toFixed(2)}"/>`;
+    s += `<rect y="372" width="${W}" height="16" fill="#5a2a1a" opacity=".6"/>`;
+    // asfalto crepato e strade
+    for (let k = 0; k < 70; k++) { const x = r() * W, y = 400 + r() * 790; s += `<path d="M${f(x)},${f(y)} l${f(-20 + r() * 40)},${f(10 + r() * 20)} l${f(-20 + r() * 40)},${f(10 + r() * 20)}" stroke="#1e1a18" stroke-width="3" fill="none" opacity=".7"/>`; }
+    const strada = [[-40, 1040], [500, 930], [1000, 1040], [1440, 900], [1840, 960]];
+    s += `<path d="${curva(strada)}" stroke="#2a2624" stroke-width="140" fill="none"/><path d="${curva(strada)}" stroke="#c8b030" stroke-width="5" stroke-dasharray="40 50" fill="none" opacity=".45"/>`;
+    s += `<path d="${curva([[1240, 1220], [1300, 860], [1265, 540]])}" stroke="#2a2624" stroke-width="90" fill="none"/>`;
+    // macerie
+    for (let k = 0; k < 40; k++) { const x = r() * W, y = 420 + r() * 760, w = 10 + r() * 30; s += `<path d="M${f(x)},${f(y)} l${f(w)},${f(-w * .4)} l${f(w * .6)},${f(w * .5)} Z" fill="${["#5a524c", "#4a423c", "#6a5a4a"][k % 3]}"/>`; }
+    // pozze tossiche
+    for (const [x, y, rx] of [[880, 640, 90], [1600, 1100, 60], [360, 1140, 50]]) s += `<path d="${blob(x, y, rx, rx * .45, r)}" fill="#5aa020"/><ellipse cx="${x}" cy="${y}" rx="${rx * 1.6}" ry="${rx * .9}" fill="url(#tossico)" opacity=".5"/>`;
+    // recinzione di quarantena con cartelli
+    s += `<path d="M40,1200 L60,820 L420,760" stroke="#8a8a90" stroke-width="5" fill="none"/>`;
+    for (let k = 0; k <= 12; k++) { const t = k / 12, [x, y] = t < .5 ? [40 + 40 * t, 1200 - 760 * t] : [60 + 720 * (t - .5), 820 - 120 * (t - .5)]; s += `<rect x="${f(x - 3)}" y="${f(y - 60)}" width="6" height="60" fill="#6a6a70"/>`; }
+    for (let k = 0; k < 6; k++) s += `<path d="M${50 + k * 4},${1180 - k * 70} l${30},${-6}" stroke="#a8a8b0" stroke-width="2"/>`;
+    for (const [x, y] of [[70, 960], [240, 780]]) s += `<g transform="translate(${x} ${y})"><path d="M0,-34 L30,18 H-30Z" fill="#f2c42a" stroke="#1a1a1a" stroke-width="4"/><text y="12" text-anchor="middle" font-size="26" font-weight="900" fill="#1a1a1a">☣</text></g>`;
+    // l'ospedale abbandonato
+    s += `<rect x="470" y="700" width="270" height="160" fill="#c8c0b4" stroke="#3a3430" stroke-width="5"/><path d="M470,700 l40,-30 l60,22 l70,-26 l60,20 l40,14" fill="#c8c0b4" stroke="#3a3430" stroke-width="5"/>`;
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 2; j++) s += `<rect x="${490 + i * 64}" y="${720 + j * 55}" width="36" height="32" fill="${r() < .3 ? "#ff9a40" : "#2a2224"}"/>`;
+    s += `<rect x="585" y="805" width="40" height="55" fill="#1a1416"/><path d="M605,668 v40 M585,688 h40" stroke="#d82a2a" stroke-width="12"/>`;
+    // ambulanza ribaltata
+    s += `<g transform="translate(800 860) rotate(-14)"><rect x="-60" y="-34" width="120" height="56" rx="8" fill="#e8e0d4" stroke="#3a3430" stroke-width="4"/><path d="M-20,-6 h24 M-8,-18 v24" stroke="#d82a2a" stroke-width="7"/><circle cx="-34" cy="24" r="12" fill="#1a1a1a"/><circle cx="34" cy="24" r="12" fill="#1a1a1a"/></g>`;
+    // auto bruciate e fuochi
+    for (const [x, y, a] of [[300, 1000, 8], [1180, 1080, -10], [1650, 980, 15], [860, 470, -6]]) s += `<g transform="translate(${x} ${y}) rotate(${a})"><rect x="-48" y="-22" width="96" height="36" rx="10" fill="#3a2a24"/><rect x="-28" y="-40" width="56" height="22" rx="6" fill="#2a1e1a"/><circle cx="-28" cy="14" r="11" fill="#141010"/><circle cx="28" cy="14" r="11" fill="#141010"/></g><circle cx="${x}" cy="${y - 30}" r="60" fill="url(#fuocoAp)"/>`;
+    // l'orda di infetti
+    for (let k = 0; k < 46; k++) {
+      const x = 860 + r() * 300, y = 930 + r() * 140, sc = .7 + (y - 930) / 300;
+      s += `<g transform="translate(${f(x)} ${f(y)}) scale(${sc.toFixed(2)})"><circle cx="0" cy="-34" r="7" fill="#4a5a3a"/><path d="M-6,-26 h12 l2,24 h-16Z" fill="#2a2a26"/><path d="M-6,-20 l-12,${f(-4 + r() * 8)} M6,-20 l12,${f(-4 + r() * 8)} M-4,-2 v14 M4,-2 v14" stroke="#2a2a26" stroke-width="4"/></g>`;
+    }
+    // la torre radio (traliccio)
+    s += `<path d="M1460,860 L1520,420 L1580,860" stroke="#7a7a84" stroke-width="7" fill="none"/>`;
+    for (let k = 0; k < 9; k++) { const y1 = 860 - k * 49, y2 = y1 - 49, w1 = 60 - k * 6.7, w2 = 60 - (k + 1) * 6.7; s += `<path d="M${f(1520 - w1)},${f(y1)} L${f(1520 + w2)},${f(y2)} M${f(1520 + w1)},${f(y1)} L${f(1520 - w2)},${f(y2)}" stroke="#6a6a74" stroke-width="3"/>`; }
+    s += `<circle cx="1520" cy="414" r="9" fill="#ff3a2a"/><circle cx="1520" cy="414" r="30" fill="#ff3a2a" opacity=".25"/>`;
+    for (const rr of [50, 80, 110]) s += `<path d="M${1520 - rr * .7},${414 - rr * .7} a${rr},${rr} 0 0 1 ${rr * 1.4},0" stroke="#ff9a7a" stroke-width="3" fill="none" opacity=".4"/>`;
+    // il laboratorio (bunker col simbolo del rischio biologico)
+    s += `<rect x="1150" y="400" width="230" height="120" fill="#4a5048" stroke="#1e221e" stroke-width="6"/><rect x="1140" y="390" width="250" height="20" fill="#3a403a"/><circle cx="1265" cy="460" r="36" fill="#f2c42a" stroke="#1a1a1a" stroke-width="4"/><text x="1265" y="476" text-anchor="middle" font-size="46" fill="#1a1a1a">☣</text>`;
+    s += `<ellipse cx="1265" cy="530" rx="160" ry="30" fill="url(#tossico)" opacity=".6"/>`;
+    // l'ultimo rifugio sul palazzo con l'eliporto e l'elicottero
+    s += `<rect x="500" y="240" width="250" height="150" fill="#2a2426" stroke="#120e10" stroke-width="5"/><rect x="480" y="226" width="290" height="20" fill="#3a3234"/>`;
+    for (let i = 0; i < 5; i++) s += `<rect x="${512 + i * 48}" y="272" width="26" height="30" fill="#ffb060" opacity=".8"/>`;
+    for (let i = 0; i < 8; i++) s += `<rect x="${482 + i * 36}" y="214" width="20" height="14" fill="#6a5a4a"/>`;
+    s += `<ellipse cx="760" cy="210" rx="56" ry="18" fill="none" stroke="#e8e0d4" stroke-width="4"/><text x="760" y="218" text-anchor="middle" font-size="22" font-weight="900" fill="#e8e0d4">H</text>`;
+    s += `<g transform="translate(770 160)"><ellipse cx="0" cy="0" rx="42" ry="18" fill="#3a4a3a"/><path d="M36,-4 l60,-8 v10 l-60,8Z" fill="#3a4a3a"/><path d="M-80,-24 H80" stroke="#c8c8c8" stroke-width="4"/><path d="M0,-18 v-6" stroke="#2a2a2a" stroke-width="5"/><path d="M-26,-4 a18,12 0 0 1 30,-4" fill="#9ad8ff" opacity=".7"/></g>`;
+    // fuochi sparsi
+    for (const [x, y] of [[1020, 760], [180, 640], [1700, 700], [700, 1130]]) s += `<circle cx="${x}" cy="${y}" r="70" fill="url(#fuocoAp)"/><path d="M${x - 12},${y + 10} q12,-50 24,0 q-12,-20 -24,0" fill="#ffd060"/>`;
+    // corvi
+    for (const [x, y] of [[420, 90], [470, 120], [1300, 70], [1340, 100]]) s += `<path d="M${x - 18},${y} q9,-10 18,0 q9,-10 18,0" stroke="#0a0608" stroke-width="5" fill="none"/>`;
+    return s;
+  }
   function mondo(r) {
     // il giro del mondo: un planisfero con i continenti, le rotte degli aerei e qualche monumento
     const P = (lon, lat) => [f((lon + 180) * 5), f((80 - lat) * 8)];
@@ -833,7 +902,7 @@ const MappeStoria = (() => {
     s += `<g transform="translate(1660 1060)"><circle r="70" fill="#0d2c4a" stroke="#d8c890" stroke-width="4"/><path d="M0,-62 L12,0 L0,62 L-12,0Z M-62,0 L0,-12 L62,0 L0,12Z" fill="#d8c890"/><text y="-74" text-anchor="middle" font-size="26" fill="#d8c890">N</text></g>`;
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, farwest, specchi, treno, torre, dimensione];
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, farwest, rovine, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -861,7 +930,7 @@ const MappeStoria = (() => {
     // colore di base e colore delle nuvole per ogni capitolo
     const NEBBIE = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
       ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"],
-      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"], ["#3a1c10", "255,214,170"],
+      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"], ["#3a1c10", "255,214,170"], ["#1c0c08", "255,170,130"],
       ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]];
     const [base, nuv] = NEBBIE[k] || NEBBIE[0];
     g.fillStyle = base; g.fillRect(0, 0, W, H);
