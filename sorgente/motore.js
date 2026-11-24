@@ -47,37 +47,39 @@ function nuovoCombattente(id, liv, lode, olo, ultra, asc) {
 const _il = v => (v === 1 || v === 11 || String(v)[0] === "8") ? `l'${v}%` : `il ${v}%`;
 // Tre livelli: 2 carte della stessa serie (bonus piccolo), 3 (medio), 5 (grande). liv = 1, 2, 3.
 const SOGLIE_SINERGIA = [2, 3, 5];
+// nov 2026: tutti i valori ricalcolati con migliaia di partite simulate, perché nessuna serie domini le altre:
+// con 2 carte circa +2-3% di vittorie, con 3 circa +6%, con 5 di più (così una squadra tutta di una serie vale quanto 3+2 leggendarie).
 const SINERGIE_BASE = {
-  eroi:     { tipo: "dif",      v2: 10, v3: 20, v5: 23, testo: v => `+${v}% difesa` },
-  db:       { tipo: "att",      v2: 8, v3: 16, v5: 22, testo: v => `+${v}% attacco` },
-  dei:      { tipo: "rigenera", v2: 1.5, v3: 3, v5: 4.5, testo: v => `in campo recuperano ${_il(v)} dei PV ogni turno` },
+  eroi:     { tipo: "dif",      v2: 9, v3: 11, v5: 22, testo: v => `+${v}% difesa` },
+  db:       { tipo: "att",      v2: 8, v3: 10, v5: 24, testo: v => `+${v}% attacco` },
+  dei:      { tipo: "rigenera", v2: 1.5, v3: 2.5, v5: 4.5, testo: v => `in campo recuperano ${_il(v)} dei PV ogni turno` },
   // Mafiosi: v = energia in più in tutto, a rate: +1 all'inizio e +1 a fine turno per i turni dopo.
   // Così non si arriva mai alla mossa finale (5) al primo turno: si parte al massimo da 4.
-  nueve:    { tipo: "energia",  v2: 1, v3: 4,  v5: 10,  testo: v => v <= 1 ? `la squadra parte con +${v} energia` : `+1 energia all'inizio e +1 in più a fine turno per i primi ${v - 1} turni` },
+  nueve:    { tipo: "energia",  v2: 1, v3: 3, v5: 10,  testo: v => v <= 1 ? `la squadra parte con +${v} energia` : `+1 energia all'inizio e +1 in più a fine turno per i primi ${v - 1} turni` },
   // Maghi: effetti più forti (e da 3 carte durano 1 turno in più); in più le loro mosse con un effetto fanno +15/25/45% di danni
-  maghi:    { tipo: "effetti",  v2: 100, v3: 180, v5: 300, testo: (v, liv) => `i loro effetti (brucia, indebolisci, stordisci) sono più forti del ${v}%${liv >= 2 ? " e durano 1 turno in più" : ""}, e le mosse con un effetto fanno +${[0, 15, 25, 45][liv] || 15}% di danni` },
-  demoni:   { tipo: "vampiro",  v2: 6, v3: 12, v5: 25, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
+  maghi:    { tipo: "effetti",  v2: 70, v3: 125, v5: 285, testo: (v, liv) => `i loro effetti (brucia, indebolisci, stordisci) sono più forti del ${v}%${liv >= 2 ? " e durano 1 turno in più" : ""}, e le mosse con un effetto fanno +${[0, 15, 25, 25][liv] || 15}% di danni` },
+  demoni:   { tipo: "vampiro",  v2: 5, v3: 10, v5: 28, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
   // Simpson: colpi critici più frequenti e, da 3 carte, più forti (×1,75; con 5 ×2 invece di ×1,5)
-  simpson:  { tipo: "critico",  v2: 15, v3: 25, v5: 35, testo: (v, liv) => `+${v}% di probabilità di colpo critico${liv >= 2 ? `, e i loro critici fanno ×${liv >= 3 ? "2" : "1,75"} invece di ×1,5` : ""}` },
+  simpson:  { tipo: "critico",  v2: 19, v3: 19, v5: 33, testo: (v, liv) => `+${v}% di probabilità di colpo critico${liv >= 2 ? `, e i loro critici fanno ×${liv >= 3 ? "2" : "1,75"} invece di ×1,5` : ""}` },
   // Barbapapà: cambiano forma, quindi il tipo conta meno per loro: lo svantaggio di tipo (quando attaccano e quando difendono) si riduce
-  barbapapa: { tipo: "forma",   v2: 40, v3: 80, v5: 95, testo: (v, liv) => v >= 100 ? `non soffrono più lo svantaggio di tipo, né in attacco né in difesa` : `lo svantaggio di tipo pesa ${_il(v)} in meno su di loro, in attacco e in difesa` },
+  barbapapa: { tipo: "forma",   v2: 29, v3: 49, v5: 95, testo: (v, liv) => v >= 100 ? `non soffrono più lo svantaggio di tipo, né in attacco né in difesa` : `lo svantaggio di tipo pesa ${_il(v)} in meno su di loro, in attacco e in difesa` },
   // Star Wars: con i riflessi della Forza a volte parano un colpo intero (come una schivata)
-  starwars: { tipo: "para",     v2: 5, v3: 8, v5: 11, testo: v => `${v}% di probabilità di parare un attacco con la Forza (non subiscono danni né effetti)` },
+  starwars: { tipo: "para",     v2: 5, v3: 7, v5: 10, testo: v => `${v}% di probabilità di parare un attacco con la Forza (non subiscono danni né effetti)` },
   // Elementi: si caricano restando in campo. Ogni fine turno in campo +v% attacco, fino a 5 volte; uscendo si scaricano.
-  elementi: { tipo: "accumulo", v2: 5, v3: 9, v5: 13, testo: v => `restando in campo si caricano: +${v}% di attacco a ogni fine turno, fino a 5 volte (massimo +${Math.round(v * 50) / 10}%); se escono si scaricano` },
+  elementi: { tipo: "accumulo", v2: 6, v3: 7, v5: 14, testo: v => `restando in campo si caricano: +${v}% di attacco a ogni fine turno, fino a 5 volte (massimo +${Math.round(v * 50) / 10}%); se escono si scaricano` },
   // Creature mistiche: non muoiono davvero. La prima volta che vanno KO hanno v% di probabilità di rialzarsi con il 20% dei PV (una volta a carta).
-  creature: { tipo: "rinascita", v2: 12, v3: 20, v5: 30, testo: v => `la prima volta che vanno KO hanno ${_il(v)} di probabilità di rialzarsi con il 20% dei PV (una volta per carta)` },
+  creature: { tipo: "rinascita", v2: 10, v3: 18, v5: 29, testo: v => `la prima volta che vanno KO hanno ${_il(v)} di probabilità di rialzarsi con il 20% dei PV (una volta per carta)` },
   // Cyborg: sistemi schermati. Hanno v% di probabilità di respingere gli effetti nemici (brucia, stordisci, indebolisci, ruba energia).
-  cyborg: { tipo: "schermo", v2: 50, v3: 85, v5: 100, testo: (v, liv) => `${v}% di probabilità di respingere gli effetti nemici (bruciatura, stordimento, indebolimento, furto di energia)${liv >= 3 ? ", e l'effetto respinto torna indietro su chi l'ha lanciato" : ""}` },
+  cyborg: { tipo: "schermo", v2: 58, v3: 70, v5: 100, testo: (v, liv) => `${v}% di probabilità di respingere gli effetti nemici (bruciatura, stordimento, indebolimento, furto di energia)${liv >= 3 ? ", e l'effetto respinto torna indietro su chi l'ha lanciato" : ""}` },
   // Carte da gioco: fortuna al tavolo. v% di probabilità che un attacco faccia «Scopa!» e colpisca di nuovo a metà danni.
-  carte: { tipo: "fortuna", v2: 11, v3: 24, v5: 33, testo: v => `${v}% di probabilità che un loro attacco faccia «Scopa!» e colpisca una seconda volta a metà danni` },
+  carte: { tipo: "fortuna", v2: 17, v3: 21, v5: 30, testo: v => `${v}% di probabilità che un loro attacco faccia «Scopa!» e colpisca una seconda volta a metà danni` },
   // Paesi del mondo: ospitalità. Quando una carta della serie entra in campo recupera v% dei PV massimi.
-  paesi: { tipo: "ospitalita", v2: 14, v3: 27, v5: 45, testo: v => `quando entrano in campo recuperano ${_il(v)} dei PV massimi (benvenuti a casa!)` },
+  paesi: { tipo: "ospitalita", v2: 15, v3: 24, v5: 33, testo: v => `quando entrano in campo recuperano ${_il(v)} dei PV massimi (benvenuti a casa!)` },
   // Far West: estrazione rapida. La prima mossa d'attacco dopo essere entrate in campo fa +v% di danni (tutti i colpi di quella mossa).
-  farwest: { tipo: "duello", v2: 15, v3: 26, v5: 34, testo: v => `estrazione rapida: la prima mossa d'attacco dopo che entrano in campo fa +${v}% di danni` },
+  farwest: { tipo: "duello", v2: 18, v3: 22, v5: 44, testo: v => `estrazione rapida: la prima mossa d'attacco dopo che entrano in campo fa +${v}% di danni` },
   // Apocalisse: istinto di sopravvivenza. Sotto il 35% dei PV subiscono v% di danni in meno.
-  apocalisse: { tipo: "sopravvivenza", v2: 25, v3: 44, v5: 48, testo: v => `istinto di sopravvivenza: quando hanno meno del 35% dei PV subiscono ${_il(v)} di danni in meno` },
-  mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
+  apocalisse: { tipo: "sopravvivenza", v2: 32, v3: 35, v5: 48, testo: v => `istinto di sopravvivenza: quando hanno meno del 35% dei PV subiscono ${_il(v)} di danni in meno` },
+  mestieri: { tipo: "vel",      v2: 6, v3: 18, v5: 37, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
 for (const k in SINERGIE) SINERGIE[k].testo = SINERGIE_BASE[k].testo;
@@ -87,7 +89,7 @@ function applicaSinergie(cfg) {
   const c = cfg && typeof cfg === "object" ? cfg : {};
   const num = (x, b, max) => x !== undefined && x !== null && x !== "" && Number.isFinite(+x) ? Math.max(0, Math.min(max, Math.round(+x * 10) / 10)) : b;
   // i valori salvati con le vecchie regole (solo 3 e 5 carte) non valgono più: si riparte dai nuovi
-  const nuove = c.versione === 4;   // nov 2026: versione 3 (Mafiosi rivisti); i valori salvati prima non valgono più
+  const nuove = c.versione === 5;   // nov 2026: versione 5 (tutte le serie ribilanciate con le simulazioni); i valori salvati prima non valgono più
   for (const k in SINERGIE_BASE) {
     const b = SINERGIE_BASE[k], m = (nuove && c[k]) || {}, max = b.tipo === "energia" ? 5 : b.tipo === "effetti" ? 400 : 60;
     for (const v of ["v2", "v3", "v5"]) SINERGIE[k][v] = num(m[v], b[v], max);
@@ -190,7 +192,7 @@ class Battaglia {
         else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
         else if (s.tipo === "critico") { x.sin.crit = s.val; x.sin.critX = s.liv >= 3 ? 2 : s.liv === 2 ? 1.75 : 1.5; }
-        else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; x.sin.dannoEff = [0, 15, 25, 45][s.liv] || 0; if (s.liv >= 2) x.sin.effetti = 1; }
+        else if (s.tipo === "effetti") { x.sin.forzaEff = s.val; x.sin.dannoEff = [0, 15, 25, 25][s.liv] || 0; if (s.liv >= 2) x.sin.effetti = 1; }
       }
       if (s.tipo === "energia") { const v = Math.round(s.val); L.energia = Math.min(ENERGIA_MAX, L.energia + Math.min(1, v)); L.spintaEnergia = Math.max(0, v - 1); }
       if (s.tipo === "vel" && s.liv >= 3) L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
@@ -351,18 +353,24 @@ class Battaglia {
       chiMuove.splice(0, 2, primo, 1 - primo);
     }
     this._mosso = [false, false];   // chi ha già agito in questo turno (per la durata della nebbia)
+    // nov 2026: l'energia della mossa scelta si paga subito, prima che qualcuno agisca. Così un furto di energia
+    // dell'avversario (ladri, mosse che rubano) non può più trasformare la mossa finale in quella gratis.
+    // Se poi la mossa salta (stordito, KO prima di agire) l'energia torna indietro.
+    const pagata = [0, 0];
+    for (const l of chiMuove) { const m = this.attivo(l).c.mosse[az[l].i]; if (m && this.lati[l].energia >= m.costo) { this.lati[l].energia -= m.costo; pagata[l] = m.costo; } }
+    const rimborsa = l => { if (pagata[l]) { this.lati[l].energia = Math.min(ENERGIA_MAX, this.lati[l].energia + pagata[l]); pagata[l] = 0; } };
     for (const l of chiMuove) {
       if (this.vincitore >= 0) break;
       this._mosso[l] = true;
       const a = this.attivo(l);
-      if (a.pv <= 0) continue;
-      if (a.stordito) { a.stordito = false; a.immuneFino = this.turno + 1; this._log(`${a.c.nome} è stordito e salta il turno.`, { lato: l }); continue; }
+      if (a.pv <= 0) { rimborsa(l); continue; }
+      if (a.stordito) { a.stordito = false; a.immuneFino = this.turno + 1; rimborsa(l); this._log(`${a.c.nome} è stordito e salta il turno.`, { lato: l }); continue; }
       const m = a.c.mosse[az[l].i];
-      // se nel frattempo ha perso energia (gliel'hanno rubata), usa la mossa gratis invece di saltare il turno
-      const mm = this.lati[l].energia < m.costo ? (a.c.mosse.find(x => x.costo === 0) || a.c.mosse[0]) : m;
-      if (mm !== m) this._log(`${a.c.nome} non ha più abbastanza energia per ${m.nome}: usa ${mm.nome}.`, { lato: l });
-      if (this.lati[l].energia < mm.costo) { this._log(`${a.c.nome} non ha abbastanza energia.`, { lato: l }); continue; }
-      this._usaMossa(l, mm);
+      // l'energia è già stata pagata a inizio turno; se non bastava nemmeno allora, usa la mossa gratis
+      const mm = !pagata[l] && this.lati[l].energia < m.costo ? (a.c.mosse.find(x => x.costo === 0) || a.c.mosse[0]) : m;
+      if (mm !== m) this._log(`${a.c.nome} non ha abbastanza energia per ${m.nome}: usa ${mm.nome}.`, { lato: l });
+      if (!pagata[l] && this.lati[l].energia < mm.costo) { this._log(`${a.c.nome} non ha abbastanza energia.`, { lato: l }); continue; }
+      this._usaMossa(l, mm, pagata[l] > 0);
       this._controllaKO();
     }
     if (this.vincitore < 0) this._fineTurno();
@@ -386,10 +394,10 @@ class Battaglia {
   // Sostituzione dopo un KO (non consuma il turno)
   sostituisci(l, i) { this.ev = []; this._cambia(l, i); return this.ev; }
 
-  _usaMossa(l, m) {
+  _usaMossa(l, m, giaPagata = false) {
     const L = this.lati[l], O = this.lati[1 - l], a = this.attivo(l), d = this.attivo(1 - l);
     this.ultimoAttacco = l;
-    L.energia -= m.costo;
+    if (!giaPagata) L.energia -= m.costo;
     this._log(`${a.c.nome} usa ${m.nome}!`, { lato: l, anim: "attacco", id: a.id, mossa: a.c.mosse.indexOf(m), nome: m.nome, costo: m.costo, stile: a.c.stile, pot: m.pot, colpi: m.colpi || 1, eff: (m.eff || {}).tipo || "" });
     const e = m.eff || {};
     const SUL_BERSAGLIO = ["brucia", "stordisci", "indebolisci", "ruba"];

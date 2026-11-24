@@ -801,8 +801,43 @@ function impronta(id) {
   const p = x => Math.max(-.08, Math.min(.08, (x - media) * .09));
   return (_impronte[id] = { pv: p(a[0]), att: p(a[1]), dif: p(a[2]), vel: v > .5 ? 1 : v < -.5 ? -1 : 0 });
 }
+// Bilanciamento per carta (nov 2026): un piccolo correttivo a PV, attacco e difesa, calcolato con migliaia di partite simulate,
+// perché ogni carta valga quanto le altre della sua rarità (le mosse e i ruoli non sono tutti uguali). 1 = nessuna correzione.
+const BILANCIO = {
+  aleadme: 1.168, alebella: 1.117, aleghilterra: 0.97, alessante: 0.985, alesshack: 0.99, alessiai: 0.956, alessieno: 1.02, alessiologa: 1.078,
+  alessmione: 0.924, alessoutlaw: 1.073, alicircuit: 1.094, alicolt: 0.99, aligorgona: 1.031, alihsoka: 1.038, aliottina: 1.136, alire: 1.028,
+  alirtogallo: 1.068, alisa: 0.916, alisombra: 0.943, alispia: 0.922, alissith: 0.939, alistaroth: 0.905, alizombie: 1.038, alledna: 1.051,
+  aphroalessia: 1.006, aresorenzo: 0.911, artalice: 0.981, atharita: 0.948, auranshee: 1.073, aurante: 1.124, auraria: 0.919, aurobrava: 1.01,
+  auroraider: 0.995, auroravive: 1.025, aurorecia: 0.993, auroressa: 1.021, auroroide: 1.094, auroruna: 1.147, aurothma: 1.013, aurrerri: 1.048,
+  bandita: 1.042, brolymone: 0.976, bulsene: 1.07, c18ora: 1.023, chapo: 1.061, chichice: 0.965, comora: 0.901, criliziano: 0.91,
+  demviky: 0.954, diablo: 1.1, diegallo: 1.039, dieganger: 0.903, diegaqua: 1.116, diegarman: 1.07, dieghunter: 1.033, diegial: 0.904,
+  diegirius: 1.015, diegkeye: 0.987, diego17: 1.049, diegobot: 0.971, diegombie: 0.892, diegopa: 0.969, diegoren: 1.022, diegspagna: 0.886,
+  dionpips: 0.924, efesamuele: 1.008, elcuervo: 0.943, ellobo: 0.982, eltigre: 0.967, fiesta: 1.025, freezovico: 1.144, fuego: 0.926,
+  ginice: 0.975, giudella: 0.989, giueia: 1.05, giulancia: 0.938, giulasso: 0.973, giulialla: 0.99, giulibyte: 0.971, giulifleur: 0.98,
+  giuliflora: 0.969, giulimaah: 0.97, giulimort: 0.98, giulistrega: 1.064, giupatty: 1.026, giuvlass: 0.945, gohanlollo: 0.932, gokiele: 0.962,
+  gossip: 1.035, herdiego: 1.029, ironlus: 0.939, labruja: 1.094, lasombra: 1.017, ligulk: 0.968, loca: 1.036, lollakin: 0.922,
+  lollapa: 1.051, lollart: 1.019, lollawless: 1.052, lollendigo: 0.977, lollifer: 0.927, lollinista: 0.895, lollirlanda: 0.951, lollivor: 0.987,
+  lolloborg: 1.017, lollocallo: 0.988, lollon: 1.036, lollonova: 1.027, ludasso: 0.93, ludhacker: 0.985, ludobunty: 1.136, ludogargo: 0.979,
+  ludohouse: 0.96, ludomagma: 0.922, ludomodeus: 0.973, ludopa: 0.975, ludormania: 1.085, ludovirus: 0.988, ludovolt: 1.01, ludowalker: 0.946,
+  ludraco: 1.054, maurialpinista: 0.972, mauriba: 0.94, mauribandit: 0.95, mauribecca: 0.973, mauriborg: 0.965, mauricore: 1.058, maurigitto: 1.178,
+  maurilanders: 0.974, maurimmia: 1.07, mauriphomet: 1.077, maurire: 0.994, mauriziente: 0.99, maurizomb: 0.986, mauthor: 1.035, mieloki: 1.141,
+  nikulia: 0.964, ombra: 0.961, pelado: 1.01, persene: 0.968, pimoe: 0.943, pipciatore: 1.014, pipgelo: 1.168, pipkenstein: 0.927,
+  pipmon: 1.036, pipsccolo: 0.911, pipscience: 1.124, pipscozia: 0.983, pipsoba: 1.039, pipsobafett: 1.031, pipstolero: 0.982, piptron: 0.914,
+  pipverus: 0.974, poseludovico: 0.975, reina: 1.079, riessica: 1.024, ritacrys: 1.073, ritacubus: 0.978, ritadora: 0.984, ritageddon: 1.042,
+  ritalia: 1.054, ritaloon: 0.985, ritamma: 0.894, ritanimatrice: 0.979, ritare: 1.145, ritarena: 1.011, ritey: 1.024, ritron: 1.042,
+  rojo: 0.989, samasso: 0.978, samuba: 1.011, samubrasil: 1.053, samudead: 0.959, samuero: 0.971, samulett: 0.951, samulex: 1.062,
+  samulmine: 1.109, samulupo: 0.911, samusty: 0.976, samutografo: 1.018, samuwan: 0.929, samuzebub: 0.977, selmene: 1.033, senebroker: 1.05,
+  senecallo: 0.978, senecate: 0.992, seneforte: 0.994, senelagoon: 0.946, seneloon: 1.135, senemune: 0.935, senesia: 0.948, senesuono: 1.197,
+  senetron: 0.992, seneverr: 1.008, simalpatine: 1.065, simarney: 0.942, simarshal: 1.021, simocallo: 1.08, simoldemort: 1.044, simoluce: 0.926,
+  simonducer: 0.983, simonex: 1.072, simonusa: 0.973, simopter: 1.069, simospirit: 0.941, simothan: 0.96, solmone: 1.051, spidertoto: 1.059,
+  stellascura: 0.893, tizgeria: 1.061, tiziamma: 0.987, tizianator: 0.958, tiziariffo: 1.012, tiziazel: 0.873, tizidrac: 0.969, tiziegista: 1.066,
+  tizievil: 0.982, tizire: 1.008, tizitron: 1.017, tizoba: 1.013, tizomer: 0.805, tizvader: 1.177, undercut: 0.978, vaggie: 0.993,
+  vedovagreca: 0.925, vegerizio: 1.033, vidalessia: 0.982, vikamashtu: 0.975, vikante: 0.913, vikappone: 0.973, vikatrix: 0.973, vikybyte: 0.891,
+  vikydead: 0.937, vikyeletro: 0.985, vikylalla: 1.006, vikylasso: 0.907, vikytal: 0.884, vikyventura: 1.016, wandessia: 1.1, waspy: 0.915,
+  wonderrita: 1.034, zeutiz: 1.062,
+};
 function statistiche(c, liv = 1, lode = false, rar) {
-  const b = RUOLI[c.ruolo], fr = RARITA[RARITA[rar] ? rar : c.rarita].forza, f = fattoreLivello(liv, lode), t = BONUS_TIPO[c.stile] || {};
+  const b = RUOLI[c.ruolo], fr = RARITA[RARITA[rar] ? rar : c.rarita].forza * (BILANCIO[c.id] || 1), f = fattoreLivello(liv, lode), t = BONUS_TIPO[c.stile] || {};
   const g = f - 1, fT = 1 + g * CRESCITA_TIPO, im = impronta(c.id);
   const pv = b.pv * (t.pv || 1) * fr * f * (1 + im.pv);
   const att = b.att * (t.att || 1) * fr * (c.stile === "FOR" ? fT : f) * (1 + im.att);

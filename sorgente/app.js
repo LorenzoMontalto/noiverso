@@ -1334,7 +1334,7 @@ const Sinergie = (() => {
       </form>`;
   }
   async function salvaAdmin(form, base) {
-    const nuovi = { versione: 4 };
+    const nuovi = { versione: 5 };
     if (!base) {
       const f = new FormData(form);
       for (const k of Object.keys(SINERGIE)) { const d = {}; for (const v of ["v2", "v3", "v5"]) { const x = f.get(`${k}.${v}`); if (x !== null && x !== "") d[v] = +x; } if (Object.keys(d).length) nuovi[k] = d; }
