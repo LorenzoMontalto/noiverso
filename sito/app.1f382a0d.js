@@ -1312,6 +1312,7 @@ const Sinergie = (() => {
   }
   // liv: 1 = 2 carte, 2 = 3 carte, 3 = 5 carte
   const testoSerie = (k, liv) => { const s = SINERGIE[k]; return s.testo(valSinergia(s, liv), liv); };
+  const nomeTra = (k, liv) => { const n = nomeSinergia(k, liv); return n ? `«${esc(n)}» ` : ""; };   // il nome scelto dall'admin, se c'è
   const prossima = n => SOGLIE_SINERGIA.find(x => x > n);
   // riquadro nella pagina Squadre: sinergie attive e quelle a cui manca poco
   function htmlSquadra(ids) {
@@ -1320,9 +1321,9 @@ const Sinergie = (() => {
     for (const s of sin.serie) {
       const se = SERIE[s.serie];
       const p = prossima(s.n), pl = p ? SOGLIE_SINERGIA.indexOf(p) + 1 : 0;
-      const dopo = p ? ` <small>${p - s.n === 1 ? "Con un'altra" : `Con ${p} carte`}: ${testoSerie(s.serie, pl)}.</small>` : "";
-      if (s.liv) righe.push(`<li class="sin-attiva" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} ${s.n}${p ? `/${p}` : ""}</b> · carte ${esc(se.nome)}: ${testoSerie(s.serie, s.liv)}.${dopo}</span></li>`);
-      else if (suggerimenti++ < 2) righe.push(`<li class="sin-quasi" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} 1/2</b> · aggiungine un'altra: carte ${esc(se.nome)}, ${testoSerie(s.serie, 1)}.</span></li>`);
+      const dopo = p ? ` <small>${p - s.n === 1 ? "Con un'altra" : `Con ${p} carte`}: ${nomeTra(s.serie, pl)}${testoSerie(s.serie, pl)}.</small>` : "";
+      if (s.liv) righe.push(`<li class="sin-attiva" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${nomeSinergia(s.serie, s.liv) ? `${esc(nomeSinergia(s.serie, s.liv))} · ` : ""}${esc(se.nome)} ${s.n}${p ? `/${p}` : ""}</b> · carte ${esc(se.nome)}: ${testoSerie(s.serie, s.liv)}.${dopo}</span></li>`);
+      else if (suggerimenti++ < 2) righe.push(`<li class="sin-quasi" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} 1/2</b> · aggiungine un'altra: carte ${esc(se.nome)}, ${nomeTra(s.serie, 1)}${testoSerie(s.serie, 1)}.</span></li>`);
     }
     for (const m of sin.multiverso) righe.push(`<li class="sin-attiva multiverso"><span class="sin-ico">∞</span><span><b>Multiverso: ${esc(m.persona)} ×${m.n}</b> +${m.val}% a PV, attacco e difesa di ${m.ids.map(id => esc(PER_ID[id].nome)).join(", ")}.${m.n === 2 ? ` <small>Con 3 versioni: +${MULTIVERSO.v3}%.</small>` : ""}</span></li>`);
     return `<div class="sinergie-box"><div class="sin-testa"><span>Sinergie</span><small>2, 3 o 5 carte della stessa serie danno a quelle carte un bonus sempre più grande. 2 o più versioni della stessa persona: Multiverso.</small></div>
@@ -1331,18 +1332,19 @@ const Sinergie = (() => {
   // icone piccole accanto al nome in battaglia
   function htmlBattaglia(L) {
     const sin = L && L.sinergie; if (!sin) return "";
-    const ico = [...sin.serie.filter(s => s.liv).map(s => `<span class="sin-mini" style="--c:${SERIE[s.serie].colore}" title="Sinergia ${esc(SERIE[s.serie].nome)} ${s.n}: ${esc(testoSerie(s.serie, s.liv))}">${SERIE[s.serie].simbolo}${s.n}</span>`),
+    const ico = [...sin.serie.filter(s => s.liv).map(s => `<span class="sin-mini" style="--c:${SERIE[s.serie].colore}" title="${nomeSinergia(s.serie, s.liv) ? `${esc(nomeSinergia(s.serie, s.liv))} · ` : ""}Sinergia ${esc(SERIE[s.serie].nome)} ${s.n}: ${esc(testoSerie(s.serie, s.liv))}">${SERIE[s.serie].simbolo}${s.n}</span>`),
       ...sin.multiverso.map(m => `<span class="sin-mini multiverso" title="Multiverso ${esc(m.persona)} ×${m.n}: +${m.val}% a quelle carte">∞${m.n}</span>`)];
     return ico.length ? `<span class="sin-icone">${ico.join("")}</span>` : "";
   }
   function htmlAdmin() {
     if (!caricato) { setTimeout(carica, 0); return `<h3>Sinergie</h3><p class="nota">Carico i valori…</p>`; }
     return `<h3>Sinergie</h3>
-      <p class="nota">Quanto valgono le sinergie con 2, 3 e 5 carte della stessa serie, e il Multiverso (stessa persona in più versioni). Valgono per tutti, anche dal vivo e contro il computer.</p>
+      <p class="nota">Quanto valgono le sinergie con 2, 3 e 5 carte della stessa serie, e il Multiverso (stessa persona in più versioni). Valgono per tutti, anche dal vivo e contro il computer. Puoi anche dare un nome a ogni sinergia (con 2, 3 e 5 carte): si vede in Squadre, in battaglia e nell'album. Lascia vuoto per non mettere un nome.</p>
       <form id="form-sinergie" class="sin-admin" autocomplete="off">
         ${ORDINE_SERIE.filter(k => SINERGIE[k]).map(k => { const s = SINERGIE[k], se = SERIE[k]; return `<fieldset style="--c:${se.colore}"><legend>${se.simbolo} ${esc(se.nome)}</legend>
-          <div class="campi-4">${[["v2", 2], ["v3", 3], ["v5", 5]].map(([v, n]) => `<label>Con ${n} (${s.tipo === "energia" ? "energia" : s.tipo === "effetti" ? "forza %" : "%"}) <input name="${k}.${v}" type="number" min="0" step="0.5" max="${s.tipo === "effetti" ? 400 : s.tipo === "energia" ? 5 : 60}" value="${s[v]}"></label>`).join("")}
-          <label>Con 5 fa <input value="${esc(testoSerie(k, 3))}" disabled></label></div></fieldset>`; }).join("")}
+          <div class="campi-4">${[["v2", 2], ["v3", 3], ["v5", 5]].map(([v, n]) => `<label>Con ${n} (${s.tipo === "energia" ? "energia" : s.tipo === "effetti" ? "forza %" : "%"}) <input name="${k}.${v}" type="number" min="0" step="0.5" max="${s.tipo === "effetti" ? 400 : s.tipo === "energia" ? 15 : 100}" value="${s[v]}"></label>`).join("")}
+          <label>Con 5 fa <input value="${esc(testoSerie(k, 3))}" disabled></label></div>
+          <div class="campi-3 sin-nomi">${[["n2", 2, 1], ["n3", 3, 2], ["n5", 5, 3]].map(([v, n, liv]) => `<label>Nome con ${n} carte <input name="${k}.${v}" type="text" maxlength="30" value="${esc(nomeSinergia(k, liv))}" placeholder="(nessun nome)"></label>`).join("")}</div></fieldset>`; }).join("")}
         <fieldset><legend>∞ Multiverso</legend><div class="campi-3">
           <label>2 versioni (%) <input name="multiverso.v2" type="number" min="0" max="30" value="${MULTIVERSO.v2}"></label>
           <label>3 o più (%) <input name="multiverso.v3" type="number" min="0" max="40" value="${MULTIVERSO.v3}"></label></div></fieldset>
@@ -1353,7 +1355,9 @@ const Sinergie = (() => {
     const nuovi = { versione: 5 };
     if (!base) {
       const f = new FormData(form);
-      for (const k of Object.keys(SINERGIE)) { const d = {}; for (const v of ["v2", "v3", "v5"]) { const x = f.get(`${k}.${v}`); if (x !== null && x !== "") d[v] = +x; } if (Object.keys(d).length) nuovi[k] = d; }
+      for (const k of Object.keys(SINERGIE)) { const d = {}; for (const v of ["v2", "v3", "v5"]) { const x = f.get(`${k}.${v}`); if (x !== null && x !== "") d[v] = +x; }
+        for (const v of ["n2", "n3", "n5"]) { const x = (f.get(`${k}.${v}`) || "").trim().slice(0, 30); if (x) d[v] = x; }
+        if (Object.keys(d).length) nuovi[k] = d; }
       nuovi.multiverso = { v2: +f.get("multiverso.v2"), v3: +f.get("multiverso.v3") };
     }
     try { await Archivio.db.doc("config/sinergie").set(nuovi); applicaSinergie(nuovi); mostraAvviso(base ? "Sinergie tornate ai valori di partenza." : "Sinergie salvate: ora valgono per tutti."); }
@@ -1363,7 +1367,7 @@ const Sinergie = (() => {
   // Album: cosa fa la sinergia di una serie (sotto il titolo della serie)
   function htmlSerieAlbum(k) {
     if (!SINERGIE[k]) return "";
-    return `<p class="sin-album"><b>Sinergia</b> <span>2 carte: ${testoSerie(k, 1)}</span><span>3 carte: ${testoSerie(k, 2)}</span><span>5 carte: ${testoSerie(k, 3)}</span></p>`;
+    return `<p class="sin-album"><b>Sinergia</b> <span>2 carte: ${nomeTra(k, 1)}${testoSerie(k, 1)}</span><span>3 carte: ${nomeTra(k, 2)}${testoSerie(k, 2)}</span><span>5 carte: ${nomeTra(k, 3)}${testoSerie(k, 3)}</span></p>`;
   }
   // Album: il Multiverso, persona per persona (le versioni che non hai trovato restano un "?")
   function htmlMultiversoAlbum() {
@@ -2304,15 +2308,18 @@ document.addEventListener("change", async e => {
 });
 
 // ---------- Editor carte: persona, serie e rarità (solo admin) ----------
-let bozza = null, edFiltro = "tutte", edCerca = "";
-function nuovaBozza() { return Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: !!c.ultra }])); }
+let bozza = null, edFiltro = "tutte", edCerca = "", ultimaRegola = null;
+function nuovaBozza() { return Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: !!c.ultra, m0: c.mosse[0].nome, m1: c.mosse[1].nome, m2: c.mosse[2].nome }])); }
+// una carta della bozza è diversa da com'è adesso? (persona, serie, rarità, tipo, Ultra o nomi delle mosse)
+const nomeMossaBozza = (c, b, i) => (b["m" + i] || "").trim() || CARTE_ORIGINALI[c.id].mosse[i];
+const bozzaCambiata = (c, b) => b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || !!b.ultra !== !!c.ultra || b.persona.trim() !== c.persona || [0, 1, 2].some(i => nomeMossaBozza(c, b, i) !== c.mosse[i].nome);
 function regolaBozza() {
   const gruppi = {};
   for (const c of CARTE) { const b = bozza[c.id]; const p = b.persona.trim(); if (p) (gruppi[p] = gruppi[p] || []).push(c); }
   const problemi = Object.keys(gruppi).filter(p => Object.keys(SERIE).some(se => gruppi[p].filter(c => bozza[c.id].serie === se && bozza[c.id].rarita === "leggendaria").length > 1));
   return { gruppi, problemi, senza: CARTE.filter(c => !bozza[c.id].persona.trim()) };
 }
-function modificheBozza() { return CARTE.filter(c => { const b = bozza[c.id]; return b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || !!b.ultra !== !!c.ultra || b.persona.trim() !== c.persona; }).length; }
+function modificheBozza() { return CARTE.filter(c => { const b = bozza[c.id]; return bozzaCambiata(c, b); }).length; }
 function htmlRegola() {
   const r = regolaBozza(), n = modificheBozza();
   const contaSerie = Object.keys(SERIE).map(id => `${SERIE[id].simbolo} ${esc(SERIE[id].nome)} ${CARTE.filter(c => bozza[c.id].serie === id).length} (${CARTE.filter(c => bozza[c.id].serie === id && bozza[c.id].rarita === "leggendaria").length} L)`).join(" · ");
@@ -2367,10 +2374,10 @@ function htmlEditorCarte() {
   const persone = [...new Set(Object.values(bozza).map(b => b.persona.trim()).filter(Boolean))].sort();
   const r = regolaBozza();
   const q = edCerca.trim().toLowerCase();
-  const elenco = CARTE.filter(c => (edFiltro === "tutte" || (edFiltro === "senza" ? !bozza[c.id].persona.trim() : bozza[c.id].serie === edFiltro)) && (!q || c.nome.toLowerCase().includes(q) || bozza[c.id].persona.toLowerCase().includes(q)));
+  const elenco = CARTE.filter(c => (edFiltro === "tutte" || (edFiltro === "senza" ? !bozza[c.id].persona.trim() : bozza[c.id].serie === edFiltro)) && (!q || c.nome.toLowerCase().includes(q) || bozza[c.id].persona.toLowerCase().includes(q) || [0, 1, 2].some(i => nomeMossaBozza(c, bozza[c.id], i).toLowerCase().includes(q))));
   return `
-    <h3>Persone, serie, rarità, tipo e versione Ultra</h3>
-    <p class="nota">Scegli per ogni carta chi è la persona, in che serie va e la rarità. Quando salvi, vale per tutti i giocatori. Regola: al massimo una leggendaria a persona in ogni serie (una persona può averne in più serie).</p>
+    <h3>Persone, serie, rarità, tipo, versione Ultra e nomi delle mosse</h3>
+    <p class="nota">Scegli per ogni carta chi è la persona, in che serie va e la rarità, e se vuoi cambia il nome delle sue mosse (solo il nome: costo, danni ed effetti restano uguali; vuoto = nome di partenza). Puoi cercare anche per nome di mossa. Quando salvi, vale per tutti i giocatori. Regola: al massimo una leggendaria a persona in ogni serie (una persona può averne in più serie).</p>
     ${Archivio.modo !== "cloud" ? `<p class="nota"><b class="errore">Serve la pagina online: senza account le modifiche non si possono salvare per tutti.</b></p>` : ""}
     <div id="ed-regola">${htmlRegola()}</div>
     <div class="ed-filtri">
@@ -2380,7 +2387,7 @@ function htmlEditorCarte() {
     <datalist id="ed-persone">${persone.map(p => `<option value="${esc(p)}"></option>`).join("")}</datalist>
     <div class="ed-righe">
       ${elenco.map(c => { const b = bozza[c.id], errata = r.problemi.includes(b.persona.trim()) && b.rarita === "leggendaria";
-        const cambiata = b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || !!b.ultra !== !!c.ultra || b.persona.trim() !== c.persona;
+        const cambiata = bozzaCambiata(c, b);
         return `<div class="ed-riga ${errata ? "errata" : ""} ${cambiata ? "cambiata" : ""}" data-ed-riga="${c.id}">
           <img src="${imgCarta(c.id)}" alt="">
           <b>${esc(c.nome)}</b>
@@ -2389,6 +2396,7 @@ function htmlEditorCarte() {
           <label><span>Rarità</span><select data-ed="${c.id}" data-campo="rarita" class="sel-r-${b.rarita}">${ORDINE_RARITA.map(id => `<option value="${id}" ${b.rarita === id ? "selected" : ""}>${RARITA[id].nome}</option>`).join("")}</select></label>
           <label><span>Tipo</span><select data-ed="${c.id}" data-campo="stile">${Object.keys(STILI).map(id => `<option value="${id}" ${b.stile === id ? "selected" : ""}>${STILI[id].icona} ${esc(STILI[id].nome)}</option>`).join("")}</select></label>
           <label class="ed-ultra" title="Ha anche una versione Ultra da trovare"><input type="checkbox" data-ed="${c.id}" data-campo="ultra" ${b.ultra ? "checked" : ""}><span>Ultra</span></label>
+          <div class="ed-mosse">${c.mosse.map((mo, i) => `<label><span>Mossa ${i + 1} · ${mo.costo ? "◆".repeat(mo.costo) : "gratis"}</span><input maxlength="40" data-ed="${c.id}" data-campo="m${i}" value="${esc(b["m" + i])}" placeholder="${esc(CARTE_ORIGINALI[c.id].mosse[i])}"></label>`).join("")}</div>
         </div>`; }).join("") || `<p class="nota">Nessuna carta corrisponde.</p>`}
     </div>`;
 }
@@ -2396,13 +2404,15 @@ function aggiornaEditor(completo) {
   const box = $("#editor-carte");
   if (!box) return;
   const bu = $("#admin-ultra"); if (bu) bu.innerHTML = htmlAdminUltra();
-  if (completo) { box.innerHTML = htmlEditorCarte(); return; }
-  $("#ed-regola").innerHTML = htmlRegola();
+  if (completo) { box.innerHTML = htmlEditorCarte(); ultimaRegola = null; return; }
+  // ridisegna il riepilogo (con il pulsante Salva) solo se è cambiato davvero: uscendo da un campo arriva un secondo
+  // evento uguale al primo, e ridisegnare in quel momento faceva perdere il clic su «Salva» (bisognava cliccare due volte)
+  const h = htmlRegola(); if (h !== ultimaRegola) { $("#ed-regola").innerHTML = h; ultimaRegola = h; }
   const r = regolaBozza();
   $$("[data-ed-riga]", box).forEach(el => {
     const c = PER_ID[el.dataset.edRiga], b = bozza[c.id];
     el.classList.toggle("errata", r.problemi.includes(b.persona.trim()) && b.rarita === "leggendaria");
-    el.classList.toggle("cambiata", b.serie !== c.serie || b.rarita !== c.rarita || b.stile !== c.stile || !!b.ultra !== !!c.ultra || b.persona.trim() !== c.persona);
+    el.classList.toggle("cambiata", bozzaCambiata(c, b));
     const sr = el.querySelector('[data-campo="rarita"]'); sr.className = "sel-r-" + b.rarita;
   });
 }
@@ -2417,6 +2427,8 @@ async function salvaEditor(el) {
     if (b.stile !== o.stile) d.stile = b.stile;
     if (!!b.ultra !== !!o.ultra) d.ultra = !!b.ultra;
     if (b.persona.trim() !== o.persona) d.persona = b.persona.trim();
+    const mosse = [0, 1, 2].map(i => { const v = (b["m" + i] || "").trim().slice(0, 40); return v && v !== o.mosse[i] ? v : null; });
+    if (mosse.some(Boolean)) d.mosse = mosse;
     if (Object.keys(d).length) cfg.carte[c.id] = d;
   }
   try { await Archivio.salvaConfig(cfg); }
@@ -2458,7 +2470,7 @@ async function azioneAdmin(cosa, el) {
   }
   if (cosa.startsWith("graffit")) { Graffiti.azioneAdmin(cosa, el); return; }
   if (cosa === "ed-annulla") { bozza = nuovaBozza(); aggiornaEditor(true); return; }
-  if (cosa === "ed-originali") { bozza = Object.fromEntries(CARTE.map(c => [c.id, { ...CARTE_ORIGINALI[c.id] }])); aggiornaEditor(true); mostraAvviso("Valori di partenza caricati: premi Salva per applicarli a tutti."); return; }
+  if (cosa === "ed-originali") { bozza = Object.fromEntries(CARTE.map(c => { const o = CARTE_ORIGINALI[c.id]; return [c.id, { serie: o.serie, rarita: o.rarita, stile: o.stile, persona: o.persona, ultra: o.ultra, m0: o.mosse[0], m1: o.mosse[1], m2: o.mosse[2] }]; })); aggiornaEditor(true); mostraAvviso("Valori di partenza caricati: premi Salva per applicarli a tutti."); return; }
   const metti = (L, lx = 0) => CARTE.forEach(c => { S.carte[c.id] = Math.max(1, S.carte[c.id] || 0); S.liv[c.id] = L; S.lodeXp[c.id] = lx; });
   if (cosa === "carte-lode") metti(LIVELLO_MAX, XP_LODE);
   if (cosa === "carte-max") metti(LIVELLO_MAX);

@@ -84,6 +84,7 @@ const SINERGIE_BASE = {
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
 for (const k in SINERGIE) SINERGIE[k].testo = SINERGIE_BASE[k].testo;
 const MULTIVERSO = { v2: 2, v3: 4 };   // nov 2026: era 8 / 14, ma toccando tutte le statistiche valeva tre volte una sinergia di serie
+const nomeSinergia = (k, liv) => (SINERGIE[k] && SINERGIE[k].nomi && SINERGIE[k].nomi[liv]) || "";
 const valSinergia = (s, liv) => liv >= 3 ? s.v5 : liv === 2 ? s.v3 : liv === 1 ? s.v2 : 0;
 function applicaSinergie(cfg) {
   const c = cfg && typeof cfg === "object" ? cfg : {};
@@ -91,8 +92,12 @@ function applicaSinergie(cfg) {
   // i valori salvati con le vecchie regole (solo 3 e 5 carte) non valgono più: si riparte dai nuovi
   const nuove = c.versione === 5;   // nov 2026: versione 5 (tutte le serie ribilanciate con le simulazioni); i valori salvati prima non valgono più
   for (const k in SINERGIE_BASE) {
-    const b = SINERGIE_BASE[k], m = (nuove && c[k]) || {}, max = b.tipo === "energia" ? 5 : b.tipo === "effetti" ? 400 : 60;
+    // nov 2026: limiti alzati (prima 5 per l'energia e 60 per le altre: tagliavano i valori del bilanciamento, es. Barbapapà 95, Mafiosi 10)
+    const b = SINERGIE_BASE[k], m = (nuove && c[k]) || {}, max = b.tipo === "energia" ? 15 : b.tipo === "effetti" ? 400 : 100;
     for (const v of ["v2", "v3", "v5"]) SINERGIE[k][v] = num(m[v], b[v], max);
+    // nomi delle sinergie scelti dall'admin (con 2, 3 e 5 carte); vuoto = nessun nome
+    const nome = x => typeof x === "string" ? x.trim().slice(0, 30) : "";
+    SINERGIE[k].nomi = { 1: nome(m.n2), 2: nome(m.n3), 3: nome(m.n5) };
   }
   const mv = (nuove && c.multiverso) || {};
   MULTIVERSO.v2 = num(mv.v2, 2, 30);

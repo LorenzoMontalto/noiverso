@@ -716,7 +716,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
 const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
-const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
+const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra, mosse: c.mosse.map(m => m.nome) }]));
 function applicaConfigCarte(cfg) {
   const mappa = (cfg && cfg.carte) || {};
   CARTE.forEach(c => {
@@ -726,6 +726,8 @@ function applicaConfigCarte(cfg) {
     c.stile = STILI[m.stile] ? m.stile : o.stile;
     c.ultra = typeof m.ultra === "boolean" ? m.ultra : o.ultra;
     c.persona = typeof m.persona === "string" ? m.persona.trim().slice(0, 30) : o.persona;
+    // nomi delle mosse cambiati dall'admin (solo il nome: costo, potenza ed effetti restano quelli)
+    c.mosse.forEach((mo, i) => { const v = m.mosse && typeof m.mosse[i] === "string" ? m.mosse[i].trim().slice(0, 40) : ""; mo.nome = v || o.mosse[i]; });
   });
 }
 
