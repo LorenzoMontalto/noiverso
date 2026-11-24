@@ -58,7 +58,7 @@ const SINERGIE_BASE = {
   nueve:    { tipo: "energia",  v2: 1, v3: 3, v5: 10,  testo: v => v <= 1 ? `la squadra parte con +${v} energia` : `+1 energia all'inizio e +1 in più a fine turno per i primi ${v - 1} turni` },
   // Maghi: effetti più forti (e da 3 carte durano 1 turno in più); in più le loro mosse con un effetto fanno +15/25/45% di danni
   maghi:    { tipo: "effetti",  v2: 70, v3: 125, v5: 285, testo: (v, liv) => `i loro effetti (brucia, indebolisci, stordisci) sono più forti del ${v}%${liv >= 2 ? " e durano 1 turno in più" : ""}, e le mosse con un effetto fanno +${[0, 15, 25, 25][liv] || 15}% di danni` },
-  demoni:   { tipo: "vampiro",  v2: 5, v3: 10, v5: 28, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
+  demoni:   { tipo: "vampiro",  v2: 5, v3: 10, v5: 21, testo: v => `recuperano in PV ${_il(v)} dei danni che fanno` },
   // Simpson: colpi critici più frequenti e, da 3 carte, più forti (×1,75; con 5 ×2 invece di ×1,5)
   simpson:  { tipo: "critico",  v2: 19, v3: 19, v5: 33, testo: (v, liv) => `+${v}% di probabilità di colpo critico${liv >= 2 ? `, e i loro critici fanno ×${liv >= 3 ? "2" : "1,75"} invece di ×1,5` : ""}` },
   // Barbapapà: cambiano forma, quindi il tipo conta meno per loro: lo svantaggio di tipo (quando attaccano e quando difendono) si riduce

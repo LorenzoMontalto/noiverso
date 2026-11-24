@@ -808,7 +808,7 @@ function impronta(id) {
 const BILANCIO = {
   aleadme: 1.168, alebella: 1.117, aleghilterra: 0.97, alessante: 0.985, alesshack: 0.99, alessiai: 0.956, alessieno: 1.02, alessiologa: 1.078,
   alessmione: 0.924, alessoutlaw: 1.073, alicircuit: 1.094, alicolt: 0.99, aligorgona: 1.031, alihsoka: 1.038, aliottina: 1.136, alire: 1.028,
-  alirtogallo: 1.068, alisa: 0.916, alisombra: 0.943, alispia: 0.922, alissith: 0.939, alistaroth: 0.905, alizombie: 1.038, alledna: 1.051,
+  alirtogallo: 1.068, alisa: 0.916, alisombra: 0.943, alispia: 0.922, alissith: 0.958, alistaroth: 0.905, alizombie: 1.038, alledna: 1.051,
   aphroalessia: 1.006, aresorenzo: 0.911, artalice: 0.981, atharita: 0.948, auranshee: 1.073, aurante: 1.124, auraria: 0.919, aurobrava: 1.01,
   auroraider: 0.995, auroravive: 1.025, aurorecia: 0.993, auroressa: 1.021, auroroide: 1.094, auroruna: 1.147, aurothma: 1.013, aurrerri: 1.048,
   bandita: 1.042, brolymone: 0.976, bulsene: 1.07, c18ora: 1.023, chapo: 1.061, chichice: 0.965, comora: 0.901, criliziano: 0.91,
@@ -818,7 +818,7 @@ const BILANCIO = {
   ginice: 0.975, giudella: 0.989, giueia: 1.05, giulancia: 0.938, giulasso: 0.973, giulialla: 0.99, giulibyte: 0.971, giulifleur: 0.98,
   giuliflora: 0.969, giulimaah: 0.97, giulimort: 0.98, giulistrega: 1.064, giupatty: 1.026, giuvlass: 0.945, gohanlollo: 0.932, gokiele: 0.962,
   gossip: 1.035, herdiego: 1.029, ironlus: 0.939, labruja: 1.094, lasombra: 1.017, ligulk: 0.968, loca: 1.036, lollakin: 0.922,
-  lollapa: 1.051, lollart: 1.019, lollawless: 1.052, lollendigo: 0.977, lollifer: 0.927, lollinista: 0.895, lollirlanda: 0.951, lollivor: 0.987,
+  lollapa: 1.051, lollart: 1.019, lollawless: 1.052, lollendigo: 0.977, lollifer: 0.946, lollinista: 0.895, lollirlanda: 0.951, lollivor: 0.987,
   lolloborg: 1.017, lollocallo: 0.988, lollon: 1.036, lollonova: 1.027, ludasso: 0.93, ludhacker: 0.985, ludobunty: 1.136, ludogargo: 0.979,
   ludohouse: 0.96, ludomagma: 0.922, ludomodeus: 0.973, ludopa: 0.975, ludormania: 1.085, ludovirus: 0.988, ludovolt: 1.01, ludowalker: 0.946,
   ludraco: 1.054, maurialpinista: 0.972, mauriba: 0.94, mauribandit: 0.95, mauribecca: 0.973, mauriborg: 0.965, mauricore: 1.058, maurigitto: 1.178,
@@ -828,7 +828,7 @@ const BILANCIO = {
   pipverus: 0.974, poseludovico: 0.975, reina: 1.079, riessica: 1.024, ritacrys: 1.073, ritacubus: 0.978, ritadora: 0.984, ritageddon: 1.042,
   ritalia: 1.054, ritaloon: 0.985, ritamma: 0.894, ritanimatrice: 0.979, ritare: 1.145, ritarena: 1.011, ritey: 1.024, ritron: 1.042,
   rojo: 0.989, samasso: 0.978, samuba: 1.011, samubrasil: 1.053, samudead: 0.959, samuero: 0.971, samulett: 0.951, samulex: 1.062,
-  samulmine: 1.109, samulupo: 0.911, samusty: 0.976, samutografo: 1.018, samuwan: 0.929, samuzebub: 0.977, selmene: 1.033, senebroker: 1.05,
+  samulmine: 1.109, samulupo: 0.911, samusty: 0.976, samutografo: 1.018, samuwan: 0.929, samuzebub: 0.997, selmene: 1.033, senebroker: 1.05,
   senecallo: 0.978, senecate: 0.992, seneforte: 0.994, senelagoon: 0.946, seneloon: 1.135, senemune: 0.935, senesia: 0.948, senesuono: 1.197,
   senetron: 0.992, seneverr: 1.008, simalpatine: 1.065, simarney: 0.942, simarshal: 1.021, simocallo: 1.08, simoldemort: 1.044, simoluce: 0.926,
   simonducer: 0.983, simonex: 1.072, simonusa: 0.973, simopter: 1.069, simospirit: 0.941, simothan: 0.96, solmone: 1.051, spidertoto: 1.059,
@@ -837,6 +837,7 @@ const BILANCIO = {
   vedovagreca: 0.925, vegerizio: 1.033, vidalessia: 0.982, vikamashtu: 0.975, vikante: 0.913, vikappone: 0.973, vikatrix: 0.973, vikybyte: 0.891,
   vikydead: 0.937, vikyeletro: 0.985, vikylalla: 1.006, vikylasso: 0.907, vikytal: 0.884, vikyventura: 1.016, wandessia: 1.1, waspy: 0.915,
   wonderrita: 1.034, zeutiz: 1.062,
+  aurorrigan: 1.02,
 };
 function statistiche(c, liv = 1, lode = false, rar) {
   const b = RUOLI[c.ruolo], fr = RARITA[RARITA[rar] ? rar : c.rarita].forza * (BILANCIO[c.id] || 1), f = fattoreLivello(liv, lode), t = BONUS_TIPO[c.stile] || {};
