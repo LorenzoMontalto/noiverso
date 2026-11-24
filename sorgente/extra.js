@@ -66,11 +66,11 @@ const Cosmetici = (() => {
 // Ogni carta ha 5 obiettivi suoi. Ogni obiettivo raggiunto è una stella: monete, punti Fama e, alla quinta, la Cornice del Maestro.
 const Maestria = (() => {
   const OBIETTIVI = [
-    { k: "v", n: 3,    testo: "Vinci 3 battaglie con questa carta scesa in campo", monete: 25,  fama: 10 },
-    { k: "d", n: 1500, testo: "Fai 1.500 danni con questa carta", monete: 50, fama: 20 },
-    { k: "o", n: 10,   testo: "Manda KO 10 carte nemiche con questa carta", monete: 75, fama: 30 },
-    { k: "f", n: 10,   testo: "Usa 10 volte la sua mossa finale", monete: 100, fama: 40 },
-    { k: "v", n: 25,   testo: "Vinci 25 battaglie con questa carta scesa in campo", monete: 150, fama: 60, frammenti: 30 },
+    { k: "v", n: 3,    testo: "Vinci 3 battaglie con questa carta scesa in campo", monete: 25,  pot: 5,  fama: 10 },
+    { k: "d", n: 1500, testo: "Fai 1.500 danni con questa carta", monete: 50, pot: 10, fama: 20 },
+    { k: "o", n: 10,   testo: "Manda KO 10 carte nemiche con questa carta", monete: 75, pot: 15, fama: 30 },
+    { k: "f", n: 10,   testo: "Usa 10 volte la sua mossa finale", monete: 100, pot: 20, fama: 40 },
+    { k: "v", n: 25,   testo: "Vinci 25 battaglie con questa carta scesa in campo", monete: 150, pot: 30, fama: 60, frammenti: 30 },
   ];
   const dati = id => (S.maestria && S.maestria[id]) || { v: 0, d: 0, o: 0, f: 0, presi: [] };
   const stelle = id => dati(id).presi.length;
@@ -86,10 +86,13 @@ const Maestria = (() => {
       OBIETTIVI.forEach((ob, i) => {
         if (m.presi.includes(i) || m[ob.k] < ob.n) return;
         m.presi = m.presi.concat(i);
-        const p = { monete: ob.monete }; daiPremio(p);
+        // potenziatori per questa carta; se è già al 30 non servono più e valgono 5 monete l'uno
+        const al30 = infoCarta(x.id).liv >= LIVELLO_MAX, extra = al30 ? ob.pot * 5 : 0;
+        daiPremio({ monete: ob.monete + extra });
+        if (!al30) S.pot = Object.assign({}, S.pot, { [x.id]: num((S.pot || {})[x.id]) + ob.pot });
         if (ob.frammenti) Frammenti.aggiungi(ob.frammenti, false);
         Livello.guadagna(ob.fama);
-        avvisi.push(`Maestria ${PER_ID[x.id].nome} ${"★".repeat(m.presi.length)}: +${ob.monete} monete${ob.frammenti ? ` e ${ob.frammenti} frammenti` : ""}`);
+        avvisi.push(`Maestria ${PER_ID[x.id].nome} ${"★".repeat(m.presi.length)}: ${al30 ? `+${ob.monete + extra} monete (è già al 30)` : `+${ob.pot} potenziatori ▲ e +${ob.monete} monete`}${ob.frammenti ? ` e ${ob.frammenti} frammenti` : ""}`);
         if (m.presi.length >= OBIETTIVI.length) Cosmetici.sblocca("cornice-maestro");
       });
       S.maestria = Object.assign({}, S.maestria, { [x.id]: m });
@@ -101,8 +104,8 @@ const Maestria = (() => {
     const m = dati(id);
     return `<div class="maestria-box"><b>Maestria ${"★".repeat(m.presi.length)}${"☆".repeat(OBIETTIVI.length - m.presi.length)}</b>
       <ul>${OBIETTIVI.map((ob, i) => { const v = Math.min(ob.n, m[ob.k]), ok = m.presi.includes(i);
-        return `<li class="${ok ? "fatto" : ""}"><span>${ok ? "★" : "☆"} ${esc(ob.testo)}</span><small>${ok ? "fatto" : `${v.toLocaleString("it-IT")} / ${ob.n.toLocaleString("it-IT")}`} · +${ob.monete} monete${ob.frammenti ? ` e ${ob.frammenti} ◈` : ""}</small></li>`; }).join("")}</ul>
-      <p class="nota">Le stelle si prendono da sole giocando: contano le battaglie in cui questa carta è scesa in campo. Con 5 stelle sblocchi la Cornice del Maestro.</p></div>`;
+        return `<li class="${ok ? "fatto" : ""}"><span>${ok ? "★" : "☆"} ${esc(ob.testo)}</span><small>${ok ? "fatto" : `${v.toLocaleString("it-IT")} / ${ob.n.toLocaleString("it-IT")}`} · +${ob.pot} ▲ e +${ob.monete} monete${ob.frammenti ? ` e ${ob.frammenti} ◈` : ""}</small></li>`; }).join("")}</ul>
+      <p class="nota">Le stelle si prendono da sole giocando: contano le battaglie in cui questa carta è scesa in campo. Ogni stella dà potenziatori ▲ per questa carta (80 in tutto); se è già al 30 li ricevi in monete, 5 l'uno. Con 5 stelle sblocchi la Cornice del Maestro.</p></div>`;
   }
   return { OBIETTIVI, stelle, totaleStelle, fineBattaglia, htmlDettaglio };
 })();
@@ -434,7 +437,7 @@ const Novita = (() => {
   const VERSIONE = "2026-11-extra";
   const SCHEDE = [
     { ico: "⚔", titolo: "Arena", testo: "Nella pagina Sfida: paghi 300 monete, scegli 5 carte (ogni volta tra 3) e giochi finché non perdi 3 volte. Tutte le carte sono al livello 20: vince chi sceglie e gioca meglio. Fino a 7 vittorie, e il premio cresce a ogni vittoria." },
-    { ico: "★", titolo: "Maestria delle carte", testo: "Ogni carta ha 5 obiettivi: vittorie, danni, KO e mosse finali. Ogni obiettivo è una stella con monete in premio. Li vedi nel dettaglio della carta e si prendono da soli giocando." },
+    { ico: "★", titolo: "Maestria delle carte", testo: "Ogni carta ha 5 obiettivi: vittorie, danni, KO e mosse finali. Ogni obiettivo è una stella con potenziatori per quella carta e monete in premio. Li vedi nel dettaglio della carta e si prendono da soli giocando." },
     { ico: "◈", titolo: "Frammenti", testo: "I doppioni delle carte già al 30 ora danno anche frammenti. Con i frammenti crei le carte che ti mancano: tocca una carta coperta nell'album." },
     { ico: "💎", titolo: "Gradi della stagione", testo: "Con i punti dal vivo sali da Bronzo a Leggenda. A fine stagione riscuoti il premio del grado più alto che hai raggiunto." },
     { ico: "🛒", titolo: "Offerte speciali", testo: "Nel negozio, ogni giorno, 3 offerte solo per te: una carta che ti manca, potenziatori, un cosmetico. Le bustine sono tutte lì come prima." },
