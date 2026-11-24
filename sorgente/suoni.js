@@ -7,7 +7,12 @@
 // ============================================================
 const Suoni = (() => {
   let ctx = null, master = null, busMusica = null, busEffetti = null, eco = null, rumore = null;
-  let volMusica = .6, volEffetti = .8, sbloccato = false;
+  // i volumi valgono per questo dispositivo (non per l'account): così valgono anche prima dell'accesso,
+  // nel profilo admin e in qualunque profilo si usi su questo telefono o computer
+  const CHIAVE = "noiverso-audio";
+  let pref = { musica: "60", suoni: "80" }, salvate = false;
+  try { const x = localStorage.getItem(CHIAVE); if (x) { pref = Object.assign(pref, JSON.parse(x)); salvate = true; } } catch (e) {}
+  let volMusica = +pref.musica / 100, volEffetti = +pref.suoni / 100, sbloccato = false;
   const ora = () => ctx.currentTime;
 
   function crea() {
@@ -37,8 +42,9 @@ const Suoni = (() => {
     if (!sbloccato) { sbloccato = true; Musica._sbloccato(); }
   }
   function imposta(o) {
-    if (o.musica !== undefined) volMusica = Math.max(0, Math.min(1, +o.musica / 100));
-    if (o.effetti !== undefined) volEffetti = Math.max(0, Math.min(1, +o.effetti / 100));
+    if (o.musica !== undefined) { volMusica = Math.max(0, Math.min(1, +o.musica / 100)); pref.musica = String(o.musica); }
+    if (o.effetti !== undefined) { volEffetti = Math.max(0, Math.min(1, +o.effetti / 100)); pref.suoni = String(o.effetti); }
+    try { localStorage.setItem(CHIAVE, JSON.stringify(pref)); salvate = true; } catch (e) {}
     if (ctx) { busMusica.gain.setTargetAtTime(volMusica * .8, ora(), .1); busEffetti.gain.setTargetAtTime(volEffetti, ora(), .05); }
     Musica._volume(volMusica);
   }
@@ -184,7 +190,7 @@ const Suoni = (() => {
     },
     rullo() { if (!effettiAttivi()) return; tonfo(.9, 0, 70); soffio("lowpass", 300, .6, .4, { fine: 60 }); },   // i colpi dell'entrata speciale
   };
-  return { sblocca, imposta, ...S, get pronto() { return pronto(); }, get _ctx() { return ctx; }, _tono: tono, _soffio: soffio, _nota: nota, get _busMusica() { return busMusica; }, get _eco() { return eco; }, get _rumore() { return rumore; } };
+  return { sblocca, imposta, ...S, get preferenze() { return { ...pref }; }, get salvate() { return salvate; }, get pronto() { return pronto(); }, get _ctx() { return ctx; }, _tono: tono, _soffio: soffio, _nota: nota, get _busMusica() { return busMusica; }, get _eco() { return eco; }, get _rumore() { return rumore; } };
 })();
 
 // ============================================================
@@ -211,7 +217,7 @@ const Musica = (() => {
       motA: [[2, 4, 2], [4, 2, 2], [6, 4, 6], [12, 6, 4]], motA2: [[0, 7, 2], [2, 6, 2], [4, 4, 4], [10, 2, 2], [12, 0, 4]],
       motB: [[0, 2, 1], [1, 4, 1], [2, 6, 2], [4, 7, 4], [8, 6, 2], [10, 4, 6]], motB2: [[0, 4, 4], [4, 3, 2], [6, 2, 2], [8, 1, 8]] },
   ];
-  let attiva = false, volume = .6, brano = 0, giro = 0, passo = 0, prossimo = 0, timer = null, sbloccato = false, voluto = false, bus = null;
+  let attiva = false, volume = +Suoni.preferenze.musica / 100, brano = 0, giro = 0, passo = 0, prossimo = 0, timer = null, sbloccato = false, voluto = false, bus = null;
 
   const nota = n => 440 * Math.pow(2, (n - 69) / 12);
   function grado(b, g) { const sc = SCALE[b.scala]; const o = Math.floor(g / 7); return b.tonica + 12 * o + sc[((g % 7) + 7) % 7]; }

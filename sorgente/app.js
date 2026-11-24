@@ -93,7 +93,7 @@ const attesa = ms => new Promise(r => setTimeout(r, ms));
 const ridotto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ---------------- Stato del giocatore ----------------
-const IMPOSTAZIONI_BASE = { modalita: "classica", velocita: "normale", effetti: true, consigli: true, grafica: "alta", musica: "60", suoni: "80" };
+const IMPOSTAZIONI_BASE = { modalita: "classica", velocita: "normale", effetti: true, consigli: true, grafica: "alta" };
 function statoNuovo() {
   return {
     v: 2, monete: MONETE_INIZIALI, carte: {},
@@ -1836,7 +1836,9 @@ function premiSfida(L) {
 function applicaImpostazioni() {
   const i = imp();
   Scena3D.imposta({ velocita: VELOCITA[i.velocita] || 1, effetti: i.effetti, qualita: i.grafica === "bassa" ? "bassa" : "alta" });
-  Suoni.imposta({ musica: i.musica, effetti: i.suoni });
+  // musica e suoni scelti nella versione di ieri (salvati nell'account): passano al dispositivo una volta sola
+  const vecchie = S.impostazioni || {};
+  if (!Suoni.salvate && (vecchie.musica !== undefined || vecchie.suoni !== undefined)) Suoni.imposta({ musica: vecchie.musica ?? Suoni.preferenze.musica, effetti: vecchie.suoni ?? Suoni.preferenze.suoni });
   document.body.classList.toggle("modo-admin", !!S.admin);
 }
 
@@ -1959,7 +1961,7 @@ function preparaAdmin() {
 
 // ---------- Profilo e impostazioni (finestra) ----------
 function segmento(chiave, etichetta, opzioni, aiuto) {
-  const v = imp()[chiave];
+  const v = chiave === "musica" || chiave === "suoni" ? Suoni.preferenze[chiave] : imp()[chiave];
   return `<div class="imp-riga"><div><b>${etichetta}</b>${aiuto ? `<small>${aiuto}</small>` : ""}</div>
     <div class="segmenti" role="radiogroup" aria-label="${esc(etichetta)}">${opzioni.map(([val, testo]) => `<button type="button" class="seg ${String(v) === String(val) ? "sel" : ""}" data-fx="gelatina" data-imp="${chiave}" data-val="${val}" role="radio" aria-checked="${String(v) === String(val)}">${testo}</button>`).join("")}</div></div>`;
 }
@@ -1985,8 +1987,8 @@ function apriProfilo() {
       ${segmento("consigli", "Mossa consigliata", [["true", "Sì"], ["false", "No"]], "Solo contro il computer: nelle sfide dal vivo con gli amici è sempre spenta.")}
       ${segmento("effetti", "Effetti delle mosse finali", [["true", "Sì"], ["false", "No"]], "Fascia con il nome della mossa ed effetti su tutto lo schermo.")}
       ${segmento("grafica", "Grafica", [["alta", "3D alta"], ["bassa", "3D leggera"], ["2d", "2D"]], "Se il telefono scalda o va a scatti, prova la leggera o il 2D.")}
-      ${segmento("musica", "Musica", [["0", "No"], ["30", "Bassa"], ["60", "Media"], ["100", "Alta"]], "Tre brani originali nei menu; in battaglia si spegne e restano i suoni.")}
-      ${segmento("suoni", "Suoni", [["0", "No"], ["40", "Bassi"], ["80", "Medi"], ["100", "Alti"]], "Bottoni, mosse, colpi e bustine.")}
+      ${segmento("musica", "Musica", [["0", "No"], ["30", "Bassa"], ["60", "Media"], ["100", "Alta"]], "Tre brani originali nei menu; in battaglia si spegne e restano i suoni. Vale per questo dispositivo.")}
+      ${segmento("suoni", "Suoni", [["0", "No"], ["40", "Bassi"], ["80", "Medi"], ["100", "Alti"]], "Bottoni, mosse, colpi e bustine. Vale per questo dispositivo.")}
       <h3>Account</h3>
       <div class="azioni">
         ${Archivio.proprietario && Archivio.modo === "cloud" ? (S.admin ? `<button class="btn" data-fx="onda" data-azione="esci-admin">Torna al tuo profilo</button>` : `<button class="btn oro" data-fx="coriandoli" data-azione="entra-admin">Passa ad admin</button>`) : ""}
@@ -3035,7 +3037,8 @@ function applicaFoto(f) {
 document.addEventListener("click", e => {
   const b = e.target.closest && e.target.closest("button, a.btn, [role=button]");
   if (!b || b.disabled || b.classList.contains("mossa")) return;
-  Suoni.tocco(b.classList.contains("primario") || b.classList.contains("oro"));
+  const forte = b.classList.contains("primario") || b.classList.contains("oro");
+  setTimeout(() => Suoni.tocco(forte), 0);
 }, true);
 // musica nei menu, silenzio in battaglia e mentre si apre una bustina
 setInterval(() => {
@@ -3217,6 +3220,11 @@ document.addEventListener("click", e => {
   if (t.disabled) return;
   if (t.id === "profilo-btn") { apriProfilo(); return; }
   if (t.dataset.avatar) { avatarScelto = t.dataset.avatar; $$(".av-btn").forEach(b => { const si = b.dataset.avatar === avatarScelto; b.classList.toggle("sel", si); b.setAttribute("aria-checked", si); }); return; }
+  if (t.dataset.imp === "musica" || t.dataset.imp === "suoni") {
+    Suoni.imposta(t.dataset.imp === "musica" ? { musica: t.dataset.val } : { effetti: t.dataset.val });
+    t.parentElement.querySelectorAll(".seg").forEach(b => { const si = b === t; b.classList.toggle("sel", si); b.setAttribute("aria-checked", si); });
+    return;
+  }
   if (t.dataset.imp) {
     const v = t.dataset.val === "true" ? true : t.dataset.val === "false" ? false : t.dataset.val;
     S.impostazioni = Object.assign(imp(), { [t.dataset.imp]: v });
