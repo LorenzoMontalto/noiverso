@@ -2010,6 +2010,24 @@ td.chi[data-profilo-amico] { cursor: pointer; } td.chi[data-profilo-amico]:hover
 .carta-maestria { color: var(--oro); font-size: .78rem; letter-spacing: 1px; line-height: 1; margin-bottom: 3px; text-shadow: 0 0 6px rgba(242, 193, 78, .7), 0 1px 2px #000; }
 .carta-maestria i { font-style: normal; color: rgba(255, 255, 255, .22); text-shadow: 0 1px 2px #000; }
 .carta.piccola .carta-maestria { font-size: .6rem; letter-spacing: 0; margin-bottom: 1px; }
+/* serie completata */
+.serie-completa { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; background: radial-gradient(circle at center, rgba(0, 0, 0, .55), rgba(0, 0, 0, .85)); opacity: 0; transition: opacity .35s; cursor: pointer; overflow: hidden; }
+.serie-completa.su { opacity: 1; } .serie-completa.giu { opacity: 0; }
+.sc-raggi { position: absolute; width: 160vmax; height: 160vmax; background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--c) 35%, transparent) 0 8deg, transparent 8deg 20deg); mask-image: radial-gradient(circle, #000 0 18%, transparent 55%); -webkit-mask-image: radial-gradient(circle, #000 0 18%, transparent 55%); animation: sc-gira 14s linear infinite; }
+@keyframes sc-gira { to { transform: rotate(360deg); } }
+.sc-box { position: relative; width: min(88vw, 380px); text-align: center; padding: 26px 20px 18px; border-radius: 22px; background: linear-gradient(160deg, color-mix(in srgb, var(--c) 30%, #17121c), #0e0b12 70%); border: 2px solid var(--c); box-shadow: 0 0 40px color-mix(in srgb, var(--c) 60%, transparent), inset 0 0 30px rgba(255, 255, 255, .05); transform: scale(.5) rotate(-6deg); transition: transform .55s var(--molla); }
+.serie-completa.su .sc-box { transform: scale(1) rotate(0); } .serie-completa.giu .sc-box { transform: scale(.85); }
+.sc-simbolo { width: 84px; height: 84px; margin: -66px auto 8px; border-radius: 50%; display: grid; place-items: center; font-size: 2.6rem; background: radial-gradient(circle at 35% 30%, #fff, var(--c) 55%); color: #120d14; border: 3px solid #fff; box-shadow: 0 0 30px var(--c); animation: sc-batti 1.2s ease-in-out infinite; }
+@keyframes sc-batti { 50% { transform: scale(1.08); box-shadow: 0 0 50px var(--c); } }
+.sc-tag { display: inline-block; font-size: .72rem; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; color: #1b1206; background: linear-gradient(90deg, #ffe08a, var(--oro)); padding: 4px 12px; border-radius: 20px; animation: sc-entra .5s .25s var(--molla) both; }
+.sc-box h2 { font-family: var(--display); font-size: 2rem; margin: 8px 0 4px; color: #fff; text-shadow: 0 0 18px var(--c); animation: sc-entra .5s .4s var(--molla) both; }
+.sc-box p { margin: 4px 0; } .sc-box small { display: block; margin-top: 10px; color: var(--spento); }
+.sc-premio { font-size: .86rem; color: #ffe9b0; }
+.sc-carte { display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin: 12px 0 8px; }
+.sc-carte img { width: 38px; aspect-ratio: 5 / 7; object-fit: cover; border-radius: 5px; border: 1px solid var(--c); background: #000; animation: sc-carta .45s calc(.5s + var(--j) * 70ms) var(--molla) both; }
+@keyframes sc-entra { from { opacity: 0; transform: translateY(10px) scale(.8); } }
+@keyframes sc-carta { from { opacity: 0; transform: translateY(16px) rotate(-12deg) scale(.6); } }
+@media (prefers-reduced-motion: reduce) { .sc-raggi, .sc-simbolo { animation: none; } }
 </style>
 <script src="config.js"></script>
 <script src="supabase.min.js"></script>

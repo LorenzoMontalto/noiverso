@@ -52,11 +52,13 @@ const Trofei = (() => {
   const pronti = () => S.admin ? 0 : elenco().filter(t => raggiunto(t) && !presi()[t.id]).length;
   const annunciati = new Set();
   function controlla() {   // avvisa una volta quando un trofeo diventa riscuotibile
-    if (S.admin || B || !$("#apertura").hidden) return;
+    // mentre apri una bustina niente annunci: rovinerebbero la sorpresa (arrivano quando la chiudi)
+    const inBustina = () => !$("#apertura").hidden || !!$("#modale-corpo .apertura2d");
+    if (S.admin || B || inBustina()) return;
     for (const t of elenco()) if (raggiunto(t) && !presi()[t.id] && !annunciati.has(t.id)) {
       annunciati.add(t.id);
       if (annunciati.size > elenco().length) break;
-      setTimeout(() => mostraAvviso(`Trofeo sbloccato: ${t.nome}! Riscuotilo nell'Album, scheda Trofei.`), 900);
+      setTimeout(() => { if (inBustina()) { annunciati.delete(t.id); return; } mostraAvviso(`Trofeo sbloccato: ${t.nome}! Riscuotilo nell'Album, scheda Trofei.`); }, 900);
     }
   }
   function titoloAttuale() { const t = elenco().find(x => x.id === S.titolo); return t && presi()[t.id] ? t.titolo : ""; }
@@ -94,7 +96,10 @@ const Trofei = (() => {
           : preso ? (usato ? `<span class="chip sel">In uso</span>` : `<button class="btn piccolo" data-titolo="${t.id}">Usa titolo</button>`) : ""}</div>
       </div>`; }).join("")}</div>`;
   }
-  return { html, pronti, controlla, riscuoti, scegliTitolo, titoloAttuale, titoloId };
+  // trofei di cui si occupa qualcun altro (la serie completata si annuncia quando giri la carta, non prima)
+  const silenzia = ids => ids.forEach(id => annunciati.add(id));
+  const trova = id => elenco().find(t => t.id === id);
+  return { html, pronti, controlla, riscuoti, scegliTitolo, titoloAttuale, titoloId, silenzia, trova };
 })();
 
 // ---------------- SCAMBI ----------------

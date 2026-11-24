@@ -657,7 +657,9 @@ function apriModale(html, opz = {}) {
   FX.riavvia($(".modale-scatola"), "entra");
 }
 function chiudiModale() {
+  const eraApertura = !!$("#modale-corpo .apertura2d");
   $("#modale").hidden = true; $("#modale-corpo").innerHTML = "";
+  if (eraApertura) { SerieCompleta.svuota(); Trofei.controlla(); }   // chiusa la bustina: annunci rimandati (e la serie, se non avevi girato tutto)
   // chiusa la scelta della squadra senza scegliere: niente battaglia, si esce dallo schermo intero
   if (typeof scegliSquadra === "function" && scegliSquadra.poi) { scegliSquadra.poi = null; if (!B) schermoIntero(false); }
 }
@@ -1070,7 +1072,9 @@ function usaBustina(tipo, pagando) {
     if (!S.inventario[tipo]) return;
     S.inventario[tipo]--;
   }
+  const incomplete = S.admin ? [] : ORDINE_SERIE.filter(k => { const st = statSerie(k); return st.tot && st.mie < st.tot; });
   const esiti = apriBustina(tipo);
+  SerieCompleta.prepara(esiti, incomplete);
   Livello.carteNuove(esiti); Frammenti.daEsiti(esiti);
   const su = aggiungiXP(XP_BUSTINA);
   Missioni.evento("bustina", { tipo });
@@ -1080,6 +1084,54 @@ function usaBustina(tipo, pagando) {
   aggiornaTesta();
   mostraApertura(esiti, tipo, su, graffito);
 }
+
+// ---------- Serie completata: annuncio al centro quando giri la carta che la completa ----------
+const SerieCompleta = (() => {
+  let attese = {}, coda = [], aperto = false;
+  // prima di girare: per ogni serie che questa bustina completa, quali carte nuove la completano
+  function prepara(esiti, incomplete) {
+    attese = {}; coda = [];
+    for (const k of incomplete) {
+      const st = statSerie(k); if (st.mie < st.tot) continue;
+      const idx = esiti.map((e, i) => e.nuova && PER_ID[e.id].serie === k ? i : -1).filter(i => i >= 0);
+      if (idx.length) attese[k] = new Set(idx);
+    }
+    Trofei.silenzia(Object.keys(attese).map(k => `serie-${k}`));
+  }
+  function scoperta(i) {
+    for (const k of Object.keys(attese)) {
+      attese[k].delete(i);
+      if (!attese[k].size) { delete attese[k]; coda.push(k); setTimeout(prossima, ridotto ? 300 : 1100); }
+    }
+  }
+  const svuota = () => { for (const k of Object.keys(attese)) coda.push(k); attese = {}; if (coda.length) setTimeout(prossima, 400); };
+  function prossima() {
+    if (aperto || !coda.length) return;
+    const k = coda.shift(), se = SERIE[k], st = statSerie(k), t = Trofei.trova(`serie-${k}`);
+    aperto = true;
+    const el = document.createElement("div");
+    el.className = "serie-completa"; el.style.setProperty("--c", se.colore);
+    el.setAttribute("role", "dialog"); el.setAttribute("aria-label", `Serie ${se.nome} completata`);
+    el.innerHTML = `<div class="sc-raggi"></div><div class="sc-box">
+      <div class="sc-simbolo">${se.simbolo}</div>
+      <span class="sc-tag">Serie completata!</span>
+      <h2>${esc(se.nome)}</h2>
+      <p>Hai trovato tutte le <b>${st.tot}</b> carte della serie.</p>
+      <div class="sc-carte">${st.carte.slice(0, 12).map((c, j) => `<img src="${imgMini(c.id)}" alt="" style="--j:${j}">`).join("")}</div>
+      ${t ? `<p class="sc-premio">Nell'album ti aspetta il trofeo: <b>+${t.premio} monete</b> e il titolo <b>«${esc(t.titolo)}»</b></p>` : ""}
+      <small>Tocca per continuare</small></div>`;
+    document.body.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("su"));
+    try { Suoni.fine(true); } catch (e) {}
+    const [x, y] = [innerWidth / 2, innerHeight / 2];
+    if (!ridotto) [0, 350, 800].forEach((d, n) => setTimeout(() => FX.esplosione(x, y, { n: 70, forma: n === 1 ? "stella" : "coriandolo", colori: [se.colore, "#ffffff", "#f2c14e"], velocita: 9, dimensione: 6 }), d));
+    let chiuso = false;
+    const chiudi = () => { if (chiuso) return; chiuso = true; el.classList.remove("su"); el.classList.add("giu"); setTimeout(() => { el.remove(); aperto = false; prossima(); }, 350); };
+    el.addEventListener("click", e => { e.stopPropagation(); chiudi(); });
+    setTimeout(chiudi, 7000);
+  }
+  return { prepara, scoperta, svuota };
+})();
 
 // ---------- Apertura bustina (3D, con riserva 2D) ----------
 let apertura = null;
@@ -1112,6 +1164,7 @@ function mostraApertura(esiti, tipo, livelloSu, graffito) {
         onGira: (i, tutte) => {
           $("#sugg").textContent = tutte ? `${livelloSu ? `Pass: livello ${livelloSu} raggiunto! · ` : ""}Tocca una carta per vedere le statistiche` : "Tocca per la prossima · le carte scoperte si aprono con un tocco";
           if (tutte) $('[data-azione="gira-tutte"]').hidden = true;
+          SerieCompleta.scoperta(i);
         },
         onDettaglio: i => apriSchedaCarta(esiti[i]),
       });
@@ -1158,7 +1211,7 @@ function apriSchedaCarta(e) {
 function chiudiSchedaCarta() { const v = document.querySelector(".scheda-veloce"); if (v) v.remove(); }
 addEventListener("keydown", e => { if (e.key === "Escape") chiudiSchedaCarta(); });
 function chiudiApertura() {
-  chiudiSchedaCarta();
+  chiudiSchedaCarta(); SerieCompleta.svuota();
   if (apertura) { apertura.distruggi(); apertura = null; }
   const ov = $("#apertura"); ov.hidden = true; ov.innerHTML = "";
   disegna();
@@ -3454,7 +3507,7 @@ document.addEventListener("click", e => {
   if (t.dataset.sostituisci !== undefined) { sostituisciGiocatore(+t.dataset.sostituisci); return; }
   if (t.dataset.sfidaVivo !== undefined) { const id = t.dataset.sfidaVivo; if (B) { Online.esci(); esciBattaglia(); } scegliSquadra(() => Online.sfida(id), "Con quale squadra sfidi il tuo amico?"); return; }
   if (t.dataset.scegliSquadra !== undefined) { S.attiva = +t.dataset.scegliSquadra; salva(); const f = scegliSquadra.poi; scegliSquadra.poi = null; chiudiModale(); if (f) f(); return; }
-  if (t.classList.contains("gira")) { if (t.classList.contains("girata")) apriSchedaCarta(esitiAperti[+t.dataset.i]); else { t.classList.add("girata"); const e = esitiAperti[+t.dataset.i]; Suoni.gira(e.ultra ? "ultra" : PER_ID[e.id].rarita); } return; }
+  if (t.classList.contains("gira")) { if (t.classList.contains("girata")) apriSchedaCarta(esitiAperti[+t.dataset.i]); else { t.classList.add("girata"); SerieCompleta.scoperta(+t.dataset.i); const e = esitiAperti[+t.dataset.i]; Suoni.gira(e.ultra ? "ultra" : PER_ID[e.id].rarita); } return; }
   if (t.matches(".carta[role=button]")) { apriDettaglio(t.dataset.id); return; }
   if (t.dataset.dettaglio) { apriDettaglio(t.dataset.dettaglio); return; }
   switch (t.dataset.azione) {
@@ -3495,7 +3548,7 @@ document.addEventListener("click", e => {
     case "riscuoti-accesso": Missioni.riscuotiAccesso(t); break;
     case "gira-tutte": if (apertura) apertura.giraTutte(); setTimeout(giraBomboletta, 1600); break;
     case "gira-bomboletta": giraBomboletta(); break;
-    case "gira-tutte-2d": $$(".gira").forEach((g, i) => setTimeout(() => g.classList.add("girata"), ridotto ? 0 : i * 180)); setTimeout(giraBomboletta, 1000); break;
+    case "gira-tutte-2d": $$(".gira").forEach((g, i) => setTimeout(() => { if (!g.classList.contains("girata")) SerieCompleta.scoperta(+g.dataset.i); g.classList.add("girata"); }, ridotto ? 0 : i * 180)); setTimeout(giraBomboletta, 1000); break;
     case "chiudi-apertura": chiudiApertura(); break;
     case "pass-bonus": apriScrignoBonus(t); break;
     case "riscuoti-tutto": riscuoti(Array.from({ length: livelloPass() }, (_, i) => i + 1), t); break;
