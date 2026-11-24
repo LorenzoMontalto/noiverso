@@ -451,7 +451,7 @@ class Battaglia {
       a.pronta = false;
       const drena = Math.max(m.drena || 0, (a.sin && a.sin.vampiro) || 0);
       if (drena && totale > 0 && a.pv > 0) this._cura(l, a, Math.max(1, Math.round(totale * drena / 100)));
-      if (a.c.ruolo === "ladro" && O.energia > 0 && this.rng() < 0.2) {
+      if (a.c.ruolo === "ladro" && O.energia > 0 && m.costo >= 2) {   // nov 2026: prima era il 20% a ogni colpo (troppo poco)
         O.energia--; L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
         this._log(`${a.c.nome} ruba 1 energia.`, { lato: l });
       }
