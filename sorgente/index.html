@@ -982,6 +982,11 @@ body.in-accesso { overflow: hidden; }
 .persona { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; background: var(--muro); border-radius: 10px; padding: 6px 8px; border: 1px solid transparent; }
 .persona.errata { border-color: var(--neon); }
 .persona > b { min-width: 70px; font-size: .85rem; }
+.ultra-colonne { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ultra-colonne .persone { grid-template-columns: 1fr; }
+.ultra-titolo { margin: 0 0 6px; font-weight: 800; color: var(--oro); }
+.ultra-titolo.senza { color: #ff9aa6; }
+@media (max-width: 760px) { .ultra-colonne { grid-template-columns: 1fr; } }
 .pill-carta { --rc: var(--r-comune); font-size: .74rem; padding: 1px 7px; border-radius: 6px; border: 1px solid var(--rc); color: var(--testo); white-space: nowrap; }
 .pill-carta.r-rara { --rc: var(--r-rara); } .pill-carta.r-epica { --rc: var(--r-epica); }
 .pill-carta.r-leggendaria { --rc: var(--oro); background: rgba(242, 193, 78, .18); font-weight: 700; }

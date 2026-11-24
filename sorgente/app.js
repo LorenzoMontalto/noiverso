@@ -2034,6 +2034,7 @@ function vistaAdmin() {
       <div class="admin-box"><h3>In battaglia</h3>
         <p class="nota">Nelle sfide da admin trovi in alto i tasti <b>◆ Piena</b> (energia al massimo) e <b>Vinci</b> (vittoria immediata).</p>
         <p class="nota">Versione del gioco: <b>${VERSIONE}</b> · ${CARTE.length} carte. Il gioco si aggiorna da solo quando pubblico una versione nuova. <button class="btn piccolo" data-fx="salto" data-azione="controlla-versione">Controlla adesso</button></p></div>
+      <div class="admin-box largo" id="admin-ultra">${htmlAdminUltra()}</div>
       <div class="admin-box largo" id="editor-carte">${htmlEditorCarte()}</div>
       <div class="admin-box largo" id="admin-immagini">${htmlAdminImmagini()}</div>
       <div class="admin-box largo" id="admin-graffiti">${Graffiti.htmlAdmin()}</div>
@@ -2310,6 +2311,41 @@ function htmlRegola() {
       <button class="btn" data-fx="scuoti" data-admin="ed-originali">Torna ai valori di partenza</button>
     </div>`;
 }
+// Riepilogo delle versioni Ultra: chi ce l'ha, chi no, e quali serie sono a posto.
+// Legge la bozza dell'editor, così si aggiorna subito quando spunti o togli «Ultra» (prima ancora di salvare).
+function htmlAdminUltra() {
+  if (!bozza) bozza = nuovaBozza();
+  const pers = {}, perSerie = {};
+  for (const c of CARTE) {
+    const b = bozza[c.id], p = b.persona.trim();
+    if (p) (pers[p] = pers[p] || { ultra: [], legg: [] });
+    if (b.ultra) { (perSerie[b.serie] = perSerie[b.serie] || []).push(c); if (p) pers[p].ultra.push(c); }
+    else if (p && b.rarita === "leggendaria") pers[p].legg.push(c);
+  }
+  const nomi = Object.keys(pers).sort((a, b) => a.localeCompare(b));
+  const con = nomi.filter(p => pers[p].ultra.length), senza = nomi.filter(p => !pers[p].ultra.length);
+  const doppie = nomi.filter(p => pers[p].ultra.length > 1);
+  const serieVuote = Object.keys(SERIE).filter(s => !(perSerie[s] || []).length), serieDoppie = Object.keys(SERIE).filter(s => (perSerie[s] || []).length > 1);
+  const pill = (c, cls) => `<span class="pill-carta ${cls}" title="${esc(SERIE[bozza[c.id].serie].nome)}">${SERIE[bozza[c.id].serie].simbolo} ${esc(c.nome)}</span>`;
+  const avvisi = [
+    doppie.length ? `${doppie.map(esc).join(", ")} ${doppie.length === 1 ? "ha" : "hanno"} più di una Ultra` : "",
+    serieDoppie.length ? `più Ultra nella stessa serie: ${serieDoppie.map(s => esc(SERIE[s].nome)).join(", ")}` : "",
+  ].filter(Boolean);
+  const tutte = Object.values(perSerie).flat();
+  const nonLegg = tutte.filter(c => bozza[c.id].rarita !== "leggendaria"), anonime = tutte.filter(c => !bozza[c.id].persona.trim());
+  return `<h3>Versioni Ultra · ${con.length}/${nomi.length} amici</h3>
+    <p class="nota">Regola: una sola Ultra per serie e mai due allo stesso amico. Si cambiano qui sotto, nell'editor delle carte (casella «Ultra»), e qui si aggiorna subito.</p>
+    ${avvisi.length ? `<p class="nota"><b class="errore">Da sistemare: ${avvisi.join(" · ")}.</b></p>` : `<p class="nota">Regola rispettata.</p>`}
+    ${nonLegg.length ? `<p class="nota">Attenzione: ${nonLegg.map(c => esc(c.nome)).join(", ")} ${nonLegg.length === 1 ? "non è leggendaria" : "non sono leggendarie"} (finora le Ultra sono tutte leggendarie).</p>` : ""}
+    ${anonime.length ? `<p class="nota piccola">Ultra senza un amico assegnato: ${anonime.map(c => pill(c, "r-ultra")).join(" ")}</p>` : ""}
+    <div class="ultra-colonne">
+      <div><p class="ultra-titolo">✔ Hanno l'Ultra (${con.length})</p>
+        <div class="persone">${con.map(p => `<div class="persona ${pers[p].ultra.length > 1 ? "errata" : ""}"><b>${esc(p)}</b>${pers[p].ultra.map(c => pill(c, "r-ultra")).join("")}</div>`).join("") || `<p class="nota">Nessuno.</p>`}</div></div>
+      <div><p class="ultra-titolo senza">✘ Ancora senza (${senza.length})</p>
+        <div class="persone">${senza.map(p => `<div class="persona"><b>${esc(p)}</b>${pers[p].legg.length ? `<span class="nota piccola">leggendarie:</span>${pers[p].legg.map(c => pill(c, "r-leggendaria")).join("")}` : `<span class="nota piccola">nessuna leggendaria</span>`}</div>`).join("") || `<p class="nota">Tutti hanno la loro Ultra!</p>`}</div>
+        ${serieVuote.length ? `<p class="nota">Serie ancora senza Ultra: ${serieVuote.map(s => `${SERIE[s].simbolo} ${esc(SERIE[s].nome)}`).join(" · ")}</p>` : `<p class="nota">Ogni serie ha la sua Ultra.</p>`}</div>
+    </div>`;
+}
 function htmlEditorCarte() {
   if (!bozza) bozza = nuovaBozza();
   const persone = [...new Set(Object.values(bozza).map(b => b.persona.trim()).filter(Boolean))].sort();
@@ -2343,6 +2379,7 @@ function htmlEditorCarte() {
 function aggiornaEditor(completo) {
   const box = $("#editor-carte");
   if (!box) return;
+  const bu = $("#admin-ultra"); if (bu) bu.innerHTML = htmlAdminUltra();
   if (completo) { box.innerHTML = htmlEditorCarte(); return; }
   $("#ed-regola").innerHTML = htmlRegola();
   const r = regolaBozza();
