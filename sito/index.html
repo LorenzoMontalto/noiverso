@@ -505,6 +505,12 @@ body.in-battaglia { overflow: hidden; }
 .mossa:disabled { opacity: .42; cursor: not-allowed; }
 .mossa b { font-weight: 700; line-height: 1.15; }
 .mossa small { color: var(--spento); font-size: .78rem; line-height: 1.2; }
+.mossa-eff { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.mossa-eff i { font-style: normal; font-size: .68rem; font-weight: 700; line-height: 1.25; padding: 0 5px; border-radius: 5px; white-space: nowrap; border: 1px solid; }
+.mossa-eff .eff-nemico { color: #ff9a8a; border-color: rgba(255, 110, 90, .45); background: rgba(255, 70, 50, .1); }
+.mossa-eff .eff-te { color: #8af0b4; border-color: rgba(90, 220, 140, .45); background: rgba(60, 200, 120, .1); }
+.mossa-eff .eff-colpo { color: #c8d0e0; border-color: rgba(200, 208, 224, .35); background: rgba(200, 208, 224, .07); }
+.mossa:disabled .mossa-eff { opacity: .6; }
 .mossa small em { font-style: normal; font-weight: 700; } .mossa small em.su { color: var(--s-FOR); } .mossa small em.giu { color: var(--spento); text-decoration: line-through; }
 .mossa-costo { color: var(--s-VEL); font-size: .8rem; letter-spacing: .05em; font-weight: 700; }
 .mossa-costo.carica { color: var(--ok); }
@@ -1923,7 +1929,7 @@ body.in-accesso { overflow: hidden; }
 <script src="online.48770847.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
 <script src="eventi.37d34f5b.js"></script>
-<script src="app.e117f7e1.js"></script>
+<script src="app.3bd3e5a0.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

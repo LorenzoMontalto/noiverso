@@ -459,6 +459,22 @@ function descrMossa(mo) {
   return p.join(" · ");
 }
 
+// Etichette corte con gli effetti di una mossa (sotto i danni, nei pulsanti della battaglia).
+// "nemico" = effetto sull'avversario (rosso), "te" = effetto su chi la usa (verde), "colpo" = come colpisce.
+function etichetteMossa(mo) {
+  const t = [], e = mo.eff, turni = n => n ? ` · ${n} ${n === 1 ? "turno" : "turni"}` : "";
+  if (mo.colpi) t.push(["colpo", `×${mo.colpi} colpi`]);
+  if (e) t.push({
+    brucia: ["nemico", `🔥 Brucia${turni(e.turni)}`], stordisci: ["nemico", `💫 ${e.val}% stordisce`],
+    indebolisci: ["nemico", `⬇ Indebolisce −${e.val}%${turni(e.turni)}`], ruba: ["nemico", `◆ Ruba ${e.val} energia`],
+    potenzia: ["te", `⬆ Squadra +${e.val}%${turni(e.turni)}`], scudo: ["te", `⛨ Scudo −${e.val}%`],
+    nebbia: ["te", "☁ Schiva il prossimo"], cura: ["te", `♥ Cura ${e.val}% PV`], energia: ["te", `◆ +${e.val} energia`],
+  }[e.tipo] || ["colpo", e.tipo]);
+  if (mo.drena) t.push(["te", `♥ Ti cura ${mo.drena}% dei danni`]);
+  if (mo.penetra) t.push(["colpo", `➹ Ignora ${mo.penetra}% difesa`]);
+  return t.length ? `<span class="mossa-eff">${t.map(([k, x]) => `<i class="eff-${k}">${esc(x)}</i>`).join("")}</span>` : "";
+}
+
 // Statistiche con evidenziata quella potenziata dal tipo della carta
 function htmlStatGriglia(c, s) {
   const su = { FOR: ["att"], DIF: ["dif"], VEL: ["vel"] }[c.stile] || [];
@@ -2988,6 +3004,7 @@ function htmlAzioni() {
         <span class="mossa-costo">${mo.costo ? "◆".repeat(mo.costo) : "Gratis"}</span>
         <b>${esc(mo.nome)}</b>
         <small>${stima}</small>
+        ${mo.pot ? etichetteMossa(mo) : ""}
         ${tag}
       </button>`;
     }).join("")}
