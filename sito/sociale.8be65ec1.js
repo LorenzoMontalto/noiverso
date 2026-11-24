@@ -144,9 +144,13 @@ const Boss = (() => {
     let h = 0; for (const ch of String(sett)) h = (h * 33 + ch.charCodeAt(0)) >>> 0;
     return leg[h % leg.length] || CARTE[0];
   }
+  // il giorno vale come sul server: a mezzanotte di Roma gli attacchi ripartono da 0
+  const giornoRoma = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(new Date());
+  let caricatoIl = "", caricatoAlle = 0;
   async function carica(forza) {
     if (!socialeAttivo() || (inCarica && !forza)) return stato;
     inCarica = true;
+    caricatoIl = giornoRoma(); caricatoAlle = Date.now();   // anche se fallisce: così non si riprova in loop
     try { stato = await rpcSociale("boss_attuale"); errore = null; } catch (e) { errore = e.message; }
     inCarica = false;
     ridisegna();
@@ -164,6 +168,8 @@ const Boss = (() => {
   function html(grande) {
     const tipo = grande ? "grande" : "compatto";
     if (!socialeAttivo()) return "";
+    // dati di un altro giorno (app rimasta aperta dopo mezzanotte) o vecchi di più di 5 minuti: si ricaricano
+    if (stato && !inCarica && (caricatoIl !== giornoRoma() || Date.now() - caricatoAlle > 5 * 60e3)) setTimeout(() => carica(), 0);
     if (!stato) { if (!errore) setTimeout(() => carica(), 0); return `<div class="boss-box" data-boss-box="${tipo}"><p class="nota">${errore ? esc(errore) : "Cerco il boss della settimana…"}</p></div>`; }
     const c = cartaBoss(stato.settimana), r = rimasti(), pct = Math.round(r / stato.pv_max * 100), caduto = r <= 0;
     const colpi = stato.colpi_oggi || 0, premi = stato.da_riscuotere || [];
@@ -186,6 +192,10 @@ const Boss = (() => {
     </div>`;
   }
 
+  // quando l'app torna in primo piano (telefono sbloccato il giorno dopo) o scatta la mezzanotte, il riquadro del boss si aggiorna
+  const controllaGiorno = () => { if (stato && document.visibilityState === "visible" && document.querySelector("[data-boss-box]") && caricatoIl !== giornoRoma()) carica(); };
+  document.addEventListener("visibilitychange", controllaGiorno);
+  setInterval(controllaGiorno, 60e3);
   async function attacca() {
     if (!socialeAttivo() || B) return;
     await carica(true);
