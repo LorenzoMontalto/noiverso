@@ -73,6 +73,8 @@ const SINERGIE_BASE = {
   carte: { tipo: "fortuna", v2: 11, v3: 24, v5: 33, testo: v => `${v}% di probabilità che un loro attacco faccia «Scopa!» e colpisca una seconda volta a metà danni` },
   // Paesi del mondo: ospitalità. Quando una carta della serie entra in campo recupera v% dei PV massimi.
   paesi: { tipo: "ospitalita", v2: 14, v3: 27, v5: 45, testo: v => `quando entrano in campo recuperano ${_il(v)} dei PV massimi (benvenuti a casa!)` },
+  // Far West: estrazione rapida. La prima mossa d'attacco dopo essere entrate in campo fa +v% di danni (tutti i colpi di quella mossa).
+  farwest: { tipo: "duello", v2: 15, v3: 26, v5: 34, testo: v => `estrazione rapida: la prima mossa d'attacco dopo che entrano in campo fa +${v}% di danni` },
   mestieri: { tipo: "vel",      v2: 8, v3: 23, v5: 30, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -181,6 +183,7 @@ class Battaglia {
         else if (s.tipo === "rinascita") x.sin.rinascita = s.val;
         else if (s.tipo === "fortuna") x.sin.fortuna = s.val;
         else if (s.tipo === "ospitalita") x.sin.ospitalita = s.val;
+        else if (s.tipo === "duello") { x.sin.duello = s.val; x.pronta = true; }
         else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
         else if (s.tipo === "critico") { x.sin.crit = s.val; x.sin.critX = s.liv >= 3 ? 2 : s.liv === 2 ? 1.75 : 1.5; }
@@ -310,6 +313,7 @@ class Battaglia {
     if (d.dannoDa) dmg *= d.dannoDa(a);
     if (a.furia && a.pv < a.pvMax * .5) dmg *= 1 + a.furia / 100;
     if (d.c.ruolo === "tank") dmg *= 0.9;
+    if (a.pronta && a.sin && a.sin.duello) dmg *= 1 + a.sin.duello / 100;   // sinergia Far West: estrazione rapida
     if (d.carica) dmg *= 0.7;
     return { danno: Math.max(1, Math.round(dmg)), crit, stile, parato };
   }
@@ -371,6 +375,7 @@ class Battaglia {
     this._log(`${L.nome} manda in campo ${dentro.c.nome}.`, { lato: l, entra: l });
     if (dentro.c.ruolo === "difensore") { dentro.scudo = Math.max(dentro.scudo, 30); this._log(`${dentro.c.nome} alza la guardia: scudo 30%.`, { lato: l, anim: "scudo", su: l }); }
     // Paesi del mondo: chi entra in campo si sente a casa e recupera un po' di PV
+    if (dentro.sin && dentro.sin.duello) dentro.pronta = true;   // Far West: rientrando in campo la pistola è di nuovo carica
     if (dentro.sin && dentro.sin.ospitalita && dentro.pv < dentro.pvMax) this._cura(l, dentro, Math.max(1, Math.round(dentro.pvMax * dentro.sin.ospitalita / 100)));
   }
 
@@ -392,6 +397,10 @@ class Battaglia {
       else if (d.sin && d.sin.para && this.rng() < d.sin.para / 100) { this._log(`${d.c.nome} para il colpo con la Forza!`, { lato: 1 - l, anim: "schiva", bersaglio: 1 - l }); }
       else colpito = true;
     }
+    // Far West: la prima mossa d'attacco dopo l'ingresso è un'estrazione rapida (anche a vuoto, la pistola è scarica)
+    const estrae = m.pot > 0 && a.pronta && a.sin && a.sin.duello;
+    if (estrae && colpito) this._log(`Estrazione rapida! ${a.c.nome} spara per primo.`, { lato: l });
+    if (estrae && !colpito) a.pronta = false;
     if (colpito && m.pot > 0) {
       const n = m.colpi || 1;
       for (let k = 0; k < n && d.pv > 0; k++) {
@@ -416,6 +425,7 @@ class Battaglia {
         if (d.pv <= 0) this._rialza(1 - l, d);
       }
       // mossa che drena e sinergia Demoni non si sommano: vale la più alta (prima si arrivava al 60% dei danni)
+      a.pronta = false;
       const drena = Math.max(m.drena || 0, (a.sin && a.sin.vampiro) || 0);
       if (drena && totale > 0 && a.pv > 0) this._cura(l, a, Math.max(1, Math.round(totale * drena / 100)));
       if (a.c.ruolo === "ladro" && O.energia > 0 && this.rng() < 0.2) {

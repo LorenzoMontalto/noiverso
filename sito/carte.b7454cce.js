@@ -16,11 +16,12 @@ const SERIE = {
   simpson:  { nome: "Simpson", colore: "#ffd90f", simbolo: "◎", desc: "Ciambelle, Duff e la centrale nucleare: a Springfield tutti sono pronti a combattere." },
   barbapapa: { nome: "Barbapapà", colore: "#ff8fc8", simbolo: "✿", desc: "Barbatrucco! Una famiglia che cambia forma come vuole: spade, ombrelli, chitarre." },
   starwars: { nome: "Star Wars", colore: "#4fc3ff", simbolo: "☄", desc: "Jedi, Sith, ribelli e cacciatori di taglie, in una galassia lontana lontana." },
-  paesi: { nome: "Paesi del Mondo", colore: "#4fb87a", simbolo: "✈", desc: "Bandiere, costumi e monumenti: i tuoi amici fanno il giro del mondo, un paese a testa." },
-  carte: { nome: "Carte da Gioco", colore: "#e8b04a", simbolo: "♣", desc: "Re, cavalli, fanti e assi delle carte napoletane: coppe, denari, spade e bastoni scendono dal mazzo e si siedono al tavolo." },
-  cyborg: { nome: "Cyborg", colore: "#38e0ff", simbolo: "⌬", desc: "Metà persone e metà macchine, tra grattacieli al neon e auto volanti: il futuro è arrivato e picchia forte." },
-  creature: { nome: "Creature Mistiche", colore: "#9d7bff", simbolo: "☠", desc: "Vampiri, lupi mannari, mummie e sirene: quando sorge la luna piena escono tutti allo scoperto." },
   elementi: { nome: "Elementi", colore: "#3fe0c0", simbolo: "❖", desc: "Fuoco, acqua, ghiaccio, fulmini, luce e ombra: i tuoi amici sono diventati i signori degli elementi." },
+  creature: { nome: "Creature Mistiche", colore: "#9d7bff", simbolo: "☠", desc: "Vampiri, lupi mannari, mummie e sirene: quando sorge la luna piena escono tutti allo scoperto." },
+  cyborg: { nome: "Cyborg", colore: "#38e0ff", simbolo: "⌬", desc: "Metà persone e metà macchine, tra grattacieli al neon e auto volanti: il futuro è arrivato e picchia forte." },
+  carte: { nome: "Carte da Gioco", colore: "#e8b04a", simbolo: "♣", desc: "Re, cavalli, fanti e assi delle carte napoletane: coppe, denari, spade e bastoni scendono dal mazzo e si siedono al tavolo." },
+  paesi: { nome: "Paesi del Mondo", colore: "#4fb87a", simbolo: "✈", desc: "Bandiere, costumi e monumenti: i tuoi amici fanno il giro del mondo, un paese a testa." },
+  farwest: { nome: "Far West", colore: "#d9893b", simbolo: "✶", desc: "Saloon, sceriffi e fuorilegge: al tramonto, nel deserto, vince chi estrae per primo." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -572,6 +573,37 @@ const CARTE = [
     mosse: [m("Pugno Celtico", 0, 26), m("Pinta di Stout", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Scogliere di Moher", 5, 78)] },
   { id: "ludormania", nome: "Ludormania", serie: "paesi", rarita: "comune", stile: "DIF", ruolo: "capo", frase: "Germania: cappello con la piuma, bretelle e un boccale enorme. All'Oktoberfest guida lui il brindisi, e la squadra.",
     mosse: [m("Boccale di Birra", 0, 26), m("Oktoberfest", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Precisione Tedesca", 5, 78)] },
+  // ---------------- Far West ----------------
+  { id: "seneloon", nome: "Seneloon", serie: "farwest", rarita: "leggendaria", stile: "FOR", ruolo: "imprevedibile", frase: "La regina del saloon: ricci al vento, sorriso da cartolina e una bottiglia sempre a portata di mano. Per brindare, o per tirartela.",
+    mosse: [m("Bottigliata", 0, 34), m("Rissa da Saloon", 2, 13, { colpi: 3 }), m("Whisky in Fiamme", 5, 96, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  { id: "giuvlass", nome: "Giuvlass", serie: "farwest", rarita: "leggendaria", stile: "VEL", ruolo: "assassino", frase: "Sorride come se ti stesse offrendo da bere. Poi suona mezzogiorno, e la sua mano è già sulla pistola.",
+    mosse: [m("Occhiolino", 0, 32, { penetra: 20 }), m("Sorriso Disarmante", 2, 0, { eff: { tipo: "nebbia" } }), m("Mezzogiorno di Fuoco", 5, 98, { penetra: 30 })] },
+  { id: "ludobunty", nome: "Ludobunty", serie: "farwest", rarita: "leggendaria", stile: "DIF", ruolo: "tiratore", frase: "Cacciatore di taglie: cartuccera piena e un elenco di nomi in tasca. Se c'è il tuo, preparati a correre.",
+    mosse: [m("Colpo di Winchester", 0, 32), m("Taglia sulla Testa", 2, 28, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Vivo o Morto", 5, 94)] },
+  { id: "alicolt", nome: "Alicolt", serie: "farwest", rarita: "epica", stile: "VEL", ruolo: "tiratore", frase: "Capelli d'oro e una Colt d'argento sotto il braccio. Sei colpi nel tamburo, e non ne spreca nemmeno uno.",
+    mosse: [m("Colpo dall'Anca", 0, 30, { penetra: 20 }), m("Rotazione del Tamburo", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Sei Colpi", 5, 15, { colpi: 6 })] },
+  { id: "auroraider", nome: "Auroraider", serie: "farwest", rarita: "epica", stile: "FOR", ruolo: "ladro", frase: "Ricercata: 5.000 dollari di taglia. Lei il manifesto lo ha visto, e si è offesa che fossero così pochi.",
+    mosse: [m("Calcio di Fucile", 0, 30, { eff: { tipo: "ruba", val: 1 } }), m("Assalto alla Diligenza", 2, 28, { eff: { tipo: "ruba", val: 1 } }), m("Ricercata", 5, 90)] },
+  { id: "lollawless", nome: "Lollawless", serie: "farwest", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Senza legge e senza fretta: arriva a cavallo dal deserto, entra nel saloon e la rissa comincia da sola.",
+    mosse: [m("Pugno da Saloon", 0, 32), m("Rissa Senza Legge", 2, 30, { eff: { tipo: "stordisci", val: 40 } }), m("Fuorilegge", 5, 92)] },
+  { id: "simarshal", nome: "Simarshal", serie: "farwest", rarita: "epica", stile: "DIF", ruolo: "capo", frase: "Barba folta, stella da marshal sul petto e lo sguardo di chi ha già deciso chi finisce in prigione stasera.",
+    mosse: [m("Calcio di Pistola", 0, 30), m("Stella del Marshal", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Legge del West", 5, 86, { eff: { tipo: "indebolisci", val: 25, turni: 2 } })] },
+  { id: "alessoutlaw", nome: "Alessoutlaw", serie: "farwest", rarita: "rara", stile: "VEL", ruolo: "stregone", frase: "Fuorilegge con gli occhiali: legge il piano della rapina due volte, poi te lo fa saltare in faccia.",
+    mosse: [m("Sguardo da Ricercata", 0, 28), m("Polvere negli Occhi", 2, 24, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Rapina al Treno", 5, 84)] },
+  { id: "dieganger", nome: "Dieganger", serie: "farwest", rarita: "rara", stile: "DIF", ruolo: "tank", frase: "Ranger del deserto: carabina in spalla e cartucce sul petto. Ha dormito sotto le stelle più notti di quante ne ricordi.",
+    mosse: [m("Calcio di Carabina", 0, 28), m("Bivacco", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Pattuglia del Ranger", 5, 82)] },
+  { id: "mauribandit", nome: "Mauribandit", serie: "farwest", rarita: "rara", stile: "FOR", ruolo: "incendiario", frase: "Bandito coi baffi e l'aria di chi ha appena acceso una miccia. Il problema è che non ti dice dove.",
+    mosse: [m("Miccia Corta", 0, 28, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Candelotto", 2, 30), m("Dinamite", 5, 82, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  { id: "samuero", nome: "Samuero", serie: "farwest", rarita: "rara", stile: "VEL", ruolo: "schivatore", frase: "Vaquero col lazo in spalla e un sorriso che non si spegne nemmeno al rodeo. Tu lo carichi, lui salta.",
+    mosse: [m("Lazo", 0, 28, { penetra: 20 }), m("Rodeo", 2, 0, { eff: { tipo: "nebbia" } }), m("Carica della Mandria", 5, 84)] },
+  { id: "pipstolero", nome: "Pipstolero", serie: "farwest", rarita: "comune", stile: "VEL", ruolo: "assassino", frase: "Pistolero con baffi e occhiali: la pistola la tiene alta, vicino alla faccia. Dice che così prende meglio la mira.",
+    mosse: [m("Estrazione Rapida", 0, 28, { penetra: 20 }), m("Doppietta", 2, 15, { colpi: 2 }), m("Duello all'Alba", 5, 80, { penetra: 25 })] },
+  { id: "ritaloon", nome: "Ritaloon", serie: "farwest", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "Lavora al saloon e ride più forte del pianoforte. Un bicchiere da lei rimette in piedi anche un cowboy steso.",
+    mosse: [m("Vassoio Volante", 0, 26), m("Giro di Whisky", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Can-Can", 5, 76, { drena: 40 })] },
+  { id: "tiziariffo", nome: "Tiziariffo", serie: "farwest", rarita: "comune", stile: "DIF", ruolo: "difensore", frase: "Lo sceriffo della città: stella sul cappello, stella sul petto e l'ufficio alle spalle. In questa città, la legge è lui.",
+    mosse: [m("Manette", 0, 26), m("Distintivo", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("In Nome della Legge", 5, 78)] },
+  { id: "vikylasso", nome: "Vikylasso", serie: "farwest", rarita: "comune", stile: "FOR", ruolo: "stratega", frase: "Cowgirl dal sorriso dolce e dal lazo infallibile: il bestiame lo prende al primo lancio. E tu non sei più veloce di un vitello.",
+    mosse: [m("Frustata di Lazo", 0, 26), m("Giro di Lazo", 1, 0, { eff: { tipo: "energia", val: 3 } }), m("Lazo Stretto", 5, 76, { eff: { tipo: "stordisci", val: 40 } })] },
 ];
 
 
@@ -630,6 +662,9 @@ const PERSONE = {
   // Paesi del Mondo
   aurorecia: "Aurora", pipscozia: "Pips", simonusa: "Simone", aleghilterra: "Alessia", diegspagna: "Diego", ritalia: "Rita", samubrasil: "Samuele",
   maurigitto: "Maurizio", senesia: "Senè", tizgeria: "Tiziano", vikappone: "Viky", alirtogallo: "Alice", giulancia: "Giulia", lollirlanda: "Lorenzo", ludormania: "Ludovico",
+  // Far West
+  seneloon: "Senè", giuvlass: "Giulia", ludobunty: "Ludovico", alicolt: "Alice", auroraider: "Aurora", lollawless: "Lorenzo", simarshal: "Simone",
+  alessoutlaw: "Alessia", dieganger: "Diego", mauribandit: "Maurizio", samuero: "Samuele", pipstolero: "Pips", ritaloon: "Rita", tiziariffo: "Tiziano", vikylasso: "Viky",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -643,7 +678,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // Una sola versione Ultra per serie, e mai due allo stesso amico.
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, persona: c.persona, ultra: c.ultra }]));
 function applicaConfigCarte(cfg) {

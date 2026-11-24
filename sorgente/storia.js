@@ -344,7 +344,25 @@ const STORIA = [
       { titolo: "Le Highlands", nemici: ["pipscozia", "aleghilterra", "lollirlanda", "diegspagna", "tizgeria"], liv: [1, 1], abilita: 0.95, monete: 360,
         parla: "pipscozia", frase: "Hai sentito la cornamusa? Vuol dire che sei arrivato nelle Highlands. E che è troppo tardi per scappare." },
       { titolo: "Il vertice delle nazioni", boss: true, nemici: ["simonusa", "aurorecia", "pipscozia", "ritalia", "samubrasil"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
-        parla: "simonusa", frase: "Benvenuto al vertice: qui si decide il mondo. E il mondo ha appena deciso che perdi.", vittoria: "Le nazioni firmano la pace e il vertice finisce in festa. Al centro della sala resta un mappamondo di vetro che non riflette te… ma mondi diversi." }
+        parla: "simonusa", frase: "Benvenuto al vertice: qui si decide il mondo. E il mondo ha appena deciso che perdi.", vittoria: "Le nazioni firmano la pace e il vertice finisce in festa. Mentre esci, il vento ti porta tra i piedi un manifesto ingiallito: «WANTED», e sotto c'è la tua faccia. Taglia: 5.000 dollari." }
+    ],
+  },
+  {
+    id: "c24", campo: "lava", titolo: "La città senza legge", serie: "farwest", colore: "#d9893b", simbolo: "✶",
+    intro: "Il manifesto ti porta in una città di legno in mezzo al deserto, dove il sole picchia e la legge la fa chi estrae per primo. Tutti hanno visto la tua faccia sul «WANTED», e tutti vogliono la taglia.",
+    tappe: [
+      { titolo: "Il saloon", nemici: ["ritaloon", "vikylasso", "tiziariffo", "pipstolero", "samuero"], liv: [1, 1], abilita: 0.9, monete: 320,
+        parla: "ritaloon", frase: "Benvenuto al saloon, straniero! Il primo bicchiere lo offre la casa. La prima scazzottata pure." },
+      { titolo: "L'ufficio dello sceriffo", nemici: ["tiziariffo", "simarshal", "dieganger", "ritaloon", "vikylasso"], liv: [1, 1], abilita: 0.92, monete: 330,
+        parla: "tiziariffo", frase: "Ho il tuo manifesto appeso in ufficio da una settimana. Finalmente ti sei fatto vedere." },
+      { titolo: "L'assalto alla diligenza", nemici: ["auroraider", "mauribandit", "alessoutlaw", "pipstolero", "samuero"], liv: [1, 1], abilita: 0.93, monete: 340, bustina: "epica",
+        parla: "auroraider", frase: "Mani in alto! Questa diligenza è nostra. E da adesso anche la tua taglia." },
+      { titolo: "Il rodeo", nemici: ["samuero", "vikylasso", "lollawless", "dieganger", "alicolt"], liv: [1, 1], abilita: 0.94, monete: 350,
+        parla: "samuero", frase: "Al rodeo vince chi resta in sella più a lungo. Tu sei già con la faccia nella polvere." },
+      { titolo: "La rapina al treno", nemici: ["alessoutlaw", "mauribandit", "lollawless", "auroraider", "ludobunty"], liv: [1, 1], abilita: 0.95, monete: 360,
+        parla: "mauribandit", frase: "La miccia è accesa e il treno sta arrivando. Tu sei proprio in mezzo ai binari." },
+      { titolo: "Mezzogiorno di fuoco", boss: true, nemici: ["seneloon", "giuvlass", "ludobunty", "simarshal", "alicolt"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
+        parla: "seneloon", frase: "Questo è il mio saloon e la mia città, straniero. Qui si beve, si balla e, a mezzogiorno, si spara.", vittoria: "Il fumo si dirada e la città intera ti applaude: da oggi lo sceriffo sei tu. Seneloon ti lascia la ricompensa sul bancone: un mappamondo di vetro, che non riflette il deserto… ma mondi diversi." }
     ],
   },
   {

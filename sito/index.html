@@ -692,6 +692,12 @@ body.in-battaglia { overflow: hidden; }
 .fx-gelo { box-shadow: inset 0 0 120px 30px rgba(190, 235, 255, .7); background: radial-gradient(circle, transparent 45%, rgba(160, 220, 255, .3)); }
 .fx-gelo b { position: absolute; top: -10%; color: #e8f8ff; font-size: 1.3rem; text-shadow: 0 0 8px #9fd8ff; animation: fx-cade 1.5s ease-in forwards; }
 .fx-mazzo b { position: absolute; top: -10%; width: 2.2rem; height: 3rem; display: grid; place-items: center; background: #f4ead2; border: 2px solid #8a6a3a; border-radius: 5px; font-size: 1.5rem; box-shadow: 0 4px 10px rgba(0, 0, 0, .4); animation: fx-cade 1.4s ease-in forwards; }
+.fx-mira { background: radial-gradient(circle, transparent 28%, rgba(70, 34, 10, .6) 75%); }
+.fx-mira svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: #ff3a2a; stroke-width: .7; animation: fx-mirino .45s ease-out; }
+@keyframes fx-mirino { from { transform: scale(1.8) rotate(60deg); opacity: 0; } }
+.fx-polvere { background: linear-gradient(180deg, rgba(230, 170, 100, .18), rgba(170, 100, 50, .45)); }
+.fx-polvere b { position: absolute; left: -10%; border-radius: 50%; background: rgba(235, 195, 140, .4); filter: blur(6px); animation: fx-soffia 1.3s linear forwards; }
+@keyframes fx-soffia { to { transform: translateX(115vw) scale(1.6); opacity: 0; } }
 .fx-festa b { position: absolute; top: -5%; width: 10px; height: 16px; border-radius: 2px; animation: fx-cade 1.5s ease-in forwards; }
 .fx-notte { background: radial-gradient(circle at 50% 30%, rgba(20, 30, 80, .15), rgba(5, 8, 30, .7)); }
 .fx-codice { background: rgba(0, 20, 10, .35); }
@@ -1892,22 +1898,22 @@ body.in-accesso { overflow: hidden; }
 <div id="avviso" role="status" hidden></div>
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
-<script src="carte.13ed60a2.js"></script>
-<script src="motore.3ae7fb1e.js"></script>
+<script src="carte.b7454cce.js"></script>
+<script src="motore.f1243dfc.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
 <script src="suoni.75417e9f.js"></script>
-<script src="scena3d.2178ced5.js"></script>
-<script src="mappe.02658896.js"></script>
-<script src="storia.8e278882.js"></script>
-<script src="tutorial.d1a729c6.js"></script>
+<script src="scena3d.2cccc00f.js"></script>
+<script src="mappe.b126ce31.js"></script>
+<script src="storia.51c4f6f1.js"></script>
+<script src="tutorial.4287656b.js"></script>
 <script src="missioni.80068fac.js"></script>
 <script src="sociale.8be65ec1.js"></script>
-<script src="collezione.670cd9df.js"></script>
+<script src="collezione.06518cef.js"></script>
 <script src="graffiti.87ba5b2f.js"></script>
 <script src="zaino.f42c2817.js"></script>
 <script src="online.48770847.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
-<script src="eventi.2479fbf4.js"></script>
+<script src="eventi.4658c37e.js"></script>
 <script src="app.7a1f5b32.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
