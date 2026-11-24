@@ -176,7 +176,17 @@ const Frammenti = (() => {
       <p class="nota">I frammenti arrivano dai doppioni delle carte già al livello 30 (comune 2, rara 4, epica 10, leggendaria 25), dall'Arena e dalla maestria. Si possono usare solo per le carte che non hai ancora.</p>
       <div class="azioni"><button class="btn ${ok ? "oro" : ""}" data-fx="stelle" data-crea="${id}" ${ok ? "" : "disabled"}>${ok ? `Crea con ${costo} ◈` : `Ti mancano ${costo - quanti()} ◈`}</button><button class="btn" data-azione="chiudi">Chiudi</button></div></div></div>`);
   }
-  return { DA_DOPPIONE, COSTO, quanti, aggiungi, daEsiti, crea, apriMistero };
+  // toccando ◈ in alto: quanti ne hai, come si prendono e quanto costa ogni carta
+  function apriInfo() {
+    const q = quanti(), mancano = CARTE.filter(c => !S.carte[c.id]), creabili = mancano.filter(c => q >= COSTO[c.rarita]).length;
+    apriModale(`<div class="framm-info"><div class="fi-ico">◈</div><h2>${q.toLocaleString("it-IT")} frammenti</h2>
+      <p>Servono a <b>creare le carte che ti mancano</b>: nell'album tocca una carta coperta. Su ognuna c'è scritto quanti frammenti costa.</p>
+      <table class="fi-tab"><thead><tr><th>Rarità</th><th>Costa</th><th>Doppione al 30 dà</th></tr></thead><tbody>
+        ${ORDINE_RARITA.map(r => `<tr><td>${esc(RARITA[r].nome)}</td><td><b>◈ ${COSTO[r].toLocaleString("it-IT")}</b></td><td>+${DA_DOPPIONE[r]} ◈</td></tr>`).join("")}</tbody></table>
+      <p class="nota">Arrivano dai doppioni delle carte già al livello 30, dall'Arena e dalla quinta stella di maestria. Ti mancano ${mancano.length} carte${creabili ? `: <b>${creabili}</b> le puoi già creare` : ""}.</p>
+      <div class="azioni centro"><button class="btn primario" data-azione="vai-album">Vai all'album</button><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
+  }
+  return { DA_DOPPIONE, COSTO, quanti, aggiungi, daEsiti, crea, apriMistero, apriInfo };
 })();
 
 // ---------------- Statistiche e vetrina ----------------

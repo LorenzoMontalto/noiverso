@@ -376,6 +376,7 @@ function aggiornaTesta() {
   Livello.controlla(); Extra.controlla();
   if (S.admin) { const m = $("#monete"); m.textContent = "∞"; m.dataset.valore = S.monete; }
   else FX.contatore($("#monete"), S.monete);
+  const fr = $("#framm-testa"); if (fr) { fr.hidden = !!S.admin || !S.profilo.nome; fr.querySelector("span").textContent = (Number(S.framm) || 0).toLocaleString("it-IT"); }
   const pb = $("#profilo-btn");
   if (pb) { pb.hidden = !S.profilo.nome; pb.innerHTML = `${S.admin ? htmlAvatar(S.profilo.avatar) : Cosmetici.avatar(S.profilo.avatar, Cosmetici.stato().cornice)}${!S.admin && S.lv ? Livello.badge(Livello.info().liv, "testa") : ""}<span>${esc(S.profilo.nome || "")}</span>${S.admin ? `<em>Admin</em>` : ""}`; }
   const na = $('[data-vista="admin"]'); if (na) na.hidden = !S.admin;
@@ -1280,7 +1281,7 @@ function htmlSezioneSerie(id, conTitolo) {
       <div class="serie-progresso"><b>${st.mie}<small>/${st.tot}</small></b><div class="barra"><i style="--p:${st.pct}%;background:${se.colore}"></i></div>${st.mie === st.tot ? `<span class="completa">Serie completa!</span>` : ""}</div>
     </div>
     <div class="griglia">
-      ${elenco.map((c, i) => `<div class="cella" style="--i:${i}">${S.carte[c.id] ? htmlCarta(c, { click: true }) + htmlBadgeSquadra(c.id) : S.admin ? htmlCarta(c, { coperta: true }) : `<div class="coperta-tocca" data-mistero="${c.id}" role="button" tabindex="0" aria-label="Carta da scoprire: crea con i frammenti">${htmlCarta(c, { coperta: true })}</div>`}</div>`).join("")}
+      ${elenco.map((c, i) => `<div class="cella" style="--i:${i}">${S.carte[c.id] ? htmlCarta(c, { click: true }) + htmlBadgeSquadra(c.id) : S.admin ? htmlCarta(c, { coperta: true }) : `<div class="coperta-tocca" data-mistero="${c.id}" role="button" tabindex="0" aria-label="Carta da scoprire: crea con ${Frammenti.COSTO[c.rarita]} frammenti">${htmlCarta(c, { coperta: true })}<span class="mistero-costo ${Frammenti.quanti() >= Frammenti.COSTO[c.rarita] ? "ok" : ""}">◈ ${Frammenti.COSTO[c.rarita].toLocaleString("it-IT")}</span></div>`}</div>`).join("")}
     </div>
   </section>`;
 }
@@ -3650,7 +3651,8 @@ document.addEventListener("click", e => {
     case "vai-classifica": vai("classifica"); break;
     case "vai-squadra": vai("squadra"); break;
     case "vai-pass": vai("pass"); break;
-    case "vai-album": albumScheda = "carte"; vai("album"); break;
+    case "vai-album": chiudiModale(); albumScheda = "carte"; vai("album"); break;
+    case "framm-info": Frammenti.apriInfo(); break;
     case "vai-trofei": albumScheda = "trofei"; vai("album"); break;
     case "vai-missioni": { const el = $(".oggi"); if (el) el.scrollIntoView({ behavior: ridotto ? "auto" : "smooth", block: "start" }); break; }
     case "consiglio-calcola": Consiglio.calcola(); break;
