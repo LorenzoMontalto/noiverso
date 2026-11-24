@@ -331,7 +331,8 @@ const CARTE = [
     mosse: [m("Colpo di Tacco", 0, 28), m("Tutti gli Occhi su di Me", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Sfilata Finale", 5, 80)] },
   // ---------------- Simpson ----------------
   { id: "tizomer", nome: "Tizomer", serie: "simpson", rarita: "epica", stile: "DIF", ruolo: "tank", frase: "D'oh! Ma una ciambella risolve tutto.",
-    mosse: [m("Ciambellata", 0, 32), m("Mmm… Ciambelle", 2, 0, { eff: { tipo: "cura", val: 35 } }), m("Incidente alla Centrale", 5, 94, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+    // nov 2026: cura 35→18 e incidente meno forte, in cambio statistiche normali (bilancio 0,795→0,92): stessa forza in battaglia
+    mosse: [m("Ciambellata", 0, 32), m("Mmm… Ciambelle", 2, 0, { eff: { tipo: "cura", val: 18 } }), m("Incidente alla Centrale", 5, 90, { eff: { tipo: "brucia", val: 3, turni: 2 } })] },
   { id: "lollart", nome: "Lollart", serie: "simpson", rarita: "leggendaria", stile: "VEL", ruolo: "imprevedibile", frase: "Ciucciati il calzino! E poi scappa sullo skate.",
     mosse: [m("Fionda", 0, 32), m("Scherzo Telefonico", 2, 26, { eff: { tipo: "stordisci", val: 50 } }), m("Skate Kamikaze", 5, 96, { penetra: 25 })] },
   { id: "alisa", nome: "Alisa", serie: "simpson", rarita: "leggendaria", stile: "VEL", ruolo: "stratega", frase: "La più brillante di Springfield, sassofono compreso.",
@@ -838,7 +839,7 @@ const BILANCIO = {
   senetron: 0.992, seneverr: 1.008, simalpatine: 1.065, simarney: 0.942, simarshal: 1.021, simocallo: 1.08, simoldemort: 1.044, simoluce: 0.926,
   simonducer: 0.983, simonex: 1.072, simonusa: 0.973, simopter: 1.069, simospirit: 0.941, simothan: 0.96, solmone: 1.051, spidertoto: 1.059,
   stellascura: 0.893, tizgeria: 1.061, tiziamma: 0.987, tizianator: 0.958, tiziariffo: 1.012, tiziazel: 0.873, tizidrac: 0.969, tiziegista: 1.066,
-  tizievil: 0.982, tizire: 1.008, tizitron: 1.017, tizoba: 1.013, tizomer: 0.795, tizvader: 1.177, undercut: 0.978, vaggie: 0.993,
+  tizievil: 0.982, tizire: 1.008, tizitron: 1.017, tizoba: 1.013, tizomer: 0.92, tizvader: 1.177, undercut: 0.978, vaggie: 0.993,
   vedovagreca: 0.925, vegerizio: 1.033, vidalessia: 0.982, vikamashtu: 0.975, vikante: 0.913, vikappone: 0.973, vikatrix: 0.973, vikybyte: 0.891,
   vikydead: 0.937, vikyeletro: 0.985, vikylalla: 1.006, vikylasso: 0.907, vikytal: 0.884, vikyventura: 1.016, wandessia: 1.1, waspy: 0.915,
   wonderrita: 1.034, zeutiz: 1.062,
