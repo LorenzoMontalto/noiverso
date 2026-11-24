@@ -2541,6 +2541,7 @@ const Scena3D = (() => {
         .then(() => { b.visible = false; });
       await this.attendi(560 + this.n * 90);
       this.alone.material.color.setHex(COL_RARITA[this.migliore]);
+      suono("mazzo");
       this.fase = "carte";
       this.cb.onPronte && this.cb.onPronte();
     }
@@ -2590,6 +2591,7 @@ const Scena3D = (() => {
       const base = c.userData.base;
       await this.anima(veloce ? 240 : 360, t => { c.position.lerpVectors(davanti, base, t); const s = lerp(scala, 1, t); c.scale.set(s, s, s); }, easing.inOut);
       c.position.copy(base); c.scale.set(1, 1, 1);
+      suono("posa");
       c.userData.occupata = false; c.userData.alone.visible = true;
       this.cb.onGira && this.cb.onGira(i, !this.mazzo.length);
     }

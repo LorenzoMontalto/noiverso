@@ -9,7 +9,7 @@ self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASE)).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
-  e.waitUntil(caches.keys().then(k => Promise.all(k.filter(n => n.startsWith("noiverso-") && n !== CACHE).map(n => caches.delete(n)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(k => Promise.all(k.filter(n => n.startsWith("noiverso-") && n !== CACHE && n !== "noiverso-suoni").map(n => caches.delete(n)))).then(() => self.clients.claim()));
 });
 self.addEventListener("fetch", e => {
   const r = e.request;
@@ -27,6 +27,7 @@ self.addEventListener("fetch", e => {
     e.respondWith(daRete.then(res => { const c = res.clone(); caches.open(CACHE).then(k => k.put(r, c)); return res; }).catch(() => caches.match(r).then(m => m || caches.match("./"))));
     return;
   }
-  const deposito = url.pathname.includes("/img/") ? "noiverso-immagini" : CACHE;
+  // immagini e suoni non cambiano a ogni versione: stanno in un deposito a parte che non si svuota
+  const deposito = url.pathname.includes("/img/") ? "noiverso-immagini" : url.pathname.includes("/suoni/") ? "noiverso-suoni" : CACHE;
   e.respondWith(caches.open(deposito).then(k => k.match(r).then(m => m || fetch(r).then(res => { if (res.ok || res.type === "opaque") k.put(r, res.clone()); return res; }))));
 });

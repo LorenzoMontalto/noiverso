@@ -40,11 +40,13 @@ const Suoni = (() => {
     if (!crea()) return;
     if (ctx.state === "suspended") ctx.resume();
     if (!sbloccato) { sbloccato = true; Musica._sbloccato(); }
+    caricaCampioni();
   }
   function imposta(o) {
     if (o.musica !== undefined) { volMusica = Math.max(0, Math.min(1, +o.musica / 100)); pref.musica = String(o.musica); }
     if (o.effetti !== undefined) { volEffetti = Math.max(0, Math.min(1, +o.effetti / 100)); pref.suoni = String(o.effetti); }
     try { localStorage.setItem(CHIAVE, JSON.stringify(pref)); salvate = true; } catch (e) {}
+    if (volEffetti > 0 && sbloccato) caricaCampioni();
     if (ctx) { busMusica.gain.setTargetAtTime(volMusica * .8, ora(), .1); busEffetti.gain.setTargetAtTime(volEffetti, ora(), .05); }
     Musica._volume(volMusica);
   }
@@ -79,25 +81,56 @@ const Suoni = (() => {
   const campana = (f, vol = .2, t = 0, dur = .9) => { tono("sine", f, dur, vol, { t, staccato: 1 }); tono("sine", f * 2.01, dur * .6, vol * .35, { t, staccato: 1 }); tono("sine", f * 3.02, dur * .35, vol * .15, { t }); };
   const nota = n => 440 * Math.pow(2, (n - 69) / 12);
 
+  // ---------- campioni registrati (Kenney, CC0): si scaricano dopo il primo tocco, se i suoni sono accesi ----------
+  const INDICE = {"ui-click": 3, "ui-forte": 2, "carta-scivola": 4, "carta-posa": 3, "carta-gira": 3, "bustina-apri": 2, "bustina-estrai": 2, "mazzo-mescola": 1, "mazzo-ventaglio": 2, "fiches": 3, "colpo": 3, "colpo-forte": 3, "metallo": 2, "metallo-leggero": 2, "roccia": 2, "legno": 2, "vetro": 2, "campana": 2, "tonfo": 2, "lama-sfodera": 2, "lama": 2, "ascia": 1, "fruscio": 2, "monete": 2, "laser": 3, "laser-grande": 2, "laser-retro": 2, "campo-energia": 2, "esplosione": 3, "boato": 2, "fiamma": 2, "melma": 2, "robot": 2, "glitch": 2, "vittoria": 1, "sconfitta": 1, "rivela-leggendaria": 1, "rivela-epica": 1, "rivela-rara": 1};
+  const VERSIONE_CAMPIONI = 1;
+  const campioni = {}, ultimoUsato = {};
+  let caricamento = false;
+  function caricaCampioni() {
+    if (caricamento || !ctx || volEffetti <= 0) return;
+    caricamento = true;
+    for (const [nome, n] of Object.entries(INDICE)) for (let i = 1; i <= n; i++) {
+      fetch(`suoni/${nome}-${i}.mp3?v=${VERSIONE_CAMPIONI}`).then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+        .then(b => new Promise((ok, no) => ctx.decodeAudioData(b, ok, no)))
+        .then(buf => { (campioni[nome] = campioni[nome] || [])[i - 1] = buf; })
+        .catch(() => {});
+    }
+  }
+  // suona un campione (una delle varianti, mai la stessa due volte di fila); se non è ancora pronto restituisce false
+  function c(nome, vol = 1, { t = 0, rate = 1, varia = .05 } = {}) {
+    const l = (campioni[nome] || []).filter(Boolean);
+    if (!l.length) return false;
+    let k = Math.floor(Math.random() * l.length);
+    if (l.length > 1 && k === ultimoUsato[nome]) k = (k + 1) % l.length;
+    ultimoUsato[nome] = k;
+    const s = ctx.createBufferSource(), g = ctx.createGain();
+    s.buffer = l[k]; s.playbackRate.value = rate * (1 + (Math.random() * 2 - 1) * varia);
+    g.gain.value = vol; s.connect(g); g.connect(busEffetti);
+    s.start(ora() + t);
+    return true;
+  }
+
   // ---------- timbri delle mosse ----------
   const TIMBRI = {
-    pugno: v => { tonfo(.8 * v); soffio("lowpass", 900, .12, .5 * v); },
-    lama: v => { soffio("bandpass", 6500, .22, .55 * v, { fine: 1200, q: 2 }); tono("triangle", 1900, .25, .08 * v, { t: .05 }); },
-    fuoco: v => { soffio("lowpass", 1800, .6, .5 * v, { fine: 300 }); for (let k = 0; k < 6; k++) soffio("highpass", 3000, .03, .25 * v, { t: k * .07 + Math.random() * .03 }); tonfo(.4 * v, .05, 90); },
-    ghiaccio: v => { soffio("highpass", 5000, .4, .18 * v); [2093, 2637, 3136, 3951].forEach((f, k) => campana(f, .08 * v, k * .05, .5)); },
-    fulmine: v => { soffio("highpass", 2500, .18, .7 * v, { a: .001 }); tono("sawtooth", 1400, .18, .15 * v, { fine: 80 }); tonfo(.6 * v, .03, 110); },
-    acqua: v => { soffio("bandpass", 600, .45, .45 * v, { fine: 2400, q: 1.5 }); for (let k = 0; k < 4; k++) tono("sine", 400 + k * 120, .08, .12 * v, { fine: 900 + k * 200, t: .1 + k * .06 }); },
-    laser: v => { tono("square", 1600, .28, .12 * v, { fine: 180 }); tono("sawtooth", 1200, .2, .06 * v, { fine: 150, t: .02 }); },
-    suono: v => { [0, 4, 7, 12].forEach((s, k) => tono("triangle", nota(72 + s), .25, .14 * v, { t: k * .06 })); soffio("bandpass", 1200, .3, .15 * v, { q: 4 }); },
-    ombra: v => { tono("sawtooth", 220, .6, .12 * v, { fine: 55, filtro: 700 }); soffio("lowpass", 500, .6, .3 * v, { fine: 120 }); },
-    luce: v => { [0, 4, 7, 11].forEach((s, k) => campana(nota(79 + s), .09 * v, k * .045, .8)); },
-    veleno: v => { for (let k = 0; k < 5; k++) tono("sine", 220 + Math.random() * 120, .12, .14 * v, { fine: 500, t: k * .07 }); soffio("lowpass", 700, .4, .2 * v); },
-    monete: v => { for (let k = 0; k < 3; k++) { tono("square", 988, .06, .06 * v, { t: k * .09 }); tono("square", 1319, .2, .06 * v, { t: k * .09 + .05 }); } },
-    vento: v => { soffio("bandpass", 400, .55, .45 * v, { fine: 2600, q: 3 }); },
-    magia: v => { [0, 7, 12, 16, 19].forEach((s, k) => tono("sine", nota(76 + s), .3, .08 * v, { t: k * .04 })); soffio("highpass", 6000, .4, .08 * v); },
-    terra: v => { tonfo(1 * v, 0, 90); soffio("lowpass", 400, .7, .6 * v, { fine: 80 }); },
-    spari: v => { for (let k = 0; k < 3; k++) { soffio("bandpass", 2200, .08, .5 * v, { t: k * .09, q: 1 }); tonfo(.3 * v, k * .09, 160); } },
+    pugno: v => { if (!c("colpo-forte", .9 * v)) { tonfo(.8 * v); soffio("lowpass", 900, .12, .5 * v); } soffio("bandpass", 900, .18, .15 * v, { fine: 2400, q: 2 }); },
+    lama: v => { const ok = c("lama-sfodera", .7 * v); c("lama", .8 * v, { t: .1 }); if (!ok) soffio("bandpass", 6500, .22, .55 * v, { fine: 1200, q: 2 }); },
+    fuoco: v => { c("fiamma", .8 * v); for (let k = 0; k < 6; k++) soffio("highpass", 3000, .03, .18 * v, { t: k * .07 + Math.random() * .03 }); tonfo(.35 * v, .05, 90); },
+    ghiaccio: v => { c("vetro", .8 * v, { rate: 1.15 }); [2093, 2637, 3136, 3951].forEach((f, k) => campana(f, .05 * v, .05 + k * .05, .5)); soffio("highpass", 5000, .4, .12 * v); },
+    fulmine: v => { soffio("highpass", 2500, .18, .6 * v, { a: .001 }); tono("sawtooth", 1400, .18, .12 * v, { fine: 80 }); c("esplosione", .55 * v, { rate: 1.5 }) || tonfo(.6 * v, .03, 110); },
+    acqua: v => { c("fruscio", .6 * v, { rate: .7 }); soffio("bandpass", 600, .45, .4 * v, { fine: 2400, q: 1.5 }); for (let k = 0; k < 4; k++) tono("sine", 400 + k * 120, .08, .1 * v, { fine: 900 + k * 200, t: .1 + k * .06 }); },
+    laser: v => { if (!c(v > 1 ? "laser-grande" : "laser", .8 * v)) { tono("square", 1600, .28, .12 * v, { fine: 180 }); } },
+    suono: v => { [0, 4, 7, 12].forEach((s, k) => tono("triangle", nota(72 + s), .25, .12 * v, { t: k * .06 })); c("campana", .3 * v, { rate: 1.5 }); },
+    ombra: v => { c("campo-energia", .6 * v, { rate: .55 }); tono("sawtooth", 220, .6, .1 * v, { fine: 55, filtro: 700 }); },
+    luce: v => { [0, 4, 7, 11].forEach((s, k) => campana(nota(79 + s), .07 * v, k * .045, .8)); c("campo-energia", .4 * v, { rate: 1.5 }); },
+    veleno: v => { c("melma", .9 * v); for (let k = 0; k < 4; k++) tono("sine", 220 + Math.random() * 120, .12, .1 * v, { fine: 500, t: k * .07 }); },
+    monete: v => { if (!c("monete", .9 * v)) TIMBRI_SINTESI.monete(v); c("fiches", .6 * v, { t: .12 }); },
+    vento: v => { c("fruscio", .9 * v); soffio("bandpass", 400, .55, .35 * v, { fine: 2600, q: 3 }); },
+    magia: v => { c("campo-energia", .7 * v); [0, 7, 12, 16, 19].forEach((s, k) => tono("sine", nota(76 + s), .3, .06 * v, { t: k * .04 })); },
+    terra: v => { if (!c("roccia", .9 * v)) tonfo(1 * v, 0, 90); soffio("lowpass", 400, .6, .4 * v, { fine: 80 }); },
+    spari: v => { for (let k = 0; k < 3; k++) if (!c("laser-retro", .55 * v, { t: k * .1 })) soffio("bandpass", 2200, .08, .5 * v, { t: k * .09, q: 1 }); },
+    ascia: v => { c("ascia", .9 * v) || c("lama", .8 * v); c("legno", .5 * v, { t: .05 }); },
   };
+  const TIMBRI_SINTESI = { monete: v => { for (let k = 0; k < 3; k++) { tono("square", 988, .06, .06 * v, { t: k * .09 }); tono("square", 1319, .2, .06 * v, { t: k * .09 + .05 }); } } };
   // dal nome della mossa all'elemento (prima le parole più precise)
   const PAROLE = [
     ["fuoco", /fuoc|fiamm|lava|magma|incend|brucia|infern|eruz|sole nasc|calderon|vulcan|nucleo/i],
@@ -111,7 +144,8 @@ const Suoni = (() => {
     ["veleno", /velen|tossic|serp|morso|ragn|zombie|sangue|vampir/i],
     ["monete", /monet|denar|soldi|tesoro|settebell|primiera|rubamazz|ruba|download|virus/i],
     ["vento", /vent|brezz|uragan|ciclon|volo|corrente|tornado/i],
-    ["lama", /spad|lama|tagli|fendent|artigl|ascia|lancia|spadin|katana|sciabol/i],
+    ["ascia", /ascia|mazzat|bastonat|randell|bastone/i],
+    ["lama", /spad|lama|tagli|fendent|artigl|lancia|spadin|katana|sciabol/i],
     ["terra", /terr|roccia|pietr|sisma|granit|sabbia|schiacc|pressa|picchiat|campanil|galopp/i],
     ["spari", /raffica|pioggia|colpi|esercito|orda|nido|tutti i/i],
   ];
@@ -133,64 +167,79 @@ const Suoni = (() => {
     tocco(forte) {
       if (!effettiAttivi()) return;
       const n = performance.now(); if (n - ultimiTocchi.t < 45) return; ultimiTocchi.t = n;
-      if (forte) { tono("triangle", 660, .08, .12, { fine: 990 }); tono("sine", 1320, .1, .05, { t: .04 }); }
-      else tono("sine", 880, .06, .09, { fine: 620 });
+      if (forte) { if (!c("ui-forte", .55)) { tono("triangle", 660, .08, .12, { fine: 990 }); tono("sine", 1320, .1, .05, { t: .04 }); } }
+      else if (!c("ui-click", .5)) tono("sine", 880, .06, .09, { fine: 620 });
     },
     mossa(e) {
       if (!effettiAttivi()) return;
-      const c = PER_ID[e.id], m = c && c.mosse[e.mossa], finale = (m && m.costo >= 5) || e.mossa === 2;
+      const carta = PER_ID[e.id], m = carta && carta.mosse[e.mossa], finale = (m && m.costo >= 5) || e.mossa === 2;
       const t = timbroMossa(e);
-      if (finale) { soffio("bandpass", 300, .7, .25, { fine: 3000, q: 2 }); tono("sawtooth", 110, .7, .06, { fine: 440, filtro: 1500 }); setTimeout(() => { if (effettiAttivi()) (TIMBRI[t] || TIMBRI.pugno)(1.2); }, 650); }
-      else (TIMBRI[t] || TIMBRI.pugno)(m && m.pot ? 1 : .7);
+      // un tocco della serie: le Carte da Gioco suonano come carte, i Cyborg come metallo
+      if (carta && carta.serie === "carte") c("carta-scivola", .6);
+      if (carta && carta.serie === "cyborg") c("robot", .35, { rate: 1.2 });
+      if (finale) {
+        // la mossa finale: un soffio che sale, poi il colpo con un'esplosione sotto
+        soffio("bandpass", 300, .7, .22, { fine: 3000, q: 2 }); tono("sawtooth", 110, .7, .05, { fine: 440, filtro: 1500 });
+        setTimeout(() => { if (!effettiAttivi()) return; (TIMBRI[t] || TIMBRI.pugno)(1.2); c("esplosione", .55); }, 650);
+      } else (TIMBRI[t] || TIMBRI.pugno)(m && m.pot ? 1 : .7);
     },
     colpo(e) {
       if (!effettiAttivi()) return;
-      const d = e.danno || 0, v = Math.min(1.2, .45 + d / 120);
-      tonfo(.7 * v, 0, e.crit ? 180 : 130); soffio("lowpass", e.crit ? 3000 : 1400, .14, .45 * v);
-      if (e.crit) { soffio("highpass", 4000, .1, .4, { a: .001 }); tono("square", 1800, .12, .06, { fine: 600 }); }
-      if (e.efficace > 1) tono("triangle", 1046, .18, .07, { t: .05 });
+      const d = e.danno || 0, v = Math.min(1.1, .5 + d / 120), forte = e.crit || d >= 60;
+      if (!c(forte ? "colpo-forte" : "colpo", .85 * v)) { tonfo(.7 * v, 0, e.crit ? 180 : 130); soffio("lowpass", e.crit ? 3000 : 1400, .14, .45 * v); }
+      if (e.crit) { c("metallo-leggero", .5) || soffio("highpass", 4000, .1, .4, { a: .001 }); tono("square", 1800, .12, .04, { fine: 600 }); }
+      if (e.efficace > 1) tono("triangle", 1046, .18, .06, { t: .05 });
     },
-    cura() { if (!effettiAttivi()) return; [0, 4, 7, 12].forEach((s, k) => campana(nota(76 + s), .07, k * .07, .7)); },
-    scudo() { if (!effettiAttivi()) return; [523, 1187, 1663, 2531].forEach((f, k) => tono("sine", f, .7, .07 / (k + 1) * 2, { staccato: 1 })); tonfo(.3, 0, 200); },
+    cura() { if (!effettiAttivi()) return; [0, 4, 7, 12].forEach((s, k) => campana(nota(76 + s), .06, k * .07, .7)); c("campo-energia", .25, { rate: 1.7 }); },
+    scudo() { if (!effettiAttivi()) return; if (!c("campo-energia", .7)) [523, 1187, 1663, 2531].forEach((f, k) => tono("sine", f, .7, .07 / (k + 1) * 2, { staccato: 1 })); c("metallo", .35, { t: .05 }); },
     effetto(tipo) {
       if (!effettiAttivi()) return;
       if (tipo === "scudo") return S.scudo();
-      if (tipo === "potenzia") { tono("sawtooth", 220, .45, .07, { fine: 880, filtro: 2000 }); [0, 4, 7].forEach((s, k) => tono("triangle", nota(67 + s), .3, .07, { t: .2 + k * .05 })); return; }
-      if (tipo === "energia") { for (let k = 0; k < 3; k++) tono("sine", 500 + k * 250, .1, .1, { fine: 900 + k * 250, t: k * .08 }); return; }
-      if (tipo === "indebolisci") { tono("triangle", 600, .5, .1, { fine: 150 }); return; }
-      if (tipo === "stordisci") { const o = tono("sine", 1200, .7, .07, { staccato: 1 }); const l = ctx.createOscillator(), g = ctx.createGain(); l.frequency.value = 9; g.gain.value = 300; l.connect(g); g.connect(o.frequency); l.start(); l.stop(ora() + .8); return; }
+      if (tipo === "potenzia") { c("campo-energia", .45, { rate: 1.25 }); tono("sawtooth", 220, .45, .05, { fine: 880, filtro: 2000 }); [0, 4, 7].forEach((s, k) => tono("triangle", nota(67 + s), .3, .06, { t: .2 + k * .05 })); return; }
+      if (tipo === "energia") { for (let k = 0; k < 3; k++) tono("sine", 500 + k * 250, .1, .09, { fine: 900 + k * 250, t: k * .08 }); c("fiches", .35, { t: .1, rate: 1.3 }); return; }
+      if (tipo === "indebolisci") { tono("triangle", 600, .5, .09, { fine: 150 }); c("campo-energia", .3, { rate: .6 }); return; }
+      if (tipo === "stordisci") { c("campana", .45, { rate: 1.4 }); const o = tono("sine", 1200, .7, .05, { staccato: 1 }); const l = ctx.createOscillator(), g = ctx.createGain(); l.frequency.value = 9; g.gain.value = 300; l.connect(g); g.connect(o.frequency); l.start(); l.stop(ora() + .8); return; }
       if (tipo === "brucia") return TIMBRI.fuoco(.5);
       if (tipo === "nebbia") return TIMBRI.vento(.6);
-      tono("sine", 700, .12, .08, { fine: 1000 });
+      tono("sine", 700, .12, .07, { fine: 1000 });
     },
-    schiva() { if (effettiAttivi()) soffio("bandpass", 800, .3, .35, { fine: 3500, q: 2.5 }); },
-    entra() { if (!effettiAttivi()) return; soffio("bandpass", 2500, .25, .25, { fine: 600, q: 2 }); tonfo(.35, .2, 160); },
-    ko() { if (!effettiAttivi()) return; tono("sawtooth", 330, .7, .09, { fine: 60, filtro: 1200 }); tonfo(.8, .25, 100); },
+    schiva() { if (effettiAttivi()) c("fruscio", .8) || soffio("bandpass", 800, .3, .35, { fine: 3500, q: 2.5 }); },
+    // una carta che entra in campo: scivola e si posa sul tavolo
+    entra() { if (!effettiAttivi()) return; if (!c("carta-scivola", .8)) soffio("bandpass", 2500, .25, .25, { fine: 600, q: 2 }); c("carta-posa", .8, { t: .18 }) || tonfo(.35, .2, 160); },
+    ko() { if (!effettiAttivi()) return; c("tonfo", 1) || tonfo(.8, .25, 100); tono("sawtooth", 330, .7, .07, { fine: 60, filtro: 1200 }); },
     fine(vinto) {
       if (!effettiAttivi()) return;
-      if (vinto) { [60, 64, 67, 72].forEach((n, k) => tono("square", nota(n), .18, .07, { t: k * .11, filtro: 3000 })); [72, 76, 79].forEach(n => tono("triangle", nota(n), 1.2, .08, { t: .46, staccato: 1 })); campana(nota(84), .08, .5, 1.4); }
-      else { [67, 63, 60, 55].forEach((n, k) => tono("triangle", nota(n), .35, .09, { t: k * .22 })); tono("sawtooth", nota(43), 1.2, .05, { t: .9, filtro: 600, staccato: 1 }); }
+      if (vinto) { if (c("vittoria", .8)) { [72, 76, 79].forEach(n => tono("triangle", nota(n), 1.2, .05, { t: .85, staccato: 1 })); c("fiches", .5, { t: .9 }); } else { [60, 64, 67, 72].forEach((n, k) => tono("square", nota(n), .18, .07, { t: k * .11, filtro: 3000 })); [72, 76, 79].forEach(n => tono("triangle", nota(n), 1.2, .08, { t: .46, staccato: 1 })); } }
+      else if (!c("sconfitta", .8)) { [67, 63, 60, 55].forEach((n, k) => tono("triangle", nota(n), .35, .09, { t: k * .22 })); }
     },
     // ---- bustine ----
     carica(dur, forza) {   // la bustina trema e si illumina: più è rara la carta migliore, più sale
       if (!effettiAttivi()) return;
       const s = dur / 1000;
-      tono("sawtooth", 80, s, .05 + forza * .03, { fine: 200 + forza * 260, filtro: 900 + forza * 900, a: s * .8, staccato: .4 });
-      soffio("bandpass", 300, s, .12 + forza * .05, { fine: 1500 + forza * 1500, q: 3, a: s * .9 });
-      if (forza >= 3) tono("sine", 55, s, .25, { a: s * .9, staccato: .3 });
+      c("mazzo-mescola", .6);
+      tono("sawtooth", 80, s, .04 + forza * .025, { fine: 200 + forza * 260, filtro: 900 + forza * 900, a: s * .8, staccato: .4 });
+      soffio("bandpass", 300, s, .08 + forza * .04, { fine: 1500 + forza * 1500, q: 3, a: s * .9 });
+      if (forza >= 3) tono("sine", 55, s, .22, { a: s * .9, staccato: .3 });
     },
-    strappo() { if (!effettiAttivi()) return; soffio("bandpass", 1800, .35, .55, { fine: 5000, q: .8, a: .002 }); soffio("highpass", 6000, .25, .2, { t: .05 }); },
-    esce() { if (effettiAttivi()) soffio("bandpass", 1500, .16, .18, { fine: 3500, q: 2 }); },
+    strappo() { if (!effettiAttivi()) return; if (!c("bustina-apri", 1)) soffio("bandpass", 1800, .35, .55, { fine: 5000, q: .8, a: .002 }); },
+    esce() { if (effettiAttivi()) c("carta-scivola", .45) || soffio("bandpass", 1500, .16, .18, { fine: 3500, q: 2 }); },
+    mazzo() { if (effettiAttivi()) c("mazzo-ventaglio", .7); },
+    posa() { if (effettiAttivi()) c("carta-posa", .7); },
     gira(rarita) {
       if (!effettiAttivi()) return;
-      soffio("highpass", 3000, .06, .25, { a: .001 });
+      if (!c("carta-gira", .9)) soffio("highpass", 3000, .06, .25, { a: .001 });
+      const sting = { rara: ["rivela-rara", .45], epica: ["rivela-epica", .55], leggendaria: ["rivela-leggendaria", .75], ultra: ["rivela-leggendaria", .8] }[rarita];
+      if (sting && c(sting[0], sting[1], { t: .08, varia: 0 })) {
+        if (rarita === "leggendaria" || rarita === "ultra") { c("campana", .4, { t: .1 }); c("fiches", .5, { t: .5 }); }
+        if (rarita === "ultra") c("boato", .8, { t: .05 });
+        return;
+      }
       const n = { comune: [72], rara: [72, 79], epica: [72, 76, 79, 84], leggendaria: [72, 76, 79, 84, 88], ultra: [60, 67, 72, 76, 79, 84, 88] }[rarita] || [72];
-      n.forEach((x, k) => tono(rarita === "comune" ? "sine" : "triangle", nota(x), .35, .07, { t: .05 + k * .06 }));
-      if (rarita === "leggendaria" || rarita === "ultra") { [72, 76, 79].forEach(x => tono("sawtooth", nota(x), 1.4, .03, { t: .4, filtro: 2500, staccato: 1 })); campana(nota(96), .06, .4, 1.6); tonfo(.6, .05, 120); }
+      if (rarita !== "comune" || !campioni["carta-gira"]) n.forEach((x, k) => tono(rarita === "comune" ? "sine" : "triangle", nota(x), .35, .06, { t: .05 + k * .06 }));
     },
-    rullo() { if (!effettiAttivi()) return; tonfo(.9, 0, 70); soffio("lowpass", 300, .6, .4, { fine: 60 }); },   // i colpi dell'entrata speciale
+    rullo() { if (!effettiAttivi()) return; c("legno", .9, { rate: .8 }) || tonfo(.9, 0, 70); tonfo(.5, 0, 70); },   // i colpi dell'entrata speciale
   };
-  return { sblocca, imposta, ...S, get preferenze() { return { ...pref }; }, get salvate() { return salvate; }, get pronto() { return pronto(); }, get _ctx() { return ctx; }, _tono: tono, _soffio: soffio, _nota: nota, get _busMusica() { return busMusica; }, get _eco() { return eco; }, get _rumore() { return rumore; } };
+  return { sblocca, imposta, ...S, _collegaRegistrazione(d) { busEffetti.connect(d); }, get campioniPronti() { return Object.values(campioni).reduce((a, l) => a + l.filter(Boolean).length, 0); }, get preferenze() { return { ...pref }; }, get salvate() { return salvate; }, get pronto() { return pronto(); }, get _ctx() { return ctx; }, _tono: tono, _soffio: soffio, _nota: nota, get _busMusica() { return busMusica; }, get _eco() { return eco; }, get _rumore() { return rumore; } };
 })();
 
 // ============================================================

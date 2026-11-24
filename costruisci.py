@@ -10,7 +10,7 @@ LIBRERIE = ["three.min", "supabase.min"]
 
 shutil.rmtree(OUT, ignore_errors=True)
 os.makedirs(OUT)
-for cartella in ["icone"]:   # le immagini delle carte stanno nello spazio privato di Supabase
+for cartella in ["icone", "suoni"]:   # le immagini delle carte stanno nello spazio privato di Supabase
     shutil.copytree(os.path.join(SRC, cartella), os.path.join(OUT, cartella))
 for f in ["config.js", "manifest.webmanifest", "installa.html", "emoji-it.json"]:
     shutil.copy(os.path.join(SRC, f), os.path.join(OUT, f))
