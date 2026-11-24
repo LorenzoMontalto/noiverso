@@ -59,8 +59,8 @@ const Scena3D = (() => {
 
   // Faccia della carta disegnata su canvas: foto, cornice, nome, ruolo
   const cacheFronte = {};
-  async function texFronte(c, liv, lode, olo, ultra) {
-    const k = c.id + ":" + liv + (lode ? "L" : "") + (olo ? "O" : "") + (ultra ? "U" : "");
+  async function texFronte(c, liv, lode, olo, ultra, stelle = 0) {
+    const k = c.id + ":" + liv + (lode ? "L" : "") + (olo ? "O" : "") + (ultra ? "U" : "") + (stelle ? "S" + stelle : "");
     if (cacheFronte[k]) return cacheFronte[k];
     await font();
     const W = 512, H = 716, cv = document.createElement("canvas");
@@ -97,6 +97,12 @@ const Scena3D = (() => {
       g.fillStyle = arc;
     } else g.fillStyle = "#f4ece8";
     g.fillText(c.nome, 34, H - 74);
+    if (stelle) {   // stelle della maestria, in basso a sinistra sopra il nome (come nell'album)
+      g.save(); g.font = '26px "Barlow Semi Condensed", sans-serif'; g.textAlign = "left";
+      const y = H - 74 - fs - (olo ? 34 : 8);
+      for (let i = 0; i < 5; i++) { g.fillStyle = i < stelle ? "#f2c14e" : "rgba(255,255,255,.22)"; g.shadowColor = i < stelle ? "rgba(242,193,78,.8)" : "transparent"; g.shadowBlur = i < stelle ? 8 : 0; g.fillText("★", 34 + i * 24, y); }
+      g.restore();
+    }
     g.fillStyle = col;
     g.font = '600 24px "Barlow Semi Condensed", "Arial Narrow", sans-serif';
     const ruolo = (typeof RUOLI !== "undefined" ? RUOLI[c.ruolo].nome : c.ruolo).toUpperCase();
@@ -571,7 +577,7 @@ const Scena3D = (() => {
     }
 
     async _creaUnita(l, i, x) {
-      const carta = creaCarta(await texFronte(x.c, x.liv, x.lode, x.olo, x.ultra), texRetro(), x.c.rarita);
+      const carta = creaCarta(await texFronte(x.c, x.liv, x.lode, x.olo, x.ultra, x.stelle), texRetro(), x.c.rarita);
       carta.userData.i = i;
       const gruppo = new T.Group();
       gruppo.add(carta);

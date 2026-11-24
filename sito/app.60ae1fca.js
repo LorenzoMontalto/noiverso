@@ -2900,7 +2900,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
     : Lp && Lp.arena ? carteForzate.slice(0, n).map(id => ({ id, liv: 20, lode: false, olo: false, ultra: false, asc: 0 }))   // Arena: tutti uguali al livello 20
-    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0 }));
+    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id) }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   // contro il computer: battaglia con un seme, così gli amici possono guardarla in diretta (le scelte del computer restano a caso)
@@ -3037,7 +3037,7 @@ function htmlHud(l) {
   return `
     ${arena ? "" : `<div class="hud-carta">${htmlCarta(a.c, { liv: a.liv, lode: a.lode, mini: true })}</div>`}
     <div class="hud-info">
-      <div class="lato-nome"><span class="hud-chi">${livelloAttuale && livelloAttuale.spettatore ? esc(String(L.nome).slice(0, 14)) : l ? "Nemico" : "Tu"}</span><b>${esc(a.c.nome)}</b><span class="stile s-${a.c.stile}">${a.c.stile}</span><small>${a.lode ? "30 e lode" : `Lv ${a.liv}`} · ${esc(RUOLI[a.c.ruolo].nome)}</small>
+      <div class="lato-nome"><span class="hud-chi">${livelloAttuale && livelloAttuale.spettatore ? esc(String(L.nome).slice(0, 14)) : l ? "Nemico" : "Tu"}</span><b>${esc(a.c.nome)}</b>${a.stelle ? `<span class="hud-stelle" title="Maestria: ${a.stelle} stelle su 5">${"★".repeat(a.stelle)}</span>` : ""}<span class="stile s-${a.c.stile}">${a.c.stile}</span><small>${a.lode ? "30 e lode" : `Lv ${a.liv}`} · ${esc(RUOLI[a.c.ruolo].nome)}</small>
         <span class="hud-squadra" title="Personaggi ancora in piedi">${L.squadra.map((x, i) => `<i class="${x.pv <= 0 ? "ko" : ""} ${i === L.attivo ? "attiva" : ""}"></i>`).join("")}<small>${vivi}/${L.squadra.length}</small></span>
         ${l ? `<span class="hud-energia" title="Energia del nemico">◆ ${L.energia}</span>` : ""}${Sinergie.htmlBattaglia(L)}</div>
       <div class="pv"><div class="pv-barra ${pct < 25 ? "basso" : pct < 55 ? "medio" : ""}"><i style="width:${pct}%"></i></div><span class="pv-num">${a.pv}/${a.pvMax}</span></div>
@@ -3073,7 +3073,7 @@ function htmlPanchina(perSostituire) {
     const ko = x.pv <= 0, e = consigliAttivi() ? multStile(x.c.stile, d.c.stile) : 1, pct = Math.max(0, x.pv / x.pvMax * 100);
     return `<button class="riserva-btn ${ko ? "ko" : ""} ${e > 1 ? "vantaggio" : e < 1 ? "svantaggio" : ""}" data-fx="salto" ${ko ? "disabled" : `data-${perSostituire ? "sostituisci" : "cambia"}="${i}"`} ${animazione ? "disabled" : ""}>
       <img src="${imgCarta(x.c.id)}" alt="">
-      <span class="riserva-testo"><b>${esc(x.c.nome)}</b><span class="stile s-${x.c.stile}">${x.c.stile}${!ko && e > 1 ? `<i class="tipo-bollino su" title="Batte il nemico in campo">▲</i>` : !ko && e < 1 ? `<i class="tipo-bollino giu" title="In svantaggio contro il nemico in campo">▼</i>` : ""}</span>${ko ? "<small>KO</small>" : ""}${ko ? "" : htmlStatBattaglia(x, true)}</span>
+      <span class="riserva-testo"><b>${esc(x.c.nome)}${x.stelle ? `<i class="hud-stelle">${"★".repeat(x.stelle)}</i>` : ""}</b><span class="stile s-${x.c.stile}">${x.c.stile}${!ko && e > 1 ? `<i class="tipo-bollino su" title="Batte il nemico in campo">▲</i>` : !ko && e < 1 ? `<i class="tipo-bollino giu" title="In svantaggio contro il nemico in campo">▼</i>` : ""}</span>${ko ? "<small>KO</small>" : ""}${ko ? "" : htmlStatBattaglia(x, true)}</span>
       <span class="mini-pv"><i style="width:${pct}%"></i></span>
     </button>`;
   }).join("");

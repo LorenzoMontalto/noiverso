@@ -254,7 +254,9 @@ begin
         'olo', coalesce((d->'olo'->>x)::boolean, false),
         'ultra', coalesce((d->'ultra'->>x)::boolean, false),
         -- Ascesa: quante volte la carta è salita di rarità (0-3)
-        'asc', least(3, greatest(0, case when d->'asc'->>x ~ '^[0-9]+$' then (d->'asc'->>x)::int else 0 end))) order by n)
+        'asc', least(3, greatest(0, case when d->'asc'->>x ~ '^[0-9]+$' then (d->'asc'->>x)::int else 0 end)),
+        -- nov 2026: stelle della maestria (si vedono sulla carta in battaglia, non cambiano la forza)
+        'stelle', least(5, case when jsonb_typeof(d->'maestria'->x->'presi') = 'array' then jsonb_array_length(d->'maestria'->x->'presi') else 0 end)) order by n)
       from jsonb_array_elements_text(coalesce(d->'squadre'->att->'carte', '[]'::jsonb)) with ordinality as t(x, n)), '[]'::jsonb));
 end $$;
 

@@ -162,8 +162,8 @@ class Battaglia {
   constructor(sqG, sqC, nomeG = "Tu", nomeC = "Avversario", rng = Math.random) {
     this.rng = rng;
     this.lati = [
-      { nome: nomeG, squadra: sqG.map(x => nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra, x.asc)), attivo: 0, energia: ENERGIA_INIZIALE },
-      { nome: nomeC, squadra: sqC.map(x => nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra, x.asc)), attivo: 0, energia: ENERGIA_INIZIALE },
+      { nome: nomeG, squadra: sqG.map(x => Object.assign(nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra, x.asc), { stelle: Math.max(0, Math.min(5, x.stelle | 0)) })), attivo: 0, energia: ENERGIA_INIZIALE },
+      { nome: nomeC, squadra: sqC.map(x => Object.assign(nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra, x.asc), { stelle: Math.max(0, Math.min(5, x.stelle | 0)) })), attivo: 0, energia: ENERGIA_INIZIALE },
     ];
     this.turno = 1;
     this.vincitore = -1;
