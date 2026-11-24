@@ -58,7 +58,7 @@ const BONUS_TIPO = { FOR: { att: 1.25 }, DIF: { dif: 1.05 }, VEL: { vel: 5, att:
 const RUOLI = {
   tank:          { nome: "Tank",          cosa: "Incassa i colpi",      pv: 150, att: 10, dif: 16, vel: 6,  passiva: "Subisce il 10% di danni in meno." },
   difensore:     { nome: "Difensore",     cosa: "Protegge con scudi",   pv: 145, att: 12, dif: 15, vel: 8,  passiva: "Quando entra in campo ottiene uno scudo del 30%." },
-  guaritore:     { nome: "Guaritore",     cosa: "Cura la squadra",      pv: 115, att: 10, dif: 13, vel: 10, passiva: "A fine turno recupera il 5% dei PV se è in campo, e cura del 2% chi è in panchina." },
+  guaritore:     { nome: "Guaritore",     cosa: "Cura la squadra",      pv: 115, att: 10, dif: 13, vel: 10, passiva: "A fine turno recupera l'8% dei PV se è in campo, e cura del 2% chi è in panchina. Le sue mosse di cura curano a metà anche il più ferito in panchina." },
   schivatore:    { nome: "Schivatore",    cosa: "Evita gli attacchi",   pv: 100, att: 13, dif: 10, vel: 16, passiva: "15% di probabilità di schivare ogni attacco." },
   assassino:     { nome: "Assassino",     cosa: "Colpi critici",        pv: 95,  att: 16, dif: 9,  vel: 15, passiva: "Colpo critico al 20% invece del 6%." },
   picchiatore:   { nome: "Picchiatore",   cosa: "Più ferito, più forte", pv: 120, att: 15, dif: 9,  vel: 11, passiva: "Più è ferito, più picchia (fino a +50% attacco)." },
@@ -66,7 +66,7 @@ const RUOLI = {
   imprevedibile: { nome: "Imprevedibile", cosa: "Danni a sorpresa",     pv: 105, att: 15, dif: 10, vel: 12, passiva: "I suoi danni variano moltissimo: da ×0,6 a ×1,5." },
   stratega:      { nome: "Stratega",      cosa: "Genera energia",       pv: 110, att: 12, dif: 12, vel: 12, passiva: "Se è in campo, la squadra guadagna +1 energia a turno." },
   ladro:         { nome: "Ladro",         cosa: "Ruba energia",         pv: 100, att: 12, dif: 10, vel: 15, passiva: "Ruba 1 energia ogni volta che colpisce con una mossa da 2 energia o più." },
-  incendiario:   { nome: "Incendiario",   cosa: "Brucia i nemici",      pv: 110, att: 15, dif: 10, vel: 12, passiva: "Le sue bruciature durano 1 turno in più. Immune alle bruciature." },
+  incendiario:   { nome: "Incendiario",   cosa: "Brucia i nemici",      pv: 110, att: 15, dif: 10, vel: 12, passiva: "Le sue bruciature durano 1 turno in più e scottano il 40% in più; fa +20% danni a chi brucia. Immune alle bruciature." },
   stregone:      { nome: "Stregone",      cosa: "Indebolisce",          pv: 110, att: 13, dif: 11, vel: 11, passiva: "I suoi indebolimenti durano 1 turno in più." },
   tiratore:      { nome: "Tiratore",      cosa: "Danni dalla distanza", pv: 105, att: 16, dif: 10, vel: 11, passiva: "+10% danni con le mosse da 2 energia o più." },
 };

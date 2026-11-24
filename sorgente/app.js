@@ -810,6 +810,8 @@ function vistaStrada() {
       <li><b>Tipi.</b> Ogni carta è di un tipo che potenzia una sua statistica: <span class="s-FOR stile">FOR</span> Forza +25% attacco, <span class="s-DIF stile">DIF</span> Difesa +5% difesa, <span class="s-VEL stile">VEL</span> Velocità +5 velocità e +15% attacco (a parità di livello una carta Velocità attacca sempre prima delle altre). Potenziando salgono attacco, difesa, velocità e PV di tutte le carte, e la statistica del tipo sale di più. Forza batte Difesa, Difesa batte Velocità, Velocità batte Forza: il vantaggio vale ×1,3, lo svantaggio ×0,8.</li>
       <li><b>Pass.</b> Le sfide del pass (3 al giorno, 4 alla settimana) danno tanta esperienza; battaglie e bustine ne danno un po'. Ogni livello del pass sblocca un premio.</li>
       <li><b>Livello giocatore.</b> Sale con tutto quello che fai (battaglie, storia, carte nuove, potenziamenti) fino al 100. Ogni livello ha un premio, alcuni anche un titolo o un cosmetico.</li>
+      <li><b>Campi.</b> Ogni battaglia si gioca su un campo (Pioggia, Notte, Stadio, Lava, Tempio) che cambia una regola. Dopo 10 turni il campo cambia, quindi tieniti pronto ad adattarti (nella storia invece resta quello della mappa).</li>
+      <li><b>Bruciature.</b> Chi brucia perde PV a ogni turno e le sue cure valgono la metà.</li>
       <li><b>Arena.</b> Scegli 5 carte tra quelle proposte, tutte al livello 20, e gioca finché non perdi 3 volte: più vittorie fai (fino a 7), più ricco è il premio.</li>
       <li><b>Maestria e frammenti.</b> Ogni carta ha 5 stelle di maestria da conquistare giocandola. I doppioni delle carte al 30 danno frammenti ◈, con cui crei le carte che ti mancano.</li>
       <li><b>Gradi.</b> I punti dal vivo del mese ti danno un grado, da Bronzo a Leggenda: a fine stagione riscuoti il premio del più alto.</li>
@@ -2911,7 +2913,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   const gMio = L.spettatore ? L.spettatore.gA : L.vivo ? L.vivo.graffitoMio : Graffiti.mio(), gNem = Graffiti.nemico(L);   // una volta sola: per i bot può essere a caso
   B.impostaGraffiti(gMio, gNem);
   const campoFisso = L.spettatore ? L.spettatore.campo : L.campo;   // storia: il campo della mappa (e chi guarda lo riceve)
-  if (campoFisso) B.impostaCampo(campoFisso);
+  if (campoFisso) { B.impostaCampo(campoFisso); B.campoBloccato = true; }   // storia: il campo della mappa resta tutta la partita
   const bossG = L.spettatore ? L.spettatore.bossGiorno : L.bossGiorno;   // boss del giorno: corazza e punto debole
   if (bossG) BossGiorno.prepara(B, bossG);
   B.zaino = L.spettatore || L.arena ? null : Zaino.perBattaglia();

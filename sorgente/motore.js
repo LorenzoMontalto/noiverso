@@ -13,7 +13,7 @@
 
 const ENERGIA_INIZIALE = 3, ENERGIA_TURNO = 2, ENERGIA_MAX = 8, BONUS_CARICA = 2;
 const K_DANNO = 0.78, SMUSSO = 6, PROB_CRITICO = 0.06;
-const TURNO_SIRENE = 30;
+const TURNO_SIRENE = 30, TURNO_CAMBIO_CAMPO = 11;   // il campo cambia all'inizio del turno 11 (dopo 10 turni)
 const TETTO_ATTACCO = 1.6;   // i bonus all'attacco sommati arrivano al massimo a +60% // da questo turno le cure si dimezzano e chi è in campo perde PV ogni turno
 
 const _carte = (typeof module !== "undefined") ? require("./carte.js") : null;
@@ -246,7 +246,7 @@ class Battaglia {
     this.ev = [];
     this.oggettiTurno = this.oggettiTurno || []; this.oggettiTurno[l] = this.turno;
     this._log(`${L.nome} apre lo zaino: ${nome || id}!`, { lato: l, oggetto: id, avviso: true });
-    if (e.tipo === "cura") this._cura(l, a, Math.round(pvCura(a) * e.val / 100));
+    if (e.tipo === "cura") { this._cura(l, a, Math.round(pvCura(a) * e.val / 100)); this._curaPanchina(l, a, e.val); }
     else if (e.tipo === "energia") { L.energia = Math.min(ENERGIA_MAX, L.energia + e.val); this._log(`+${e.val} energia.`, { lato: l, anim: "energia", su: l }); }
     else if (e.tipo === "forza") { a.buff.att = { val: e.val, turni: e.turni }; this._log(`Attacco di ${a.c.nome} +${e.val}% per ${e.turni} turni.`, { lato: l, anim: "potenzia", su: l }); }
     else if (e.tipo === "scudo") { a.scudo = Math.max(a.scudo, e.val); this._log(`${a.c.nome} è protetto: il prossimo colpo fa il ${e.val}% di danni in meno.`, { lato: l, anim: "scudo", su: l }); }
@@ -262,7 +262,7 @@ class Battaglia {
       this._log(`${ko.c.nome} torna in piedi con ${ko.pv} PV ed è di nuovo in panchina.`, { lato: l, cura: l, quanto: ko.pv });
     }
     else if (e.tipo === "campo") {
-      this.impostaCampo(scelta);
+      this.impostaCampo(scelta); this.campoBloccato = true;   // scelto con la Radio pirata: resta quello
       this._log(`Il campo cambia: ${CAMPI[scelta].icona} ${CAMPI[scelta].nome}! ${CAMPI[scelta].desc}`, { lato: l, campo: scelta, avviso: true });
     }
     return { ok: true, ev: this.ev };
@@ -320,6 +320,7 @@ class Battaglia {
     let dmg = m.pot * rapporto * stile * varia * (crit ? ((a.sin && a.sin.critX) || 1.5) : 1) * K_DANNO * (a.f || 1);
     dmg *= (1 + this.gv(l, "fiamma") / 100) * (1 - this.gv(1 - l, "muro") / 100);
     if (a.c.ruolo === "tiratore" && m.costo >= 2) dmg *= 1.1;
+    if (a.c.ruolo === "incendiario" && d.stati && d.stati.brucia) dmg *= 1.2;   // nov 2026: l'Incendiario picchia di più chi sta già bruciando
     if (m.eff && a.sin && a.sin.dannoEff) dmg *= 1 + a.sin.dannoEff / 100;   // sinergia Maghi
     // boss del giorno: corazze e punti deboli (funzioni messe da BossGiorno.prepara)
     if (d.dannoDa) dmg *= d.dannoDa(a);
@@ -472,7 +473,8 @@ class Battaglia {
     if (e.tipo === "brucia") {
       if (d.c.ruolo === "incendiario") { this._log(`${d.c.nome} non brucia.`, { lato: 1 - l }); return; }
       const turni = Math.max(1, e.turni + (a.c.ruolo === "incendiario" ? 1 : 0) + (a.sin && a.sin.effetti ? 1 : 0) - (this.campo === "pioggia" ? 1 : 0));
-      d.stati.brucia = { val: Math.round(e.val * (1 + ((a.sin && a.sin.forzaEff) || 0) / 100)), turni };
+      // nov 2026: le bruciature dell'Incendiario scottano il 40% in più
+      d.stati.brucia = { val: Math.round(e.val * (1 + ((a.sin && a.sin.forzaEff) || 0) / 100) * (a.c.ruolo === "incendiario" ? 1.4 : 1)), turni };
       this._log(`${d.c.nome} brucia per ${turni} turni.`, { lato: l, anim: "brucia", su: 1 - l });
     } else if (d.immuneEffetti && (e.tipo === "stordisci" || e.tipo === "indebolisci")) {
       this._log(`${d.c.nome} è protetto da uno scudo magico: l'effetto non lo tocca.`, { lato: 1 - l });
@@ -507,7 +509,7 @@ class Battaglia {
       else { a.nebbia = true; a.nebbiaFino = this.turno + (this._mosso && this._mosso[1 - l] ? 1 : 0); this._log(`${a.c.nome} sparisce per un turno: il prossimo attacco nemico andrà a vuoto.`, { lato: l, anim: "nebbia", su: l }); }
       a.ultimaNebbia = this.turno;
     }
-    else if (e.tipo === "cura") this._cura(l, a, Math.round(pvCura(a) * e.val / 100));
+    else if (e.tipo === "cura") { this._cura(l, a, Math.round(pvCura(a) * e.val / 100)); this._curaPanchina(l, a, e.val); }
     else if (e.tipo === "energia") { L.energia = Math.min(ENERGIA_MAX, L.energia + e.val); this._log(`${L.nome} guadagna ${e.val} energia.`, { lato: l, anim: "energia", su: l }); }
   }
 
@@ -523,6 +525,7 @@ class Battaglia {
   _cura(l, x, n) {
     if (this.campo === "tempio") n *= 2;
     if (this.turno >= TURNO_SIRENE) n = Math.round(n / 2);
+    if (x.stati && x.stati.brucia) n = Math.max(1, Math.round(n / 2));   // nov 2026: chi brucia guarisce la metà
     const prima = x.pv;
     x.pv = Math.min(x.pvMax, x.pv + n);
     if (x.pv > prima) this._log(`${x.c.nome} recupera ${x.pv - prima} PV.`, { lato: l, cura: l, quanto: x.pv - prima });
@@ -540,6 +543,13 @@ class Battaglia {
       if (finiti.length === 2) this._log("Doppio KO! Restate a terra tutti e due, ma l'ultimo a cadere è il nemico.", { avviso: true });
       this._log(this.vincitore === 0 ? "Hai vinto!" : "Hai perso.", { fine: true });
     }
+  }
+
+  // Guaritore: quando usa una cura, cura della metà anche la carta più ferita in panchina
+  _curaPanchina(l, a, val) {
+    if (a.c.ruolo !== "guaritore") return;
+    const x = this.lati[l].squadra.filter(y => y !== a && y.pv > 0 && y.pv < y.pvMax).sort((p, q) => p.pv / p.pvMax - q.pv / q.pvMax)[0];
+    if (x) this._cura(l, x, Math.max(1, Math.round(pvCura(x) * val / 200)));
   }
 
   _fineTurno() {
@@ -562,7 +572,7 @@ class Battaglia {
         const cuore = this.gv(l, "cuore");
         if (cuore && a.pv > 0 && a.pv < a.pvMax) this._cura(l, a, Math.max(1, Math.round(pvCura(a) * cuore / 100)));
         if (a.pv > 0 && a.c.ruolo === "guaritore") {
-          this._cura(l, a, Math.round(pvCura(a) * 0.05));
+          this._cura(l, a, Math.round(pvCura(a) * 0.08));   // nov 2026: era il 5%
           for (const x of L.squadra) if (x !== a && x.pv > 0 && x.pv < x.pvMax) x.pv = Math.min(x.pvMax, x.pv + Math.round(x.pvMax * (this.turno >= TURNO_SIRENE ? 0.01 : 0.02)));
         }
         if (a.pv > 0 && this.campo === "lava") {
@@ -593,6 +603,13 @@ class Battaglia {
     this.turno++;
     if (this.vincitore < 0) {
       this._log(`— Turno ${this.turno} —`, { separatore: true });
+      // nov 2026: a metà partita il campo cambia (non nella storia, dove il campo è quello della mappa)
+      if (this.turno === TURNO_CAMBIO_CAMPO - 1 && !this.campoBloccato) this._log("Il cielo cambia: alla fine di questo turno cambierà anche il campo!", { avviso: true });
+      if (this.turno === TURNO_CAMBIO_CAMPO && !this.campoBloccato) {
+        const altri = ORDINE_CAMPI.filter(k => k !== this.campo), nuovo = altri[Math.floor(this.rng() * altri.length)];
+        this.impostaCampo(nuovo);
+        this._log(`Il campo cambia: ${CAMPI[nuovo].icona} ${CAMPI[nuovo].nome}! ${CAMPI[nuovo].desc}`, { campo: nuovo, avviso: true, cambioCampo: true });
+      }
       if (this.turno === TURNO_SIRENE - 5) this._log("Tra 5 turni arrivano le sirene: da lì le cure valgono la metà e ogni turno si perdono PV. Conviene chiudere!", { avviso: true });
       if (this.turno === TURNO_SIRENE) this._log("Arrivano le sirene! Da ora le cure valgono la metà e ogni turno si perdono PV.", { avviso: true });
     }
