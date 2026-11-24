@@ -657,11 +657,12 @@ function apriModale(html, opz = {}) {
   FX.riavvia($(".modale-scatola"), "entra");
 }
 function chiudiModale() {
-  const eraApertura = !!$("#modale-corpo .apertura2d");
+  const eraApertura = !!$("#modale-corpo .apertura2d"), eraOrdine = !!$("#modale-corpo .ordine-entrata");
   $("#modale").hidden = true; $("#modale-corpo").innerHTML = "";
   if (eraApertura) { SerieCompleta.svuota(); Trofei.controlla(); }   // chiusa la bustina: annunci rimandati (e la serie, se non avevi girato tutto)
   // chiusa la scelta della squadra senza scegliere: niente battaglia, si esce dallo schermo intero
   if (typeof scegliSquadra === "function" && scegliSquadra.poi) { scegliSquadra.poi = null; if (!B) schermoIntero(false); }
+  if (eraOrdine && !B) schermoIntero(false);   // chiuso l'ordine di entrata senza combattere
 }
 
 // Avvisi in fila: uno alla volta (toccandolo passi al prossimo). A fine battaglia non escono come avvisi:
@@ -1351,10 +1352,10 @@ function vistaSquadra() {
   const sq = squadraAttiva();
   const slot = Array.from({ length: CARTE_SQUADRA }, (_, i) => {
     const id = sq.carte[i];
-    if (!id) return `<div class="slot"><div class="slot-vuoto">Posto ${i + 1}</div></div>`;
+    if (!id) return `<div class="slot" data-rilascia="sq:${i}"><div class="slot-vuoto">Posto ${i + 1}</div></div>`;
     const sel = selSq && selSq.id === id, bersaglio = selSq && selSq.modo === "slot" && !sel;
-    return `<div class="slot pieno ${sel ? "selezionata" : ""} ${bersaglio ? "bersaglio" : ""}" style="--i:${i}">
-      <div class="slot-carta" data-slot="${i}" role="button" tabindex="0" aria-label="${esc(PER_ID[id].nome)}: tocca per le opzioni">${htmlCarta(PER_ID[id], { piccola: true })}</div>
+    return `<div class="slot pieno ${sel ? "selezionata" : ""} ${bersaglio ? "bersaglio" : ""}" style="--i:${i}" data-rilascia="sq:${i}">
+      <div class="slot-carta" data-slot="${i}" data-trascina="sq:${i}" role="button" tabindex="0" aria-label="${esc(PER_ID[id].nome)}: tocca per le opzioni">${htmlCarta(PER_ID[id], { piccola: true })}</div>
       <div class="slot-comandi">
         <button class="mini-btn" data-fx="salto" data-sposta="${i}:-1" ${i === 0 ? "disabled" : ""} aria-label="Sposta a sinistra">◀</button>
         <button class="mini-btn togli" data-fx="scuoti" data-togli="${i}" aria-label="Togli dalla squadra">✕</button>
@@ -1383,7 +1384,7 @@ function vistaSquadra() {
       <label for="nome-squadra">Nome</label>
       <input id="nome-squadra" maxlength="22" value="${esc(sq.nome)}" autocomplete="off">
       <button class="btn piccolo" data-fx="stelle" data-azione="consiglio-calcola">✦ Squadra consigliata</button>
-      <span class="nota">${sq.carte.length === CARTE_SQUADRA ? "Squadra pronta per le sfide." : `Mancano ${CARTE_SQUADRA - sq.carte.length} ${CARTE_SQUADRA - sq.carte.length === 1 ? "carta" : "carte"}.`}</span>
+      <span class="nota">Tieni premuta una carta e trascinala su un posto della squadra per scambiarla. ${sq.carte.length === CARTE_SQUADRA ? "Squadra pronta per le sfide." : `Mancano ${CARTE_SQUADRA - sq.carte.length} ${CARTE_SQUADRA - sq.carte.length === 1 ? "carta" : "carte"}.`}</span>
     </div>
     <div class="slot5">${slot.join("")}</div>
     ${Graffiti.htmlSquadra()}
@@ -1401,7 +1402,7 @@ function vistaSquadra() {
     ${elenco.length ? "" : `<p class="nota vuoto-filtri">Nessuna carta con questi filtri.</p>`}
     <div class="griglia">
       ${elenco.map((c, i) => { const dentro = sq.carte.includes(c.id);
-        return `<div class="scegli cella ${dentro ? "scelta" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" role="button" tabindex="0" aria-pressed="${dentro}">${htmlCarta(c)}</div>`; }).join("")}
+        return `<div class="scegli cella ${dentro ? "scelta" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" data-trascina="lista:${c.id}" role="button" tabindex="0" aria-pressed="${dentro}">${htmlCarta(c)}</div>`; }).join("")}
     </div>
   </section>
   ${htmlAzioniCarta()}`;
@@ -1924,7 +1925,7 @@ function vistaClassifica() {
     <table class="classifica">
       <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vinte / giocate</th><th>Carte</th><th>Livello</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
       <tbody>${classificaDati.map((r, i) => `
-        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi" data-profilo-amico="${esc(r.id)}" role="button" tabindex="0" title="Vedi il profilo">${Cosmetici.avatar(String(r.avatar || ""), r.cornice, "mini")}${r.id !== Archivio.uid && Online.eOnline(r.id) ? `<span class="pallino-online" title="Online adesso"></span>` : ""}<span class="${Cosmetici.classeNome(r.stileNome)}">${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}</span>${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</td>
+        <tr class="${r.id === Archivio.uid ? "io" : ""}" style="--i:${i}"><td>${i + 1}</td><td class="chi" data-profilo-amico="${esc(r.id)}" role="button" tabindex="0" title="Vedi il profilo"><div class="chi-riga">${Cosmetici.avatar(String(r.avatar || ""), r.cornice, "mini")}${r.id !== Archivio.uid && Online.eOnline(r.id) ? `<span class="pallino-online" title="Online adesso"></span>` : ""}<div class="chi-testo"><span class="chi-nome ${Cosmetici.classeNome(r.stileNome)}">${esc(String(r.nome || "") || nomiCache[r.id] || (r.id === Archivio.uid ? "Tu" : "Giocatore"))}</span>${r.titolo ? `<small class="titolo-giocatore">${esc(String(r.titolo).slice(0, 30))}</small>` : ""}</div></div></td>
         <td>${Number(r.punti) || 0}<small class="grado-mini" title="Grado della stagione">${Gradi.nome(Number(r.punti) || 0)}</small></td><td>${Number(r.vinte_vivo) || 0}/${Number(r.giocate_vivo) || 0}</td><td>${Number(r.carte) || 0}/${CARTE.length}</td><td>${Number(r.livello) > 0 ? Livello.badge(Number(r.livello), "mini") : "–"}</td>${socialeAttivo() ? `<td>${r.id !== Archivio.uid ? `<span class="sfida-celle"><button class="btn piccolo" data-fx="spinta" data-sfida-amico="${esc(r.id)}">Sfida</button>${Online.eOnline(r.id) ? `<button class="btn piccolo primario" data-fx="spinta" data-sfida-vivo="${esc(r.id)}">Dal vivo</button>` : ""}</span>` : ""}</td>` : ""}</tr>`).join("")}</tbody>
     </table>
   </section>`;
@@ -2887,6 +2888,38 @@ function htmlListaSquadre(attr, scelta) {
         <div class="ss-carte">${q.carte.length ? q.carte.map(id => `<img src="${imgCarta(id)}" alt="${esc(PER_ID[id] ? PER_ID[id].nome : "")}" title="${esc(PER_ID[id] ? PER_ID[id].nome : "")} · Lv ${livello(id) || 1}">`).join("") : `<span class="nota">vuota</span>`}</div>
         ${ok ? "" : `<small class="ss-no">${q.carte.length < CARTE_SQUADRA ? "Squadra incompleta" : ""}</small>`}</button>`; }).join("")}</div>`;
 }
+// Dopo aver scelto la squadra: l'ordine in cui le carte entrano in campo (si trascinano o si toccano due carte per scambiarle).
+// L'ordine resta salvato nella squadra.
+const Ordine = (() => {
+  let poi = null, titolo = "", sel = -1;
+  function apri(f, t) { poi = f; titolo = t || titolo; sel = -1; disegnaOrdine(); }
+  function disegnaOrdine() {
+    const sq = squadraAttiva(), n = carteBattaglia();
+    apriModale(`<div class="ordine-entrata"><span class="codice-tag">${esc(sq.nome || `Squadra ${(S.attiva || 0) + 1}`)}</span><h3>Ordine di entrata</h3>
+      <p class="nota">La prima carta entra subito in campo, le altre aspettano in panchina. Trascina una carta su un'altra per scambiarle (col dito: tieni premuto), oppure tocca due carte.</p>
+      <div class="ordine-lista">${sq.carte.map((id, i) => { const c = PER_ID[id], st = statistiche(c, livello(id) || 1, haLode(id), rarCarta(id));
+        return `<div class="ord-riga ${i >= n ? "fuori" : ""} ${sel === i ? "sel" : ""}" data-rilascia="ord:${i}" data-trascina="ord:${i}" data-ord-tocca="${i}" role="button" tabindex="0" aria-label="${esc(c.nome)}, posto ${i + 1}">
+          <span class="ord-n">${i + 1}</span>
+          <img src="${imgMini(id)}" alt="">
+          <span class="ord-testo"><b>${esc(c.nome)}${i === 0 ? ` <em class="ord-primo">in campo</em>` : i >= n ? ` <em>non gioca</em>` : ""}</b><small><span class="s-${c.stile}">${STILI[c.stile].icona}</span> ${esc(RUOLI[c.ruolo].nome)} · Lv ${livello(id) || 1} · PV ${st.pv} · Att ${st.att}</small></span>
+          <span class="ord-maniglia" aria-hidden="true">⠿</span></div>`; }).join("")}</div>
+      ${n < sq.carte.length ? `<p class="nota">In modalità rapida giocano solo le prime ${n}.</p>` : ""}
+      <div class="azioni centro"><button class="btn" data-azione="ordine-indietro">Cambia squadra</button><button class="btn primario" data-fx="onda" data-azione="ordine-via">Combatti!</button></div></div>`);
+  }
+  function scambia(i, j) {
+    const c = squadraAttiva().carte; if (i === j || !c[i] || !c[j]) return;
+    [c[i], c[j]] = [c[j], c[i]]; sel = -1; salva(); disegnaOrdine();
+  }
+  function tocca(i) { if (sel < 0) { sel = i; disegnaOrdine(); } else if (sel === i) { sel = -1; disegnaOrdine(); } else scambia(sel, i); }
+  async function via() {
+    const f = poi; poi = null; chiudiModale();
+    // dal vivo la squadra la legge il server: aspetto che l'ordine nuovo sia salvato
+    for (let k = 0; k < 20 && Archivio._inScrittura; k++) await attesa(100);
+    if (f) f();
+  }
+  function indietro() { const f = poi; poi = null; scegliSquadra(f, titolo || undefined); }
+  return { apri, scambia, tocca, via, indietro };
+})();
 function scegliSquadra(poi, titolo = "Con quale squadra combatti?") {
   if (B && $("#azioni")) return;
   apriModale(`<div class="scelta-squadra"><h3>${esc(titolo)}</h3>
@@ -3222,6 +3255,90 @@ function applicaFoto(f) {
 // il browser accende l'audio solo dopo un gesto: al primo tocco (o tasto) si sblocca tutto
 ["pointerdown", "keydown", "touchend"].forEach(t => document.addEventListener(t, () => Suoni.sblocca(), { capture: true, passive: true }));
 // un "tic" per i bottoni (più squillante per quelli importanti); le mosse in battaglia hanno già il loro suono
+// ---------- Trascinare le carte (dito o mouse) ----------
+// Col mouse basta trascinare; col dito si tiene premuto un attimo (così lo scorrimento della pagina resta normale).
+// [data-trascina]="tipo:valore" si prende, [data-rilascia]="tipo:valore" lo riceve; Trascina.lascia decide cosa fare.
+const Trascina = (() => {
+  let p = null, bloccaFino = 0;
+  const SOGLIA = 8, TIENI = 230;
+  function pulisci() {
+    if (!p) return;
+    clearTimeout(p.timer);
+    if (p.fantasma) p.fantasma.remove();
+    if (p.el) p.el.classList.remove("trascinata");
+    if (p.sopra) p.sopra.classList.remove("sopra");
+    document.body.classList.remove("trascinando");
+    p = null;
+  }
+  function avvia(x, y) {
+    const r = p.el.getBoundingClientRect(), f = p.el.cloneNode(true);
+    f.className += " trascina-fantasma"; f.removeAttribute("data-trascina"); f.removeAttribute("id");
+    Object.assign(f.style, { width: r.width + "px", height: r.height + "px", left: "0", top: "0" });
+    p.dx = x - r.left; p.dy = y - r.top;
+    document.body.appendChild(f); p.fantasma = f; p.attivo = true;
+    p.el.classList.add("trascinata"); document.body.classList.add("trascinando");
+    sposta(x, y);
+  }
+  function sposta(x, y) {
+    p.fantasma.style.transform = `translate(${x - p.dx}px, ${y - p.dy}px) rotate(-4deg) scale(1.06)`;
+    const sotto = document.elementFromPoint(x, y), t = sotto && sotto.closest("[data-rilascia]");
+    if (t !== p.sopra) { if (p.sopra) p.sopra.classList.remove("sopra"); p.sopra = t; if (t) t.classList.add("sopra"); }
+  }
+  document.addEventListener("pointerdown", e => {
+    const el = e.target.closest && e.target.closest("[data-trascina]");
+    if (!el || e.button > 0 || p) return;
+    p = { el, val: el.dataset.trascina, x0: e.clientX, y0: e.clientY, id: e.pointerId, tocco: e.pointerType !== "mouse", attivo: false };
+    if (p.tocco) p.timer = setTimeout(() => { if (p && !p.attivo) { avvia(p.x0, p.y0); try { navigator.vibrate && navigator.vibrate(12); } catch (er) {} } }, TIENI);
+  });
+  document.addEventListener("pointermove", e => {
+    if (!p || e.pointerId !== p.id) return;
+    if (!p.attivo) {
+      const d = Math.hypot(e.clientX - p.x0, e.clientY - p.y0);
+      if (p.tocco) { if (d > SOGLIA) pulisci(); return; }   // il dito si è mosso subito: sta scorrendo la pagina
+      if (d < SOGLIA) return;
+      avvia(e.clientX, e.clientY);
+    }
+    e.preventDefault(); sposta(e.clientX, e.clientY);
+  });
+  const fine = e => {
+    if (!p || (e.pointerId !== undefined && e.pointerId !== p.id)) return;
+    if (p.attivo) {
+      bloccaFino = Date.now() + 400;   // il "click" che segue il rilascio non deve aprire niente
+      const da = p.val, a = p.sopra && p.sopra.dataset.rilascia;
+      pulisci();
+      if (a && e.type === "pointerup") lascia(da, a);
+    } else pulisci();
+  };
+  document.addEventListener("pointerup", fine);
+  document.addEventListener("pointercancel", fine);
+  // mentre trascini col dito la pagina non deve scorrere
+  document.addEventListener("touchmove", e => { if (p && p.attivo) e.preventDefault(); }, { passive: false });
+  document.addEventListener("contextmenu", e => { if (e.target.closest && e.target.closest("[data-trascina]")) e.preventDefault(); });
+  function lascia(da, a) {
+    const [td, vd] = da.split(/:(.*)/), [ta, va] = a.split(/:(.*)/);
+    if (ta === "sq") SquadraTrascina(td, vd, +va);
+    else if (ta === "ord" && td === "ord") Ordine.scambia(+vd, +va);
+  }
+  return { appena: () => Date.now() < bloccaFino };
+})();
+// Squadre: trascini una carta della squadra su un altro posto (si scambiano) o una carta della collezione su un posto
+function SquadraTrascina(tipo, valore, j) {
+  const sq = squadraAttiva();
+  if (tipo === "sq") {
+    const i = +valore; if (i === j || !sq.carte[i]) return;
+    if (j >= sq.carte.length) { const [c] = sq.carte.splice(i, 1); sq.carte.push(c); }
+    else [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]];
+  } else if (tipo === "lista") {
+    const id = valore; if (!PER_ID[id] || !S.carte[id]) return;
+    const i = sq.carte.indexOf(id);
+    if (i >= 0) { if (j >= sq.carte.length || i === j) return; [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]]; }
+    else if (j < sq.carte.length) { mostraAvviso(`${PER_ID[sq.carte[j]].nome} esce, entra ${PER_ID[id].nome}.`); sq.carte[j] = id; }
+    else if (sq.carte.length < CARTE_SQUADRA) sq.carte.push(id);
+    else return;
+  } else return;
+  selSq = null; salva(); ridisegnaSquadra();
+}
+
 document.addEventListener("click", e => {
   const b = e.target.closest && e.target.closest("button, a.btn, [role=button]");
   if (!b || b.disabled || b.classList.contains("mossa")) return;
@@ -3402,9 +3519,10 @@ document.addEventListener("change", e => { if (e.target.dataset && e.target.data
 document.addEventListener("change", e => { if (e.target.id === "img-file" && e.target.files.length) caricaFileImmagini(e.target.files); });
 document.addEventListener("change", e => { if (e.target.dataset && e.target.dataset.vetrina !== undefined) { Vetrina.metti(+e.target.dataset.vetrina, e.target.value); return; } if (e.target.dataset && e.target.dataset.reazImg !== undefined && e.target.files.length) Reazioni.immagine(+e.target.dataset.reazImg, e.target.files[0]); });
 document.addEventListener("click", e => {
+  if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
   if (e.target.id === "avviso") { mostraAvviso.prossimo(); return; }
-  const t = e.target.closest("[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3509,7 +3627,8 @@ document.addEventListener("click", e => {
   if (t.dataset.cambia !== undefined) { turnoGiocatore({ tipo: "cambio", i: +t.dataset.cambia }); return; }
   if (t.dataset.sostituisci !== undefined) { sostituisciGiocatore(+t.dataset.sostituisci); return; }
   if (t.dataset.sfidaVivo !== undefined) { const id = t.dataset.sfidaVivo; if (B) { Online.esci(); esciBattaglia(); } scegliSquadra(() => Online.sfida(id), "Con quale squadra sfidi il tuo amico?"); return; }
-  if (t.dataset.scegliSquadra !== undefined) { S.attiva = +t.dataset.scegliSquadra; salva(); const f = scegliSquadra.poi; scegliSquadra.poi = null; chiudiModale(); if (f) f(); return; }
+  if (t.dataset.scegliSquadra !== undefined) { S.attiva = +t.dataset.scegliSquadra; salva(); const f = scegliSquadra.poi; scegliSquadra.poi = null; Ordine.apri(f, $(".scelta-squadra h3") ? $(".scelta-squadra h3").textContent : ""); return; }
+  if (t.dataset.ordTocca !== undefined) { Ordine.tocca(+t.dataset.ordTocca); return; }
   if (t.classList.contains("gira")) { if (t.classList.contains("girata")) apriSchedaCarta(esitiAperti[+t.dataset.i]); else { t.classList.add("girata"); SerieCompleta.scoperta(+t.dataset.i); const e = esitiAperti[+t.dataset.i]; Suoni.gira(e.ultra ? "ultra" : PER_ID[e.id].rarita); } return; }
   if (t.matches(".carta[role=button]")) { apriDettaglio(t.dataset.id); return; }
   if (t.dataset.dettaglio) { apriDettaglio(t.dataset.dettaglio); return; }
@@ -3533,6 +3652,8 @@ document.addEventListener("click", e => {
     case "vai-missioni": { const el = $(".oggi"); if (el) el.scrollIntoView({ behavior: ridotto ? "auto" : "smooth", block: "start" }); break; }
     case "consiglio-calcola": Consiglio.calcola(); break;
     case "consiglio-usa": Consiglio.usa(); break;
+    case "ordine-via": Ordine.via(); break;
+    case "ordine-indietro": Ordine.indietro(); break;
     case "novita-avanti": Novita.avanti(); break;
     case "novita-indietro": Novita.indietro(); break;
     case "novita-fine": Novita.fine(); break;
