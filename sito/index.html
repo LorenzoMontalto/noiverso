@@ -209,6 +209,9 @@ h2 { font-size: 1.35rem; }
 .stile { display: inline-block; font-size: .7rem; font-weight: 700; letter-spacing: .06em; padding: 1px 6px; border-radius: 5px; background: rgba(13, 10, 12, .8); border: 1px solid currentColor; }
 .s-FOR { color: var(--s-FOR); } .s-VEL { color: var(--s-VEL); } .s-DIF { color: var(--s-DIF); }
 .cella { animation: cella-entra .35s var(--molla) both; animation-delay: calc(min(var(--i, 0), 10) * 20ms); }
+/* nov 2026: le carte fuori dallo schermo non vengono disegnate né animate (sui telefoni le liste lunghe facevano chiudere la pagina) */
+.griglia > .cella { content-visibility: auto; contain-intrinsic-size: auto 240px; }
+.altre-carte { display: grid; place-items: center; padding: 18px 0 6px; }
 
 /* ---------- Home ---------- */
 .eroe { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: center; margin-bottom: 28px; }
@@ -2310,7 +2313,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <script src="progressi.07b8e2a1.js"></script>
 <script src="extra.3599cc91.js"></script>
 <script src="avvento.355b1396.js"></script>
-<script src="app.913b47e1.js"></script>
+<script src="app.4d7100ac.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

@@ -739,6 +739,7 @@ function vai(v) {
   if (!VISTE.includes(v)) v = "strada";
   const cambiata = v !== vista;
   if (cambiata) selSq = null;
+  if (cambiata && v === "squadra") limSq = PASSO_SQ;
   vista = v;
   if (location.hash.slice(1) !== v) { try { history.replaceState(null, "", "#" + v); } catch (e) { location.hash = v; } }
   $$(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.vista === v ? "page" : "false"));
@@ -767,6 +768,7 @@ function disegna() {
   if (vista === "classifica") avviaClassifica();
   if (vista === "pass") dopoPass();
   if (vista === "storia") dopoStoria();
+  if (vista === "squadra") avviaAltreCarte();
 }
 
 // ---------- STRADA (home) ----------
@@ -1350,6 +1352,27 @@ function vistaAlbum() {
 }
 
 // ---------- SQUADRE ----------
+// nov 2026: la lista delle carte in Squadre si disegna a blocchi (prima tutte le 300+ insieme: sui telefoni la pagina
+// usava troppa memoria e il browser la chiudeva). Le altre arrivano da sole quando scorri in fondo.
+const PASSO_SQ = 36;
+let limSq = PASSO_SQ, elencoSquadra = [], osservaAltre = null;
+function htmlCellaSquadra(c, i, sq) {
+  const dentro = sq.carte.includes(c.id);
+  return `<div class="scegli cella ${dentro ? "scelta" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" data-trascina="lista:${c.id}" role="button" tabindex="0" aria-pressed="${dentro}">${htmlCarta(c)}</div>`;
+}
+function altreCarteSquadra() {
+  const g = $("#vista .griglia"), box = $("#vista [data-altre-squadra]"); if (!g || !box || vista !== "squadra") return;
+  const sq = squadraAttiva(), da = limSq; limSq += PASSO_SQ;
+  g.insertAdjacentHTML("beforeend", elencoSquadra.slice(da, limSq).map((c, i) => htmlCellaSquadra(c, da + i, sq)).join(""));
+  const resto = elencoSquadra.length - limSq;
+  if (resto > 0) box.querySelector("button").textContent = `Mostra altre carte (${resto})`; else { box.remove(); if (osservaAltre) osservaAltre.disconnect(); }
+}
+function avviaAltreCarte() {
+  if (osservaAltre) osservaAltre.disconnect();
+  const box = $("#vista [data-altre-squadra]"); if (!box || !("IntersectionObserver" in window)) return;
+  osservaAltre = new IntersectionObserver(v => { if (v.some(x => x.isIntersecting)) altreCarteSquadra(); }, { rootMargin: "600px 0px" });
+  osservaAltre.observe(box);
+}
 function vistaSquadra() {
   const mie = possedute();
   if (!mie.length) return vuoto("Non hai ancora carte.", "Apri la tua prima bustina", "vai-bustine");
@@ -1378,6 +1401,7 @@ function vistaSquadra() {
   const liv = c => livello(c.id) + (haLode(c.id) ? .5 : 0);
   const elenco = mie.filter(c => passaFiltri(c, filtri.squadra))
     .sort((a, b) => liv(b) - liv(a) || ORDINE_RARITA.indexOf(rarCarta(b.id)) - ORDINE_RARITA.indexOf(rarCarta(a.id)) || a.nome.localeCompare(b.nome));
+  elencoSquadra = elenco;
   return `
   <section>
     <div class="titolo-riga">
@@ -1405,9 +1429,9 @@ function vistaSquadra() {
     </div>
     ${elenco.length ? "" : `<p class="nota vuoto-filtri">Nessuna carta con questi filtri.</p>`}
     <div class="griglia">
-      ${elenco.map((c, i) => { const dentro = sq.carte.includes(c.id);
-        return `<div class="scegli cella ${dentro ? "scelta" : ""} ${selSq && selSq.id === c.id ? "selezionata" : ""}" style="--i:${i}" data-scegli="${c.id}" data-trascina="lista:${c.id}" role="button" tabindex="0" aria-pressed="${dentro}">${htmlCarta(c)}</div>`; }).join("")}
+      ${elenco.slice(0, limSq).map((c, i) => htmlCellaSquadra(c, i, sq)).join("")}
     </div>
+    ${elenco.length > limSq ? `<div class="altre-carte" data-altre-squadra><button class="btn" data-azione="altre-squadra">Mostra altre carte (${elenco.length - limSq})</button></div>` : ""}
   </section>
   ${htmlAzioniCarta()}`;
 }
@@ -1559,6 +1583,7 @@ function disegnaQuieto() {
   t.innerHTML = FUNZIONI_VISTE()[vista]();
   main.classList.add("quieta");
   morfaFigli(main, t);
+  if (vista === "squadra") avviaAltreCarte();
 }
 // album: dopo aver toccato una serie, la pagina scende da sola fin dove iniziano le sue carte
 function scorriAlleCarteAlbum() {
@@ -3681,6 +3706,7 @@ document.addEventListener("click", e => {
     case "vai-trofei": albumScheda = "trofei"; vai("album"); break;
     case "vai-missioni": { const el = $(".oggi"); if (el) el.scrollIntoView({ behavior: ridotto ? "auto" : "smooth", block: "start" }); break; }
     case "consiglio-calcola": Consiglio.calcola(); break;
+    case "altre-squadra": altreCarteSquadra(); break;
     case "consiglio-usa": Consiglio.usa(); break;
     case "ordine-via": Ordine.via(); break;
     case "ordine-indietro": Ordine.indietro(); break;
