@@ -38,7 +38,8 @@ Object.assign(TIPI_BUSTINA.epica, { prezzo: 300, gruppo: "classiche", colore: "#
 Object.assign(TIPI_BUSTINA.leggendaria, { prezzo: 900, gruppo: "classiche", colore: "#f2c14e" });
 Object.assign(TIPI_BUSTINA.ultra, { prezzo: 3000, gruppo: "classiche", colore: "#ffe9a8" });
 TIPI_BUSTINA.mega = { nome: "Mega bustina", carte: 8, ultima: { epica: 85, leggendaria: 15 }, desc: "8 carte, l'ultima almeno Epica.", prezzo: 450, gruppo: "classiche", colore: "#3fd8ff", simbolo: "✚" };
-for (const id of Object.keys(SERIE)) TIPI_BUSTINA[`serie-${id}`] = { serie: id, carte: 4, ultima: "peso4", prezzo: 150, gruppo: "serie",
+for (const id of Object.keys(SERIE).filter(k => !SERIE[k].jolly)) TIPI_BUSTINA[`serie-${id}`] =   // i Jolly non hanno bustina: si trovano solo per fortuna
+  { serie: id, carte: 4, ultima: "peso4", prezzo: 150, gruppo: "serie",
   get nome() { return `Bustina ${SERIE[id].nome}`; }, get desc() { return `4 carte solo della serie ${SERIE[id].nome}, l'ultima almeno Rara.`; },
   get colore() { return SERIE[id].colore; }, get simbolo() { return SERIE[id].simbolo; } };
 const COLORI_STILE = { FOR: "#ff7a45", VEL: "#3fd8ff", DIF: "#7ddc6a" };
@@ -3938,12 +3939,17 @@ function applicaSalvataggio(salvato) {
   }
   S.liv = Object.assign({}, S.liv || {}); S.pot = Object.assign({}, S.pot || {}); S.lodeXp = Object.assign({}, S.lodeXp || {});
   // il tipo Mente non c'è più: le sue bustine diventano bustine Difesa
+  // nov 2026: la bustina della serie Jolly non esiste più: chi ne aveva qualcuna riceve indietro le 150 monete per ognuna
+  if (S.inventario && S.inventario["serie-ospiti"]) { S.monete = (S.monete || 0) + 150 * S.inventario["serie-ospiti"]; delete S.inventario["serie-ospiti"]; }
   if (S.inventario && S.inventario["stile-MEN"]) { S.inventario["stile-DIF"] = (S.inventario["stile-DIF"] || 0) + S.inventario["stile-MEN"]; delete S.inventario["stile-MEN"]; }
   S.squadre = Array.from({ length: NUM_SQUADRE }, (_, i) => {
     const q = (S.squadre || [])[i] || { nome: `Squadra ${i + 1}`, carte: [] };
     // il graffito della squadra (prima del cambio era uno solo per tutte: lo do alla squadra attiva)
     const graffito = q.graffito || (i === (S.attiva || 0) && S.graffito ? S.graffito : null);
-    return { nome: q.nome || `Squadra ${i + 1}`, carte: [...new Set(q.carte || [])].filter(id => PER_ID[id] && S.carte[id] > 0).slice(0, CARTE_SQUADRA), graffito };
+    const jolly = typeof q.jolly === "string" && SERIE[q.jolly] ? { jolly: q.jolly } : {};
+    if (MODI_JOLLY.includes(q.jollyModo)) jolly.jollyModo = q.jollyModo;
+    if (STILI[q.jollyTipo]) jolly.jollyTipo = q.jollyTipo;
+    return { nome: q.nome || `Squadra ${i + 1}`, carte: [...new Set(q.carte || [])].filter(id => PER_ID[id] && S.carte[id] > 0).slice(0, CARTE_SQUADRA), graffito, ...jolly };
   });
 }
 

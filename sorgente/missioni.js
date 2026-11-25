@@ -89,7 +89,7 @@ const Missioni = (() => {
   // ---------- premi ----------
   function dai(p) {
     const q = Object.assign({}, p);
-    if (q.serieCaso) { const ids = Object.keys(SERIE); q.bustine = { [`serie-${ids[Math.floor(Math.random() * ids.length)]}`]: 1 }; delete q.serieCaso; }
+    if (q.serieCaso) { const ids = Object.keys(SERIE).filter(k => !SERIE[k].jolly); q.bustine = { [`serie-${ids[Math.floor(Math.random() * ids.length)]}`]: 1 }; delete q.serieCaso; }
     daiPremio(q);
     return q;
   }

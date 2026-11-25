@@ -44,7 +44,7 @@ const RARITA = {
   // probabilità a parte (PROB_JOLLY) e non salgono di rarità. Forza tra rara ed epica: il loro vantaggio è la flessibilità.
   jolly:       { nome: "Jolly",       peso: 0,   peso4: 0,  forza: 1.14 },
 };
-const PROB_JOLLY = 0.02;   // ogni carta di una bustina ha il 2% di probabilità di essere un Jolly
+const PROB_JOLLY = 0.003;   // ogni carta di una bustina (tranne l'ultima) ha lo 0,3% di probabilità di essere un Jolly: circa 1 bustina normale su 120 (ne ha 3 che possono diventarlo)
 const ORDINE_RARITA = ["comune", "rara", "epica", "leggendaria"];
 const RARE_TOP = r => r === "leggendaria" || r === "ultra";   // per la regola "una a persona per serie"
 
