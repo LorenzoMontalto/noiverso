@@ -24,7 +24,17 @@
   const Accesso = {
     sb,
     pulisciNick,
-    async sessione() { const { data } = await sb.auth.getSession(); return data.session; },
+    async sessione() {
+      const { data } = await sb.auth.getSession(); if (!data.session) return null;
+      // la sessione salvata sul dispositivo potrebbe essere di un account cancellato: lo chiedo al server.
+      // Se il server dice che l'account non c'è più (o la sessione non vale), esco; se manca solo la rete, resto dentro.
+      try {
+        const { data: u, error } = await sb.auth.getUser();
+        if (error && (error.status === 401 || error.status === 403 || error.status === 404 || /not.?found|does not exist|invalid|expired/i.test(error.message || "")) && !/fetch|network/i.test(error.message || "")) { await sb.auth.signOut({ scope: "local" }); return null; }
+        if (!error && !(u && u.user)) { await sb.auth.signOut({ scope: "local" }); return null; }
+      } catch (e) { /* senza rete: tengo la sessione */ }
+      return (await sb.auth.getSession()).data.session;
+    },
     async entra(nick, password) {
       const n = pulisciNick(nick);
       const { error } = await sb.auth.signInWithPassword({ email: `${n}@${DOMINIO}`, password });
