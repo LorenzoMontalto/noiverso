@@ -434,9 +434,27 @@ const STORIA = [
       { titolo: "Le terme di Pipposeidon", nemici: ["pipposeidon", "vikyber", "alicronos", "diegigante", "samufi"], liv: [1, 1], abilita: 0.95, monete: 360,
         parla: "pipposeidon", frase: "Sono sotto la doccia da tre ore e ne ho ancora per due. Tu aspetti fuori, come tutti." },
       { titolo: "Il divano dell'Olimpo", boss: true, nemici: ["lollimpo", "pipposeidon", "vikyber", "maurizap", "diegigante"], liv: [1, 1], abilita: 0.97, monete: 640, bustina: "leggendaria",
-        parla: "lollimpo", frase: "Ero così comodo… Va bene, combatto. Ma dal divano: alzarmi non è previsto.", vittoria: "Lollimpo sbadiglia, si gira dall'altra parte e ti lancia il telecomando: «Hai vinto, ora lasciami dormire». Sotto un cuscino del divano, tra briciole e monetine, trovi un mappamondo di vetro che non riflette le nuvole… ma mondi diversi." }
+        parla: "lollimpo", frase: "Ero così comodo… Va bene, combatto. Ma dal divano: alzarmi non è previsto.", vittoria: "Lollimpo sbadiglia, si gira dall'altra parte e ti lancia il telecomando: «Hai vinto, ora lasciami dormire». Sotto un cuscino del divano, tra briciole e monetine, trovi una scatola di pastelli che brillano. Ne prendi uno in mano e il mondo intorno a te comincia a colorarsi." }
+    ],
+  },  {
+    id: "c29", campo: "tempio", titolo: "L'Italia a colori", serie: "colori", colore: "#ff4fd8", simbolo: "🎨",
+    intro: "I pastelli ti trascinano dentro un quadro: l'Italia dipinta a mano, dai girasoli della Toscana al mare di Capri, fino a Roma di notte. Ogni amico è diventato un colore e custodisce un pezzo del quadro. Per uscirne devi raccoglierli tutti, fino alla luce bianca che li contiene.",
+    tappe: [
+      { titolo: "Le colline toscane", nemici: ["alessiallo", "tizianverde", "seneocra", "aliverde", "diegosa"], liv: [1, 1], abilita: 0.9, monete: 330,
+        parla: "alessiallo", frase: "Qui il giallo è mio: girasoli, sole e tramonto. Vuoi passare? Prima devi abbronzarti un po'." },
+      { titolo: "Il bosco smeraldo", nemici: ["aliverde", "ludovirde", "tizianverde", "samuarancio", "ritavola"], liv: [1, 1], abilita: 0.92, monete: 340,
+        parla: "aliverde", frase: "Shh, le lucciole dormono. E la tua energia… ora è mia." },
+      { titolo: "La costiera al tramonto", nemici: ["diegosa", "samuarancio", "vikfuchsia", "seneocra", "ludovirde"], liv: [1, 1], abilita: 0.93, monete: 350, bustina: "epica",
+        parla: "diegosa", frase: "Guarda che tramonto rosa! Peccato che tu non te lo possa godere: si combatte." },
+      { titolo: "I campi di lavanda", nemici: ["giulilla", "ritavola", "simoborg", "vikfuchsia", "alessiallo"], liv: [1, 1], abilita: 0.94, monete: 360,
+        parla: "giulilla", frase: "Senti questo profumo? Respira forte… ecco, ora ti gira la testa." },
+      { titolo: "Il mare di Capri", nemici: ["mauzzurro", "lolloblitz", "giulilla", "simoborg", "ludovirde"], liv: [1, 1], abilita: 0.95, monete: 370,
+        parla: "mauzzurro", frase: "Il mare oggi è calmo. Non farmi arrabbiare, o arrivano le onde." },
+      { titolo: "Roma di notte", boss: true, nemici: ["aurormo", "pipscuro", "lolloblitz", "mauzzurro", "vikfuchsia"], liv: [1, 1], abilita: 0.97, monete: 660, bustina: "leggendaria",
+        parla: "aurormo", frase: "Il nero, il blu, il rosa… sono tutti dentro di me. Sono la luce bianca: battimi e il quadro sarà finito.", vittoria: "Aurormo sorride e la luce bianca si apre come un ventaglio: tutti i colori tornano al loro posto e il quadro si asciuga. Nell'angolo in basso, al posto della firma, è dipinto un mappamondo di vetro che non riflette i colori… ma mondi diversi. Lo tocchi, ed è vero." }
     ],
   },
+
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
     intro: "Tocchi il mappamondo di vetro e la sua superficie si muove come acqua, sempre più grande. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",

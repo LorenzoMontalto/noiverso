@@ -34,6 +34,7 @@ const MappeStoria = (() => {
     [[240, 1000], [620, 860], [1020, 980], [1480, 760], [1150, 540], [640, 300]],     // santuario della luna rossa (Mitologia Giapponese)
     [[220, 1040], [560, 840], [980, 1000], [1440, 820], [1300, 480], [880, 600]],     // circo tra le stelle (Circo Intergalattico)
     [[200, 1040], [560, 860], [1000, 1000], [1440, 860], [1360, 500], [820, 380]],     // Olimpo degli inutili (Dei Inutili)
+    [[220, 1040], [560, 880], [1000, 1020], [1460, 860], [1320, 480], [760, 360]],     // l'Italia a colori (Colori)
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -107,6 +108,9 @@ const MappeStoria = (() => {
     [[150, 1150, "☁", "Ingresso tra le Nuvole"], [330, 560, "☾", "Gregge che Dorme"], [700, 1110, "♨", "Montagna di Panni"], [1180, 1180, "♨", "Tavola Imbandita"],
      [1690, 850, "✕", "Router Rotto"], [1630, 520, "≋", "Doccia Infinita"], [1180, 40, "⌛", "Orologio in Ritardo"], [300, 110, "✉", "Chat Ignorate"],
      [820, 160, "♛", "Il Divano del Re"], [570, 520, "⚑", "Panni Stesi"]],
+    [[150, 1170, "🎨", "La Tavolozza"], [330, 1190, "✿", "Girasoli"], [410, 590, "≋", "Cascata Smeraldo"], [900, 1180, "⌂", "Case Rosa"],
+     [1520, 1000, "❀", "Lavanda"], [1610, 480, "⛵", "Faraglioni"], [620, 300, "☾", "Colosseo di Notte"], [1045, 210, "✝", "San Pietro"],
+     [1230, 700, "〰", "Pennellata"], [920, 470, "✦", "Luce Bianca"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -913,6 +917,52 @@ const MappeStoria = (() => {
     for (let k = 0; k < 14; k++) { const x = 80 + r() * (W - 160), y = 820 + r() * 330, a = f(r() * 60 - 30); s += k % 2 ? `<rect x="${f(x)}" y="${f(y)}" width="40" height="40" fill="#e0b070" stroke="#8a5a2a" stroke-width="2" opacity=".8" transform="rotate(${a} ${f(x + 20)} ${f(y + 20)})"/>` : `<path d="M${f(x)},${f(y)} v26 q0,12 14,12 h14 v-10 h-12 v-28Z" fill="${["#ff7ab8", "#4fc3ff", "#ffe08a", "#a88aff"][k % 4]}" opacity=".85" transform="rotate(${a} ${f(x)} ${f(y)})"/>`; }
     return s;
   }
+  function colori(r) {
+    // l'Italia dipinta: colline gialle di girasoli, bosco smeraldo con la cascata, costiera rosa, campi di lavanda,
+    // il mare azzurro di Capri, Roma di notte in alto; il sentiero è un arcobaleno, con schizzi di colore dappertutto
+    let s = `<defs><linearGradient id="cieloCo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#141a4a"/><stop offset=".3" stop-color="#3a2a7a"/><stop offset=".55" stop-color="#f2a0c0"/><stop offset="1" stop-color="#fff0d8"/></linearGradient>
+      <radialGradient id="lunaCo"><stop offset="0" stop-color="#fffbe8"/><stop offset=".6" stop-color="#fff1b8" stop-opacity=".5"/><stop offset="1" stop-color="#fff1b8" stop-opacity="0"/></radialGradient>
+      <filter id="pennelloCo"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="7"/><feDisplacementMap in="SourceGraphic" scale="14"/></filter></defs>
+      <rect width="${W}" height="${H}" fill="url(#cieloCo)"/>`;
+    for (let k = 0; k < 60; k++) s += `<circle cx="${f(r() * W)}" cy="${f(r() * 320)}" r="${(.7 + r() * 1.5).toFixed(1)}" fill="#fff" opacity="${(.4 + r() * .5).toFixed(2)}"/>`;
+    s += `<circle cx="360" cy="140" r="110" fill="url(#lunaCo)"/><circle cx="360" cy="140" r="42" fill="#fffbe8"/>`;
+    // Roma di notte: Colosseo e cupola di San Pietro in silhouette, con le finestre accese
+    s += `<g fill="#1a1440" opacity=".95"><path d="M480,470 v-120 q140,-50 280,0 v120Z"/>${[0, 1, 2, 3, 4, 5, 6].map(k => `<rect x="${500 + k * 36}" y="372" width="16" height="22" rx="8" fill="#ffd27a" opacity=".8"/><rect x="${500 + k * 36}" y="412" width="16" height="22" rx="8" fill="#ffb84d" opacity=".7"/>`).join("")}
+      <path d="M960,470 v-90 h30 v-20 q55,-110 110,0 v20 h30 v90Z"/><rect x="1043" y="230" width="8" height="40"/><path d="M1035,250 h24" stroke="#1a1440" stroke-width="5"/></g>`;
+    s += `<path d="M0,470 Q300,440 600,480 T1200,470 T${W},480 V560 H0Z" fill="#241a50"/>`;
+    // il mare azzurro di Capri con i Faraglioni
+    s += `<path d="M1080,560 Q1300,500 ${W},520 V820 Q1500,760 1240,800 Q1120,700 1080,560Z" fill="#2a8adf" filter="url(#pennelloCo)"/>`;
+    for (let k = 0; k < 14; k++) { const x = 1150 + r() * 600, y = 580 + r() * 200; s += `<path d="M${f(x)},${f(y)} q18,-12 36,0 t36,0" stroke="#bfe8ff" stroke-width="4" fill="none" opacity=".7" stroke-linecap="round"/>`; }
+    s += `<path d="M1560,640 l30,-120 l26,30 l18,90Z M1640,650 l20,-80 l30,40 l6,40Z" fill="#6a5a4a" stroke="#3a2a1a" stroke-width="3"/><path d="M1440,690 h70 l-10,16 h-50Z" fill="#fff"/><path d="M1475,690 v-40 l22,30Z" fill="#fff"/>`;
+    // il bosco smeraldo con la cascata
+    s += `<path d="${blob(560, 780, 330, 170, r, 18, .25)}" fill="#0f5a32" filter="url(#pennelloCo)"/>`;
+    for (let k = 0; k < 22; k++) { const x = 270 + r() * 560, y = 650 + r() * 250; s += `<path d="M${f(x)},${f(y)} l-26,60 h52Z" fill="${["#1d8a4a", "#2ab35e", "#13703a"][k % 3]}"/><rect x="${f(x - 4)}" y="${f(y + 60)}" width="8" height="14" fill="#5a3a1a"/>`; }
+    s += `<path d="M410,610 v190" stroke="#c8fff0" stroke-width="26" opacity=".85"/><path d="M410,610 v190" stroke="#ffffff" stroke-width="8" stroke-dasharray="14 10" opacity=".9"/><ellipse cx="410" cy="806" rx="70" ry="20" fill="#9affd8" opacity=".7"/>`;
+    for (let k = 0; k < 24; k++) s += `<circle cx="${f(300 + r() * 520)}" cy="${f(640 + r() * 260)}" r="3" fill="#e8ff7a" opacity="${(.5 + r() * .5).toFixed(2)}"/>`;
+    // i campi di lavanda
+    s += `<path d="M1240,820 Q1500,770 ${W},790 V1130 H1300 Q1240,980 1240,820Z" fill="#6a4ab8" filter="url(#pennelloCo)"/>`;
+    for (let k = 0; k < 9; k++) s += `<path d="M${1290 + k * 12},${1120} Q${1420 + k * 30},${930 - k * 4} ${W},${840 + k * 30}" stroke="#b89aff" stroke-width="9" fill="none" opacity=".8" stroke-dasharray="3 6" stroke-linecap="round"/>`;
+    // la costiera rosa al tramonto: case colorate una sopra l'altra e il mare
+    s += `<path d="M760,1010 Q980,900 1240,960 V${H} H760Z" fill="#ff8fb8" filter="url(#pennelloCo)"/>`;
+    for (let k = 0; k < 26; k++) { const x = 800 + (k % 9) * 46 + r() * 10, y = 960 + Math.floor(k / 9) * 50 + r() * 10; s += `<rect x="${f(x)}" y="${f(y)}" width="36" height="34" fill="${["#ffd27a", "#ff7a9a", "#fff3e0", "#ffb070", "#f2a0c0"][k % 5]}" stroke="#8a3a5a" stroke-width="2"/><rect x="${f(x + 12)}" y="${f(y + 10)}" width="10" height="12" fill="#5a2a4a"/>`; }
+    // le colline gialle di girasoli
+    s += `<path d="M0,960 Q220,880 460,950 T820,1010 V${H} H0Z" fill="#f2b632" filter="url(#pennelloCo)"/><path d="M0,1060 Q260,1000 560,1070 T900,1120 V${H} H0Z" fill="#e8962a"/>`;
+    for (let k = 0; k < 34; k++) { const x = 20 + r() * 700, y = 990 + r() * 190; s += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(9 + r() * 5)}" fill="#ffd21a" stroke="#c8820a" stroke-width="2"/><circle cx="${f(x)}" cy="${f(y)}" r="4" fill="#5a3a0a"/>`; }
+    for (const x of [140, 170, 660]) s += `<path d="M${x},950 q8,-70 0,-110 q-8,40 0,110Z" fill="#1a4a2a"/>`;
+    // schizzi di colore sparsi
+    const tav = ["#ff2e46", "#ff9a1f", "#ffd90f", "#3adc7a", "#2a8adf", "#9b4dff", "#ff4fd8", "#ffffff"];
+    for (let k = 0; k < 26; k++) { const x = r() * W, y = 300 + r() * 900, c = tav[k % tav.length]; s += `<path d="${blob(x, y, 10 + r() * 22, 8 + r() * 18, r, 10, .6)}" fill="${c}" opacity=".55"/>${[0, 1, 2].map(() => `<circle cx="${f(x + (r() - .5) * 90)}" cy="${f(y + (r() - .5) * 70)}" r="${f(2 + r() * 5)}" fill="${c}" opacity=".6"/>`).join("")}`; }
+    // il sentiero ad arcobaleno
+    const via = [[100, 1150], [220, 1040], [560, 880], [1000, 1020], [1460, 860], [1320, 480], [760, 360]];
+    [["#ff2e46", 44], ["#ff9a1f", 37], ["#ffd90f", 30], ["#3adc7a", 23], ["#2a8adf", 16], ["#9b4dff", 9]].forEach(([c, w]) => { s += `<path d="${curva(via)}" stroke="${c}" stroke-width="${w}" fill="none" stroke-linecap="round" opacity=".9"/>`; });
+    s += `<path d="${curva(via)}" stroke="#ffffff" stroke-width="3" stroke-dasharray="2 16" stroke-linecap="round" fill="none" opacity=".9"/>`;
+    // la luce bianca su Roma (la tappa finale)
+    s += `<circle cx="760" cy="360" r="120" fill="url(#lunaCo)" opacity=".7"/>`;
+    // la tavolozza del pittore, in basso a destra
+    s += `<g transform="translate(1680 1150) rotate(-15)"><path d="M-120,0 C-120,-80 0,-100 80,-60 C130,-35 120,10 80,20 C50,28 60,60 20,70 C-60,90 -120,60 -120,0Z" fill="#d8a86a" stroke="#8a5a2a" stroke-width="5"/><ellipse cx="40" cy="-10" rx="18" ry="14" fill="#2a1a0a" opacity=".5"/>
+      ${tav.slice(0, 7).map((c, k) => `<circle cx="${-90 + (k % 4) * 40}" cy="${-45 + Math.floor(k / 4) * 50 + (k % 2) * 8}" r="15" fill="${c}"/>`).join("")}<path d="M60,-120 L-60,40" stroke="#8a5a2a" stroke-width="10" stroke-linecap="round"/><path d="M-60,40 l-14,22 l22,-10Z" fill="#ff4fd8"/></g>`;
+    return s;
+  }
   function sakura(r) {
     // la valle dei kami: luna rossa, Fuji, ciliegi in fiore, torii, pagoda, dojo, lago dell'Orochi, vetta del tengu e santuario
     let s = `<defs><linearGradient id="cieloJp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#140a1e"/><stop offset=".6" stop-color="#4a1a3a"/><stop offset="1" stop-color="#b24a5a"/></linearGradient>
@@ -1079,7 +1129,7 @@ const MappeStoria = (() => {
     s += `<g transform="translate(1660 1060)"><circle r="70" fill="#0d2c4a" stroke="#d8c890" stroke-width="4"/><path d="M0,-62 L12,0 L0,62 L-12,0Z M-62,0 L0,-12 L62,0 L0,12Z" fill="#d8c890"/><text y="-74" text-anchor="middle" font-size="26" fill="#d8c890">N</text></g>`;
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, farwest, rovine, sakura, circo, inutili, specchi, treno, torre, dimensione];
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, farwest, rovine, sakura, circo, inutili, colori, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -1107,7 +1157,7 @@ const MappeStoria = (() => {
     // colore di base e colore delle nuvole per ogni capitolo
     const NEBBIE = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
       ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"],
-      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"], ["#3a1c10", "255,214,170"], ["#1c0c08", "255,170,130"], ["#1a0a1e", "255,200,220"], ["#12082a", "220,190,255"], ["#d98aa8", "255,240,245"],
+      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"], ["#3a1c10", "255,214,170"], ["#1c0c08", "255,170,130"], ["#1a0a1e", "255,200,220"], ["#12082a", "220,190,255"], ["#d98aa8", "255,240,245"], ["#3a2a7a", "255,220,250"],
       ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]];
     const [base, nuv] = NEBBIE[k] || NEBBIE[0];
     g.fillStyle = base; g.fillRect(0, 0, W, H);

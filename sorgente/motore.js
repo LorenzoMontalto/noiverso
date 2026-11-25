@@ -85,6 +85,8 @@ const SINERGIE_BASE = {
   circo: { tipo: "finale", v2: 10, v3: 14, v5: 24, testo: v => `gran finale: le loro mosse da 5 energia fanno +${v}% di danni` },
   // Dei Inutili: fortuna sfacciata. Quando un colpo li manderebbe KO, v% di probabilità di restare in piedi con 1 PV (al massimo una volta per turno).
   inutili: { tipo: "miracolo", v2: 10, v3: 22, v5: 32, testo: v => `fortuna sfacciata: quando un colpo li manderebbe KO hanno ${_il(v)} di probabilità di restare in piedi con 1 PV (al massimo una volta per turno)` },
+  // Colori: colori complementari. Quando colpiscono in vantaggio di tipo, il vantaggio vale ancora di più.
+  colori: { tipo: "contrasto", v2: 30, v3: 45, v5: 85, testo: v => `colori complementari: quando colpiscono in vantaggio di tipo fanno +${v}% di danni` },
   mestieri: { tipo: "vel",      v2: 6, v3: 18, v5: 37, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -202,6 +204,7 @@ class Battaglia {
         else if (s.tipo === "onore") x.sin.onore = s.val;
         else if (s.tipo === "finale") x.sin.finale = s.val;
         else if (s.tipo === "miracolo") x.sin.miracolo = s.val;
+        else if (s.tipo === "contrasto") x.sin.contrasto = s.val;
         else if (s.tipo === "duello") { x.sin.duello = s.val; x.pronta = true; }
         else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
@@ -330,6 +333,7 @@ class Battaglia {
     dmg *= (1 + this.gv(l, "fiamma") / 100) * (1 - this.gv(1 - l, "muro") / 100);
     if (a.c.ruolo === "tiratore" && m.costo >= 2) dmg *= 1.1;
     if (a.sin && a.sin.finale && m.costo >= 5) dmg *= 1 + a.sin.finale / 100;   // sinergia Circo Intergalattico
+    if (stile > 1 && a.sin && a.sin.contrasto) dmg *= 1 + a.sin.contrasto / 100;   // sinergia Colori
     if (a.sin && a.sin.onore) { const caduti = this.lati[l].squadra.filter(x => x !== a && x.pv <= 0).length; if (caduti) dmg *= 1 + Math.min(4, caduti) * a.sin.onore / 100; }   // sinergia Mitologia Giapponese
     if (a.c.ruolo === "incendiario" && d.stati && d.stati.brucia) dmg *= 1.2;   // nov 2026: l'Incendiario picchia di più chi sta già bruciando
     if (m.eff && a.sin && a.sin.dannoEff) dmg *= 1 + a.sin.dannoEff / 100;   // sinergia Maghi

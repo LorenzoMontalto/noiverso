@@ -26,6 +26,7 @@ const SERIE = {
   giappone: { nome: "Mitologia Giapponese", colore: "#e84a7f", simbolo: "⛩", desc: "Torii rossi, ciliegi in fiore e una luna di sangue: tra samurai, kami, volpi a nove code e demoni oni, l'onore vale più della vita." },
   circo: { nome: "Circo Intergalattico", colore: "#9b4dff", simbolo: "✪", desc: "Tendoni tra le galassie, acrobati in orbita, alieni domati e un direttore col cilindro: lo spettacolo più grande dell'universo sta per cominciare." },
   inutili: { nome: "Dei Inutili", colore: "#ffa07a", simbolo: "☁", desc: "Un Olimpo tra le nuvole dove nessuno ha voglia di fare niente: dei del divano, del ritardo, delle docce infinite e del Wi-Fi che non va. Inutili sì, ma guai a svegliarli." },
+  colori: { nome: "Colori", colore: "#ff4fd8", simbolo: "🎨", desc: "Un colore per ognuno, dipinto sull'Italia più bella: girasoli e colline toscane, il mare di Capri, la costiera al tramonto, Roma di notte. Insieme fanno l'arcobaleno." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -733,6 +734,37 @@ const CARTE = [
     mosse: [m("Colpo di Scopa", 0, 28), m("Cesto dei Panni", 2, 22, { eff: { tipo: "stordisci", val: 30 } }), m("Caos Totale", 5, 13, { colpi: 6 })] },
   { id: "senevolta", nome: "Senevolta", serie: "inutili", rarita: "comune", stile: "VEL", ruolo: "picchiatore", frase: "La dea delle lamentele e dei drammi: mano sulla guancia, fazzoletti ovunque e la lista dei lamenti del giorno sempre aggiornata («troppo stress», «non è giusto», «uffa!»). Più si lamenta, più picchia.",
     mosse: [m("Sospiro", 0, 26), m("Che Dramma!", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Lamentela Infinita", 5, 78)] },
+  // ---------------- Colori ----------------
+  { id: "aurormo", nome: "Aurormo", serie: "colori", rarita: "leggendaria", stile: "DIF", ruolo: "guaritore", frase: "Il bianco del marmo: tra colonne, statue e scalinate candide, è la luce che contiene tutti gli altri colori. Dove passa lei, tutto torna pulito, anche le ferite.",
+    mosse: [m("Scheggia di Marmo", 0, 32), m("Luce Bianca", 2, 0, { eff: { tipo: "cura", val: 34 } }), m("Statua Vivente", 5, 94, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "pipscuro", nome: "Pipscuro", serie: "colori", rarita: "leggendaria", stile: "VEL", ruolo: "assassino", frase: "Il nero della notte romana: lampioni, luna piena e il Colosseo illuminato alle spalle. Si muove dove la luce non arriva, e quando lo vedi è già troppo tardi.",
+    mosse: [m("Colpo nel Buio", 0, 34), m("Notte Senza Luna", 2, 0, { eff: { tipo: "nebbia" } }), m("Inchiostro Nero", 5, 96, { eff: { tipo: "indebolisci", val: 30, turni: 2 } })] },
+  { id: "lolloblitz", nome: "Lolloblitz", serie: "colori", rarita: "leggendaria", stile: "FOR", ruolo: "imprevedibile", frase: "Il blu elettrico: fulmini su Roma, il Colosseo che si accende a ogni scarica e una corona di luce sopra il nome. Non sai mai dove colpirà il prossimo lampo.",
+    mosse: [m("Scarica Blu", 0, 34), m("Fulmine sul Colosseo", 2, 26, { eff: { tipo: "stordisci", val: 35 } }), m("Blitz Elettrico", 5, 20, { colpi: 5 })] },
+  { id: "mauzzurro", nome: "Mauzzurro", serie: "colori", rarita: "epica", stile: "DIF", ruolo: "tank", frase: "L'azzurro del mare di Capri: Faraglioni, barche e casette sulla scogliera. Calmo come l'acqua d'estate, ma quando si arrabbia arrivano le onde.",
+    mosse: [m("Onda Azzurra", 0, 30), m("Bagno a Capri", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Mare in Tempesta", 5, 88, { eff: { tipo: "stordisci", val: 30 } })] },
+  { id: "giulilla", nome: "Giulilla", serie: "colori", rarita: "epica", stile: "VEL", ruolo: "stregone", frase: "Il lilla dei campi di lavanda sotto la luna: lanterne accese, glicine e un profumo che ti fa girare la testa. Un sorriso, e sei già incantato.",
+    mosse: [m("Petalo di Lavanda", 0, 30), m("Profumo Lilla", 2, 24, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Luna di Lavanda", 5, 86, { eff: { tipo: "stordisci", val: 30 } })] },
+  { id: "simoborg", nome: "Simoborg", serie: "colori", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Il bordeaux del vino rosso: vigne al tramonto, un castello sulla collina e un calice sempre pieno. Più la serata va avanti, più picchia forte.",
+    mosse: [m("Calice in Faccia", 0, 32), m("Vendemmia", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Luna Rossa", 5, 90)] },
+  { id: "vikfuchsia", nome: "Vikfuchsia", serie: "colori", rarita: "epica", stile: "VEL", ruolo: "schivatore", frase: "Il fucsia dell'ibisco sulla costiera: fiori ovunque, lampioni accesi e il mare che si tinge di rosa. Provi a colpirla, ma afferri solo petali.",
+    mosse: [m("Petalo Fucsia", 0, 30), m("Ibisco in Fiore", 2, 0, { eff: { tipo: "nebbia" } }), m("Tramonto Fucsia", 5, 88)] },
+  { id: "diegosa", nome: "Diegosa", serie: "colori", rarita: "rara", stile: "FOR", ruolo: "capo", frase: "Il rosa della costiera amalfitana al tramonto: bouganville, barche sul mare e una corona sopra il nome. Vede tutto rosa, e convince anche gli altri.",
+    mosse: [m("Bocciolo", 0, 28), m("La Vie en Rose", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Rosa Spinosa", 5, 80, { penetra: 20 })] },
+  { id: "ritavola", nome: "Ritavola", serie: "colori", rarita: "rara", stile: "DIF", ruolo: "stratega", frase: "Il viola dei glicini su Roma: San Pietro in lontananza, il fiume che riflette le luci e una risata che si sente da un ponte all'altro.",
+    mosse: [m("Ramo di Glicine", 0, 26), m("Sera Viola", 0, 0, { eff: { tipo: "energia", val: 3 } }), m("Cascata di Glicine", 5, 80, { eff: { tipo: "indebolisci", val: 25, turni: 2 } })] },
+  { id: "samuarancio", nome: "Samuarancio", serie: "colori", rarita: "rara", stile: "FOR", ruolo: "incendiario", frase: "L'arancione degli agrumi e del sole che tramonta sul mare: arance appese ai rami, scogliere infuocate e un sorriso che scalda più del sole.",
+    mosse: [m("Spremuta", 0, 28, { eff: { tipo: "brucia", val: 3, turni: 2 } }), m("Arancia Infuocata", 2, 24, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Tramonto d'Agrumi", 5, 78, { eff: { tipo: "brucia", val: 5, turni: 3 } })] },
+  { id: "ludovirde", nome: "Ludovirde", serie: "colori", rarita: "rara", stile: "VEL", ruolo: "tiratore", frase: "Il verde acqua delle rovine sommerse: meduse luminose, colonne sotto il mare e bolle che salgono verso la luce. Mira da lontano, e la corrente fa il resto.",
+    mosse: [m("Getto Turchese", 0, 28, { penetra: 20 }), m("Medusa", 2, 22, { eff: { tipo: "stordisci", val: 30 } }), m("Abisso Verde Acqua", 5, 80, { penetra: 25 })] },
+  { id: "alessiallo", nome: "Alessiallo", serie: "colori", rarita: "comune", stile: "DIF", ruolo: "difensore", frase: "Il giallo dei girasoli toscani al tramonto: un casale sulla collina, occhiali sul naso e fiori alti quanto lei. Si gira sempre verso il sole, e ti para ogni colpo.",
+    mosse: [m("Girasole", 0, 26), m("Raggio Giallo", 2, 0, { eff: { tipo: "scudo", val: 45 } }), m("Campo di Girasoli", 5, 76)] },
+  { id: "aliverde", nome: "Aliverde", serie: "colori", rarita: "comune", stile: "VEL", ruolo: "ladro", frase: "Il verde smeraldo del bosco incantato: lucciole, una cascata che brilla e un ponticello di pietra. Ti ruba l'energia senza che tu te ne accorga.",
+    mosse: [m("Lucciola", 0, 26, { eff: { tipo: "ruba", val: 1 } }), m("Cascata Smeraldo", 2, 20, { eff: { tipo: "stordisci", val: 30 } }), m("Bosco Incantato", 5, 74, { eff: { tipo: "ruba", val: 1 } })] },
+  { id: "tizianverde", nome: "Tizianverde", serie: "colori", rarita: "comune", stile: "FOR", ruolo: "assassino", frase: "Il verde prato delle colline toscane in primavera: cipressi, un casale e il sole che spunta. Tranquillo come la campagna, ma taglia come una foglia d'erba.",
+    mosse: [m("Foglia Tagliente", 0, 28), m("Colline Verdi", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Primavera Toscana", 5, 13, { colpi: 6 })] },
+  { id: "seneocra", nome: "Senèocra", serie: "colori", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "L'ocra della campagna toscana al tramonto: muri di pietra, cipressi, girasoli e il Colosseo dipinto sopra il nome. Calda come la terra d'estate.",
+    mosse: [m("Terra d'Ocra", 0, 26), m("Sole di Toscana", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Tramonto d'Ocra", 5, 76, { eff: { tipo: "stordisci", val: 30 } })] },
 ];
 
 
@@ -806,6 +838,9 @@ const PERSONE = {
   // Dei Inutili
   lollimpo: "Lorenzo", vikyber: "Viky", pipposeidon: "Pips", alicronos: "Alice", maurizap: "Maurizio", diegigante: "Diego", samufi: "Samuele",
   alessietra: "Alessia", simondo: "Simone", giulimbuto: "Giulia", tizifone: "Tiziano", auroronfla: "Aurora", ludosbadiglio: "Ludovico", ricaos: "Rita", senevolta: "Senè",
+  // Colori
+  aurormo: "Aurora", pipscuro: "Pips", lolloblitz: "Lorenzo", mauzzurro: "Maurizio", giulilla: "Giulia", simoborg: "Simone", vikfuchsia: "Viky",
+  diegosa: "Diego", ritavola: "Rita", samuarancio: "Samuele", ludovirde: "Ludovico", alessiallo: "Alessia", aliverde: "Alice", tizianverde: "Tiziano", seneocra: "Senè",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -820,7 +855,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // (ma conviene darla prima a chi ne ha meno: lo mostra il riquadro «Versioni Ultra» nel pannello admin).
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta", "lollimpo"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta", "lollimpo", "aurormo"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, ruolo: c.ruolo, persona: c.persona, ultra: c.ultra, mosse: c.mosse.map(m => m.nome) }]));
 function applicaConfigCarte(cfg) {
@@ -917,6 +952,8 @@ function impronta(id) {
 // Bilanciamento per carta (nov 2026): un piccolo correttivo a PV, attacco e difesa, calcolato con migliaia di partite simulate,
 // perché ogni carta valga quanto le altre della sua rarità (le mosse e i ruoli non sono tutti uguali). 1 = nessuna correzione.
 const BILANCIO = {
+  // Colori (nov 2026), dalle simulazioni
+  aurormo: 0.89, pipscuro: 1.035, mauzzurro: 0.975, giulilla: 1.025, simoborg: 0.97, vikfuchsia: 0.955, diegosa: 0.935, ritavola: 1.015, samuarancio: 0.92, ludovirde: 0.985, alessiallo: 1.04, aliverde: 1.015, tizianverde: 1.045, seneocra: 1.035,
   // Dei Inutili (nov 2026), dalle simulazioni
   lollimpo: 0.985, vikyber: 1.04, pipposeidon: 1.02, alicronos: 1.135, maurizap: 0.95, diegigante: 0.945, alessietra: 0.985, simondo: 0.955, giulimbuto: 1.085, tizifone: 1.02, auroronfla: 1.04, ludosbadiglio: 1.045, ricaos: 1.01, senevolta: 1.035,
   // Circo Intergalattico (nov 2026), dalle simulazioni
