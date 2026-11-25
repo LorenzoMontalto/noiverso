@@ -28,7 +28,7 @@ const SERIE = {
   inutili: { nome: "Dei Inutili", colore: "#ffa07a", simbolo: "☁", desc: "Un Olimpo tra le nuvole dove nessuno ha voglia di fare niente: dei del divano, del ritardo, delle docce infinite e del Wi-Fi che non va. Inutili sì, ma guai a svegliarli." },
   colori: { nome: "Colori", colore: "#ff4fd8", simbolo: "🎨", desc: "Un colore per ognuno, dipinto sull'Italia più bella: girasoli e colline toscane, il mare di Capri, la costiera al tramonto, Roma di notte. Insieme fanno l'arcobaleno." },
   arte: { nome: "Opere d'Arte", colore: "#d8a84a", simbolo: "🖼", desc: "Il museo più strano del mondo: nei quadri più famosi della storia, al posto dei soliti volti, ci sono i tuoi amici. Cornici d'oro, vernice ancora fresca e guai a toccare." },
-  ospiti: { nome: "Ospiti Indesiderati", colore: "#e8443a", simbolo: "🃏", jolly: true, desc: "Non fanno parte del gruppo, nessuno li ha invitati, eppure sono sempre in mezzo. Sono carte Jolly: si uniscono alla sinergia che vuoi tu (al massimo una per squadra)." },
+  ospiti: { nome: "Jolly", colore: "#e8443a", simbolo: "🃏", jolly: true, desc: "Non fanno parte del gruppo, nessuno li ha invitati, eppure sono sempre in mezzo. Sono carte Jolly: si uniscono alla sinergia che vuoi tu (al massimo una per squadra)." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -40,7 +40,7 @@ const RARITA = {
   rara:        { nome: "Rara",        peso: 28,  peso4: 70, forza: 1.10 },
   epica:       { nome: "Epica",       peso: 8.5, peso4: 24, forza: 1.20 },
   leggendaria: { nome: "Leggendaria", peso: 1.5, peso4: 6,  forza: 1.30 },
-  // nov 2026: carte Jolly (serie Ospiti Indesiderati). Non stanno in ORDINE_RARITA: escono nelle bustine con una
+  // nov 2026: carte Jolly (serie "Jolly", id interno "ospiti"). Non stanno in ORDINE_RARITA: escono nelle bustine con una
   // probabilità a parte (PROB_JOLLY) e non salgono di rarità. Forza tra rara ed epica: il loro vantaggio è la flessibilità.
   jolly:       { nome: "Jolly",       peso: 0,   peso4: 0,  forza: 1.14 },
 };
@@ -802,11 +802,15 @@ const CARTE = [
     mosse: [m("Specchio Incrinato", 0, 26), m("Maledizione", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Corrente del Fiume", 5, 13, { colpi: 6 })] },
   { id: "pecorella", nome: "La famiglia Pecorella", serie: "arte", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "Mamma, papà, due bambini e il cane: tutti tondi, tutti in posa, tutti appena finito di pranzare. In famiglia ci si cura a forza di cibo.",
     mosse: [m("Abbraccio di Famiglia", 0, 26), m("Pranzo della Domenica", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Peso Massimo", 5, 76, { eff: { tipo: "stordisci", val: 30 } })] },
-  // ---------------- Ospiti Indesiderati (carte Jolly) ----------------
+  // ---------------- Jolly (fuori dal gruppo; id serie interno "ospiti") ----------------
   { id: "arciulo", nome: "Arciulo", serie: "ospiti", rarita: "jolly", stile: "DIF", ruolo: "guaritore", frase: "La cameriera che non hai mai assunto, ma che ormai è sempre in casa. Piumino in mano, grembiule perfetto: pulisce tutto, anche le tue ferite.",
     mosse: [m("Colpo di Piumino", 0, 28), m("Pulizie di Primavera", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Grembiule Volante", 5, 82, { eff: { tipo: "stordisci", val: 30 } })] },
   { id: "michele", nome: "Michele", serie: "ospiti", rarita: "jolly", stile: "FOR", ruolo: "tank", frase: "L'ospite che entra per caso, ma occupa tutto lo spazio. Maglietta strappata e muscoli ovunque: una volta che si è seduto, non lo sposta più nessuno.",
     mosse: [m("Spallata", 0, 30), m("Occupo Tutto Io", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Maglietta Strappata", 5, 88)] },
+  { id: "tomm", nome: "Tomm", serie: "ospiti", rarita: "jolly", stile: "VEL", ruolo: "stratega", frase: "Il producer ospite: entra in studio per un beat, ma finisce sempre per stravolgere tutto. Cuffie al collo, mano sul mixer: il ritmo lo decide lui.",
+    mosse: [m("Colpo di Cassa", 0, 28), m("Beat in Loop", 0, 0, { eff: { tipo: "energia", val: 3 } }), m("Il Drop", 5, 86, { eff: { tipo: "stordisci", val: 30 } })] },
+  { id: "yaska", nome: "Yaska.wav", serie: "ospiti", rarita: "jolly", stile: "FOR", ruolo: "incendiario", frase: "La rapper ospite: entra nel gruppo, registra un pezzo e porta il caos. Ogni barra è una scintilla, ogni ritornello un incendio.",
+    mosse: [m("Barra Rovente", 0, 26, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Dissing", 2, 34, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Traccia di Fuoco", 5, 82, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
 ];
 
 
@@ -883,8 +887,8 @@ const PERSONE = {
   // Colori
   aurormo: "Aurora", pipscuro: "Pips", lolloblitz: "Lorenzo", mauzzurro: "Maurizio", giulilla: "Giulia", simoborg: "Simone", vikfuchsia: "Viky",
   diegosa: "Diego", ritavola: "Rita", samuarancio: "Samuele", ludovirde: "Ludovico", alessiallo: "Alessia", aliverde: "Alice", tizianverde: "Tiziano", seneocra: "Senè",
-  // Ospiti Indesiderati (fuori dal gruppo)
-  arciulo: "Arciulo", michele: "Michele",
+  // Jolly (fuori dal gruppo)
+  arciulo: "Arciulo", michele: "Michele", tomm: "Tomm", yaska: "Yaska.wav",
   // Opere d'Arte
   monnarita: "Rita", urlosamu: "Samuele", aliceperla: "Alice", bonaparte: "Tiziano", lollante: "Lorenzo", seneberta: "Senè", pipsgothic: "Pips",
   auroraermellino: "Aurora", giuvvsage: "Giulia", vikith: "Viky", mortesimons: "Simone", diegazzo: "Diego", dinoludovico: "Ludovico", damaalessiott: "Alessia", pecorella: "Maurizio",
@@ -1000,7 +1004,7 @@ function impronta(id) {
 // perché ogni carta valga quanto le altre della sua rarità (le mosse e i ruoli non sono tutti uguali). 1 = nessuna correzione.
 const BILANCIO = {
   // carte Jolly (nov 2026): un po' sotto le epiche, il loro vantaggio è che si uniscono alla sinergia che vuoi
-  arciulo: 0.945, michele: 0.915,
+  arciulo: 0.945, michele: 0.915, tomm: 0.95, yaska: 0.95,
   // Opere d'Arte (nov 2026), dalle simulazioni
   monnarita: 1.12, aliceperla: 0.96, bonaparte: 0.935, lollante: 0.955, seneberta: 0.955, pipsgothic: 1.03, auroraermellino: 0.99, giuvvsage: 1.07, mortesimons: 1.055, diegazzo: 1.01, dinoludovico: 1.01, damaalessiott: 1.16, pecorella: 1.0,
   // Colori (nov 2026), dalle simulazioni

@@ -660,6 +660,10 @@ create or replace function public.rarita_base(carta text) returns text language 
     when 'dinoludovico' then 'comune'
     when 'damaalessiott' then 'comune'
     when 'pecorella' then 'comune'
+    when 'arciulo' then 'jolly'
+    when 'michele' then 'jolly'
+    when 'tomm' then 'jolly'
+    when 'yaska' then 'jolly'
   end;
 $$;
 -- FINE RARITA

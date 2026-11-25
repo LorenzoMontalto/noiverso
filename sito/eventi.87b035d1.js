@@ -23,7 +23,7 @@ const INIZIO_GIRI = new Date(2026, 10, 9);   // lunedì 9 novembre 2026: così l
 // Serie nuove: giorno di uscita ("AAAA-MM-GG"). Entrano nel giro successivo e tra i boss dal giorno dopo. Le altre ci sono da sempre.
 const USCITA_SERIE = { giappone: "2026-11-24", circo: "2026-11-24", inutili: "2026-11-25", colori: "2026-11-25", arte: "2026-11-25", ospiti: "2026-11-25" };   // quando esce una serie nuova: AAAA-MM-GG
 const uscitaPrima = (s, d) => { const u = USCITA_SERIE[s]; if (!u) return true; const [a, m, g] = u.split("-").map(Number); return new Date(a, m - 1, g) < d; };
-// le serie Jolly (Ospiti Indesiderati) non fanno da serie della settimana né da boss del giorno: hanno poche carte e nessuna leggendaria
+// le serie Jolly (Jolly) non fanno da serie della settimana né da boss del giorno: hanno poche carte e nessuna leggendaria
 const SERIE_EVENTI = () => ORDINE_SERIE.filter(k => !SERIE[k].jolly);
 const piuSettimane = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7 * n);
 function serieDellaSettimana(lun) {

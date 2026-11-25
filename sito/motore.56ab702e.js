@@ -117,7 +117,7 @@ function applicaSinergie(cfg) {
 }
 // Quali sinergie ha una squadra (array di id carte). Usata dal motore e dalla schermata Squadre.
 // ---------------- Carte Jolly ----------------
-// Le carte di rarità "jolly" (serie Ospiti Indesiderati) non hanno una sinergia loro: si uniscono a una serie della
+// Le carte di rarità "jolly" (serie serie Jolly) non hanno una sinergia loro: si uniscono a una serie della
 // squadra, scelta dal giocatore (squadra.jolly) o, se non l'ha scelta, quella dove servono di più. Contano per arrivare
 // a 2, 3 o 5 carte come una carta vera della serie (nov 2026: prima non contava per il 5). Ne conta una sola per squadra.
 const eJolly = c => !!c && c.rarita === "jolly";
