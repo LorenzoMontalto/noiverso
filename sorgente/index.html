@@ -275,6 +275,19 @@ h1.neon { font-size: clamp(2.6rem, 8vw, 4.6rem); line-height: .95; margin-bottom
 .suggerimento { margin: 0; font-family: var(--display); font-size: 1.1rem; color: var(--testo); text-shadow: 0 0 12px var(--neon-alone); animation: respira 1.8s ease-in-out infinite; min-height: 1.4em; }
 /* riserva 2D */
 .apertura2d { text-align: center; }
+/* nov 2026: riepilogo a fine bustina */
+.riepilogo-bustina h2 { text-align: center; margin-bottom: 4px; }
+.rb-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; margin: 14px 0 16px; }
+.rb-carta { background: none; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 6px; text-align: center; }
+.rb-carta .carta { pointer-events: none; }
+.rb-esito { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: .82rem; line-height: 1.2; }
+.rb-esito b { padding: 2px 9px; border-radius: 999px; font-weight: 800; }
+.rb-nuova { background: var(--neon); color: #fff; }
+.rb-pot { background: rgba(125, 220, 106, .18); color: #9cf08a; border: 1px solid rgba(125, 220, 106, .5); }
+.rb-monete { background: rgba(242, 193, 78, .16); color: #f2c14e; border: 1px solid rgba(242, 193, 78, .45); }
+.rb-olo { color: #9ad8ff; font-weight: 700; } .rb-ultra { color: #ffe9a8; font-weight: 700; } .rb-pronta { color: #7ddc6a; font-weight: 600; }
+.rb-bomboletta { text-align: center; border: 1px solid var(--c, #fff); border-radius: 12px; padding: 8px 12px; margin: 0 0 14px; }
+@media (max-width: 520px) { .rb-griglia { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 .apertura2d h2 { margin-bottom: 18px; }
 .apertura-carte { display: grid; grid-template-columns: repeat(5, minmax(0, 150px)); gap: 12px; justify-content: center; margin-bottom: 20px; }
 .gira { position: relative; aspect-ratio: 5 / 7; background: none; border: 0; padding: 0; cursor: pointer; perspective: 900px; }

@@ -1156,7 +1156,10 @@ function giraBomboletta() {
   b.classList.add("girata");
   const [x, y] = FX.centro(b); FX.esplosione(x, y, { n: 50, forma: "coriandolo", colori: ["#ff2e46", "#3fd8ff", "#f2c14e", "#b866ff"], velocita: 7, dimensione: 5 });
 }
+// l'ultima bustina aperta: serve al riepilogo finale e al tasto per aprirne subito un'altra dello stesso tipo
+let ultimaBustina = null;
 function mostraApertura(esiti, tipo, livelloSu, graffito) {
+  ultimaBustina = { esiti, tipo, graffito };
   if (usa3D()) {
     const ov = $("#apertura");
     ov.hidden = false;
@@ -1166,17 +1169,17 @@ function mostraApertura(esiti, tipo, livelloSu, graffito) {
         <p class="suggerimento" id="sugg">Tocca la bustina per aprirla</p>
         ${htmlBombolettaBustina(graffito)}
         <div class="azioni centro">
-          <button class="btn" data-fx="gelatina" data-azione="gira-tutte" hidden>Salta</button>
-          <button class="btn primario" data-fx="onda" data-azione="chiudi-apertura" hidden>Continua</button>
+          <button class="btn" data-fx="gelatina" data-azione="gira-tutte" hidden>Auto</button>
+          <button class="btn primario" data-fx="onda" data-azione="riepilogo-bustina" hidden>Skippa</button>
         </div>
       </div>`;
     try {
       apertura = new Scena3D.Apertura($("#tela-bustina"), esiti, tipo, {
         onApri: () => { $("#sugg").textContent = ""; },
-        onPronte: () => { $("#sugg").textContent = graffito ? "Tocca il mazzetto per scoprire le carte (la più rara è l'ultima): c'è anche una bomboletta!" : "Tocca il mazzetto per scoprire le carte: la più rara è sempre l'ultima"; $('[data-azione="gira-tutte"]').hidden = false; $('[data-azione="chiudi-apertura"]').hidden = false; const bb = $(".bomboletta-bustina"); if (bb) bb.hidden = false; },
+        onPronte: () => { $("#sugg").textContent = graffito ? "Tocca il mazzetto per scoprire le carte (la più rara è l'ultima): c'è anche una bomboletta!" : "Tocca il mazzetto per scoprire le carte: la più rara è sempre l'ultima"; $('[data-azione="gira-tutte"]').hidden = false; $('[data-azione="riepilogo-bustina"]').hidden = false; const bb = $(".bomboletta-bustina"); if (bb) bb.hidden = false; },
         onGira: (i, tutte) => {
           $("#sugg").textContent = tutte ? `${livelloSu ? `Pass: livello ${livelloSu} raggiunto! · ` : ""}Tocca una carta per vedere le statistiche` : "Tocca per la prossima · le carte scoperte si aprono con un tocco";
-          if (tutte) $('[data-azione="gira-tutte"]').hidden = true;
+          if (tutte) { $('[data-azione="gira-tutte"]').hidden = true; const sk = $('[data-azione="riepilogo-bustina"]'); if (sk) sk.textContent = "Riepilogo"; }
           SerieCompleta.scoperta(i);
         },
         onDettaglio: i => apriSchedaCarta(esiti[i]),
@@ -1223,12 +1226,46 @@ function apriSchedaCarta(e) {
 }
 function chiudiSchedaCarta() { const v = document.querySelector(".scheda-veloce"); if (v) v.remove(); }
 addEventListener("keydown", e => { if (e.key === "Escape") chiudiSchedaCarta(); });
-function chiudiApertura() {
+function chiudiApertura(perRiepilogo) {
   chiudiSchedaCarta(); SerieCompleta.svuota();
   if (apertura) { apertura.distruggi(); apertura = null; }
   const ov = $("#apertura"); ov.hidden = true; ov.innerHTML = "";
   disegna();
-  if (versioneNuova) setTimeout(applicaAggiornamento, 600);
+  if (versioneNuova && !perRiepilogo) setTimeout(applicaAggiornamento, 600);
+}
+// Fine bustina: riepilogo di tutte le carte (nuova, oppure quanti potenziatori ha dato il doppione) e,
+// se ne hai altre dello stesso tipo, il tasto per aprire subito la prossima senza tornare indietro
+function etichettaEsito(e) {
+  const parti = [];
+  if (e.nuova) parti.push(`<b class="rb-nuova">Nuova!</b>`);
+  else if (e.pot) parti.push(`<b class="rb-pot">+${e.pot} potenziator${e.pot > 1 ? "i" : "e"}</b>`);
+  else if (e.extra) parti.push(`<b class="rb-monete">+${e.extra} monete${e.framm ? ` · +${e.framm} ◈` : ""}</b>`);
+  if (e.ultra) parti.push(`<span class="rb-ultra">◆ Ultra</span>`); else if (e.olo) parti.push(`<span class="rb-olo">✦ Olografica</span>`);
+  if (e.pronta) parti.push(`<span class="rb-pronta">▲ può salire di livello</span>`);
+  return parti.join("");
+}
+function mostraRiepilogoBustina() {
+  const u = ultimaBustina; if (!u) { chiudiApertura(); return; }
+  if (apertura || !$("#apertura").hidden) chiudiApertura(true);
+  if ($("#modale-corpo .apertura2d")) chiudiModale();
+  const T = TIPI_BUSTINA[u.tipo] || {}, resta = S.inventario[u.tipo] || 0;
+  const ord = u.esiti.map((e, i) => ({ e, i, v: e.ultra ? 9 : ORDINE_RARITA.indexOf(PER_ID[e.id].rarita) })).sort((a, b) => a.v - b.v || a.i - b.i);
+  const nuove = u.esiti.filter(e => e.nuova).length, pot = u.esiti.reduce((n, e) => n + (e.nuova ? 0 : e.pot || 0), 0);
+  const g = u.graffito && Graffiti.info(u.graffito.id);
+  apriModale(`<div class="riepilogo-bustina">
+    <h2>Riepilogo · ${esc(T.nome || "Bustina")}</h2>
+    <p class="nota centro">${nuove ? `<b>${nuove}</b> ${nuove > 1 ? "carte nuove" : "carta nuova"}` : "Nessuna carta nuova"}${pot ? ` · <b>+${pot}</b> potenziatori dai doppioni` : ""} · tocca una carta per le statistiche</p>
+    <div class="rb-griglia">${ord.map(({ e, i }) => `<button type="button" class="rb-carta" data-rb-carta="${i}">
+      ${htmlCarta(PER_ID[e.id], { liv: e.liv, lode: e.lode, olo: e.olo, ultra: e.ultra })}<span class="rb-esito">${etichettaEsito(e)}</span></button>`).join("")}</div>
+    ${g ? `<p class="rb-bomboletta" style="--c:${g.colore}">🎨 Bomboletta: <b>${esc(g.nome)}</b> · ${u.graffito.nuovo ? "graffito nuovo!" : u.graffito.extra ? `già al massimo, +${u.graffito.extra} monete` : `sale al livello ${u.graffito.liv}`}</p>` : ""}
+    <div class="azioni centro">
+      ${resta > 0 ? `<button class="btn primario" data-fx="onda" data-azione="altra-bustina">Apri un'altra · ne hai ${resta}</button>` : ""}
+      <button class="btn ${resta > 0 ? "" : "primario"}" data-azione="chiudi-riepilogo">Chiudi</button>
+    </div></div>`, { bloccata: true });
+}
+function chiudiRiepilogoBustina(poi) {
+  chiudiSchedaCarta(); chiudiModale(); Trofei.controlla(); disegna();
+  if (poi) poi(); else if (versioneNuova) setTimeout(applicaAggiornamento, 600);
 }
 let esitiAperti = [];
 function mostraApertura2D(esiti, graffito) {
@@ -1249,8 +1286,8 @@ function mostraApertura2D(esiti, graffito) {
       </div>
       ${htmlBombolettaBustina(graffito).replace(" hidden ", " ")}
       <div class="azioni centro">
-        <button class="btn" data-azione="gira-tutte-2d">Gira tutte</button>
-        <button class="btn primario" data-azione="chiudi">Continua</button>
+        <button class="btn" data-azione="gira-tutte-2d">Auto</button>
+        <button class="btn primario" data-azione="riepilogo-bustina">Skippa</button>
       </div>
     </div>`, { bloccata: true });
 }
@@ -3621,13 +3658,14 @@ document.addEventListener("click", e => {
   if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
   if (e.target.id === "avviso") { mostraAvviso.prossimo(); return; }
-  const t = e.target.closest("[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
   }
   if (t.dataset.cosmUsa !== undefined) { const [tipo, id] = t.dataset.cosmUsa.split(":"); Cosmetici.usa(tipo, id); apriProfilo(); return; }
   if (t.dataset.crea) { chiudiModale(); Frammenti.crea(t.dataset.crea, t); return; }
+  if (t.dataset.rbCarta && ultimaBustina) { const es = ultimaBustina.esiti[+t.dataset.rbCarta]; if (es) apriSchedaCarta(es); return; }
   if (t.dataset.mistero) { Frammenti.apriMistero(t.dataset.mistero); return; }
   if (t.dataset.arenaScegli) { Arena.scegli(t.dataset.arenaScegli); return; }
   if (t.dataset.arenaInfo) { Arena.info(t.dataset.arenaInfo); return; }
@@ -3781,6 +3819,9 @@ document.addEventListener("click", e => {
     case "gira-bomboletta": giraBomboletta(); break;
     case "gira-tutte-2d": $$(".gira").forEach((g, i) => setTimeout(() => { if (!g.classList.contains("girata")) SerieCompleta.scoperta(+g.dataset.i); g.classList.add("girata"); }, ridotto ? 0 : i * 180)); setTimeout(giraBomboletta, 1000); break;
     case "chiudi-apertura": chiudiApertura(); break;
+    case "riepilogo-bustina": mostraRiepilogoBustina(); break;
+    case "chiudi-riepilogo": chiudiRiepilogoBustina(); break;
+    case "altra-bustina": { const tipo = ultimaBustina && ultimaBustina.tipo; chiudiRiepilogoBustina(() => { if (tipo && S.inventario[tipo] > 0) apriBustinaAggiornata(tipo); }); break; }
     case "pass-bonus": apriScrignoBonus(t); break;
     case "riscuoti-tutto": riscuoti(Array.from({ length: livelloPass() }, (_, i) => i + 1), t); break;
     case "carica": turnoGiocatore({ tipo: "carica" }); break;
