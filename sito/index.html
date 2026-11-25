@@ -1771,7 +1771,9 @@ body.in-accesso { overflow: hidden; }
 .sin-lista li b { color: var(--c, #b866ff); } .sin-lista li small { display: block; color: var(--spento); }
 .sin-lista li.sin-quasi { opacity: .65; border-left-style: dashed; }
 .sin-lista li.sin-jolly { --c: var(--r-jolly); background: rgba(232, 68, 58, .08); }
-.sin-jolly-scelte { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; } .sin-jolly-scelte .chip { padding: 4px 10px; font-size: .8rem; }
+.sin-jolly-scelte { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; } .sin-jolly-scelte small { color: var(--spento); font-size: .75rem; }
+.sin-jolly-corpo { display: grid; gap: 2px; } .sin-jolly-corpo > .nota { margin-top: 4px; font-size: .78rem; }
+.ord-jolly { display: flex; gap: 10px; align-items: flex-start; margin: 10px 0 4px; padding: 10px 12px; border-radius: 12px; border-left: 3px solid var(--r-jolly); background: rgba(232, 68, 58, .08); text-align: left; font-size: .86rem; } .ord-jolly b { color: var(--r-jolly); } .sin-jolly-scelte .chip { padding: 4px 10px; font-size: .8rem; }
 .sin-jolly-scelte .chip[aria-pressed="true"] { border-color: var(--c, var(--r-jolly)); background: color-mix(in srgb, var(--c, var(--r-jolly)) 20%, transparent); }
 .sin-lista li.multiverso { --c: #c38bff; }
 .sin-ico { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--c, #b866ff); color: #0b0a10; font-weight: 900; }
@@ -2321,7 +2323,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
 <script src="carte.6a14eac2.js"></script>
-<script src="motore.7f17fa73.js"></script>
+<script src="motore.d02ae451.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
 <script src="suoni.75417e9f.js"></script>
 <script src="scena3d.b8e0e550.js"></script>
@@ -2339,7 +2341,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <script src="progressi.4c1b6331.js"></script>
 <script src="extra.7fb69b29.js"></script>
 <script src="avvento.355b1396.js"></script>
-<script src="app.c134000c.js"></script>
+<script src="app.101fdf85.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

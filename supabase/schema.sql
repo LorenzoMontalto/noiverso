@@ -264,7 +264,10 @@ begin
           when coalesce(d->'cosm'->'carte'->>x, '') ~ '^cc-[a-z]{1,15}$' and coalesce(d->'cosm'->'have'->>(d->'cosm'->'carte'->>x), '') = 'true' then d->'cosm'->'carte'->>x
           else '' end,
         -- nov 2026: carte Jolly: a quale sinergia si unisce (la sceglie il giocatore; vuoto = automatico)
-        'js', case when coalesce(d->'squadre'->att->>'jolly', '') ~ '^[a-z]{1,20}$' then d->'squadre'->att->>'jolly' else '' end) order by n)
+        'js', case when coalesce(d->'squadre'->att->>'jolly', '') ~ '^[a-z]{1,20}$' then d->'squadre'->att->>'jolly' else '' end,
+        -- modo del Jolly (rinforzo / camaleonte / imbucato) e tipo scelto per il Camaleonte
+        'jm', case when d->'squadre'->att->>'jollyModo' in ('rinforzo', 'camaleonte', 'imbucato') then d->'squadre'->att->>'jollyModo' else 'rinforzo' end,
+        'jt', case when d->'squadre'->att->>'jollyTipo' in ('FOR', 'DIF', 'VEL') then d->'squadre'->att->>'jollyTipo' else '' end) order by n)
       from jsonb_array_elements_text(coalesce(d->'squadre'->att->'carte', '[]'::jsonb)) with ordinality as t(x, n)), '[]'::jsonb));
 end $$;
 

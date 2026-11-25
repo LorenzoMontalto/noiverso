@@ -31,8 +31,10 @@ function multStile(sa, sd) {
 // Le carte olografiche hanno il 5% in più di PV e di danni (come un piccolo livello extra)
 const BONUS_OLO = 1.05, BONUS_ULTRA = 1.10;   // la versione Ultra: +10% di PV e danni (si somma all'olografica)
 // asc: quante volte la carta è salita di rarità (Ascesa). La carta in battaglia ha la rarità nuova (anche la cornice).
-function nuovoCombattente(id, liv, lode, olo, ultra, asc) {
-  const base = _PER_ID[id], rar = _rarDopo(base.rarita, asc);
+function nuovoCombattente(id, liv, lode, olo, ultra, asc, stile) {
+  const base0 = _PER_ID[id], rar = _rarDopo(base0.rarita, asc);
+  // carta Jolly in modo Camaleonte: gioca con il tipo scelto dal giocatore (statistiche comprese)
+  const base = stile && STILI[stile] && stile !== base0.stile ? Object.assign({}, base0, { stile, camaleonte: true }) : base0;
   const c = rar !== base.rarita ? Object.assign({}, base, { rarita: rar, ascesa: true }) : base, s = _stat(c, liv, lode), k = (olo ? BONUS_OLO : 1) * (ultra && c.ultra ? BONUS_ULTRA : 1);
   const pv = Math.round(s.pv * k);
   return { id, c, liv, lode: !!lode, olo: !!olo, asc: rar !== base.rarita ? asc | 0 : 0, ultra: !!(ultra && c.ultra), f: s.f * k, pv, pvMax: pv, att: s.attBase, dif: s.dif, vel: s.vel,
@@ -126,20 +128,25 @@ function serieJollyAuto(perSerie, cand) {
   const guadagno = k => livSinergia(perSerie[k].length + 1) - livSinergia(perSerie[k].length);
   return cand.slice().sort((a, b) => guadagno(b) - guadagno(a) || perSerie[b].length - perSerie[a].length || (a < b ? -1 : 1))[0];
 }
-function sinergieDi(ids, sceltaJolly) {
+// Modi del Jolly: "rinforzo" (si unisce a una sinergia, il modo normale), "camaleonte" (niente sinergia, sceglie il suo tipo),
+// "imbucato" (niente sinergia; quando entra in campo il nemico perde 1 energia e i potenziamenti attivi)
+const MODI_JOLLY = ["rinforzo", "camaleonte", "imbucato"];
+var IMBUCATO_ENERGIA = 2;   // quanta energia toglie il Jolly Imbucato quando entra in campo
+function sinergieDi(ids, sceltaJolly, modoJolly) {
   const carte = ids.map(id => _PER_ID[id]).filter(Boolean);
   const perSerie = {}, perPersona = {};
   const jolly = carte.find(eJolly);
   for (const c of carte) { if (!eJolly(c)) (perSerie[c.serie] = perSerie[c.serie] || []).push(c.id); if (c.persona) (perPersona[c.persona] = perPersona[c.persona] || []).push(c.id); }
   const scelte = Object.keys(perSerie).filter(k => SINERGIE[k]);
-  const conJolly = jolly && scelte.length ? (scelte.includes(sceltaJolly) ? sceltaJolly : serieJollyAuto(perSerie, scelte)) : null;
+  const modo = MODI_JOLLY.includes(modoJolly) ? modoJolly : "rinforzo";
+  const conJolly = jolly && modo === "rinforzo" && scelte.length ? (scelte.includes(sceltaJolly) ? sceltaJolly : serieJollyAuto(perSerie, scelte)) : null;
   const serie = Object.entries(perSerie).filter(([k]) => SINERGIE[k]).map(([k, lista]) => {
     const conJ = k === conJolly, n = conJ ? lista.length + 1 : lista.length, liv = livSinergia(n), s = SINERGIE[k];
     return { serie: k, n, liv, ids: conJ ? lista.concat(jolly.id) : lista, tipo: s.tipo, val: valSinergia(s, liv), jolly: conJ ? jolly.id : null };
   }).sort((a, b) => b.n - a.n);
   const multiverso = Object.entries(perPersona).filter(([, l]) => l.length >= 2)
     .map(([persona, lista]) => ({ persona, ids: lista, n: lista.length, val: lista.length >= 3 ? MULTIVERSO.v3 : MULTIVERSO.v2 }));
-  return { serie, multiverso, jolly: jolly ? { id: jolly.id, serie: conJolly, scelte, auto: !scelte.includes(sceltaJolly) } : null };
+  return { serie, multiverso, jolly: jolly ? { id: jolly.id, serie: conJolly, scelte, auto: !scelte.includes(sceltaJolly), modo } : null };
 }
 
 // ---------------- Campi di battaglia ----------------
@@ -187,20 +194,24 @@ class Battaglia {
   constructor(sqG, sqC, nomeG = "Tu", nomeC = "Avversario", rng = Math.random) {
     this.rng = rng;
     this.lati = [
-      { nome: nomeG, squadra: sqG.map(x => Object.assign(nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra, x.asc), { stelle: Math.max(0, Math.min(5, x.stelle | 0)), cc: typeof x.cc === "string" ? x.cc.slice(0, 20) : "" })), attivo: 0, energia: ENERGIA_INIZIALE },
-      { nome: nomeC, squadra: sqC.map(x => Object.assign(nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra, x.asc), { stelle: Math.max(0, Math.min(5, x.stelle | 0)), cc: typeof x.cc === "string" ? x.cc.slice(0, 20) : "" })), attivo: 0, energia: ENERGIA_INIZIALE },
+      { nome: nomeG, squadra: sqG.map(x => Object.assign(nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra, x.asc, eJolly(_PER_ID[x.id]) && x.jm === "camaleonte" ? x.jt : null), { stelle: Math.max(0, Math.min(5, x.stelle | 0)), cc: typeof x.cc === "string" ? x.cc.slice(0, 20) : "" })), attivo: 0, energia: ENERGIA_INIZIALE },
+      { nome: nomeC, squadra: sqC.map(x => Object.assign(nuovoCombattente(x.id, x.liv, x.lode, x.olo, x.ultra, x.asc, eJolly(_PER_ID[x.id]) && x.jm === "camaleonte" ? x.jt : null), { stelle: Math.max(0, Math.min(5, x.stelle | 0)), cc: typeof x.cc === "string" ? x.cc.slice(0, 20) : "" })), attivo: 0, energia: ENERGIA_INIZIALE },
     ];
     this.turno = 1;
     this.vincitore = -1;
     this.ev = [];
     this.graffitiAnnullati = null;
-    this.lati.forEach((L, i) => { const sj = [sqG, sqC][i].find(x => x && typeof x.js === "string" && x.js); L.sceltaJolly = sj ? sj.js : ""; this._sinergie(L); if (L.squadra[0]) L.squadra[0].usata = true; });   // "usata": è scesa in campo (per i premi)
+    this.lati.forEach((L, i) => {
+      const sj = [sqG, sqC][i].find(x => x && _PER_ID[x.id] && eJolly(_PER_ID[x.id]));
+      L.sceltaJolly = sj && typeof sj.js === "string" ? sj.js : ""; L.modoJolly = sj && MODI_JOLLY.includes(sj.jm) ? sj.jm : "rinforzo";
+      if (L.modoJolly === "imbucato") for (const x of L.squadra) if (eJolly(x.c)) { x.imbucato = true; break; }
+      this._sinergie(L); if (L.squadra[0]) L.squadra[0].usata = true; });   // "usata": è scesa in campo (per i premi)
     this.campo = null;
     this.impostaCampo(ORDINE_CAMPI[Math.floor(this.rng() * ORDINE_CAMPI.length)]);
   }
   // applica le sinergie di una squadra ai suoi combattenti
   _sinergie(L) {
-    const sin = sinergieDi(L.squadra.map(x => x.id), L.sceltaJolly);
+    const sin = sinergieDi(L.squadra.map(x => x.id), L.sceltaJolly, L.modoJolly);
     L.sinergie = sin;
     for (const s of sin.serie) {
       if (!s.liv) continue;
@@ -430,6 +441,13 @@ class Battaglia {
     // Paesi del mondo: chi entra in campo si sente a casa e recupera un po' di PV
     if (dentro.sin && dentro.sin.duello) dentro.pronta = true;   // Far West: rientrando in campo la pistola è di nuovo carica
     if (dentro.sin && dentro.sin.ospitalita && dentro.pv < dentro.pvMax) this._cura(l, dentro, Math.max(1, Math.round(dentro.pvMax * dentro.sin.ospitalita / 100)));
+    // Jolly Imbucato: rovina la festa, il nemico perde 1 energia e i potenziamenti attivi (attacco potenziato, scudo, nebbia)
+    if (dentro.imbucato) {
+      const O = this.lati[1 - l], o = this.attivo(1 - l), tolti = [];
+      const pe = Math.min(O.energia, IMBUCATO_ENERGIA); if (pe > 0) { O.energia -= pe; tolti.push(`${pe} energia`); }
+      if (o && o.pv > 0) { if (o.buff.att) { delete o.buff.att; tolti.push("il potenziamento"); } if (o.scudo) { o.scudo = 0; tolti.push("lo scudo"); } if (o.nebbia) { o.nebbia = false; tolti.push("la nebbia"); } }
+      this._log(`${dentro.c.nome} si imbuca alla festa${tolti.length ? `: ${O.nome} perde ${tolti.join(", ")}` : ""}!`, { lato: l, anim: "debole", su: 1 - l });
+    }
     // Opere d'Arte: il nemico in campo resta incantato davanti al quadro e salta il prossimo turno
     if (dentro.sin && dentro.sin.incanto) {
       const o = this.attivo(1 - l);

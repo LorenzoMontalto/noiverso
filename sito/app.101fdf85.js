@@ -1420,7 +1420,7 @@ function vistaSquadra() {
     <div class="slot5">${slot.join("")}</div>
     ${Jolly.htmlSquadra()}
     ${Graffiti.htmlSquadra()}
-    ${Sinergie.htmlSquadra(sq.carte, sq.jolly)}
+    ${Sinergie.htmlSquadra(sq.carte, sq.jolly, sq)}
     <div class="riepilogo">
       <div><span>Stili</span>${Object.entries(stili).map(([k, n]) => `<b class="stile s-${k}">${k} ${n}</b>`).join(" ")}</div>
       <div><span>Ruoli</span>${ruoli.length ? ruoli.map(r => `<b class="ruolo-pill">${esc(r)}</b>`).join(" ") : "—"}</div>
@@ -1454,16 +1454,11 @@ const Sinergie = (() => {
   const nomeTra = (k, liv) => { const n = nomeSinergia(k, liv); return n ? `«${esc(n)}» ` : ""; };   // il nome scelto dall'admin, se c'è
   const prossima = n => SOGLIE_SINERGIA.find(x => x > n);
   // riquadro nella pagina Squadre: sinergie attive e quelle a cui manca poco
-  function htmlSquadra(ids, sceltaJolly) {
-    const sin = sinergieDi(ids, sceltaJolly);
+  function htmlSquadra(ids, sceltaJolly, sq2 = {}) {
+    const sin = sinergieDi(ids, sceltaJolly, sq2.jollyModo);
     const righe = []; let suggerimenti = 0;
-    // carta Jolly: a quale sinergia si unisce (la sceglie il giocatore; "Automatico" = dove serve di più)
-    if (sin.jolly) {
-      const J = PER_ID[sin.jolly.id];
-      righe.push(sin.jolly.scelte.length ? `<li class="sin-jolly"><span class="sin-ico">🃏</span><span><b>${esc(J.nome)} è un Jolly</b> · si unisce alla sinergia che scegli tu (conta come una carta di quella serie):
-        <span class="sin-jolly-scelte"><button class="chip" data-jolly-serie="" aria-pressed="${sin.jolly.auto}">Automatico${sin.jolly.auto ? ` (${esc(SERIE[sin.jolly.serie].nome)})` : ""}</button>${sin.jolly.scelte.map(k => `<button class="chip" style="--c:${SERIE[k].colore}" data-jolly-serie="${k}" aria-pressed="${!sin.jolly.auto && sin.jolly.serie === k}">${SERIE[k].simbolo} ${esc(SERIE[k].nome)}</button>`).join("")}</span></span></li>`
-        : `<li class="sin-jolly"><span class="sin-ico">🃏</span><span><b>${esc(J.nome)} è un Jolly</b> · si unirà a una sinergia appena metti in squadra altre carte.</span></li>`);
-    }
+    // carta Jolly: come gioca (Rinforzo / Camaleonte / Imbucato) e, nel Rinforzo, a quale sinergia si unisce
+    if (sin.jolly) righe.push(`<li class="sin-jolly">${htmlSceltaJolly(ids, { jolly: sceltaJolly, jollyModo: sq2.jollyModo, jollyTipo: sq2.jollyTipo })}</li>`);
     for (const s of sin.serie) {
       const se = SERIE[s.serie];
       const p = prossima(s.n), pl = p ? SOGLIE_SINERGIA.indexOf(p) + 1 : 0;
@@ -1604,6 +1599,29 @@ function scorriAlleCarteAlbum() {
     const fermo = matchMedia("(prefers-reduced-motion: reduce)").matches;
     scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + scrollY - 12), behavior: fermo ? "auto" : "smooth" });
   }));
+}
+// ---------------- Carte Jolly: i tre modi ----------------
+const MODI_JOLLY_INFO = {
+  rinforzo:   { nome: "Rinforzo",   ico: "🧩", testo: "si unisce alla sinergia che scegli e conta come una carta di quella serie (anche per arrivare a 5)." },
+  camaleonte: { nome: "Camaleonte", ico: "🦎", testo: "niente sinergia, ma gioca con il tipo che scegli tu: utile contro una squadra piena dello stesso tipo." },
+  imbucato:   { nome: "Imbucato",   ico: "🎉", testo: "niente sinergia, ma quando entra in campo dalla panchina il nemico perde 2 energia e i potenziamenti attivi (attacco potenziato, scudo, nebbia)." },
+};
+// pannello del Jolly (riquadro delle sinergie in Squadre e schermata dell'ordine di entrata)
+function htmlSceltaJolly(ids, sq) {
+  const sin = sinergieDi(ids, sq.jolly, sq.jollyModo); if (!sin.jolly) return "";
+  const J = PER_ID[sin.jolly.id], modo = sin.jolly.modo, info = MODI_JOLLY_INFO[modo];
+  const chip = (attr, val, testo, on, col) => `<button class="chip" ${col ? `style="--c:${col}"` : ""} data-${attr}="${val}" aria-pressed="${on}">${testo}</button>`;
+  let sotto = "";
+  if (modo === "rinforzo") sotto = sin.jolly.scelte.length ? `<span class="sin-jolly-scelte"><small>Si unisce a:</small>${chip("jolly-serie", "", `Automatico${sin.jolly.auto && sin.jolly.serie ? ` (${esc(SERIE[sin.jolly.serie].nome)})` : ""}`, sin.jolly.auto)}${sin.jolly.scelte.map(k => chip("jolly-serie", k, `${SERIE[k].simbolo} ${esc(SERIE[k].nome)}`, !sin.jolly.auto && sin.jolly.serie === k, SERIE[k].colore)).join("")}</span>`
+    : `<small class="nota">Si unirà a una sinergia appena metti in squadra altre carte.</small>`;
+  else if (modo === "camaleonte") { const t = STILI[sq.jollyTipo] ? sq.jollyTipo : J.stile; sotto = `<span class="sin-jolly-scelte"><small>Gioca come:</small>${["FOR", "DIF", "VEL"].map(k => chip("jolly-tipo", k, `${STILI[k].icona} ${STILI[k].nome}`, t === k)).join("")}</span><small class="nota">${STILI[t].nome} batte ${STILI[STILI[t].batte].nome}.</small>`; }
+  return `<span class="sin-ico">🃏</span><span class="sin-jolly-corpo"><b>${esc(J.nome)} è un Jolly</b> · scegli come gioca:
+    <span class="sin-jolly-scelte modi">${Object.entries(MODI_JOLLY_INFO).map(([k, m]) => chip("jolly-modo", k, `${m.ico} ${m.nome}`, modo === k)).join("")}</span>
+    <small class="nota"><b>${info.nome}</b>: ${info.testo}</small>${sotto}</span>`;
+}
+function cambiaJolly(campo, valore) {
+  const sq = squadraAttiva(); sq[campo] = valore; salva();
+  if ($("#modale-corpo .ordine-entrata")) Ordine.ridisegna(); else disegnaQuieto();
 }
 // carte Jolly: al massimo una per squadra. Vero (e avviso) se far entrare "entra" al posto di "esce" ne metterebbe due
 function dueJolly(sq, entra, esce) {
@@ -2960,9 +2978,10 @@ const Ordine = (() => {
         return `<div class="ord-riga ${i >= n ? "fuori" : ""} ${sel === i ? "sel" : ""}" data-rilascia="ord:${i}" data-trascina="ord:${i}" data-ord-tocca="${i}" role="button" tabindex="0" aria-label="${esc(c.nome)}, posto ${i + 1}">
           <span class="ord-n">${i + 1}</span>
           <img src="${imgMini(id)}" alt="">
-          <span class="ord-testo"><b>${esc(c.nome)}${i === 0 ? ` <em class="ord-primo">in campo</em>` : i >= n ? ` <em>non gioca</em>` : ""}</b><small><span class="stile s-${c.stile} ord-stile">${STILI[c.stile].icona} ${STILI[c.stile].nome}</span> ${esc(RUOLI[c.ruolo].nome)} · Lv ${livello(id) || 1} · PV ${Math.round(st.pv)} · Att ${Math.round(st.att)}</small></span>
+          <span class="ord-testo"><b>${esc(c.nome)}${i === 0 ? ` <em class="ord-primo">in campo</em>` : i >= n ? ` <em>non gioca</em>` : ""}</b><small>${(() => { const t = c.rarita === "jolly" && sq.jollyModo === "camaleonte" && STILI[sq.jollyTipo] ? sq.jollyTipo : c.stile; return `<span class="stile s-${t} ord-stile">${STILI[t].icona} ${STILI[t].nome}</span>`; })()} ${esc(RUOLI[c.ruolo].nome)} · Lv ${livello(id) || 1} · PV ${Math.round(st.pv)} · Att ${Math.round(st.att)}</small></span>
           <span class="ord-maniglia" aria-hidden="true">⠿</span></div>`; }).join("")}</div>
       ${n < sq.carte.length ? `<p class="nota">In modalità rapida giocano solo le prime ${n}.</p>` : ""}
+      ${(() => { const h = htmlSceltaJolly(sq.carte.slice(0, n), sq); return h ? `<div class="ord-jolly sin-jolly">${h}</div>` : ""; })()}
       <div class="azioni centro"><button class="btn" data-azione="ordine-indietro">Cambia squadra</button><button class="btn primario" data-fx="onda" data-azione="ordine-via">Combatti!</button></div></div>`);
   }
   function scambia(i, j) {
@@ -2977,7 +2996,7 @@ const Ordine = (() => {
     if (f) f();
   }
   function indietro() { const f = poi; poi = null; if (tornaIndietro) { tornaIndietro(); return; } scegliSquadra(f, titolo || undefined); }
-  return { apri, scambia, tocca, via, indietro };
+  return { apri, scambia, tocca, via, indietro, ridisegna: disegnaOrdine };
 })();
 function scegliSquadra(poi, titolo = "Con quale squadra combatti?") {
   if (B && $("#azioni")) return;
@@ -2995,7 +3014,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
     : Lp && Lp.arena ? carteForzate.slice(0, n).map(id => ({ id, liv: 20, lode: false, olo: false, ultra: false, asc: 0 }))   // Arena: tutti uguali al livello 20
-    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, js: PER_ID[id] && PER_ID[id].rarita === "jolly" && !carteForzate ? (squadraAttiva().jolly || "") : undefined, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id), cc: S.admin ? "" : Cosmetici.corniceCarta(id) }));
+    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, ...(PER_ID[id] && PER_ID[id].rarita === "jolly" && !carteForzate ? { js: squadraAttiva().jolly || "", jm: squadraAttiva().jollyModo || "rinforzo", jt: squadraAttiva().jollyTipo || "" } : {}), liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id), cc: S.admin ? "" : Cosmetici.corniceCarta(id) }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   // contro il computer: battaglia con un seme, così gli amici possono guardarla in diretta (le scelte del computer restano a caso)
@@ -3600,7 +3619,7 @@ document.addEventListener("click", e => {
   if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
   if (e.target.id === "avviso") { mostraAvviso.prossimo(); return; }
-  const t = e.target.closest("[data-jolly-serie],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3610,7 +3629,9 @@ document.addEventListener("click", e => {
   if (t.dataset.mistero) { Frammenti.apriMistero(t.dataset.mistero); return; }
   if (t.dataset.arenaScegli) { Arena.scegli(t.dataset.arenaScegli); return; }
   if (t.dataset.arenaInfo) { Arena.info(t.dataset.arenaInfo); return; }
-  if (t.dataset.jollySerie !== undefined) { const sq = squadraAttiva(); sq.jolly = t.dataset.jollySerie; salva(); disegnaQuieto(); return; }
+  if (t.dataset.jollySerie !== undefined) { cambiaJolly("jolly", t.dataset.jollySerie); return; }
+  if (t.dataset.jollyModo) { cambiaJolly("jollyModo", t.dataset.jollyModo); return; }
+  if (t.dataset.jollyTipo) { cambiaJolly("jollyTipo", t.dataset.jollyTipo); return; }
   if (t.dataset.cosmCompra) { Cosmetici.compra(t.dataset.cosmCompra, t); return; }
   if (t.dataset.ccUsa !== undefined) { const [c, cc] = t.dataset.ccUsa.split(":"); Cosmetici.usaCarta(c, cc); return; }
   if (t.dataset.offertaSp) { Offerte.compra(t.dataset.offertaSp, t); return; }
