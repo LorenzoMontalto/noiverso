@@ -1460,14 +1460,14 @@ const Sinergie = (() => {
     // carta Jolly: a quale sinergia si unisce (la sceglie il giocatore; "Automatico" = dove serve di più)
     if (sin.jolly) {
       const J = PER_ID[sin.jolly.id];
-      righe.push(sin.jolly.scelte.length ? `<li class="sin-jolly"><span class="sin-ico">🃏</span><span><b>${esc(J.nome)} è un Jolly</b> · si unisce alla sinergia che scegli tu (conta per arrivare a 2 o 3 carte, non a 5):
+      righe.push(sin.jolly.scelte.length ? `<li class="sin-jolly"><span class="sin-ico">🃏</span><span><b>${esc(J.nome)} è un Jolly</b> · si unisce alla sinergia che scegli tu (conta come una carta di quella serie):
         <span class="sin-jolly-scelte"><button class="chip" data-jolly-serie="" aria-pressed="${sin.jolly.auto}">Automatico${sin.jolly.auto ? ` (${esc(SERIE[sin.jolly.serie].nome)})` : ""}</button>${sin.jolly.scelte.map(k => `<button class="chip" style="--c:${SERIE[k].colore}" data-jolly-serie="${k}" aria-pressed="${!sin.jolly.auto && sin.jolly.serie === k}">${SERIE[k].simbolo} ${esc(SERIE[k].nome)}</button>`).join("")}</span></span></li>`
         : `<li class="sin-jolly"><span class="sin-ico">🃏</span><span><b>${esc(J.nome)} è un Jolly</b> · si unirà a una sinergia appena metti in squadra altre carte.</span></li>`);
     }
     for (const s of sin.serie) {
       const se = SERIE[s.serie];
       const p = prossima(s.n), pl = p ? SOGLIE_SINERGIA.indexOf(p) + 1 : 0;
-      const dopo = p ? ` <small>${s.jolly && p === 5 ? `Con 5 carte ${esc(se.nome)} vere (senza Jolly)` : p - s.n === 1 ? "Con un'altra" : `Con ${p} carte`}: ${nomeTra(s.serie, pl)}${testoSerie(s.serie, pl)}.</small>` : "";
+      const dopo = p ? ` <small>${p - s.n === 1 ? "Con un'altra" : `Con ${p} carte`}: ${nomeTra(s.serie, pl)}${testoSerie(s.serie, pl)}.</small>` : "";
       if (s.liv) righe.push(`<li class="sin-attiva" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${nomeSinergia(s.serie, s.liv) ? `${esc(nomeSinergia(s.serie, s.liv))} · ` : ""}${esc(se.nome)} ${s.n}${p ? `/${p}` : ""}${s.jolly ? " (con 🃏 " + esc(PER_ID[s.jolly].nome) + ")" : ""}</b> · carte ${esc(se.nome)}${s.jolly ? " e il Jolly" : ""}: ${testoSerie(s.serie, s.liv)}.${dopo}</span></li>`);
       else if (suggerimenti++ < 2) righe.push(`<li class="sin-quasi" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} 1/2</b> · aggiungine un'altra: carte ${esc(se.nome)}, ${nomeTra(s.serie, 1)}${testoSerie(s.serie, 1)}.</span></li>`);
     }
@@ -1512,7 +1512,7 @@ const Sinergie = (() => {
   }
   // Album: cosa fa la sinergia di una serie (sotto il titolo della serie)
   function htmlSerieAlbum(k) {
-    if (SERIE[k] && SERIE[k].jolly) return `<p class="sin-album"><b>🃏 Carte Jolly</b> <span>Non hanno una sinergia loro: in squadra si uniscono alla sinergia che scegli tu (conta per arrivare a 2 o 3 carte, non a 5). Al massimo un Jolly per squadra.</span></p>`;
+    if (SERIE[k] && SERIE[k].jolly) return `<p class="sin-album"><b>🃏 Carte Jolly</b> <span>Non hanno una sinergia loro: in squadra si uniscono alla sinergia che scegli tu e contano come una carta di quella serie (anche per arrivare a 5). Al massimo un Jolly per squadra.</span></p>`;
     if (!SINERGIE[k]) return "";
     return `<p class="sin-album"><b>Sinergia</b> <span>2 carte: ${nomeTra(k, 1)}${testoSerie(k, 1)}</span><span>3 carte: ${nomeTra(k, 2)}${testoSerie(k, 2)}</span><span>5 carte: ${nomeTra(k, 3)}${testoSerie(k, 3)}</span></p>`;
   }

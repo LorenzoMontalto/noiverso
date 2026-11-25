@@ -117,13 +117,13 @@ function applicaSinergie(cfg) {
 // ---------------- Carte Jolly ----------------
 // Le carte di rarità "jolly" (serie Ospiti Indesiderati) non hanno una sinergia loro: si uniscono a una serie della
 // squadra, scelta dal giocatore (squadra.jolly) o, se non l'ha scelta, quella dove servono di più. Contano per arrivare
-// a 2 o a 3 carte, mai a 5 (il bonus pieno resta per le squadre di 5 carte vere). Ne conta una sola per squadra.
+// a 2, 3 o 5 carte come una carta vera della serie (nov 2026: prima non contava per il 5). Ne conta una sola per squadra.
 const eJolly = c => !!c && c.rarita === "jolly";
 const livSinergia = n => n >= 5 ? 3 : n >= 3 ? 2 : n >= 2 ? 1 : 0;
 function serieJollyAuto(perSerie, cand) {
   // prima dove il jolly fa salire di livello la sinergia, poi la serie con più carte (a parità, in ordine alfabetico: deve
   // venire uguale su tutti e due i telefoni nelle partite dal vivo)
-  const guadagno = k => livSinergia(Math.min(4, perSerie[k].length + 1)) - livSinergia(perSerie[k].length);
+  const guadagno = k => livSinergia(perSerie[k].length + 1) - livSinergia(perSerie[k].length);
   return cand.slice().sort((a, b) => guadagno(b) - guadagno(a) || perSerie[b].length - perSerie[a].length || (a < b ? -1 : 1))[0];
 }
 function sinergieDi(ids, sceltaJolly) {
@@ -134,7 +134,7 @@ function sinergieDi(ids, sceltaJolly) {
   const scelte = Object.keys(perSerie).filter(k => SINERGIE[k]);
   const conJolly = jolly && scelte.length ? (scelte.includes(sceltaJolly) ? sceltaJolly : serieJollyAuto(perSerie, scelte)) : null;
   const serie = Object.entries(perSerie).filter(([k]) => SINERGIE[k]).map(([k, lista]) => {
-    const conJ = k === conJolly, n = conJ ? Math.min(4, lista.length + 1) : lista.length, liv = livSinergia(n), s = SINERGIE[k];
+    const conJ = k === conJolly, n = conJ ? lista.length + 1 : lista.length, liv = livSinergia(n), s = SINERGIE[k];
     return { serie: k, n, liv, ids: conJ ? lista.concat(jolly.id) : lista, tipo: s.tipo, val: valSinergia(s, liv), jolly: conJ ? jolly.id : null };
   }).sort((a, b) => b.n - a.n);
   const multiverso = Object.entries(perPersona).filter(([, l]) => l.length >= 2)
