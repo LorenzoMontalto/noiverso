@@ -381,7 +381,7 @@ const Arena = (() => {
         <p class="serie-nome">${esc(SERIE[c.serie].nome)}</p><h2>${esc(c.nome)}</h2>
         <div class="ruolo-box"><b>${esc(r.nome)}</b><span>${esc(r.cosa)}</span><p>${esc(r.passiva)}</p></div>
         ${htmlStatGriglia(c, s)}${htmlBonusRarita(c)}${htmlTipo(c)}
-        <ul class="mosse-lista">${c.mosse.map(mo => `<li><span class="costo">${mo.costo}◆</span><b>${esc(mo.nome)}</b><small>${esc(descrMossa(mo))}</small></li>`).join("")}</ul>
+        <ul class="mosse-lista">${c.mosse.map(mo => `<li><span class="costo">${mo.costo}⚡</span><b>${esc(mo.nome)}</b><small>${esc(descrMossa(mo))}</small></li>`).join("")}</ul>
         ${(() => { const n = a.scelte.filter(x => PER_ID[x].serie === c.serie).length + 1, S2 = SINERGIE[c.serie]; if (n < 2 || !S2) return "";
           const liv = n >= 5 ? 3 : n >= 3 ? 2 : 1, v = S2[["", "v2", "v3", "v5"][liv]];
           return `<p class="passiva"><b>Sinergia:</b> con questa avresti ${n} carte ${esc(SERIE[c.serie].nome)}: ${esc(S2.testo(v, liv))}.</p>`; })()}
@@ -683,7 +683,7 @@ const Jolly = (() => {
     }
     if (!tot) return 0;
     S.jolly = n() + tot; salva();
-    if (avvisa) mostraAvviso(`◆ ${tot} potenziatori avanzati (${nomi.slice(0, 3).join(", ")}${nomi.length > 3 ? "…" : ""}, già al 30) sono diventati jolly: li usi su qualsiasi carta da Squadre.`);
+    if (avvisa) mostraAvviso(`✪ ${tot} potenziatori avanzati (${nomi.slice(0, 3).join(", ")}${nomi.length > 3 ? "…" : ""}, già al 30) sono diventati universali: li usi su qualsiasi carta da Squadre.`);
     return tot;
   }
 
@@ -698,14 +698,14 @@ const Jolly = (() => {
   // il "salvadanaio" in Squadre
   function htmlSquadra() {
     const j = n(); if (!j) return "";
-    return `<div class="jolly-box"><span class="jolly-ico">◆</span><div><b>Potenziatori jolly: ${j}</b><small>Arrivano dalle carte al livello 30 e dalle vittorie delle carte 30 e lode. Li usi su qualsiasi carta, quando vuoi tu.</small></div>
+    return `<div class="jolly-box"><span class="jolly-ico">✪</span><div><b>Potenziatori universali: ${j}</b><small>Arrivano dalle carte al livello 30 e dalle vittorie delle carte 30 e lode. Li usi su qualsiasi carta, quando vuoi tu.</small></div>
       <button class="btn piccolo primario" data-fx="stelle" data-azione="jolly-apri">Usali</button></div>`;
   }
   // nel dettaglio di una carta
   function htmlDettaglio(id) {
     const j = n(), m = mancanoAl30(id); if (!j || !m) return "";
     const p = mancaProssimo(id);
-    return `<div class="jolly-dett"><span>◆ Hai <b>${j}</b> potenziatori jolly</span>
+    return `<div class="jolly-dett"><span>✪ Hai <b>${j}</b> potenziatori universali</span>
       ${p ? `<button class="btn piccolo" data-jolly-usa="${id}:${p}" ${p <= j ? "" : "disabled"}>+${p} per il prossimo livello</button>` : ""}
       <button class="btn piccolo" data-jolly-usa="${id}:${Math.min(j, m)}">Metti ${Math.min(j, m) === m ? `i ${m} che servono fino al 30` : `tutti i ${j}`}</button></div>`;
   }
@@ -724,9 +724,9 @@ const Jolly = (() => {
         <button class="btn piccolo" data-jolly-usa="${c.id}:1" ${j ? "" : "disabled"}>+1</button>
         ${p > 1 ? `<button class="btn piccolo" data-jolly-usa="${c.id}:${p}" ${p <= j ? "" : "disabled"}>+${p}</button>` : ""}</span></div>`;
     };
-    apriModale(`<div class="jolly-fin"><h2>◆ Potenziatori jolly</h2>
+    apriModale(`<div class="jolly-fin"><h2>✪ Potenziatori universali</h2>
       <p class="jolly-conto">Ne hai <b>${j}</b></p>
-      <p class="nota">Arrivano dalle carte che hanno raggiunto il livello 30 (i potenziatori che avanzavano non servivano più) e dalle carte <b>30 e lode</b>: ognuna che scende in campo in una battaglia vinta dà da 1 a 5 jolly (quanti i potenziatori normali di quella battaglia) e 15 monete (non nell'Arena). Scegli tu su quale carta metterli e quanti: poi la potenzi come sempre, con le monete. <b>+N</b> mette quelli che mancano per il prossimo livello.</p>
+      <p class="nota">Arrivano dalle carte che hanno raggiunto il livello 30 (i potenziatori che avanzavano non servivano più) e dalle carte <b>30 e lode</b>: ognuna che scende in campo in una battaglia vinta dà da 1 a 5 universali (quanti i potenziatori normali di quella battaglia) e 15 monete (non nell'Arena). Scegli tu su quale carta metterli e quanti: poi la potenzi come sempre, con le monete. <b>+N</b> mette quelli che mancano per il prossimo livello.</p>
       ${mie.length ? `<div class="jolly-lista">${mie.map(riga).join("")}</div>` : `<p class="nota">Tutte le tue carte sono già al livello 30!</p>`}</div>`);
   }
 
@@ -737,7 +737,7 @@ const Jolly = (() => {
     const [id, q] = t.dataset.jollyUsa.split(":"), fatti = usa(id, +q);
     if (!fatti) return;
     const [x, y] = FX.centro(t); FX.esplosione(x, y, { n: 26, forma: "stella", colori: ["#c9a4ff", "#ffffff", "#3fd8ff"], velocita: 6, dimensione: 5 });
-    mostraAvviso(`◆ ${fatti} jolly messi su ${PER_ID[id].nome}.${infoCarta(id).pronta ? " Ora puoi potenziarla!" : ""}`);
+    mostraAvviso(`✪ ${fatti} potenziatori universali messi su ${PER_ID[id].nome}.${infoCarta(id).pronta ? " Ora puoi potenziarla!" : ""}`);
     if (inFinestra) apri(); else { disegna(); apriDettaglio(id); }
   });
 

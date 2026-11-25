@@ -1538,3 +1538,9 @@ begin
 end $$;
 revoke all on function public.registra_carte(text[], boolean, text), public.statistiche_carte(), public.azzera_statistiche_carte() from public, anon;
 grant execute on function public.registra_carte(text[], boolean, text), public.statistiche_carte(), public.azzera_statistiche_carte() to authenticated;
+
+-- ---------------- Versione del database ----------------
+-- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
+create or replace function public.versione_schema() returns text language sql immutable as $$ select 'c7fe95d829'::text $$;
+grant execute on function public.versione_schema() to anon, authenticated;
+-- FINE VERSIONE

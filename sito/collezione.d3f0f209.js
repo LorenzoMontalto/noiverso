@@ -55,11 +55,16 @@ const Trofei = (() => {
     // mentre apri una bustina niente annunci: rovinerebbero la sorpresa (arrivano quando la chiudi)
     const inBustina = () => !$("#apertura").hidden || !!$("#modale-corpo .apertura2d");
     if (S.admin || B || inBustina()) return;
-    for (const t of elenco()) if (raggiunto(t) && !presi()[t.id] && !annunciati.has(t.id)) {
-      annunciati.add(t.id);
-      if (annunciati.size > elenco().length) break;
-      setTimeout(() => { if (inBustina()) { annunciati.delete(t.id); return; } mostraAvviso(`Trofeo sbloccato: ${t.nome}! Riscuotilo nell'Album, scheda Trofei.`); }, 900);
-    }
+    // nov 2026: più trofei insieme diventano un solo avviso (prima ne arrivavano 5 o 6 di fila)
+    const nuovi = elenco().filter(t => raggiunto(t) && !presi()[t.id] && !annunciati.has(t.id));
+    if (!nuovi.length) return;
+    nuovi.forEach(t => annunciati.add(t.id));
+    setTimeout(() => {
+      if (inBustina()) { nuovi.forEach(t => annunciati.delete(t.id)); return; }
+      const nomi = nuovi.map(t => t.nome);
+      mostraAvviso(nomi.length === 1 ? `Trofeo sbloccato: ${nomi[0]}! Riscuotilo nell'Album, scheda Trofei.`
+        : `${nomi.length} trofei sbloccati: ${nomi.slice(0, 3).join(", ")}${nomi.length > 3 ? ` e altri ${nomi.length - 3}` : ""}! Riscuotili nell'Album, scheda Trofei.`);
+    }, 900);
   }
   function titoloAttuale() { const t = elenco().find(x => x.id === S.titolo); return t && presi()[t.id] ? t.titolo : ""; }
   const titoloId = () => titoloAttuale() ? S.titolo : "";

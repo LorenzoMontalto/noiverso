@@ -1,9 +1,11 @@
 # Pubblica il gioco su GitHub Pages a ogni aggiornamento della cartella sito/
+# Prima di pubblicare fa i controlli automatici (cartella controlli/): se uno non passa, il sito NON viene pubblicato
+# e resta online la versione di prima, che funzionava.
 name: Pubblica il sito
 on:
   push:
     branches: [main]
-    paths: ["sito/**", ".github/workflows/sito.yml"]
+    paths: ["sito/**", "sorgente/**", "controlli/**", ".github/workflows/sito.yml"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,16 +15,51 @@ concurrency:
   group: pages
   cancel-in-progress: true
 jobs:
+  controlla:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 400 battaglie simulate
+        run: node controlli/simula.js
+      - name: Prepara il browser
+        run: |
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Il gioco nel browser (telefono e computer)
+        run: python controlli/fumo.py
+
   pubblica:
+    needs: controlla
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url || steps.deploy2.outputs.page_url || steps.deploy3.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: sito
+      # GitHub Pages a volte fallisce per un problema suo ("Fetching artifact metadata failed"):
+      # in quel caso aspetta e riprova da solo, fino a 3 volte
       - id: deploy
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - if: steps.deploy.outcome == 'failure'
+        run: sleep 30
+      - id: deploy2
+        if: steps.deploy.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - if: steps.deploy.outcome == 'failure' && steps.deploy2.outcome == 'failure'
+        run: sleep 90
+      - id: deploy3
+        if: steps.deploy.outcome == 'failure' && steps.deploy2.outcome == 'failure'
         uses: actions/deploy-pages@v4

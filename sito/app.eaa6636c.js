@@ -475,9 +475,9 @@ function etichetteMossa(mo) {
   if (mo.colpi) t.push(["colpo", `×${mo.colpi} colpi`]);
   if (e) t.push({
     brucia: ["nemico", `🔥 Brucia${turni(e.turni)}`], stordisci: ["nemico", `💫 ${e.val}% stordisce`],
-    indebolisci: ["nemico", `⬇ Indebolisce −${e.val}%${turni(e.turni)}`], ruba: ["nemico", `◆ Ruba ${e.val} energia`],
+    indebolisci: ["nemico", `⬇ Indebolisce −${e.val}%${turni(e.turni)}`], ruba: ["nemico", `⚡ Ruba ${e.val} energia`],
     potenzia: ["te", `⬆ Squadra +${e.val}%${turni(e.turni)}`], scudo: ["te", `⛨ Scudo −${e.val}%`],
-    nebbia: ["te", "☁ Schiva il prossimo"], cura: ["te", `♥ Cura ${e.val}% PV`], energia: ["te", `◆ +${e.val} energia`],
+    nebbia: ["te", "☁ Schiva il prossimo"], cura: ["te", `♥ Cura ${e.val}% PV`], energia: ["te", `⚡ +${e.val} energia`],
   }[e.tipo] || ["colpo", e.tipo]);
   if (mo.drena) t.push(["te", `♥ Ti cura ${mo.drena}% dei danni`]);
   if (mo.penetra) t.push(["colpo", `➹ Ignora ${mo.penetra}% difesa`]);
@@ -510,7 +510,7 @@ function apriDettaglio(id) {
         ${htmlTipo(c)}
         ${squadreDi(id).length ? `<p class="passiva"><b>⚑ In squadra:</b> ${squadreDi(id).map(n => esc(S.squadre[n - 1].nome || `Squadra ${n}`) + (n === (S.attiva || 0) + 1 ? " (quella che usi adesso)" : "")).join(", ")}.</p>` : ""}
         <ul class="mosse-lista">
-          ${c.mosse.map(mo => `<li><span class="costo">${mo.costo}◆</span><b>${esc(mo.nome)}</b><small>${esc(descrMossa(mo))}</small></li>`).join("")}
+          ${c.mosse.map(mo => `<li><span class="costo">${mo.costo}⚡</span><b>${esc(mo.nome)}</b><small>${esc(descrMossa(mo))}</small></li>`).join("")}
         </ul>
         <div class="livello-box ${lode ? "lode" : ""}" id="livello-box">
           <div class="livello-riga"><b>${lode ? "Livello 30 e lode" : `Livello ${liv}`}</b><span>${lode ? "+5% a PV e danni" : liv < LIVELLO_MAX ? `Potenziatori ${inf.pot}/${inf.servePot}` : `Lode: ${inf.dentro}/${inf.serve} XP`}</span></div>
@@ -525,7 +525,7 @@ function apriDettaglio(id) {
           ${htmlAscesa(id)}
           ${haOlo(c.id) ? `<p class="olo-nota">✦ <b>Olografica</b>: +5% di PV e di danni in battaglia. Ne esce una ogni 50 carte circa.</p>` : ""}
           ${c.ultra ? (haUltra(c.id) ? `<p class="ultra-nota">◆ <b>Versione Ultra</b>: cornice nera e oro e +10% di PV e di danni in battaglia.</p>` : `<p class="nota">Questa carta ha anche una <b>versione Ultra</b> da trovare (+10% in battaglia): esce raramente quando la trovi in una bustina, sempre nella Bustina Ultra.</p>`) : ""}
-          <p class="nota piccola">${lode ? "Ha la lode: è al massimo. I suoi doppioni ora danno monete, e ogni battaglia vinta in cui scende in campo dà da ◆ 1 a 5 potenziatori jolly (come i potenziatori normali: di più nelle sfide difficili) e 15 monete." : liv < LIVELLO_MAX ? `Ogni doppione di questa carta dà ${POT_DOPPIONE[c.rarita]} potenziatori, e ogni battaglia vinta in cui scende in campo da 1 a 5.${!inf.pronta ? ` Te ne mancano ${inf.servePot - inf.pot}.` : !inf.puoi ? ` Ti mancano ${inf.serveMon - S.monete} monete.` : ""}` : "È al 30: continua a giocarci in battaglia per prendere la lode. I suoi doppioni ora danno monete."} · ${copie} ${copie === 1 ? "copia" : "copie"}</p>
+          <p class="nota piccola">${lode ? "Ha la lode: è al massimo. I suoi doppioni ora danno monete, e ogni battaglia vinta in cui scende in campo dà da 1 a 5 ✪ potenziatori universali (come i potenziatori normali: di più nelle sfide difficili) e 15 monete." : liv < LIVELLO_MAX ? `Ogni doppione di questa carta dà ${POT_DOPPIONE[c.rarita]} potenziatori, e ogni battaglia vinta in cui scende in campo da 1 a 5.${!inf.pronta ? ` Te ne mancano ${inf.servePot - inf.pot}.` : !inf.puoi ? ` Ti mancano ${inf.serveMon - S.monete} monete.` : ""}` : "È al 30: continua a giocarci in battaglia per prendere la lode. I suoi doppioni ora danno monete."} · ${copie} ${copie === 1 ? "copia" : "copie"}</p>
         </div>
         ${Maestria.htmlDettaglio(id)}${Cosmetici.htmlSceltaCarta(id)}
       </div>
@@ -589,6 +589,44 @@ const StatCarte = (() => {
       <div><b>Da tenere d'occhio</b> <small class="nota">(almeno 30 battaglie, vince più del 60% o meno del 40%)</small>
         ${occhio.length ? `<div class="st-serie">${occhio.map(x => `<span class="${x.p >= 60 ? "st-forte" : "st-debole"}">${esc(x.c.nome)} <b>${x.p}%</b> <small>${x.u}</small></span>`).join("")}</div>` : `<p class="nota">Nessuna carta fuori misura per ora.</p>`}</div></div>`;
   }
+  // nov 2026: bilanciamento dai dati veri. Ogni carta si confronta con la media della sua rarità (una leggendaria
+  // vince più di una comune per forza); per ogni punto di differenza suggerisco mezzo centesimo di BILANCIO
+  // (nelle simulazioni 0,01 vale circa 1 punto di vittorie), al massimo ±0,05 alla volta: correzioni piccole e sicure.
+  const MIN_BATT = 30;
+  function bilancio() {
+    const b = dati.battaglie || {}, tot = id => { const pc = b[`${id}:pc`] || [0, 0], vi = b[`${id}:vivo`] || [0, 0]; return [pc[0] + vi[0], pc[1] + vi[1]]; };
+    const r = CARTE.map(c => { const [u, v] = tot(c.id); return { c, u, v, p: u ? v / u * 100 : 0 }; }).filter(x => x.u >= MIN_BATT);
+    const media = {};
+    for (const x of r) { const m = media[x.c.rarita] || (media[x.c.rarita] = [0, 0]); m[0] += x.u; m[1] += x.v; }
+    for (const x of r) {
+      const m = media[x.c.rarita]; x.m = m[1] / m[0] * 100; x.scarto = x.p - x.m;
+      x.ora = BILANCIO[x.c.id] || 1; x.delta = Math.max(-.05, Math.min(.05, -Math.round(x.scarto / 2) / 100));
+    }
+    const ord = [...r].sort((a, b) => b.scarto - a.scarto);
+    return { forti: ord.filter(x => x.scarto >= 4).slice(0, 5), deboli: ord.filter(x => x.scarto <= -4).slice(-5).reverse(), quante: r.length };
+  }
+  const PLURALE_RAR = { comune: "comuni", rara: "rare", epica: "epiche", leggendaria: "leggendarie", jolly: "jolly" };
+  const testoBil = x => `${x.c.nome} (${RARITA[x.c.rarita].nome.toLowerCase()}): vince il ${Math.round(x.p)}% su ${x.u} battaglie, la media delle ${PLURALE_RAR[x.c.rarita] || x.c.rarita} è ${Math.round(x.m)}% → BILANCIO ${x.c.id} ${x.ora.toFixed(3)} → ${(x.ora + x.delta).toFixed(3)}`;
+  function htmlBilancio() {
+    const { forti, deboli, quante } = bilancio();
+    const riga = x => `<li><b>${esc(x.c.nome)}</b> <small>${esc(RARITA[x.c.rarita].nome)}</small> · vince <b>${Math.round(x.p)}%</b> su ${x.u} (media ${Math.round(x.m)}%) → <span class="${x.delta < 0 ? "st-forte" : "st-debole"}">${x.delta > 0 ? "+" : ""}${x.delta.toFixed(2)}</span></li>`;
+    const ultimo = S.ultimoBilanciamento ? `ultimo controllo il ${new Date(S.ultimoBilanciamento).toLocaleDateString("it-IT")}` : "mai controllato";
+    return `<div class="st-bilancio"><b>Bilanciamento del mese</b> <small class="nota">(${quante} carte con almeno ${MIN_BATT} battaglie, confrontate con la media della loro rarità · ${ultimo})</small>
+      ${!forti.length && !deboli.length ? `<p class="nota">Nessuna carta si allontana di più di 4 punti dalla media della sua rarità: va tutto bene.</p>` : `
+      <div class="st-bil-colonne"><div><p class="st-forte"><b>Troppo forti</b> (da indebolire)</p><ol>${forti.map(riga).join("") || "<li class='nota'>nessuna</li>"}</ol></div>
+      <div><p class="st-debole"><b>Troppo deboli</b> (da rinforzare)</p><ol>${deboli.map(riga).join("") || "<li class='nota'>nessuna</li>"}</ol></div></div>
+      <p class="nota">Il numero a destra è la correzione consigliata alla forza della carta (0,01 ≈ 1 punto di vittorie). Premi il tasto e incolla il testo a Claude: le applica lui.</p>`}
+      <div class="azioni"><button class="btn piccolo primario" data-admin="stat-copia-bil">Copia per Claude</button></div></div>`;
+  }
+  async function copiaBilancio(el) {
+    const { forti, deboli } = bilancio();
+    const t = `Bilanciamento Noiverso dai dati veri (${new Date().toLocaleDateString("it-IT")}):\n` + (forti.length || deboli.length
+      ? `TROPPO FORTI:\n${forti.map(testoBil).join("\n") || "nessuna"}\nTROPPO DEBOLI:\n${deboli.map(testoBil).join("\n") || "nessuna"}` : "nessuna carta fuori media di più di 4 punti.");
+    try { await navigator.clipboard.writeText(t); mostraAvviso("Copiato! Incollalo nella chat con Claude."); }
+    catch (e) { apriModale(`<h2>Bilanciamento</h2><p class="nota">Copia questo testo e incollalo a Claude:</p><textarea class="st-copia" readonly rows="12">${esc(t)}</textarea>`); }
+    S.ultimoBilanciamento = Date.now(); salva(); ridisegna();
+  }
+  const daControllare = () => S.admin && (!S.ultimoBilanciamento || Date.now() - S.ultimoBilanciamento > 30 * 864e5);
   function htmlAdmin() {
     const th = (k, t) => `<th><button class="st-ordina ${ordine === k ? "attivo" : ""}" data-admin="stat-ordina-${k}">${t}${ordine === k ? " ▾" : ""}</button></th>`;
     return `<h3>Statistiche delle carte</h3>
@@ -596,12 +634,14 @@ const StatCarte = (() => {
       <div class="azioni"><button class="btn primario" data-admin="stat-carica" ${carico ? "disabled" : ""}>${dati ? "Aggiorna" : "Carica le statistiche"}</button>${dati ? `<button class="btn" data-admin="stat-azzera">Azzera le battaglie</button>` : ""}</div>
       ${errore ? `<p class="errore">${esc(errore)}</p>` : carico ? `<p class="nota">Carico…</p>` : !dati ? "" : `
       <p class="nota">${dati.giocatori} giocatori (admin esclusi).</p>
+      ${htmlBilancio()}
       ${htmlRiassunto()}
       <div class="st-scorri"><table class="st-tabella"><thead><tr><th>Carta</th>${th("possesso", "Ce l'hanno")}${th("squadra", "In squadra")}${th("livello", "Lv medio")}${th("usate", "Battaglie PC")}${th("vince", "Vince")}${th("vivo", "Dal vivo")}<th>Vince</th></tr></thead>
       <tbody>${righe()}</tbody></table></div>`}`;
   }
   async function azione(cosa, el) {
     if (cosa === "carica") return carica();
+    if (cosa === "copia-bil") return copiaBilancio(el);
     if (cosa.startsWith("ordina-")) { ordine = cosa.slice(7); ridisegna(); return; }
     if (cosa === "azzera") {
       if (!el.dataset.sicuro) { el.dataset.sicuro = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
@@ -609,7 +649,7 @@ const StatCarte = (() => {
       return carica();
     }
   }
-  return { registra, htmlAdmin, azione };
+  return { registra, htmlAdmin, azione, daControllare };
 })();
 
 // ---------------- Ascesa ----------------
@@ -685,9 +725,30 @@ mostraAvviso.prossimo = () => {
   clearTimeout(mostraAvviso._t);
   const t = c.shift(); mostraAvviso.ora = t || null;
   if (!t) { el.hidden = true; return; }
+  el.classList.remove("via"); el.style.removeProperty("--dx"); el.style.removeProperty("--dy"); el.style.opacity = "";
   el.textContent = t; mostraAvviso.conta(); el.hidden = false; FX.riavvia(el, "entra");
-  mostraAvviso._t = setTimeout(mostraAvviso.prossimo, c.length ? 3500 : 5000);
+  // tempo per leggere: più lungo per i testi lunghi, più corto se ce ne sono altri in coda
+  const leggi = Math.min(6500, 2600 + t.length * 35);
+  mostraAvviso._t = setTimeout(mostraAvviso.prossimo, c.length ? Math.min(leggi, 3500) : leggi);
 };
+// scorrendo l'avviso (in su o di lato) lo mandi via; un tocco lo chiude come prima
+(() => {
+  let x0 = null, y0 = 0, spostato = false;
+  const el = () => $("#avviso");
+  addEventListener("pointerdown", e => { if (e.target.id !== "avviso") return; x0 = e.clientX; y0 = e.clientY; spostato = false; clearTimeout(mostraAvviso._t); });
+  addEventListener("pointermove", e => {
+    if (x0 === null) return; const dx = e.clientX - x0, dy = Math.min(0, e.clientY - y0);
+    if (Math.abs(dx) > 6 || dy < -6) spostato = true;
+    el().style.setProperty("--dx", dx + "px"); el().style.setProperty("--dy", dy + "px"); el().style.opacity = String(Math.max(.2, 1 - (Math.abs(dx) + -dy) / 220));
+  });
+  const fine = e => {
+    if (x0 === null) return; const dx = e.clientX - x0, dy = e.clientY - y0; x0 = null; const a = el();
+    setTimeout(() => { mostraAvviso._salta = false; }, 350);   // il "click" che segue uno scorrimento non deve chiudere anche il prossimo avviso
+    if (Math.abs(dx) > 70 || dy < -35) { a.classList.add("via"); a.style.setProperty("--dx", Math.sign(dx) * (Math.abs(dx) > 70 ? 400 : 0) + "px"); a.style.setProperty("--dy", (dy < -35 ? -120 : 0) + "px"); mostraAvviso._salta = true; setTimeout(mostraAvviso.prossimo, 220); }
+    else { a.style.removeProperty("--dx"); a.style.removeProperty("--dy"); a.style.opacity = ""; if (spostato) mostraAvviso._salta = true; mostraAvviso._t = setTimeout(mostraAvviso.prossimo, 2500); }
+  };
+  addEventListener("pointerup", fine); addEventListener("pointercancel", fine);
+})();
 const Riepilogo = {
   attivo: () => !!(typeof B !== "undefined" && B && B.vincitore >= 0 && livelloAttuale && !livelloAttuale.spettatore),
   aggiungi(testo) {
@@ -774,12 +835,32 @@ function disegna() {
 }
 
 // ---------- STRADA (home) ----------
+// nov 2026: «Cosa fare adesso»: le cose pronte, al massimo 4, ognuna porta dritta al posto giusto
+function coseDaFare() {
+  const v = [...StatoServer.voci()], pl = (n, uno, tanti) => n === 1 ? uno : tanti.replace("#", n);
+  if (S.admin) setTimeout(() => StatoServer.controlla(), 0);
+  const b = bustineTotali(); if (b) v.push({ ico: "🎴", t: pl(b, "1 bustina da aprire", "# bustine da aprire"), az: "vai-bustine" });
+  try { if (Avvento.visibile() && Avvento.oggiPronta()) v.push({ ico: "🎄", t: "La porta di oggi dell'avvento", az: "adesso-avvento" }); } catch (e) {}
+  const pr = possedute().filter(c => infoCarta(c.id).puoi).length; if (pr) v.push({ ico: "▲", t: pl(pr, "1 carta può salire di livello", "# carte possono salire di livello"), az: "adesso-potenzia" });
+  const tr = Trofei.pronti(); if (tr) v.push({ ico: "🏆", t: pl(tr, "1 trofeo da riscuotere", "# trofei da riscuotere"), az: "vai-trofei" });
+  const mi = Missioni.pronte(); if (mi) v.push({ ico: "✔", t: pl(mi, "1 missione da riscuotere", "# missioni da riscuotere"), az: "vai-missioni" });
+  const r = daRiscuotere(); if (r) v.push({ ico: "🎁", t: pl(r, "1 premio del pass", "# premi del pass"), az: "vai-pass" });
+  const u = Jolly.n(); if (u && possedute().some(c => infoCarta(c.id).liv < LIVELLO_MAX)) v.push({ ico: "✪", t: pl(u, "1 potenziatore universale da usare", "# potenziatori universali da usare"), az: "jolly-apri" });
+  return v;
+}
+function htmlAdesso() {
+  const v = coseDaFare(); if (!v.length) return "";
+  const vis = v.slice(0, 4), altri = v.length - vis.length;
+  return `<section class="adesso" aria-label="Cosa fare adesso"><h2>Cosa fare adesso${altri ? ` <small>+${altri}</small>` : ""}</h2>
+    <div class="adesso-lista">${vis.map(x => `<button type="button" class="adesso-voce" data-fx="spinta" data-azione="${x.az}"><span class="adesso-ico">${x.ico}</span><span>${esc(x.t)}</span><span class="adesso-freccia">›</span></button>`).join("")}</div></section>`;
+}
 function vistaStrada() {
   const tot = CARTE.length, mie = possedute().length;
   const b = bustineTotali(), r = daRiscuotere();
   const giocate = S.stats.vittorie + S.stats.sconfitte;
   const anteprima = ["reina", "gokiele", "zeutiz", "ironlus", "brolymone"].map(id => PER_ID[id]).filter(Boolean);
-  return `${Avvento.htmlStrada()}
+  return `${htmlAdesso()}
+  ${Avvento.htmlStrada()}
   ${Online.htmlStrada()}
   ${Torneo.htmlStrada()}
   ${Settimana.htmlStrada()}
@@ -1174,12 +1255,14 @@ function mostraApertura(esiti, tipo, livelloSu, graffito) {
         </div>
       </div>`;
     try {
+      // le animazioni possono finire dopo che hai già premuto Skippa (schermata chiusa): ogni scrittura controlla che l'elemento ci sia ancora
+      const scriviSugg = t => { const el = $("#sugg"); if (el) el.textContent = t; }, mostraEl = q => { const el = $(q); if (el) el.hidden = false; };
       apertura = new Scena3D.Apertura($("#tela-bustina"), esiti, tipo, {
-        onApri: () => { $("#sugg").textContent = ""; },
-        onPronte: () => { $("#sugg").textContent = graffito ? "Tocca il mazzetto per scoprire le carte (la più rara è l'ultima): c'è anche una bomboletta!" : "Tocca il mazzetto per scoprire le carte: la più rara è sempre l'ultima"; $('[data-azione="gira-tutte"]').hidden = false; $('[data-azione="riepilogo-bustina"]').hidden = false; const bb = $(".bomboletta-bustina"); if (bb) bb.hidden = false; },
+        onApri: () => { scriviSugg(""); },
+        onPronte: () => { scriviSugg(graffito ? "Tocca il mazzetto per scoprire le carte (la più rara è l'ultima): c'è anche una bomboletta!" : "Tocca il mazzetto per scoprire le carte: la più rara è sempre l'ultima"); mostraEl('[data-azione="gira-tutte"]'); mostraEl('[data-azione="riepilogo-bustina"]'); const bb = $(".bomboletta-bustina"); if (bb) bb.hidden = false; },
         onGira: (i, tutte) => {
-          $("#sugg").textContent = tutte ? `${livelloSu ? `Pass: livello ${livelloSu} raggiunto! · ` : ""}Tocca una carta per vedere le statistiche` : "Tocca per la prossima · le carte scoperte si aprono con un tocco";
-          if (tutte) { $('[data-azione="gira-tutte"]').hidden = true; const sk = $('[data-azione="riepilogo-bustina"]'); if (sk) sk.textContent = "Riepilogo"; }
+          scriviSugg(tutte ? `${livelloSu ? `Pass: livello ${livelloSu} raggiunto! · ` : ""}Tocca una carta per vedere le statistiche` : "Tocca per la prossima · le carte scoperte si aprono con un tocco");
+          if (tutte) { const gt = $('[data-azione="gira-tutte"]'); if (gt) gt.hidden = true; const sk = $('[data-azione="riepilogo-bustina"]'); if (sk) sk.textContent = "Riepilogo"; }
           SerieCompleta.scoperta(i);
         },
         onDettaglio: i => apriSchedaCarta(esiti[i]),
@@ -1218,7 +1301,7 @@ function apriSchedaCarta(e) {
     ${htmlBonusRarita(c)}
     ${htmlTipo(c)}
     <p class="passiva"><b>${esc(r.cosa)}.</b> ${esc(r.passiva)}</p>
-    <ul class="mosse-lista">${c.mosse.map(mo => `<li><span class="costo">${mo.costo}◆</span><b>${esc(mo.nome)}</b><small>${esc(descrMossa(mo))}</small></li>`).join("")}</ul>
+    <ul class="mosse-lista">${c.mosse.map(mo => `<li><span class="costo">${mo.costo}⚡</span><b>${esc(mo.nome)}</b><small>${esc(descrMossa(mo))}</small></li>`).join("")}</ul>
     <p class="nota centro">Tocca ✕ o fuori dalla scheda per tornare alle carte</p>
   </div>`;
   el.addEventListener("click", ev => { if (ev.target === el || ev.target.closest(".scheda-x")) { ev.stopPropagation(); chiudiSchedaCarta(); } });
@@ -1724,7 +1807,7 @@ function confrontaCarte(a, b) {
     <div class="confronto-testa">${colonna(ca, sa)}<span class="confronto-vs">VS</span>${colonna(cb, sb)}</div>
     <table class="confronto-tab"><tbody>${righe.map(([n, k]) => `<tr><td class="${cella(sa[k], sb[k])}">${sa[k]}</td><th>${n}</th><td class="${cella(sb[k], sa[k])}">${sb[k]}</td></tr>`).join("")}
       <tr><td class="piccolo">${esc(RUOLI[ca.ruolo].passiva)}</td><th>Abilità</th><td class="piccolo">${esc(RUOLI[cb.ruolo].passiva)}</td></tr>
-      <tr><td class="piccolo">${ca.mosse.map(m => `${m.costo}◆ ${esc(m.nome)}`).join("<br>")}</td><th>Mosse</th><td class="piccolo">${cb.mosse.map(m => `${m.costo}◆ ${esc(m.nome)}`).join("<br>")}</td></tr>
+      <tr><td class="piccolo">${ca.mosse.map(m => `${m.costo}⚡ ${esc(m.nome)}`).join("<br>")}</td><th>Mosse</th><td class="piccolo">${cb.mosse.map(m => `${m.costo}⚡ ${esc(m.nome)}`).join("<br>")}</td></tr>
     </tbody></table>
     <p class="nota centro">${testoVs}</p>
     <div class="azioni centro"><button class="btn primario" data-azione="chiudi">Ok</button></div></div>`);
@@ -2259,12 +2342,50 @@ async function vaiAccesso() {
 }
 
 // ---------- Pannello admin ----------
+// ---------- Da sistemare (solo admin): database da aggiornare e carte senza immagine ----------
+// La versione del database è un'impronta di supabase/schema.sql scritta da costruisci.py sia qui sia nel server:
+// se il server ne restituisce un'altra (o non ha ancora la funzione), schema.sql va eseguito di nuovo.
+const VERSIONE_SCHEMA = "c7fe95d829";
+const StatoServer = (() => {
+  let schema = null, mancano = null, quando = 0, inCorso = false;
+  async function controlla(forza) {
+    if (!S.admin || !window.NOIVERSO_SUPABASE || inCorso || (!forza && Date.now() - quando < 5 * 60000)) return;
+    inCorso = true; const prima = JSON.stringify([schema, mancano && mancano.length]);
+    try { const v = await rpcSociale("versione_schema"); schema = v === VERSIONE_SCHEMA ? "ok" : "vecchio"; }
+    catch (e) { schema = /schema cache|could not find|versione_schema|does not exist/i.test(e.message || "") ? "vecchio" : "errore"; }
+    try { const ci = new Set(await ImmaginiCarte.elenco()); mancano = CARTE.filter(c => !ci.has(ImmaginiCarte.file(c.id))); } catch (e) { mancano = null; }
+    quando = Date.now(); inCorso = false;
+    if (JSON.stringify([schema, mancano && mancano.length]) !== prima && ["strada", "admin"].includes(vista) && !B) disegna();
+  }
+  function voci() {
+    if (!S.admin) return [];
+    const v = [];
+    if (schema === "vecchio") v.push({ ico: "🛠", t: "Il database va aggiornato: esegui schema.sql", az: "vai-admin" });
+    if (mancano && mancano.length) v.push({ ico: "🖼", t: mancano.length === 1 ? "1 carta senza immagine" : `${mancano.length} carte senza immagine`, az: "vai-admin" });
+    if (StatCarte.daControllare()) v.push({ ico: "⚖", t: "Controlla il bilanciamento del mese", az: "vai-bilancio" });
+    return v;
+  }
+  function html() {
+    if (!window.NOIVERSO_SUPABASE) return "";
+    const db = schema === null ? `<p class="nota">Controllo il database…</p>`
+      : schema === "ok" ? `<p class="ds-ok">✔ Database aggiornato.</p>`
+      : schema === "vecchio" ? `<div class="ds-ko"><b>🛠 Il database è indietro rispetto al gioco.</b> Apri Supabase → SQL Editor → New query, incolla <b>tutto</b> il file <code>supabase/schema.sql</code> (lo trovi su GitHub, o chiedilo a Claude) e premi Run. Si può eseguire tutte le volte che vuoi: non cancella niente. Senza, alcune cose nuove (scambi, sfide tra amici, carte appena aggiunte) possono non funzionare.</div>`
+      : `<p class="nota">Non riesco a controllare il database (sei online?).</p>`;
+    const img = mancano === null ? "" : mancano.length
+      ? `<div class="ds-ko"><b>🖼 ${mancano.length === 1 ? "1 carta senza immagine" : `${mancano.length} carte senza immagine`}:</b> ${mancano.map(c => `${esc(c.nome)} <small>(${esc(SERIE[c.serie].nome)})</small>`).join(", ")}. Caricale qui sotto, in «Immagini delle carte».</div>`
+      : `<p class="ds-ok">✔ Tutte le ${CARTE.length} carte hanno l'immagine.</p>`;
+    return `<div class="admin-box largo da-sistemare"><h3>Da sistemare</h3>${db}${img}<div class="azioni"><button class="btn piccolo" data-azione="ricontrolla-server">Controlla di nuovo</button></div></div>`;
+  }
+  return { controlla, voci, html, get schema() { return schema; } };
+})();
 function vistaAdmin() {
   if (!S.admin) return vuoto("Questa pagina è solo per l'admin.", "Torna in strada", "vai-strada");
+  setTimeout(() => StatoServer.controlla(), 0);
   return `
   <section class="admin">
     <div class="titolo-riga"><h2>Pannello admin</h2><p class="nota">Solo tu vedi questa pagina. Qui le monete sono infinite e niente finisce in classifica.</p></div>
     <div class="admin-griglia">
+      ${StatoServer.html()}
       <div class="admin-box"><h3>Carte · ${possedute().length}/${CARTE.length}</h3>
         <div class="azioni"><button class="btn oro" data-fx="coriandoli" data-admin="carte-lode">Tutte al 30 e lode</button><button class="btn" data-fx="stelle" data-admin="carte-max">Tutte al livello 30</button><button class="btn" data-fx="salto" data-admin="carte-15">Tutte al livello 15</button><button class="btn" data-fx="salto" data-admin="carte-1">Tutte al livello 1</button><button class="btn" data-fx="monete" data-admin="pot-100">+100 potenziatori a tutte</button><button class="btn" data-fx="stelle" data-admin="olo-5">5 olografiche a caso</button><button class="btn oro" data-fx="stelle" data-admin="tutte-speciali">Tutte Ultra e olografiche</button><button class="btn" data-fx="scuoti" data-admin="togli-speciali">Togli Ultra e olografiche</button><button class="btn" data-fx="scuoti" data-admin="carte-zero">Svuota collezione</button></div></div>
       <div class="admin-box"><h3>Bustine</h3>
@@ -2278,11 +2399,11 @@ function vistaAdmin() {
         <p class="nota">Scegli una carta e una mossa: parte una battaglia di prova con energia piena e la mossa viene lanciata subito.</p>
         <div class="prova-riga">
           <select id="prova-carta">${CARTE.map(c => `<option value="${c.id}">${esc(c.nome)}</option>`).join("")}</select>
-          <select id="prova-mossa">${PER_ID[CARTE[0].id].mosse.map((m, i) => `<option value="${i}">${esc(m.nome)} (${m.costo}◆)</option>`).join("")}</select>
+          <select id="prova-mossa">${PER_ID[CARTE[0].id].mosse.map((m, i) => `<option value="${i}">${esc(m.nome)} (${m.costo}⚡)</option>`).join("")}</select>
           <button class="btn primario" data-fx="spinta" data-admin="prova">Guarda l'animazione</button>
         </div></div>
       <div class="admin-box"><h3>In battaglia</h3>
-        <p class="nota">Nelle sfide da admin trovi in alto i tasti <b>◆ Piena</b> (energia al massimo) e <b>Vinci</b> (vittoria immediata).</p>
+        <p class="nota">Nelle sfide da admin trovi in alto i tasti <b>⚡ Piena</b> (energia al massimo) e <b>Vinci</b> (vittoria immediata).</p>
         <p class="nota">Versione del gioco: <b>${VERSIONE}</b> · ${CARTE.length} carte. Il gioco si aggiorna da solo quando pubblico una versione nuova. <button class="btn piccolo" data-fx="salto" data-azione="controlla-versione">Controlla adesso</button></p></div>
       <div class="admin-box largo" id="admin-ultra">${htmlAdminUltra()}</div>
       <div class="admin-box largo" id="editor-carte">${htmlEditorCarte()}</div>
@@ -2631,7 +2752,7 @@ function htmlEditorCarte() {
           <label><span>Tipo</span><select data-ed="${c.id}" data-campo="stile">${Object.keys(STILI).map(id => `<option value="${id}" ${b.stile === id ? "selected" : ""}>${STILI[id].icona} ${esc(STILI[id].nome)}</option>`).join("")}</select></label>
           <label><span>Ruolo</span><select data-ed="${c.id}" data-campo="ruolo" title="${esc(RUOLI[b.ruolo || c.ruolo].passiva)}">${Object.keys(RUOLI).map(id => `<option value="${id}" ${(b.ruolo || c.ruolo) === id ? "selected" : ""}>${esc(RUOLI[id].nome)}</option>`).join("")}</select></label>
           <label class="ed-ultra" title="Ha anche una versione Ultra da trovare"><input type="checkbox" data-ed="${c.id}" data-campo="ultra" ${b.ultra ? "checked" : ""}><span>Ultra</span></label>
-          <div class="ed-mosse">${c.mosse.map((mo, i) => `<label><span>Mossa ${i + 1} · ${mo.costo ? "◆".repeat(mo.costo) : "gratis"}</span><input maxlength="40" data-ed="${c.id}" data-campo="m${i}" value="${esc(b["m" + i])}" placeholder="${esc(CARTE_ORIGINALI[c.id].mosse[i])}"></label>`).join("")}</div>
+          <div class="ed-mosse">${c.mosse.map((mo, i) => `<label><span>Mossa ${i + 1} · ${mo.costo ? "⚡".repeat(mo.costo) : "gratis"}</span><input maxlength="40" data-ed="${c.id}" data-campo="m${i}" value="${esc(b["m" + i])}" placeholder="${esc(CARTE_ORIGINALI[c.id].mosse[i])}"></label>`).join("")}</div>
         </div>`; }).join("") || `<p class="nota">Nessuna carta corrisponde.</p>`}
     </div>`;
 }
@@ -2883,7 +3004,7 @@ function apriTappa(k, i) {
       </div>
       <p class="serie-nome">Capitolo ${k + 1} · ${t.boss ? "Boss" : `Tappa ${i + 1}`}</p>
       <h2>${esc(t.titolo)}</h2>
-      <p class="nota">Avversari al livello ${t.liv[0] === t.liv[1] ? t.liv[0] : `${t.liv[0]}–${t.liv[1]}`} · Difficoltà ${"◆".repeat(Math.max(1, Math.round(t.abilita * 5)))}${n === 3 ? " · Modalità rapida: primi 3 avversari" : ""}</p>
+      <p class="nota">Avversari al livello ${t.liv[0] === t.liv[1] ? t.liv[0] : `${t.liv[0]}–${t.liv[1]}`} · Difficoltà ${"★".repeat(Math.max(1, Math.round(t.abilita * 5)))}${n === 3 ? " · Modalità rapida: primi 3 avversari" : ""}</p>
       <div class="tappa-nemici">${t.nemici.slice(0, n).map(id => htmlCarta(PER_ID[id], { piccola: true, liv: t.liv[1], lode: false })).join("")}</div>
       <p class="tappa-premio">${premio}</p>
       <p class="nota piccola">★ vinci · ★★ vinci con almeno ${Math.ceil(n * .6)} personaggi in piedi · ★★★ vinci senza KO${st ? ` · Il tuo record: ${htmlStelle(st)}` : ""}</p>
@@ -3080,7 +3201,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
       <div class="arena-testa">
         <button class="btn piccolo" data-fx="scuoti" data-azione="abbandona">${L.spettatore ? "Esci" : "Abbandona"}</button>
         <div class="neon-turno" id="neon-turno" aria-live="polite"><b id="neon-chi">Tocca a te</b><small id="turno"></small></div>
-        ${S.admin ? `<span class="admin-barra"><button class="btn piccolo oro" data-fx="carica" data-azione="admin-energia">◆ Piena</button><button class="btn piccolo oro" data-fx="coriandoli" data-azione="admin-vinci">Vinci</button></span>` : `<span class="arena-vs">contro <b>${esc(livelloAttuale.nome)}</b></span>`}
+        ${S.admin ? `<span class="admin-barra"><button class="btn piccolo oro" data-fx="carica" data-azione="admin-energia">⚡ Piena</button><button class="btn piccolo oro" data-fx="coriandoli" data-azione="admin-vinci">Vinci</button></span>` : `<span class="arena-vs">contro <b>${esc(livelloAttuale.nome)}</b></span>`}
       </div>
       <div class="hud hud-1" id="hud-1"></div>
       <div class="lato-mio">
@@ -3191,7 +3312,7 @@ function htmlHud(l) {
     <div class="hud-info">
       <div class="lato-nome"><span class="hud-chi">${livelloAttuale && livelloAttuale.spettatore ? esc(String(L.nome).slice(0, 14)) : l ? "Nemico" : "Tu"}</span><b>${esc(a.c.nome)}</b>${a.stelle ? `<span class="hud-stelle" title="Maestria: ${a.stelle} stelle su 5">${"★".repeat(a.stelle)}</span>` : ""}<span class="stile s-${a.c.stile}">${a.c.stile}</span><small>${a.lode ? "30 e lode" : `Lv ${a.liv}`} · ${esc(RUOLI[a.c.ruolo].nome)}</small>
         <span class="hud-squadra" title="Personaggi ancora in piedi">${L.squadra.map((x, i) => `<i class="${x.pv <= 0 ? "ko" : ""} ${i === L.attivo ? "attiva" : ""}"></i>`).join("")}<small>${vivi}/${L.squadra.length}</small></span>
-        ${l ? `<span class="hud-energia" title="Energia del nemico">◆ ${L.energia}</span>` : ""}${Sinergie.htmlBattaglia(L)}</div>
+        ${l ? `<span class="hud-energia" title="Energia del nemico">⚡ ${L.energia}</span>` : ""}${Sinergie.htmlBattaglia(L)}</div>
       <div class="pv"><div class="pv-barra ${pct < 25 ? "basso" : pct < 55 ? "medio" : ""}"><i style="width:${pct}%"></i></div><span class="pv-num">${a.pv}/${a.pvMax}</span></div>
       ${htmlStatBattaglia(a)}
       ${stato.length ? `<div class="hud-riga">${stato.join("")}</div>` : ""}
@@ -3281,10 +3402,10 @@ function htmlAzioni() {
   <div class="mosse">
     ${a.c.mosse.map((mo, i) => {
       const puo = B.puoUsare(0, i), s = stimaMossa(i), manca = mo.costo - L.energia;
-      const tag = !puo ? `<span class="mossa-tag manca">Mancano ${manca} ◆</span>` : consOn && s.ko ? `<span class="mossa-tag ko">KO!</span>` : cons && cons.mossa === i ? `<span class="mossa-tag cons">Consigliata</span>` : "";
+      const tag = !puo ? `<span class="mossa-tag manca">Mancano ${manca} ⚡</span>` : consOn && s.ko ? `<span class="mossa-tag ko">KO!</span>` : cons && cons.mossa === i ? `<span class="mossa-tag cons">Consigliata</span>` : "";
       const stima = mo.pot ? (s.vuoto ? "Andrà a vuoto" : `≈ ${s.danno} danni${!aiuti ? "" : s.eff > 1 ? ' <i class="tipo-bollino su" title="Efficace: il tuo stile batte il suo">▲</i>' : s.eff < 1 ? ' <i class="tipo-bollino giu" title="Poco efficace: il suo stile batte il tuo">▼</i>' : ""}`) : esc(descrMossa(mo));
       return `<button class="mossa${mo.costo >= 5 ? " finale" : ""}${cons && cons.mossa === i ? " consigliata" : ""}" data-fx="scintille" data-stile="${a.c.stile}" data-mossa="${i}" data-costo="${mo.costo}" ${puo && !animazione ? "" : "disabled"}>
-        <span class="mossa-costo">${mo.costo ? "◆".repeat(mo.costo) : "Gratis"}</span>
+        <span class="mossa-costo">${mo.costo ? "⚡".repeat(mo.costo) : "Gratis"}</span>
         <b>${esc(mo.nome)}</b>
         <small>${stima}</small>
         ${mo.pot ? etichetteMossa(mo) : ""}
@@ -3292,7 +3413,7 @@ function htmlAzioni() {
       </button>`;
     }).join("")}
     <button class="mossa secondaria${cons && cons.carica ? " consigliata" : ""}" data-fx="carica" data-azione="carica" data-costo="-2" ${animazione ? "disabled" : ""}>
-      <span class="mossa-costo carica">+◆◆</span><b>Carica</b><small>+2 energia subito e −30% danni subiti</small>
+      <span class="mossa-costo carica">+⚡⚡</span><b>Carica</b><small>+2 energia subito e −30% danni subiti</small>
       ${cons && cons.carica ? `<span class="mossa-tag cons">Consigliata</span>` : ""}
     </button>
   </div>
@@ -3584,13 +3705,13 @@ function htmlEspCarte() {
   const lista = livelloAttuale && livelloAttuale.espCarte;
   if (!lista || !lista.length) return Riepilogo.html();
   const totPot = lista.reduce((n, r) => n + (r.pot || 0), 0), totJ = lista.reduce((n, r) => n + (r.jolly || 0), 0), carteJ = lista.filter(r => r.jolly).length;
-  return `${totJ ? `<p class="esp-pot-nota jolly-nota">Le carte 30 e lode hanno guadagnato <b>◆ ${totJ} potenziator${totJ > 1 ? "i" : "e"} jolly</b> e <b>${carteJ * JOLLY_MONETE} monete</b>: i jolly li usi da Squadre.</p>` : ""}${totPot ? `<p class="esp-pot-nota">Le carte scese in campo hanno guadagnato <b>potenziatori</b> ▲${lista.some(r => r.prontaNuova) ? " — qualcuna ora si può potenziare!" : ""}</p>` : ""}<div class="esp-carte">${lista.map((r, j) => {
+  return `${totJ ? `<p class="esp-pot-nota jolly-nota">Le carte 30 e lode hanno guadagnato <b>✪ ${totJ} potenziator${totJ > 1 ? "i" : "e"} universal${totJ > 1 ? "i" : "e"}</b> e <b>${carteJ * JOLLY_MONETE} monete</b>: li usi su qualsiasi carta da Squadre.</p>` : ""}${totPot ? `<p class="esp-pot-nota">Le carte scese in campo hanno guadagnato <b>potenziatori</b> ▲${lista.some(r => r.prontaNuova) ? " — qualcuna ora si può potenziare!" : ""}</p>` : ""}<div class="esp-carte">${lista.map((r, j) => {
     const ora = infoCarta(r.id), pct = ora.lode ? 100 : Math.round(ora.dentro / ora.serve * 100);
     return `<div class="esp-carta ${ora.puoi ? "su" : ""} ${r.lodeNuova ? "lode" : ""}" style="--i:${j}">
     <img src="${imgCarta(r.id)}" alt="${esc(PER_ID[r.id].nome)}">
     <span class="esp-liv">${ora.lode ? "30L" : "Lv " + ora.liv}</span>
     <span class="esp-barra ${ora.liv < LIVELLO_MAX ? "pot" : ""}"><i style="--p:${pct}%"></i></span>
-    ${r.pot ? `<span class="esp-pot">+${r.pot} ▲</span>` : ""}${r.jolly ? `<span class="esp-pot esp-jolly">+${r.jolly} ◆</span>` : ""}
+    ${r.pot ? `<span class="esp-pot">+${r.pot} ▲</span>` : ""}${r.jolly ? `<span class="esp-pot esp-jolly">+${r.jolly} ✪</span>` : ""}
     <small>${r.lodeNuova ? "LODE!" : r.xp ? `+${r.xp} lode` : ora.lode ? "Lode" : ora.puoi ? "Potenzia!" : `${ora.pot}/${ora.servePot}`}</small>
   </div>`; }).join("")}</div>${Riepilogo.html()}`;
 }
@@ -3657,7 +3778,7 @@ document.addEventListener("change", e => { if (e.target.dataset && e.target.data
 document.addEventListener("click", e => {
   if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
-  if (e.target.id === "avviso") { mostraAvviso.prossimo(); return; }
+  if (e.target.id === "avviso") { if (mostraAvviso._salta) { mostraAvviso._salta = false; return; } mostraAvviso.prossimo(); return; }
   const t = e.target.closest("[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
@@ -3796,6 +3917,11 @@ document.addEventListener("click", e => {
     case "consiglio-calcola": Consiglio.calcola(); break;
     case "altre-squadra": altreCarteSquadra(); break;
     case "jolly-apri": Jolly.apri(); break;
+    case "adesso-potenzia": filtri.squadra.pot = true; vai("squadra"); break;
+    case "adesso-avvento": Avvento.apri(); break;
+    case "vai-admin": vai("admin"); break;
+    case "vai-bilancio": vai("admin"); setTimeout(() => { const b = $("#admin-stat"); if (b) { b.scrollIntoView({ block: "start" }); const c = b.querySelector('[data-admin="stat-carica"]'); if (c && !b.querySelector(".st-bilancio")) c.click(); } }, 300); break;
+    case "ricontrolla-server": StatoServer.controlla(true); break;
     case "consiglio-usa": Consiglio.usa(); break;
     case "ordine-via": Ordine.via(); break;
     case "ordine-indietro": Ordine.indietro(); break;
@@ -3889,7 +4015,7 @@ document.addEventListener("input", e => {
 document.addEventListener("change", e => {
   if (e.target.dataset && e.target.dataset.ed && bozza) { bozza[e.target.dataset.ed][e.target.dataset.campo] = e.target.type === "checkbox" ? e.target.checked : e.target.value; aggiornaEditor(false); return; }
   if (e.target.dataset && e.target.dataset.reazTesto !== undefined) { Reazioni.testo(+e.target.dataset.reazTesto, e.target.value); return; }
-  if (e.target.id === "prova-carta") { const c = PER_ID[e.target.value]; $("#prova-mossa").innerHTML = c.mosse.map((m, i) => `<option value="${i}">${esc(m.nome)} (${m.costo}◆)</option>`).join(""); }
+  if (e.target.id === "prova-carta") { const c = PER_ID[e.target.value]; $("#prova-mossa").innerHTML = c.mosse.map((m, i) => `<option value="${i}">${esc(m.nome)} (${m.costo}⚡)</option>`).join(""); }
   if (e.target.id === "nome-squadra") {
     const v = e.target.value.trim().slice(0, 22);
     squadraAttiva().nome = v || `Squadra ${S.attiva + 1}`;

@@ -8,6 +8,26 @@ SRC, OUT = os.path.join(QUI, "sorgente"), os.path.join(QUI, "sito")
 CODICE = ["carte", "motore", "effetti", "suoni", "scena3d", "mappe", "storia", "tutorial", "missioni", "sociale", "collezione", "graffiti", "zaino", "online", "reazioni", "eventi", "progressi", "extra", "avvento", "app", "supabase-ponte", "immagini"]
 LIBRERIE = ["three.min", "supabase.min"]
 
+# Il server deve sapere la rarità di ogni carta (per gli scambi): la copia da carte.js dentro schema.sql
+carte_js = open(os.path.join(SRC, "carte.js"), encoding="utf-8").read()
+coppie = re.findall(r'\{ id: "([a-z0-9_-]+)",[^}]*?rarita: "(comune|rara|epica|leggendaria|ultra|jolly)"', carte_js)
+assert len(coppie) >= 60, len(coppie)
+blocco = ("-- INIZIO RARITA (scritto da costruisci.py a partire da sorgente/carte.js: non modificarlo a mano)\n"
+  "create or replace function public.rarita_base(carta text) returns text language sql immutable as $$\n  select case carta\n"
+  + "".join(f"    when '{i}' then '{r}'\n" for i, r in coppie) + "  end;\n$$;\n-- FINE RARITA")
+schema_p = os.path.join(QUI, "supabase", "schema.sql")
+schema = open(schema_p, encoding="utf-8").read()
+nuovo_schema = re.sub(r"-- INIZIO RARITA.*?-- FINE RARITA", lambda m: blocco, schema, flags=re.S)
+# Versione del database (nov 2026): un'impronta di schema.sql. Il gioco la conosce e il server la restituisce con
+# versione_schema(): se sono diverse, il pannello admin avvisa che schema.sql va eseguito di nuovo su Supabase.
+senza = re.sub(r"-- INIZIO VERSIONE.*?-- FINE VERSIONE", "", nuovo_schema, flags=re.S)
+VERSIONE_SCHEMA = hashlib.sha256(senza.encode()).hexdigest()[:10]
+blocco_v = ("-- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)\n"
+  f"create or replace function public.versione_schema() returns text language sql immutable as $$ select '{VERSIONE_SCHEMA}'::text $$;\n"
+  "grant execute on function public.versione_schema() to anon, authenticated;\n-- FINE VERSIONE")
+if "-- INIZIO VERSIONE" in nuovo_schema: nuovo_schema = re.sub(r"-- INIZIO VERSIONE.*?-- FINE VERSIONE", lambda m: blocco_v, nuovo_schema, flags=re.S)
+else: nuovo_schema = nuovo_schema.rstrip() + "\n\n-- ---------------- Versione del database ----------------\n" + blocco_v + "\n"
+if nuovo_schema != schema: open(schema_p, "w", encoding="utf-8").write(nuovo_schema)
 shutil.rmtree(OUT, ignore_errors=True)
 os.makedirs(OUT)
 for cartella in ["icone", "suoni"]:   # le immagini delle carte stanno nello spazio privato di Supabase
@@ -17,7 +37,7 @@ for f in ["config.js", "manifest.webmanifest", "installa.html", "emoji-it.json"]
 html = open(os.path.join(SRC, "index.html"), encoding="utf-8").read()
 nomi = []
 for nome in CODICE + LIBRERIE:
-    dati = open(os.path.join(SRC, nome + ".js"), "rb").read()
+    dati = open(os.path.join(SRC, nome + ".js"), "rb").read().replace(b"__VERSIONE_SCHEMA__", VERSIONE_SCHEMA.encode())
     impronta = hashlib.sha256(dati).hexdigest()[:8]
     nuovo = f"{nome}.{impronta}.js"
     open(os.path.join(OUT, nuovo), "wb").write(dati)
@@ -31,18 +51,7 @@ sw = open(os.path.join(SRC, "sw.js"), encoding="utf-8").read().replace("__VERSIO
 open(os.path.join(OUT, "sw.js"), "w", encoding="utf-8").write(sw)
 open(os.path.join(OUT, ".nojekyll"), "w").close()
 
-# Il server deve sapere la rarità di ogni carta (per gli scambi): la copia da carte.js dentro schema.sql
-carte_js = open(os.path.join(SRC, "carte.js"), encoding="utf-8").read()
-coppie = re.findall(r'\{ id: "([a-z0-9_-]+)",[^}]*?rarita: "(comune|rara|epica|leggendaria|ultra|jolly)"', carte_js)
-assert len(coppie) >= 60, len(coppie)
-blocco = ("-- INIZIO RARITA (scritto da costruisci.py a partire da sorgente/carte.js: non modificarlo a mano)\n"
-  "create or replace function public.rarita_base(carta text) returns text language sql immutable as $$\n  select case carta\n"
-  + "".join(f"    when '{i}' then '{r}'\n" for i, r in coppie) + "  end;\n$$;\n-- FINE RARITA")
-schema_p = os.path.join(QUI, "supabase", "schema.sql")
-schema = open(schema_p, encoding="utf-8").read()
-nuovo_schema = re.sub(r"-- INIZIO RARITA.*?-- FINE RARITA", lambda m: blocco, schema, flags=re.S)
-if nuovo_schema != schema: open(schema_p, "w", encoding="utf-8").write(nuovo_schema)
-print("sito/ pronto · versione", versione)
+print("sito/ pronto · versione", versione, "· database", VERSIONE_SCHEMA)
 
 # Controllo (nov 2026): ogni serie nuova deve avere la data di uscita in USCITA_SERIE (eventi.js),
 # altrimenti entra subito nella rotazione e sposta le prossime settimane in evidenza e i boss.

@@ -275,6 +275,25 @@ h1.neon { font-size: clamp(2.6rem, 8vw, 4.6rem); line-height: .95; margin-bottom
 .suggerimento { margin: 0; font-family: var(--display); font-size: 1.1rem; color: var(--testo); text-shadow: 0 0 12px var(--neon-alone); animation: respira 1.8s ease-in-out infinite; min-height: 1.4em; }
 /* riserva 2D */
 .apertura2d { text-align: center; }
+/* nov 2026: bilanciamento del mese (admin) */
+.st-bilancio { border: 1px solid rgba(242, 193, 78, .4); border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
+.st-bil-colonne { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 8px; }
+.st-bil-colonne ol { margin: 4px 0 0; padding-left: 20px; line-height: 1.5; font-size: .9rem; }
+.st-copia { width: 100%; font: .85rem/1.4 monospace; background: rgba(0, 0, 0, .3); color: var(--testo); border-radius: 8px; padding: 8px; }
+/* nov 2026: pannello admin «Da sistemare» */
+.da-sistemare .ds-ok { color: #7ddc6a; font-weight: 600; margin: 6px 0; }
+.da-sistemare .ds-ko { border: 1px solid rgba(255, 122, 69, .55); background: rgba(255, 122, 69, .08); border-radius: 12px; padding: 10px 12px; margin: 8px 0; line-height: 1.45; }
+.da-sistemare small { color: var(--spento); }
+/* nov 2026: «Cosa fare adesso» in home */
+.adesso { margin: 4px 0 18px; }
+.adesso h2 { font-size: 1rem; letter-spacing: .02em; margin: 0 0 8px; color: var(--spento); text-transform: uppercase; }
+.adesso h2 small { font-size: .75rem; background: var(--oro); color: #1b1206; border-radius: 8px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+.adesso-lista { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.adesso-voce { display: flex; align-items: center; gap: 10px; text-align: left; padding: 10px 12px; border-radius: 14px; border: 1px solid rgba(242, 193, 78, .35); background: linear-gradient(135deg, rgba(242, 193, 78, .1), rgba(255, 46, 70, .06)); color: var(--testo); font: inherit; font-weight: 600; cursor: pointer; }
+.adesso-voce:hover { border-color: var(--oro); }
+.adesso-ico { font-size: 1.25rem; width: 28px; text-align: center; flex: none; }
+.adesso-voce > span:nth-child(2) { flex: 1; }
+.adesso-freccia { color: var(--oro); font-size: 1.3rem; }
 /* nov 2026: riepilogo a fine bustina */
 .riepilogo-bustina h2 { text-align: center; margin-bottom: 4px; }
 .rb-griglia { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; margin: 14px 0 16px; }
@@ -1057,7 +1076,16 @@ body.in-accesso { overflow: hidden; }
 .conferma { text-align: center; display: grid; gap: 10px; }
 .conferma p { color: var(--spento); margin: 0 0 8px; }
 
-#avviso { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--muro); border: 1px solid var(--oro); color: var(--testo); padding: 12px 18px; border-radius: 12px; max-width: min(520px, calc(100% - 32px)); z-index: 30; box-shadow: 0 10px 30px rgba(0, 0, 0, .6); }
+/* nov 2026: avvisi piccoli in alto, uno alla volta (non coprono più i tasti in basso); si chiudono con un tocco o scorrendo */
+#avviso { --dx: 0px; --dy: 0px; position: fixed; left: 50%; top: max(10px, env(safe-area-inset-top)); bottom: auto; transform: translate(calc(-50% + var(--dx)), var(--dy)); background: rgba(28, 18, 22, .94); backdrop-filter: blur(8px); border: 1px solid rgba(242, 193, 78, .55); color: var(--testo);
+  padding: 8px 14px; border-radius: 14px; width: max-content; max-width: min(440px, calc(100% - 24px)); font-size: .86rem; line-height: 1.3; z-index: 45; box-shadow: 0 8px 24px rgba(0, 0, 0, .55); touch-action: none; user-select: none; }
+#avviso.via { transition: transform .22s ease, opacity .22s ease; opacity: 0; }
+/* in battaglia sul telefono l'avviso scende sotto la scheda del nemico, così non copre nome e statistiche */
+@media (max-width: 899px) and (min-height: 520px) { body.in-battaglia #avviso { top: calc(max(8px, env(safe-area-inset-top)) + 150px); } }
+/* telefono in orizzontale: in battaglia l'avviso va in alto a destra, sopra la scena 3D, lontano dalle schede e dai tasti */
+@media (max-height: 519px) { body.in-battaglia #avviso { top: calc(max(8px, env(safe-area-inset-top)) + 50px); left: auto; right: 62px; max-width: min(360px, 44vw); transform: translate(var(--dx), var(--dy)); }
+  body.in-battaglia #avviso.entra { animation-name: avviso-entra-lato; } }
+@keyframes avviso-entra-lato { from { opacity: 0; transform: translateY(-16px) scale(.94); } }
 #avviso.entra { animation: avviso-entra .45s var(--molla); }
 #caricamento { position: fixed; inset: 0; display: grid; place-items: center; background: var(--notte); z-index: 40; }
 #caricamento[hidden] { display: none; }
@@ -1100,7 +1128,7 @@ body.in-accesso { overflow: hidden; }
 @keyframes riscatto { 0% { transform: rotateY(0) scale(1); } 50% { transform: rotateY(180deg) scale(1.2); box-shadow: 0 0 40px var(--oro); } 100% { transform: rotateY(360deg) scale(1); } }
 @keyframes riga-entra { from { opacity: 0; transform: translateX(-8px); } }
 @keyframes modale-entra { from { opacity: 0; transform: translateY(24px) scale(.94) rotateX(10deg); } }
-@keyframes avviso-entra { from { opacity: 0; transform: translate(-50%, 20px) scale(.9); } }
+@keyframes avviso-entra { from { opacity: 0; transform: translate(-50%, -16px) scale(.94); } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
@@ -2345,16 +2373,16 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <script src="tutorial.0cd83cd8.js"></script>
 <script src="missioni.d2040597.js"></script>
 <script src="sociale.250f8d4a.js"></script>
-<script src="collezione.19644a17.js"></script>
+<script src="collezione.d3f0f209.js"></script>
 <script src="graffiti.87ba5b2f.js"></script>
 <script src="zaino.f42c2817.js"></script>
 <script src="online.546aed30.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
 <script src="eventi.87b035d1.js"></script>
 <script src="progressi.4c1b6331.js"></script>
-<script src="extra.a30dd752.js"></script>
+<script src="extra.89229d04.js"></script>
 <script src="avvento.355b1396.js"></script>
-<script src="app.9b1e5743.js"></script>
+<script src="app.eaa6636c.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
