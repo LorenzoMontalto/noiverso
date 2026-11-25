@@ -508,6 +508,7 @@ const Extra = {
     if (!attivoExtra()) return;
     if (S.lv && Array.isArray(S.lv.riscossi)) for (const L of S.lv.riscossi) { const x = Livello.premiExtra[L]; if (x && x.id && !Cosmetici.ha(x.id)) Cosmetici.sblocca(x.id, false); }
     Gradi.controlla();
+    Jolly.sistema();
     if (!Extra.nv) { Extra.nv = true; setTimeout(Novita.controlla, 2500); }
   },
 };
@@ -653,4 +654,91 @@ const Consiglio = (() => {
     salva(); chiudiModale(); disegna(); mostraAvviso(`Squadra «${sq.nome}» aggiornata.`);
   }
   return { calcola, usa };
+})();
+
+// ---------------- Potenziatori jolly ----------------
+// I potenziatori che restano su una carta arrivata al livello 30 non servono più a quella carta: diventano jolly.
+// I jolly stanno da parte (S.jolly) finché decidi tu su quale carta usarli e quanti: si mettono sulla carta scelta
+// come normali potenziatori, poi la potenzi come sempre (con le monete). Non si scambiano.
+const Jolly = (() => {
+  const n = () => Math.max(0, Math.floor(S.jolly || 0));
+  // quanti potenziatori mancano a una carta per arrivare al 30 (contando quelli che ha già)
+  function mancanoAl30(id) {
+    const inf = infoCarta(id); if (!inf.liv || inf.liv >= LIVELLO_MAX) return 0;
+    let tot = 0; for (let l = inf.liv; l < LIVELLO_MAX; l++) tot += potPerLivello(l);
+    return Math.max(0, tot - inf.pot);
+  }
+  const mancaProssimo = id => { const inf = infoCarta(id); return inf.liv && inf.liv < LIVELLO_MAX ? Math.max(0, inf.servePot - inf.pot) : 0; };
+
+  // le carte al 30 cedono i potenziatori avanzati (tranne quelli promessi in uno scambio aperto)
+  function sistema(avvisa = true) {
+    if (typeof S === "undefined" || !S || !S.pot || !S.carte || S.admin) return 0;
+    let tot = 0; const nomi = [];
+    for (const id of Object.keys(S.pot)) {
+      if (!S.carte[id] || !PER_ID[id] || livello(id) < LIVELLO_MAX) continue;
+      const ris = typeof Scambi !== "undefined" ? Scambi.riservati(id) : 0;
+      const q = Math.floor((S.pot[id] || 0) - ris); if (q <= 0) continue;
+      S.pot = Object.assign({}, S.pot, { [id]: S.pot[id] - q }); tot += q; nomi.push(PER_ID[id].nome);
+    }
+    if (!tot) return 0;
+    S.jolly = n() + tot; salva();
+    if (avvisa) mostraAvviso(`◆ ${tot} potenziatori avanzati (${nomi.slice(0, 3).join(", ")}${nomi.length > 3 ? "…" : ""}, già al 30) sono diventati jolly: li usi su qualsiasi carta da Squadre.`);
+    return tot;
+  }
+
+  function usa(id, quanti) {
+    const max = Math.min(n(), mancanoAl30(id)), q = Math.max(0, Math.min(Math.floor(quanti), max));
+    if (!q) return 0;
+    S.jolly = n() - q; S.pot = Object.assign({}, S.pot, { [id]: ((S.pot || {})[id] || 0) + q });
+    salva(); aggiornaTesta();
+    return q;
+  }
+
+  // il "salvadanaio" in Squadre
+  function htmlSquadra() {
+    const j = n(); if (!j) return "";
+    return `<div class="jolly-box"><span class="jolly-ico">◆</span><div><b>Potenziatori jolly: ${j}</b><small>Vengono dalle carte già al livello 30. Li usi su qualsiasi carta, quando vuoi tu.</small></div>
+      <button class="btn piccolo primario" data-fx="stelle" data-azione="jolly-apri">Usali</button></div>`;
+  }
+  // nel dettaglio di una carta
+  function htmlDettaglio(id) {
+    const j = n(), m = mancanoAl30(id); if (!j || !m) return "";
+    const p = mancaProssimo(id);
+    return `<div class="jolly-dett"><span>◆ Hai <b>${j}</b> potenziatori jolly</span>
+      ${p ? `<button class="btn piccolo" data-jolly-usa="${id}:${p}" ${p <= j ? "" : "disabled"}>+${p} per il prossimo livello</button>` : ""}
+      <button class="btn piccolo" data-jolly-usa="${id}:${Math.min(j, m)}">Metti ${Math.min(j, m) === m ? `i ${m} che servono fino al 30` : `tutti i ${j}`}</button></div>`;
+  }
+
+  // la finestra per scegliere la carta
+  function apri() {
+    const j = n();
+    const mie = possedute().filter(c => livello(c.id) < LIVELLO_MAX);
+    const inSq = id => squadreDi(id).length ? 0 : 1;
+    mie.sort((a, b) => inSq(a.id) - inSq(b.id) || mancaProssimo(a.id) - mancaProssimo(b.id) || livello(b.id) - livello(a.id));
+    const riga = c => {
+      const inf = infoCarta(c.id), p = mancaProssimo(c.id), sq = squadreDi(c.id);
+      return `<div class="jolly-riga"><img src="${imgMini(c.id)}" alt="">
+        <span class="jolly-testo"><b>${esc(c.nome)}</b><small><span class="stile s-${c.stile}">${c.stile}</span> Lv ${inf.liv} · potenziatori ${inf.pot}/${inf.servePot}${sq.length ? ` · squadra ${sq.join(", ")}` : ""}</small></span>
+        <span class="jolly-btn">${inf.pronta ? `<button class="btn piccolo primario" data-jolly-potenzia="${c.id}" ${inf.puoi ? "" : "disabled"} title="${inf.serveMon} monete">Potenzia ▲</button>` : ""}
+        <button class="btn piccolo" data-jolly-usa="${c.id}:1" ${j ? "" : "disabled"}>+1</button>
+        ${p > 1 ? `<button class="btn piccolo" data-jolly-usa="${c.id}:${p}" ${p <= j ? "" : "disabled"}>+${p}</button>` : ""}</span></div>`;
+    };
+    apriModale(`<div class="jolly-fin"><h2>◆ Potenziatori jolly</h2>
+      <p class="jolly-conto">Ne hai <b>${j}</b></p>
+      <p class="nota">Arrivano dalle carte che hanno raggiunto il livello 30: i potenziatori che avanzavano non servivano più, quindi diventano jolly. Scegli tu su quale carta metterli e quanti: poi la potenzi come sempre, con le monete. <b>+N</b> mette quelli che mancano per il prossimo livello.</p>
+      ${mie.length ? `<div class="jolly-lista">${mie.map(riga).join("")}</div>` : `<p class="nota">Tutte le tue carte sono già al livello 30!</p>`}</div>`);
+  }
+
+  document.addEventListener("click", e => {
+    const t = e.target.closest && e.target.closest("[data-jolly-usa],[data-jolly-potenzia]"); if (!t) return;
+    const inFinestra = !!t.closest(".jolly-fin");
+    if (t.dataset.jollyPotenzia) { potenziaCarta(t.dataset.jollyPotenzia, null, true); if (inFinestra) apri(); return; }
+    const [id, q] = t.dataset.jollyUsa.split(":"), fatti = usa(id, +q);
+    if (!fatti) return;
+    const [x, y] = FX.centro(t); FX.esplosione(x, y, { n: 26, forma: "stella", colori: ["#c9a4ff", "#ffffff", "#3fd8ff"], velocita: 6, dimensione: 5 });
+    mostraAvviso(`◆ ${fatti} jolly messi su ${PER_ID[id].nome}.${infoCarta(id).pronta ? " Ora puoi potenziarla!" : ""}`);
+    if (inFinestra) apri(); else { disegna(); apriDettaglio(id); }
+  });
+
+  return { n, sistema, usa, apri, htmlSquadra, htmlDettaglio, mancanoAl30 };
 })();

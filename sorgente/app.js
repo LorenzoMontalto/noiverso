@@ -520,6 +520,7 @@ function apriDettaglio(id) {
             <span class="costi"><span class="${inf.pronta ? "ok" : "manca"}">${inf.servePot} potenziatori</span><span class="${monOk ? "ok" : "manca"}">${inf.serveMon} monete</span></span>
             <button class="btn primario" data-fx="stelle" data-azione="potenzia" data-id="${id}" ${inf.puoi ? "" : "disabled"}>Potenzia</button>
           </div>`; })() : ""}
+          ${copie ? Jolly.htmlDettaglio(id) : ""}
           ${htmlAscesa(id)}
           ${haOlo(c.id) ? `<p class="olo-nota">✦ <b>Olografica</b>: +5% di PV e di danni in battaglia. Ne esce una ogni 50 carte circa.</p>` : ""}
           ${c.ultra ? (haUltra(c.id) ? `<p class="ultra-nota">◆ <b>Versione Ultra</b>: cornice nera e oro e +10% di PV e di danni in battaglia.</p>` : `<p class="nota">Questa carta ha anche una <b>versione Ultra</b> da trovare (+10% in battaglia): esce raramente quando la trovi in una bustina, sempre nella Bustina Ultra.</p>`) : ""}
@@ -1415,6 +1416,7 @@ function vistaSquadra() {
       <span class="nota">Tieni premuta una carta e trascinala su un posto della squadra per scambiarla. ${sq.carte.length === CARTE_SQUADRA ? "Squadra pronta per le sfide." : `Mancano ${CARTE_SQUADRA - sq.carte.length} ${CARTE_SQUADRA - sq.carte.length === 1 ? "carta" : "carte"}.`}</span>
     </div>
     <div class="slot5">${slot.join("")}</div>
+    ${Jolly.htmlSquadra()}
     ${Graffiti.htmlSquadra()}
     ${Sinergie.htmlSquadra(sq.carte)}
     <div class="riepilogo">
@@ -2939,7 +2941,7 @@ const Ordine = (() => {
         return `<div class="ord-riga ${i >= n ? "fuori" : ""} ${sel === i ? "sel" : ""}" data-rilascia="ord:${i}" data-trascina="ord:${i}" data-ord-tocca="${i}" role="button" tabindex="0" aria-label="${esc(c.nome)}, posto ${i + 1}">
           <span class="ord-n">${i + 1}</span>
           <img src="${imgMini(id)}" alt="">
-          <span class="ord-testo"><b>${esc(c.nome)}${i === 0 ? ` <em class="ord-primo">in campo</em>` : i >= n ? ` <em>non gioca</em>` : ""}</b><small><span class="s-${c.stile}">${STILI[c.stile].icona}</span> ${esc(RUOLI[c.ruolo].nome)} · Lv ${livello(id) || 1} · PV ${st.pv} · Att ${st.att}</small></span>
+          <span class="ord-testo"><b>${esc(c.nome)}${i === 0 ? ` <em class="ord-primo">in campo</em>` : i >= n ? ` <em>non gioca</em>` : ""}</b><small><span class="stile s-${c.stile} ord-stile">${STILI[c.stile].icona} ${STILI[c.stile].nome}</span> ${esc(RUOLI[c.ruolo].nome)} · Lv ${livello(id) || 1} · PV ${Math.round(st.pv)} · Att ${Math.round(st.att)}</small></span>
           <span class="ord-maniglia" aria-hidden="true">⠿</span></div>`; }).join("")}</div>
       ${n < sq.carte.length ? `<p class="nota">In modalità rapida giocano solo le prime ${n}.</p>` : ""}
       <div class="azioni centro"><button class="btn" data-azione="ordine-indietro">Cambia squadra</button><button class="btn primario" data-fx="onda" data-azione="ordine-via">Combatti!</button></div></div>`);
@@ -3707,6 +3709,7 @@ document.addEventListener("click", e => {
     case "vai-missioni": { const el = $(".oggi"); if (el) el.scrollIntoView({ behavior: ridotto ? "auto" : "smooth", block: "start" }); break; }
     case "consiglio-calcola": Consiglio.calcola(); break;
     case "altre-squadra": altreCarteSquadra(); break;
+    case "jolly-apri": Jolly.apri(); break;
     case "consiglio-usa": Consiglio.usa(); break;
     case "ordine-via": Ordine.via(); break;
     case "ordine-indietro": Ordine.indietro(); break;
