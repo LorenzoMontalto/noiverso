@@ -202,13 +202,12 @@ const Maestria = (() => {
 // Esempio: una bustina normale con tutte le carte al 30 dà in media circa 16 ◈; una leggendaria a scelta ne costa 1500 (circa 90 bustine).
 const Frammenti = (() => {
   const DA_DOPPIONE = { comune: 2, rara: 4, epica: 10, leggendaria: 25, jolly: 12 };
-  const COSTO = { comune: 100, rara: 250, epica: 600, leggendaria: 1500, jolly: 900 };
+  const COSTO = { comune: 100, rara: 250, epica: 600, leggendaria: 1500, jolly: 2000 };   // nov 2026: Jolly 900→2000 (non si comprano e nelle bustine sono rarissimi: i frammenti sono l'unica strada sicura)
   const quanti = () => num(S.framm);
   function aggiungi(n, avvisa = true) { if (!attivoExtra() || !(n > 0)) return; S.framm = quanti() + Math.round(n); if (avvisa) setTimeout(() => mostraAvviso(`+${n} frammenti ◈ (ne hai ${S.framm}).`), 1200); }
   function daEsiti(esiti) { const n = (esiti || []).reduce((a, e) => a + num(e.framm), 0); aggiungi(n); }
   function crea(id, el) {
     const c = PER_ID[id]; if (!c || S.carte[id] || !attivoExtra()) return;
-    if (c.rarita === "jolly") { mostraAvviso("I Jolly non si creano: si trovano solo nelle bustine, con tanta fortuna."); return; }
     const costo = COSTO[c.rarita]; if (quanti() < costo) { mostraAvviso(`Servono ${costo} frammenti.`); return; }
     S.framm = quanti() - costo; S.carte[id] = 1; S.liv[id] = S.liv[id] || 1; S.stats.create = num(S.stats.create) + 1;
     Livello.carteNuove([{ id, nuova: true }]);
@@ -219,25 +218,20 @@ const Frammenti = (() => {
   // carta coperta dell'album: resta una sorpresa (vedi solo rarità e serie) finché non la crei
   function apriMistero(id) {
     const c = PER_ID[id]; if (!c || S.carte[id] || S.admin) return;
-    if (c.rarita === "jolly") { apriModale(`<div class="crea-box grande"><div class="crea-carta">${htmlCarta(c, { coperta: true })}</div>
-      <div><span class="codice-tag">🃏 Jolly</span><h2>Carta Jolly da scoprire</h2>
-      <p>I Jolly <b>non si creano con i frammenti e non si comprano</b>: escono solo aprendo le bustine, ed è rarissimo (circa una bustina normale su 120).</p>
-      <p class="nota">Se un amico ne ha uno doppio, puoi scambiarlo con un tuo Jolly.</p>
-      <div class="azioni"><button class="btn" data-azione="chiudi">Chiudi</button></div></div></div>`); return; }
     const costo = COSTO[c.rarita], ok = quanti() >= costo;
     apriModale(`<div class="crea-box grande"><div class="crea-carta">${htmlCarta(c, { coperta: true })}</div>
-      <div><span class="codice-tag">${esc(SERIE[c.serie].simbolo)} ${esc(SERIE[c.serie].nome)} · ${esc(RARITA[c.rarita].nome)}</span><h2>Carta da scoprire</h2>
+      <div><span class="codice-tag">${esc(SERIE[c.serie].simbolo)} ${esc(SERIE[c.serie].nome)}${SERIE[c.serie].nome === RARITA[c.rarita].nome ? "" : ` · ${esc(RARITA[c.rarita].nome)}`}</span><h2>Carta da scoprire</h2>
       <p>Puoi crearla con i <b>frammenti ◈</b>: costa <b>${costo}</b> e ne hai <b>${quanti()}</b>.</p>
-      <p class="nota">I frammenti arrivano dai doppioni delle carte già al livello 30 (comune 2, rara 4, epica 10, leggendaria 25), dall'Arena e dalla maestria. Si possono usare solo per le carte che non hai ancora.</p>
+      <p class="nota">I frammenti arrivano dai doppioni delle carte già al livello 30 (comune 2, rara 4, epica 10, leggendaria 25, jolly 12), dall'Arena e dalla maestria. Si possono usare solo per le carte che non hai ancora.</p>
       <div class="azioni"><button class="btn ${ok ? "oro" : ""}" data-fx="stelle" data-crea="${id}" ${ok ? "" : "disabled"}>${ok ? `Crea con ${costo} ◈` : `Ti mancano ${costo - quanti()} ◈`}</button><button class="btn" data-azione="chiudi">Chiudi</button></div></div></div>`);
   }
   // toccando ◈ in alto: quanti ne hai, come si prendono e quanto costa ogni carta
   function apriInfo() {
-    const q = quanti(), mancano = CARTE.filter(c => !S.carte[c.id]), creabili = mancano.filter(c => c.rarita !== "jolly" && q >= COSTO[c.rarita]).length;
+    const q = quanti(), mancano = CARTE.filter(c => !S.carte[c.id]), creabili = mancano.filter(c => q >= COSTO[c.rarita]).length;
     apriModale(`<div class="framm-info"><div class="fi-ico">◈</div><h2>${q.toLocaleString("it-IT")} frammenti</h2>
       <p>Servono a <b>creare le carte che ti mancano</b>: nell'album tocca una carta coperta. Su ognuna c'è scritto quanti frammenti costa.</p>
       <table class="fi-tab"><thead><tr><th>Rarità</th><th>Costa</th><th>Doppione al 30 dà</th></tr></thead><tbody>
-        ${ORDINE_RARITA.map(r => `<tr><td>${esc(RARITA[r].nome)}</td><td><b>◈ ${COSTO[r].toLocaleString("it-IT")}</b></td><td>+${DA_DOPPIONE[r]} ◈</td></tr>`).join("")}</tbody></table>
+        ${[...ORDINE_RARITA, "jolly"].map(r => `<tr><td>${esc(RARITA[r].nome)}</td><td><b>◈ ${COSTO[r].toLocaleString("it-IT")}</b></td><td>+${DA_DOPPIONE[r]} ◈</td></tr>`).join("")}</tbody></table>
       <p class="nota">Arrivano dai doppioni delle carte già al livello 30, dall'Arena e dalla quinta stella di maestria. Ti mancano ${mancano.length} carte${creabili ? `: <b>${creabili}</b> le puoi già creare` : ""}.</p>
       <div class="azioni centro"><button class="btn primario" data-azione="vai-album">Vai all'album</button><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }
@@ -466,7 +460,7 @@ const Offerte = (() => {
   function calcola(g) {
     const seme = g + ":" + (S.profilo && S.profilo.nome || "");
     const out = [];
-    const mancanti = CARTE.filter(c => !S.carte[c.id] && c.rarita !== "leggendaria" && c.rarita !== "jolly");   // i Jolly si trovano solo nelle bustine
+    const mancanti = CARTE.filter(c => !S.carte[c.id] && c.rarita !== "leggendaria" && c.rarita !== "jolly");   // i Jolly non si comprano: solo bustine (rarissimi) o frammenti
     const carta = sorteggia(mancanti, seme + ":carta");
     if (carta) out.push({ k: "carta", id: carta.id, prezzo: PREZZO_CARTA[carta.rarita], titolo: `Carta ${RARITA[carta.rarita].nome.toLowerCase()} da scoprire · ${SERIE[carta.serie].nome}`, desc: "Una carta che non hai ancora: scopri chi è quando la compri." });
     const salgono = possedute().filter(c => infoCarta(c.id).liv < LIVELLO_MAX);
