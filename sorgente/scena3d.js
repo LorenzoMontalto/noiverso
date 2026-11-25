@@ -91,7 +91,8 @@ const Scena3D = (() => {
       "cc-smeraldo": ["#2ad87a", "#b8ffd8"], "cc-rubino": ["#ff2e56", "#ffc8d2"], "cc-zaffiro": ["#2a6aff", "#c8e0ff"], "cc-veleno": ["#5ad81a", "#d6ff5a"],
       "cc-oceano": ["#0a3a8a", "#2a8adf", "#9ae4ff", "#2a8adf", "#0a3a8a"], "cc-notte": ["#0a0f2a", "#3a4a9a"], "cc-lava": ["#3a1006", "#ff5a1a", "#ffb02a", "#ff5a1a", "#3a1006"],
       "cc-tempesta": ["#3fa8ff", "#e8f6ff"], "cc-ombra": ["#0a0410", "#7a3ac8", "#0a0410", "#4a1a7a"], "cc-aurora": ["#3affa0", "#2ad8ff", "#a84aff", "#ff6ad8", "#3affa0"],
-      "cc-prisma": ["#ff2e46", "#f2c14e", "#5adc8c", "#39f3ff", "#8a6aff", "#ff6ad8"], "cc-reale": ["#5a1a8a", "#a85ae8", "#3a0a5a", "#a85ae8", "#5a1a8a"] };
+      "cc-prisma": ["#ff2e46", "#f2c14e", "#5adc8c", "#39f3ff", "#8a6aff", "#ff6ad8"], "cc-reale": ["#5a1a8a", "#a85ae8", "#3a0a5a", "#a85ae8", "#5a1a8a"],
+      "cc-natale": ["#c8102e", "#ffffff", "#1a8a3a", "#ffffff", "#c8102e"] };
     if (TELAI[cc]) {
       const [c1, c2] = TELAI[cc], gt = g.createLinearGradient(0, 0, W, H);
       if (cc === "cc-arcobaleno") ["#ff2e46", "#f2c14e", "#5adc8c", "#39f3ff", "#c9a4ff"].forEach((x, i, a) => gt.addColorStop(i / (a.length - 1), x));
@@ -101,6 +102,9 @@ const Scena3D = (() => {
       // ornamenti delle cornici nuove
       g.save();
       if (cc === "cc-caramella" || cc === "cc-pixel") { g.lineWidth = 16; g.strokeStyle = c2; g.setLineDash(cc === "cc-pixel" ? [12, 12] : [16, 16]); g.strokeRect(10, 10, W - 20, H - 20); }
+      if (cc === "cc-natale") { g.lineWidth = 16; g.strokeStyle = "#1a8a3a"; g.setLineDash([18, 18]); g.strokeRect(10, 10, W - 20, H - 20); g.setLineDash([]);
+        g.fillStyle = "#ffffff"; g.shadowColor = "#bfe8ff"; g.shadowBlur = 8; for (let k = 0; k < 26; k++) { g.beginPath(); g.arc((k * 97) % W, 30 + (k * 53) % (H - 60), 2 + k % 3, 0, 7); g.fill(); }
+        g.shadowBlur = 0; g.font = "44px sans-serif"; g.textAlign = "center"; g.fillText("🎄", W - 40, H - 30); g.fillText("🎀", W / 2, 46); g.textAlign = "left"; }
       if (cc === "cc-legno") { g.fillStyle = "#efe6d6"; g.strokeStyle = "#5a4a3a"; g.lineWidth = 3; for (const [x, y] of [[26, 26], [W - 26, 26], [26, H - 26], [W - 26, H - 26]]) { g.beginPath(); g.arc(x, y, 7, 0, 7); g.fill(); g.stroke(); } }
       if (cc === "cc-smeraldo" || cc === "cc-rubino" || cc === "cc-zaffiro") for (const x of [24, W - 24]) {
         g.save(); g.translate(x, H / 2); g.rotate(Math.PI / 4); const gg = g.createLinearGradient(-16, -16, 16, 16); gg.addColorStop(0, "#ffffff"); gg.addColorStop(.25, c2); gg.addColorStop(.7, c1); gg.addColorStop(1, "#000");

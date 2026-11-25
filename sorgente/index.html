@@ -2158,6 +2158,67 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 @keyframes cc-respira { from { box-shadow: inset 0 0 14px 3px rgba(10, 0, 20, .95), inset 0 0 22px rgba(140, 70, 220, .35); } to { box-shadow: inset 0 0 20px 6px rgba(10, 0, 20, .95), inset 0 0 34px rgba(160, 90, 255, .6); } }
 @keyframes cc-tinta { to { filter: hue-rotate(360deg); } }
 @keyframes cc-riflesso { 0%, 35% { left: -60%; } 75%, 100% { left: 130%; } }
+/* ===== Calendario dell'Avvento ===== */
+.avvento-strada { position: relative; display: flex; gap: 12px; align-items: center; margin: 0 0 12px; padding: 12px 14px; border-radius: 16px; overflow: hidden;
+  background: radial-gradient(circle at 12% 30%, rgba(255, 255, 255, .5) 0 1px, transparent 1.5px) 0 0 / 26px 26px, linear-gradient(100deg, #8a0f22, #1a5a32 70%, #0f3a22);
+  border: 1px solid #ffd27a88; box-shadow: 0 6px 20px rgba(200, 16, 46, .25); animation: av-neve 6s linear infinite; }
+.avvento-strada.pronto { border-color: #ffd27a; box-shadow: 0 0 0 2px rgba(255, 210, 122, .35), 0 8px 26px rgba(255, 74, 90, .35); }
+.avvento-strada > div { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.avvento-strada small { color: #ffd27a; font-weight: 800; letter-spacing: .04em; font-size: .74rem; text-transform: uppercase; }
+.avvento-strada b { font: 400 1.15rem var(--display); color: #fff; } .avvento-strada .nota { color: #f4ecd8; }
+.av-albero { font-size: 2rem; filter: drop-shadow(0 0 8px rgba(255, 210, 122, .6)); animation: av-dondola 3s ease-in-out infinite; flex: none; }
+.av-conto { font-variant-numeric: tabular-nums; color: #ffd27a; font-weight: 800; letter-spacing: .02em; font-family: var(--corpo) !important; font-size: inherit !important; }
+.av-punto { position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; border-radius: 50%; background: #ff2e46; box-shadow: 0 0 0 0 rgba(255, 46, 70, .7); animation: pulsa-online 1.6s infinite; }
+@keyframes av-neve { to { background-position: 0 26px, 0 0; } }
+@keyframes av-dondola { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+.avvento { display: grid; gap: 14px; }
+.av-testa { display: flex; gap: 12px; align-items: center; } .av-testa small { color: #ffd27a; font-weight: 700; font-size: .78rem; } .av-testa h2 { margin: 0; }
+.av-stato { margin: 2px 0 0; color: var(--testo); }
+.av-griglia { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; padding: 10px; border-radius: 16px; perspective: 700px;
+  background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, .35) 0 1px, transparent 1.5px) 0 0 / 22px 22px, linear-gradient(160deg, #6a0c1c, #2a0a12 60%, #0f2a1a); border: 2px solid #ffd27a66; }
+.av-casella { position: relative; aspect-ratio: 1 / 1.05; border-radius: 10px; border: 0; padding: 0; color: #fff; display: grid; place-items: center; text-align: center; font: inherit; }
+.av-casella .av-num { font: 400 1.35rem/1 var(--display); text-shadow: 0 2px 0 rgba(0, 0, 0, .35); }
+.av-casella small { font-size: .58rem; line-height: 1.15; opacity: .9; padding: 0 3px; }
+.av-anta { position: absolute; inset: 0; display: grid; place-content: center; gap: 3px; border-radius: inherit; transform-origin: left center; transition: transform .6s cubic-bezier(.3, .7, .2, 1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, .18), transparent 40%), var(--av-c, #b3122e); box-shadow: inset 0 0 0 2px rgba(255, 210, 122, .55), 0 3px 8px rgba(0, 0, 0, .4); }
+.av-casella:nth-child(3n) { --av-c: #1d7a3e; } .av-casella:nth-child(4n) { --av-c: #2a4a9a; } .av-casella:nth-child(5n+2) { --av-c: #c8902a; }
+.av-casella.chiusa { cursor: default; } .av-casella.chiusa .av-anta { filter: saturate(.75) brightness(.85); }
+.av-casella.chiusa:not(:has(.av-anta)) { background: rgba(255, 255, 255, .06); color: var(--spento); }
+.av-casella.oggi { cursor: pointer; z-index: 1; } .av-casella.oggi .av-anta { box-shadow: inset 0 0 0 2px #ffd27a, 0 0 18px rgba(255, 210, 122, .8); animation: av-bussa 1.4s ease-in-out infinite; }
+.av-casella.oggi small { font-weight: 800; color: #ffe8a8; }
+.av-casella.persa { cursor: pointer; } .av-casella.persa .av-anta { filter: grayscale(.6) brightness(.8); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .35); }
+.av-casella.persa:hover .av-anta { filter: none; }
+.av-casella.natale .av-anta { background: radial-gradient(circle at 50% 30%, #fff3 0 30%, transparent 31%), linear-gradient(135deg, #ffd27a, #c8902a); color: #4a1a0a; }
+.av-casella.natale .av-num { text-shadow: none; }
+.av-casella.si-apre .av-anta { transform: rotateY(-115deg); }
+.av-casella.aperta { cursor: pointer; background: radial-gradient(circle at 50% 35%, rgba(255, 210, 122, .35), transparent 70%), #1a0f14; box-shadow: inset 0 0 0 1px rgba(255, 210, 122, .35); align-content: center; gap: 2px; padding: 4px 2px; }
+.av-casella.aperta .av-num { position: absolute; top: 3px; left: 5px; font-size: .75rem; opacity: .7; }
+.av-premio-ico { font-size: 1.45rem; line-height: 1; filter: drop-shadow(0 0 6px rgba(255, 210, 122, .6)); }
+.av-casella.aperta small { font-size: .52rem; color: #f4ecd8; }
+@keyframes av-bussa { 0%, 100% { transform: rotate(0); } 10% { transform: rotate(-3deg); } 20% { transform: rotate(3deg); } 30% { transform: rotate(0); } }
+.av-piede { display: grid; gap: 10px; } .av-piede .nota { margin: 0; }
+.av-completo { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 12px; background: var(--muro); border: 1px dashed #ffd27a88; }
+.av-completo > span { font-size: 1.6rem; } .av-completo b { display: block; } .av-completo small { color: var(--spento); }
+.av-completo.fatto { border-style: solid; border-color: #5adc8c; } .av-completo.fatto small { color: #5adc8c; }
+@media (max-width: 420px) { .av-griglia { gap: 5px; padding: 7px; } .av-casella .av-num { font-size: 1.1rem; } .av-casella.aperta small { display: none; } }
+@media (prefers-reduced-motion: reduce) { .avvento-strada, .av-albero, .av-casella.oggi .av-anta { animation: none; } }
+/* cosmetici di Natale (solo dal calendario) */
+.cosm-cornice-neve .avatar { border-color: #ffffff; box-shadow: 0 0 0 3px #c8102e, 0 0 14px #bfe8ff; }
+.cornice-avatar.cosm-cornice-neve { position: relative; } .cornice-avatar.cosm-cornice-neve::after { content: "❄"; position: absolute; top: -6px; right: -6px; font-size: .9em; color: #fff; text-shadow: 0 0 6px #8fd8ff; pointer-events: none; }
+.cosm-nome-natale { background: linear-gradient(90deg, #ff4a5a, #ffffff, #3adc7a, #ffffff, #ff4a5a) 0 0 / 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: av-nome 4s linear infinite; }
+.cosm-chip.cosm-nome-natale { color: transparent; }
+@keyframes av-nome { to { background-position: 200% 0; } }
+.cosm-sfondo-natale { background: radial-gradient(circle at 30% 20%, #fff 0 1.2px, transparent 2px) 0 0 / 28px 28px, radial-gradient(circle at 70% 60%, #fff 0 1px, transparent 1.6px) 0 0 / 34px 34px,
+  radial-gradient(120% 40% at 50% 115%, #f4fbff 0 55%, transparent 56%), radial-gradient(circle at 82% 18%, #fff8d8 0 7%, transparent 8%), linear-gradient(180deg, #0a1430, #1a3060 70%, #2a4a7a); }
+.cc-telaio.cc-natale { border-width: 6px; -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  background: repeating-linear-gradient(45deg, #c8102e 0 8px, #ffffff 8px 11px, #1a8a3a 11px 19px, #ffffff 19px 22px) border-box; animation: cc-strisce-natale 2s linear infinite; }
+@keyframes cc-strisce-natale { to { background-position: 31.1px 0; } }
+.cc-orn.cc-natale { box-shadow: inset 0 0 12px rgba(255, 255, 255, .45); }
+.cc-orn.cc-natale::before { inset: 0; animation: cc-nevica 5s linear infinite; background: radial-gradient(circle at 15% 10%, #fff 0 1.3px, transparent 2px), radial-gradient(circle at 55% 25%, #fff 0 1px, transparent 1.8px), radial-gradient(circle at 85% 5%, #fff 0 1.4px, transparent 2.2px), radial-gradient(circle at 35% 45%, #fff 0 1px, transparent 1.8px), radial-gradient(circle at 75% 60%, #fff 0 1.2px, transparent 2px), radial-gradient(circle at 10% 75%, #fff 0 1.3px, transparent 2px), radial-gradient(circle at 60% 90%, #fff 0 1px, transparent 1.8px);
+  background-size: 100% 50%; }
+.cc-orn.cc-natale::after { content: "🎄"; right: 6px; bottom: 5px; font-size: .95rem; filter: drop-shadow(0 0 4px rgba(255, 210, 122, .8)); }
+.carta.piccola .cc-orn.cc-natale::after { font-size: .75rem; }
+@keyframes cc-nevica { to { background-position: 0 100%; } }
 @media (prefers-reduced-motion: reduce) { .cc-telaio, .cc-orn, .cc-orn::before, .cc-orn::after { animation: none !important; } }
 /* il reparto delle cornici nel negozio */
 .cc-vetrina .carta { width: 118px; }
@@ -2245,6 +2306,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <script src="eventi.js"></script>
 <script src="progressi.js"></script>
 <script src="extra.js"></script>
+<script src="avvento.js"></script>
 <script src="app.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria

@@ -775,7 +775,8 @@ function vistaStrada() {
   const b = bustineTotali(), r = daRiscuotere();
   const giocate = S.stats.vittorie + S.stats.sconfitte;
   const anteprima = ["reina", "gokiele", "zeutiz", "ironlus", "brolymone"].map(id => PER_ID[id]).filter(Boolean);
-  return `${Online.htmlStrada()}
+  return `${Avvento.htmlStrada()}
+  ${Online.htmlStrada()}
   ${Torneo.htmlStrada()}
   ${Settimana.htmlStrada()}
   ${Livello.htmlStrada()}
