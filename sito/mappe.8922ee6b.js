@@ -35,6 +35,7 @@ const MappeStoria = (() => {
     [[220, 1040], [560, 840], [980, 1000], [1440, 820], [1300, 480], [880, 600]],     // circo tra le stelle (Circo Intergalattico)
     [[200, 1040], [560, 860], [1000, 1000], [1440, 860], [1360, 500], [820, 380]],     // Olimpo degli inutili (Dei Inutili)
     [[220, 1040], [560, 880], [1000, 1020], [1460, 860], [1320, 480], [760, 360]],     // l'Italia a colori (Colori)
+    [[220, 1040], [580, 860], [1020, 1010], [1460, 840], [1340, 460], [780, 340]],     // il museo dei capolavori (Opere d'Arte)
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -111,6 +112,9 @@ const MappeStoria = (() => {
     [[150, 1170, "🎨", "La Tavolozza"], [330, 1190, "✿", "Girasoli"], [410, 590, "≋", "Cascata Smeraldo"], [900, 1180, "⌂", "Case Rosa"],
      [1520, 1000, "❀", "Lavanda"], [1610, 480, "⛵", "Faraglioni"], [620, 300, "☾", "Colosseo di Notte"], [1045, 210, "✝", "San Pietro"],
      [1230, 700, "〰", "Pennellata"], [920, 470, "✦", "Luce Bianca"]],
+    [[150, 1180, "⌂", "Biglietteria"], [300, 925, "♟", "Statua"], [470, 610, "▣", "Ritratti"], [960, 1110, "▭", "Panchina"],
+     [1690, 1080, "☼", "Il Guardiano"], [1640, 700, "⚔", "Battaglie"], [1360, 250, "✦", "Lucernario"], [1060, 600, "⚠", "Allarme Laser"],
+     [780, 110, "♛", "La Gioconda"], [400, 430, "❦", "Cordone di Velluto"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -963,6 +967,45 @@ const MappeStoria = (() => {
       ${tav.slice(0, 7).map((c, k) => `<circle cx="${-90 + (k % 4) * 40}" cy="${-45 + Math.floor(k / 4) * 50 + (k % 2) * 8}" r="15" fill="${c}"/>`).join("")}<path d="M60,-120 L-60,40" stroke="#8a5a2a" stroke-width="10" stroke-linecap="round"/><path d="M-60,40 l-14,22 l22,-10Z" fill="#ff4fd8"/></g>`;
     return s;
   }
+  function arte(r) {
+    // il museo di notte, visto dall'alto: pavimento di marmo a scacchi, sale con le pareti colorate e i quadri nelle cornici d'oro,
+    // statue sui piedistalli, cordoni di velluto, i laser dell'allarme, la luna dai lucernari e il tappeto rosso che unisce le tappe
+    let s = `<defs><pattern id="marmoAr" width="80" height="80" patternUnits="userSpaceOnUse"><rect width="80" height="80" fill="#2a2630"/><rect width="40" height="40" fill="#3a3540"/><rect x="40" y="40" width="40" height="40" fill="#3a3540"/><path d="M5,30 q20,-10 30,5 M45,70 q15,-12 30,2" stroke="#4a4550" stroke-width="2" fill="none"/></pattern>
+      <radialGradient id="lunaAr"><stop offset="0" stop-color="#dfe8ff" stop-opacity=".55"/><stop offset="1" stop-color="#dfe8ff" stop-opacity="0"/></radialGradient>
+      <linearGradient id="oroAr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe29a"/><stop offset=".5" stop-color="#c8902a"/><stop offset="1" stop-color="#ffe29a"/></linearGradient></defs>
+      <rect width="${W}" height="${H}" fill="url(#marmoAr)"/>`;
+    // le sale: [x, y, larghezza, altezza, colore delle pareti]
+    const sale = [[60, 900, 420, 290, "#5a1a22"], [400, 640, 420, 330, "#173a2a"], [820, 860, 460, 300, "#1a2450"], [1260, 640, 480, 360, "#4a2a12"], [1100, 280, 520, 330, "#3a1640"], [520, 160, 560, 330, "#5a1a22"]];
+    for (const [x, y, w, h, c] of sale) s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="none" stroke="${c}" stroke-width="34" opacity=".95"/><rect x="${x + 17}" y="${y + 17}" width="${w - 34}" height="${h - 34}" fill="${c}" opacity=".18"/>`;
+    // la luna che entra dai lucernari
+    for (const [x, y] of [[780, 330], [1360, 450], [600, 800], [1040, 1000]]) s += `<circle cx="${x}" cy="${y}" r="170" fill="url(#lunaAr)"/><rect x="${x - 50}" y="${y - 50}" width="100" height="100" fill="none" stroke="#dfe8ff" stroke-width="3" opacity=".25"/><path d="M${x},${y - 50} v100 M${x - 50},${y} h100" stroke="#dfe8ff" stroke-width="2" opacity=".2"/>`;
+    // i quadri appesi alle pareti (cornici d'oro con dentro macchie di colore)
+    const tinte = [["#2a4a8a", "#ffd27a"], ["#8a2a1a", "#ffb84d"], ["#1a5a3a", "#c8e8a0"], ["#3a2a6a", "#ff9ad8"], ["#6a4a2a", "#f4e2b8"], ["#0a1a3a", "#5ab8ff"]];
+    let q = 0;
+    for (const [x, y, w, h] of sale) {
+      for (const [px, py, pw, ph] of [[x + w * .2, y - 6, 70, 46], [x + w * .62, y - 6, 60, 52], [x - 6, y + h * .45, 46, 64], [x + w - 40, y + h * .3, 46, 70]]) {
+        const [c1, c2] = tinte[q++ % tinte.length];
+        s += `<rect x="${f(px)}" y="${f(py)}" width="${pw}" height="${ph}" fill="url(#oroAr)" stroke="#6a4a1a" stroke-width="2"/><rect x="${f(px + 6)}" y="${f(py + 6)}" width="${pw - 12}" height="${ph - 12}" fill="${c1}"/><circle cx="${f(px + pw / 2)}" cy="${f(py + ph / 2)}" r="${Math.min(pw, ph) / 5}" fill="${c2}" opacity=".85"/>`;
+      }
+    }
+    // il tappeto rosso che collega le tappe
+    const via = [[120, 1150], [220, 1040], [580, 860], [1020, 1010], [1460, 840], [1340, 460], [780, 340]];
+    s += `<path d="${curva(via)}" stroke="#6a0a14" stroke-width="54" fill="none" stroke-linecap="round" opacity=".9"/><path d="${curva(via)}" stroke="#b3122e" stroke-width="44" fill="none" stroke-linecap="round"/><path d="${curva(via)}" stroke="#f2c14e" stroke-width="3" stroke-dasharray="12 10" fill="none" opacity=".8"/>`;
+    // statue sui piedistalli e panchine
+    for (const [x, y] of [[300, 980], [700, 700], [1150, 930], [1640, 760], [1500, 330], [620, 230]]) s += `<g transform="translate(${x} ${y})"><rect x="-26" y="-26" width="52" height="52" fill="#d8d0c0" stroke="#8a8070" stroke-width="3"/><circle r="16" fill="#f4eee0" stroke="#b8ae9a" stroke-width="2"/><circle cx="-3" cy="-3" r="7" fill="#fffaf0"/></g>`;
+    for (const [x, y, rot] of [[960, 1060, 0], [1500, 920, 90], [700, 260, 0]]) s += `<rect x="${x - 50}" y="${y - 12}" width="100" height="24" rx="6" fill="#5a3a1a" stroke="#2a1a0a" stroke-width="3" transform="rotate(${rot} ${x} ${y})"/>`;
+    // cordoni di velluto davanti alla Gioconda
+    s += `<g>${[640, 700, 760, 820, 880, 940].map(x => `<circle cx="${x}" cy="420" r="9" fill="url(#oroAr)" stroke="#6a4a1a" stroke-width="2"/>`).join("")}<path d="M640,420 Q670,445 700,420 Q730,445 760,420 Q790,445 820,420 Q850,445 880,420 Q910,445 940,420" stroke="#b3122e" stroke-width="7" fill="none"/></g>`;
+    // il quadro più famoso, con la sua cornice enorme
+    s += `<rect x="730" y="150" width="100" height="130" fill="url(#oroAr)" stroke="#6a4a1a" stroke-width="4"/><rect x="742" y="162" width="76" height="106" fill="#4a5a3a"/><ellipse cx="780" cy="200" rx="16" ry="20" fill="#d8b890"/><path d="M752,268 q28,-50 56,0Z" fill="#2a2a1a"/>`;
+    // i laser dell'allarme e la torcia del guardiano
+    for (const [x1, y1, x2, y2] of [[1110, 520, 1610, 400], [1110, 560, 1610, 590], [830, 900, 1270, 1150]]) s += `<path d="M${x1},${y1} L${x2},${y2}" stroke="#ff2e46" stroke-width="3" opacity=".75"/><path d="M${x1},${y1} L${x2},${y2}" stroke="#ff8a9a" stroke-width="9" opacity=".18"/>`;
+    s += `<path d="M1700,1120 L1480,1020 L1560,1180Z" fill="#fff4c0" opacity=".2"/><circle cx="1700" cy="1120" r="18" fill="#2a2a3a" stroke="#ffd27a" stroke-width="3"/>`;
+    // impronte di vernice fresca qua e là
+    const vern = ["#ff2e46", "#2a8adf", "#ffd90f", "#3adc7a", "#ff4fd8"];
+    for (let k = 0; k < 16; k++) { const x = r() * W, y = r() * H; s += `<path d="${blob(x, y, 8 + r() * 12, 6 + r() * 10, r, 9, .6)}" fill="${vern[k % vern.length]}" opacity=".45"/>`; }
+    return s;
+  }
   function sakura(r) {
     // la valle dei kami: luna rossa, Fuji, ciliegi in fiore, torii, pagoda, dojo, lago dell'Orochi, vetta del tengu e santuario
     let s = `<defs><linearGradient id="cieloJp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#140a1e"/><stop offset=".6" stop-color="#4a1a3a"/><stop offset="1" stop-color="#b24a5a"/></linearGradient>
@@ -1129,7 +1172,7 @@ const MappeStoria = (() => {
     s += `<g transform="translate(1660 1060)"><circle r="70" fill="#0d2c4a" stroke="#d8c890" stroke-width="4"/><path d="M0,-62 L12,0 L0,62 L-12,0Z M-62,0 L0,-12 L62,0 L0,12Z" fill="#d8c890"/><text y="-74" text-anchor="middle" font-size="26" fill="#d8c890">N</text></g>`;
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, farwest, rovine, sakura, circo, inutili, colori, specchi, treno, torre, dimensione];
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, farwest, rovine, sakura, circo, inutili, colori, arte, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -1157,7 +1200,7 @@ const MappeStoria = (() => {
     // colore di base e colore delle nuvole per ogni capitolo
     const NEBBIE = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
       ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"],
-      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"], ["#3a1c10", "255,214,170"], ["#1c0c08", "255,170,130"], ["#1a0a1e", "255,200,220"], ["#12082a", "220,190,255"], ["#d98aa8", "255,240,245"], ["#3a2a7a", "255,220,250"],
+      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"], ["#3a1c10", "255,214,170"], ["#1c0c08", "255,170,130"], ["#1a0a1e", "255,200,220"], ["#12082a", "220,190,255"], ["#d98aa8", "255,240,245"], ["#3a2a7a", "255,220,250"], ["#2a2630", "240,225,200"],
       ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]];
     const [base, nuv] = NEBBIE[k] || NEBBIE[0];
     g.fillStyle = base; g.fillRect(0, 0, W, H);

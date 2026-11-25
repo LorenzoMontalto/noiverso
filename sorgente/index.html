@@ -199,6 +199,9 @@ h2 { font-size: 1.35rem; }
 .ruolo-tag { background: var(--rc); color: #120c10; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 4px; }
 .ruolo-cosa { font-size: .74rem; color: #d9cdd1; }
 .carta.piccola .carta-nome { font-size: .8rem; }
+/* nomi lunghi (es. i titoli dei quadri): testo più piccolo così non copre il tipo in alto */
+.carta-nome.lungo { font-size: .9rem; } .carta-nome.lunghissimo { font-size: .78rem; }
+.carta.piccola .carta-nome.lungo { font-size: .72rem; } .carta.piccola .carta-nome.lunghissimo { font-size: .64rem; }
 .carta.piccola .ruolo-tag { font-size: .62rem; }
 .carta.sconosciuta { border-color: var(--linea); box-shadow: none; }
 .carta.sconosciuta img { filter: brightness(0); opacity: .9; }

@@ -444,7 +444,7 @@ function htmlCarta(c, opz = {}) {
     <div class="carta-piede">
       ${!coperta && !opz.mini && (opz.olo ?? (opz.liv === undefined && haOlo(c.id))) ? `<div class="olo-scritta">✦ Olografica</div>` : ""}
       ${(() => { const st = opz.stelle ?? (info && !opz.mini && typeof Maestria !== "undefined" ? Maestria.stelle(c.id) : 0); return st ? `<div class="carta-maestria" title="Maestria: ${st} stelle su 5">${"★".repeat(st)}<i>${"★".repeat(5 - st)}</i></div>` : ""; })()}
-      <div class="carta-nome">${esc(c.nome)}</div>
+      <div class="carta-nome${c.nome.length > 22 ? " lunghissimo" : c.nome.length > 16 ? " lungo" : ""}">${esc(c.nome)}</div>
       <div class="carta-sotto"><span class="ruolo-tag">${esc(RUOLI[c.ruolo].nome)}</span> ${opz.piccola ? "" : `<span class="ruolo-cosa">${esc(RUOLI[c.ruolo].cosa)}</span>`}</div>
     </div>`}
   </div>`;

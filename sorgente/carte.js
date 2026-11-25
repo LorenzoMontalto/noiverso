@@ -27,6 +27,7 @@ const SERIE = {
   circo: { nome: "Circo Intergalattico", colore: "#9b4dff", simbolo: "✪", desc: "Tendoni tra le galassie, acrobati in orbita, alieni domati e un direttore col cilindro: lo spettacolo più grande dell'universo sta per cominciare." },
   inutili: { nome: "Dei Inutili", colore: "#ffa07a", simbolo: "☁", desc: "Un Olimpo tra le nuvole dove nessuno ha voglia di fare niente: dei del divano, del ritardo, delle docce infinite e del Wi-Fi che non va. Inutili sì, ma guai a svegliarli." },
   colori: { nome: "Colori", colore: "#ff4fd8", simbolo: "🎨", desc: "Un colore per ognuno, dipinto sull'Italia più bella: girasoli e colline toscane, il mare di Capri, la costiera al tramonto, Roma di notte. Insieme fanno l'arcobaleno." },
+  arte: { nome: "Opere d'Arte", colore: "#d8a84a", simbolo: "🖼", desc: "Il museo più strano del mondo: nei quadri più famosi della storia, al posto dei soliti volti, ci sono i tuoi amici. Cornici d'oro, vernice ancora fresca e guai a toccare." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -765,6 +766,37 @@ const CARTE = [
     mosse: [m("Foglia Tagliente", 0, 28), m("Colline Verdi", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Primavera Toscana", 5, 13, { colpi: 6 })] },
   { id: "seneocra", nome: "Senèocra", serie: "colori", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "L'ocra della campagna toscana al tramonto: muri di pietra, cipressi, girasoli e il Colosseo dipinto sopra il nome. Calda come la terra d'estate.",
     mosse: [m("Terra d'Ocra", 0, 26), m("Sole di Toscana", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Tramonto d'Ocra", 5, 76, { eff: { tipo: "stordisci", val: 30 } })] },
+  // ---------------- Opere d'Arte ----------------
+  { id: "monnarita", nome: "Monnarita", serie: "arte", rarita: "leggendaria", stile: "DIF", ruolo: "stregone", frase: "Il quadro più famoso del mondo, con il sorriso più famoso del mondo. Da qualunque parte la guardi, lei ti guarda. E sorride, perché sa già come finirà.",
+    mosse: [m("Sorriso Enigmatico", 0, 32), m("Sguardo che Ti Segue", 2, 26, { eff: { tipo: "indebolisci", val: 35, turni: 2 } }), m("Capolavoro del Louvre", 5, 94, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "urlosamu", nome: "L’Urlo di Samu", serie: "arte", rarita: "leggendaria", stile: "FOR", ruolo: "picchiatore", frase: "Un cielo rosso fuoco, un ponte e un urlo che si sente fino in Norvegia. Più è disperato, più picchia forte: meglio non farlo agitare.",
+    mosse: [m("Urlo", 0, 34), m("Angoscia", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Cielo in Fiamme", 5, 98)] },
+  { id: "aliceperla", nome: "Alice con l’orecchino di perla", serie: "arte", rarita: "leggendaria", stile: "VEL", ruolo: "tiratore", frase: "Il turbante blu, lo sguardo di spalle e una perla che brilla nel buio. Ti guarda un attimo, e quella perla ti ha già colpito.",
+    mosse: [m("Perla Lanciata", 0, 32, { penetra: 20 }), m("Sguardo di Spalle", 2, 0, { eff: { tipo: "nebbia" } }), m("Luce di Vermeer", 5, 96, { penetra: 25 })] },
+  { id: "bonaparte", nome: "Bonaparte di Tiziano", serie: "arte", rarita: "epica", stile: "FOR", ruolo: "capo", frase: "Sul cavallo bianco che s'impenna, mantello rosso al vento e il dito puntato verso le Alpi. Dove indica lui, tutto l'esercito lo segue.",
+    mosse: [m("Carica di Cavalleria", 0, 32), m("Oltre le Alpi", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Impero", 5, 90)] },
+  { id: "lollante", nome: "Lollante sul mare di nebbia", serie: "arte", rarita: "epica", stile: "DIF", ruolo: "difensore", frase: "In cima alla roccia, di spalle, a guardare un mare di nebbia che non finisce mai. Non si muove di un passo: per arrivare a lui devi attraversare tutta quella nebbia.",
+    mosse: [m("Bastone del Viandante", 0, 30), m("Mare di Nebbia", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Vetta Romantica", 5, 88, { eff: { tipo: "stordisci", val: 30 } })] },
+  { id: "seneberta", nome: "Senèbertà che guida il popolo", serie: "arte", rarita: "epica", stile: "VEL", ruolo: "incendiario", frase: "Bandiera in mano, fucile nell'altra e il popolo dietro di lei tra fumo e barricate. Dove passa, la rivoluzione prende fuoco.",
+    mosse: [m("Bandiera al Vento", 0, 28, { eff: { tipo: "brucia", val: 3, turni: 2 } }), m("Barricate in Fiamme", 2, 26, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Rivoluzione", 5, 82, { eff: { tipo: "brucia", val: 5, turni: 3 } })] },
+  { id: "pipsgothic", nome: "Pips Gothic", serie: "arte", rarita: "epica", stile: "DIF", ruolo: "tank", frase: "Davanti alla casa di campagna, forcone in mano e sguardo severo da contadino dell'Iowa. Non sorride mai, e non si sposta mai.",
+    mosse: [m("Forconata", 0, 30), m("Sguardo Severo", 2, 24, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Fattoria dell’Iowa", 5, 88)] },
+  { id: "auroraermellino", nome: "Aurora con l’ermellino", serie: "arte", rarita: "rara", stile: "VEL", ruolo: "ladro", frase: "Abito rinascimentale, collana di perle nere e un ermellino in braccio che sembra innocuo. Mentre la ammiri, l'ermellino ti sfila l'energia.",
+    mosse: [m("Morso d’Ermellino", 0, 28, { eff: { tipo: "ruba", val: 1 } }), m("Graffio", 2, 22, { eff: { tipo: "stordisci", val: 30 } }), m("Ritratto di Leonardo", 5, 80, { eff: { tipo: "ruba", val: 1 } })] },
+  { id: "giuvvsage", nome: "Shot Sage Giuvv", serie: "arte", rarita: "rara", stile: "VEL", ruolo: "imprevedibile", frase: "Pop art: capelli gialli, pelle rosa, sfondo azzurro e un sorriso stampato in serie. Non sai mai quale copia di lei sta per colpirti.",
+    mosse: [m("Pop!", 0, 28), m("Colori Acidi", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Serigrafia", 5, 13, { colpi: 6 })] },
+  { id: "vikith", nome: "Vikith e Oloferne", serie: "arte", rarita: "rara", stile: "FOR", ruolo: "assassino", frase: "Una spada in mano, l'ancella dietro e un sorriso fin troppo tranquillo per quello che ha appena fatto. Meglio non farla arrabbiare a cena.",
+    mosse: [m("Lama di Giuditta", 0, 30), m("Notte di Betulia", 2, 0, { eff: { tipo: "nebbia" } }), m("Taglio Netto", 5, 82)] },
+  { id: "mortesimons", nome: "La morte di Simons", serie: "arte", rarita: "rara", stile: "DIF", ruolo: "stratega", frase: "Nella vasca, turbante in testa, penna d'oca in mano e una lettera ancora da finire. Sembra spacciato, ma sta solo pianificando la prossima mossa.",
+    mosse: [m("Penna d’Oca", 0, 26), m("Bagno Caldo", 0, 0, { eff: { tipo: "energia", val: 3 } }), m("Ultima Lettera", 5, 80, { eff: { tipo: "indebolisci", val: 25, turni: 2 } })] },
+  { id: "diegazzo", nome: "Il Diegazzo con la pipa", serie: "arte", rarita: "comune", stile: "VEL", ruolo: "schivatore", frase: "Camicia aperta, ricci spettinati e una pipa che fa più fumo di una locomotiva. Quando provi a colpirlo, trovi solo una nuvola.",
+    mosse: [m("Boccata", 0, 26), m("Nuvola di Fumo", 2, 0, { eff: { tipo: "nebbia" } }), m("Tabacco Forte", 5, 76)] },
+  { id: "dinoludovico", nome: "Il dinosauro Ludovico", serie: "arte", rarita: "comune", stile: "FOR", ruolo: "picchiatore", frase: "Un dipinto dell'Ottocento con un brontosauro gigante in mezzo alla valle… e la faccia di Ludovico. Nessuno sa come ci sia finito, ma nessuno osa chiederglielo.",
+    mosse: [m("Codata", 0, 28), m("Ruggito Preistorico", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Estinzione", 5, 78)] },
+  { id: "damaalessiott", nome: "La Dama di Alessiott", serie: "arte", rarita: "comune", stile: "FOR", ruolo: "stregone", frase: "Sulla barca, tra le canne del fiume, con gli occhiali e un arazzo che le scivola in acqua. Su di lei c'è una maledizione, e te la passa volentieri.",
+    mosse: [m("Specchio Incrinato", 0, 26), m("Maledizione", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Corrente del Fiume", 5, 13, { colpi: 6 })] },
+  { id: "pecorella", nome: "La famiglia Pecorella", serie: "arte", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "Mamma, papà, due bambini e il cane: tutti tondi, tutti in posa, tutti appena finito di pranzare. In famiglia ci si cura a forza di cibo.",
+    mosse: [m("Abbraccio di Famiglia", 0, 26), m("Pranzo della Domenica", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Peso Massimo", 5, 76, { eff: { tipo: "stordisci", val: 30 } })] },
 ];
 
 
@@ -841,6 +873,9 @@ const PERSONE = {
   // Colori
   aurormo: "Aurora", pipscuro: "Pips", lolloblitz: "Lorenzo", mauzzurro: "Maurizio", giulilla: "Giulia", simoborg: "Simone", vikfuchsia: "Viky",
   diegosa: "Diego", ritavola: "Rita", samuarancio: "Samuele", ludovirde: "Ludovico", alessiallo: "Alessia", aliverde: "Alice", tizianverde: "Tiziano", seneocra: "Senè",
+  // Opere d'Arte
+  monnarita: "Rita", urlosamu: "Samuele", aliceperla: "Alice", bonaparte: "Tiziano", lollante: "Lorenzo", seneberta: "Senè", pipsgothic: "Pips",
+  auroraermellino: "Aurora", giuvvsage: "Giulia", vikith: "Viky", mortesimons: "Simone", diegazzo: "Diego", dinoludovico: "Ludovico", damaalessiott: "Alessia", pecorella: "Maurizio",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -855,7 +890,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // (ma conviene darla prima a chi ne ha meno: lo mostra il riquadro «Versioni Ultra» nel pannello admin).
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta", "lollimpo", "aurormo"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta", "lollimpo", "aurormo", "monnarita"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, ruolo: c.ruolo, persona: c.persona, ultra: c.ultra, mosse: c.mosse.map(m => m.nome) }]));
 function applicaConfigCarte(cfg) {
@@ -952,6 +987,8 @@ function impronta(id) {
 // Bilanciamento per carta (nov 2026): un piccolo correttivo a PV, attacco e difesa, calcolato con migliaia di partite simulate,
 // perché ogni carta valga quanto le altre della sua rarità (le mosse e i ruoli non sono tutti uguali). 1 = nessuna correzione.
 const BILANCIO = {
+  // Opere d'Arte (nov 2026), dalle simulazioni
+  monnarita: 1.12, aliceperla: 0.96, bonaparte: 0.935, lollante: 0.955, seneberta: 0.955, pipsgothic: 1.03, auroraermellino: 0.99, giuvvsage: 1.07, mortesimons: 1.055, diegazzo: 1.01, dinoludovico: 1.01, damaalessiott: 1.16, pecorella: 1.0,
   // Colori (nov 2026), dalle simulazioni
   aurormo: 0.89, pipscuro: 1.035, mauzzurro: 0.975, giulilla: 1.025, simoborg: 0.97, vikfuchsia: 0.955, diegosa: 0.935, ritavola: 1.015, samuarancio: 0.92, ludovirde: 0.985, alessiallo: 1.04, aliverde: 1.015, tizianverde: 1.045, seneocra: 1.035,
   // Dei Inutili (nov 2026), dalle simulazioni

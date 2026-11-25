@@ -87,6 +87,8 @@ const SINERGIE_BASE = {
   inutili: { tipo: "miracolo", v2: 10, v3: 22, v5: 32, testo: v => `fortuna sfacciata: quando un colpo li manderebbe KO hanno ${_il(v)} di probabilità di restare in piedi con 1 PV (al massimo una volta per turno)` },
   // Colori: colori complementari. Quando colpiscono in vantaggio di tipo, il vantaggio vale ancora di più.
   colori: { tipo: "contrasto", v2: 30, v3: 45, v5: 85, testo: v => `colori complementari: quando colpiscono in vantaggio di tipo fanno +${v}% di danni` },
+  // Opere d'Arte: incanto. Quando entrano in campo, il nemico può restare incantato ad ammirarle e saltare il prossimo turno.
+  arte: { tipo: "incanto", v2: 35, v3: 50, v5: 80, testo: v => `incanto: quando entrano in campo il nemico ha ${_il(v)} di probabilità di restare incantato ad ammirarle e saltare il prossimo turno` },
   mestieri: { tipo: "vel",      v2: 6, v3: 18, v5: 37, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -205,6 +207,7 @@ class Battaglia {
         else if (s.tipo === "finale") x.sin.finale = s.val;
         else if (s.tipo === "miracolo") x.sin.miracolo = s.val;
         else if (s.tipo === "contrasto") x.sin.contrasto = s.val;
+        else if (s.tipo === "incanto") x.sin.incanto = s.val;
         else if (s.tipo === "duello") { x.sin.duello = s.val; x.pronta = true; }
         else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
@@ -412,6 +415,13 @@ class Battaglia {
     // Paesi del mondo: chi entra in campo si sente a casa e recupera un po' di PV
     if (dentro.sin && dentro.sin.duello) dentro.pronta = true;   // Far West: rientrando in campo la pistola è di nuovo carica
     if (dentro.sin && dentro.sin.ospitalita && dentro.pv < dentro.pvMax) this._cura(l, dentro, Math.max(1, Math.round(dentro.pvMax * dentro.sin.ospitalita / 100)));
+    // Opere d'Arte: il nemico in campo resta incantato davanti al quadro e salta il prossimo turno
+    if (dentro.sin && dentro.sin.incanto) {
+      const o = this.attivo(1 - l);
+      if (o && o.pv > 0 && !o.stordito && !(o.immuneFino >= this.turno) && this.rng() < dentro.sin.incanto / 100) {
+        o.stordito = true; this._log(`${o.c.nome} resta incantato davanti a ${dentro.c.nome} e salta il prossimo turno!`, { lato: l, anim: "stordito", su: 1 - l });
+      }
+    }
   }
 
   // Sostituzione dopo un KO (non consuma il turno)

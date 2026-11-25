@@ -199,6 +199,9 @@ h2 { font-size: 1.35rem; }
 .ruolo-tag { background: var(--rc); color: #120c10; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 4px; }
 .ruolo-cosa { font-size: .74rem; color: #d9cdd1; }
 .carta.piccola .carta-nome { font-size: .8rem; }
+/* nomi lunghi (es. i titoli dei quadri): testo più piccolo così non copre il tipo in alto */
+.carta-nome.lungo { font-size: .9rem; } .carta-nome.lunghissimo { font-size: .78rem; }
+.carta.piccola .carta-nome.lungo { font-size: .72rem; } .carta.piccola .carta-nome.lunghissimo { font-size: .64rem; }
 .carta.piccola .ruolo-tag { font-size: .62rem; }
 .carta.sconosciuta { border-color: var(--linea); box-shadow: none; }
 .carta.sconosciuta img { filter: brightness(0); opacity: .9; }
@@ -2288,26 +2291,26 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <div id="avviso" role="status" hidden></div>
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
-<script src="carte.139d6520.js"></script>
-<script src="motore.1d9eb090.js"></script>
+<script src="carte.2d52e1f9.js"></script>
+<script src="motore.5320dd5f.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
 <script src="suoni.75417e9f.js"></script>
-<script src="scena3d.e30b852d.js"></script>
-<script src="mappe.df656069.js"></script>
-<script src="storia.465201a0.js"></script>
-<script src="tutorial.eec72695.js"></script>
+<script src="scena3d.72d6594f.js"></script>
+<script src="mappe.8922ee6b.js"></script>
+<script src="storia.c200db04.js"></script>
+<script src="tutorial.a83fc5bd.js"></script>
 <script src="missioni.5d6745fb.js"></script>
 <script src="sociale.250f8d4a.js"></script>
-<script src="collezione.9159b379.js"></script>
+<script src="collezione.89d23b76.js"></script>
 <script src="graffiti.87ba5b2f.js"></script>
 <script src="zaino.f42c2817.js"></script>
 <script src="online.546aed30.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
-<script src="eventi.bc60b647.js"></script>
+<script src="eventi.c59d12ef.js"></script>
 <script src="progressi.07b8e2a1.js"></script>
 <script src="extra.3599cc91.js"></script>
 <script src="avvento.355b1396.js"></script>
-<script src="app.49674e64.js"></script>
+<script src="app.913b47e1.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

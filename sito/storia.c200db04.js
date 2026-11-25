@@ -451,9 +451,27 @@ const STORIA = [
       { titolo: "Il mare di Capri", nemici: ["mauzzurro", "lolloblitz", "giulilla", "simoborg", "ludovirde"], liv: [1, 1], abilita: 0.95, monete: 370,
         parla: "mauzzurro", frase: "Il mare oggi è calmo. Non farmi arrabbiare, o arrivano le onde." },
       { titolo: "Roma di notte", boss: true, nemici: ["aurormo", "pipscuro", "lolloblitz", "mauzzurro", "vikfuchsia"], liv: [1, 1], abilita: 0.97, monete: 660, bustina: "leggendaria",
-        parla: "aurormo", frase: "Il nero, il blu, il rosa… sono tutti dentro di me. Sono la luce bianca: battimi e il quadro sarà finito.", vittoria: "Aurormo sorride e la luce bianca si apre come un ventaglio: tutti i colori tornano al loro posto e il quadro si asciuga. Nell'angolo in basso, al posto della firma, è dipinto un mappamondo di vetro che non riflette i colori… ma mondi diversi. Lo tocchi, ed è vero." }
+        parla: "aurormo", frase: "Il nero, il blu, il rosa… sono tutti dentro di me. Sono la luce bianca: battimi e il quadro sarà finito.", vittoria: "Aurormo sorride e la luce bianca si apre come un ventaglio: tutti i colori tornano al loro posto e il quadro si asciuga. Nell'angolo in basso, al posto della firma, c'è un biglietto d'ingresso dipinto: «Museo dei Capolavori, valido per un giorno». Lo tocchi, e ti ritrovi davanti a una porta enorme con le cornici d'oro." }
+    ],
+  },  {
+    id: "c30", campo: "notte", titolo: "Il museo dei capolavori", serie: "arte", colore: "#d8a84a", simbolo: "🖼",
+    intro: "È notte e il museo è chiuso, ma i quadri sono svegli: in ogni cornice d'oro c'è uno dei tuoi amici, e non hanno nessuna intenzione di farsi guardare in silenzio. Per uscire devi attraversare tutte le sale fino alla più famosa di tutte.",
+    tappe: [
+      { titolo: "L'ingresso del museo", nemici: ["diegazzo", "dinoludovico", "damaalessiott", "pecorella", "giuvvsage"], liv: [1, 1], abilita: 0.9, monete: 340,
+        parla: "diegazzo", frase: "Vietato fumare nel museo? Io sono un quadro: le regole valgono per voi." },
+      { titolo: "La sala dei ritratti", nemici: ["pecorella", "auroraermellino", "damaalessiott", "mortesimons", "diegazzo"], liv: [1, 1], abilita: 0.92, monete: 350,
+        parla: "pecorella", frase: "Abbiamo appena pranzato in famiglia. Non disturbare la digestione, o ci alziamo tutti insieme." },
+      { titolo: "La galleria moderna", nemici: ["giuvvsage", "vikith", "pipsgothic", "dinoludovico", "auroraermellino"], liv: [1, 1], abilita: 0.93, monete: 360, bustina: "epica",
+        parla: "giuvvsage", frase: "Ciao! Ciao! Ciao! Ciao! Scusa, sono stampata in serie: ti saluto tutte e quattro." },
+      { titolo: "La sala delle battaglie", nemici: ["bonaparte", "seneberta", "vikith", "mortesimons", "lollante"], liv: [1, 1], abilita: 0.94, monete: 370,
+        parla: "bonaparte", frase: "Ho attraversato le Alpi a cavallo. Credi davvero che una sala del museo mi fermi?" },
+      { titolo: "La sala dei capolavori", nemici: ["urlosamu", "aliceperla", "lollante", "seneberta", "pipsgothic"], liv: [1, 1], abilita: 0.95, monete: 380,
+        parla: "urlosamu", frase: "AAAAAAH! …scusa, faccio sempre così quando arriva un visitatore." },
+      { titolo: "La Gioconda", boss: true, nemici: ["monnarita", "urlosamu", "aliceperla", "bonaparte", "seneberta"], liv: [1, 1], abilita: 0.97, monete: 680, bustina: "leggendaria",
+        parla: "monnarita", frase: "Tutti vengono qui per guardarmi. Ma sono io che guardo te, da qualunque parte ti metti.", vittoria: "Monnarita sorride, come sempre, e ti fa l'occhiolino: «Torna quando vuoi, la fila la salti». Dietro il quadro, appoggiato al muro, c'è un mappamondo di vetro che non riflette il museo… ma mondi diversi." }
     ],
   },
+
 
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
