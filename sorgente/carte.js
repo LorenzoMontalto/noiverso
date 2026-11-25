@@ -28,7 +28,7 @@ const SERIE = {
   inutili: { nome: "Dei Inutili", colore: "#ffa07a", simbolo: "☁", desc: "Un Olimpo tra le nuvole dove nessuno ha voglia di fare niente: dei del divano, del ritardo, delle docce infinite e del Wi-Fi che non va. Inutili sì, ma guai a svegliarli." },
   colori: { nome: "Colori", colore: "#ff4fd8", simbolo: "🎨", desc: "Un colore per ognuno, dipinto sull'Italia più bella: girasoli e colline toscane, il mare di Capri, la costiera al tramonto, Roma di notte. Insieme fanno l'arcobaleno." },
   arte: { nome: "Opere d'Arte", colore: "#d8a84a", simbolo: "🖼", desc: "Il museo più strano del mondo: nei quadri più famosi della storia, al posto dei soliti volti, ci sono i tuoi amici. Cornici d'oro, vernice ancora fresca e guai a toccare." },
-  ospiti: { nome: "Jolly", colore: "#e8443a", simbolo: "🃏", jolly: true, desc: "Non fanno parte del gruppo, nessuno li ha invitati, eppure sono sempre in mezzo. Sono carte Jolly: si uniscono alla sinergia che vuoi tu (al massimo una per squadra)." },
+  ospiti: { nome: "Jolly", colore: "#e8443a", simbolo: "🃏", jolly: true, desc: "Le carte matte del mazzo: non appartengono a nessuna serie, e proprio per questo stanno bene in tutte. Un Jolly diventa quello che ti serve: rinforza una sinergia, cambia tipo per sorprendere l'avversario o si imbuca a metà battaglia per rovinargli i piani. Rarissimi, e al massimo uno per squadra." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
