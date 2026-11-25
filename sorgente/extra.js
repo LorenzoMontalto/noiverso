@@ -726,7 +726,7 @@ const Jolly = (() => {
     };
     apriModale(`<div class="jolly-fin"><h2>◆ Potenziatori jolly</h2>
       <p class="jolly-conto">Ne hai <b>${j}</b></p>
-      <p class="nota">Arrivano dalle carte che hanno raggiunto il livello 30 (i potenziatori che avanzavano non servivano più) e dalle carte <b>30 e lode</b>: ognuna che scende in campo in una battaglia vinta dà 1 jolly e 15 monete (non nell'Arena). Scegli tu su quale carta metterli e quanti: poi la potenzi come sempre, con le monete. <b>+N</b> mette quelli che mancano per il prossimo livello.</p>
+      <p class="nota">Arrivano dalle carte che hanno raggiunto il livello 30 (i potenziatori che avanzavano non servivano più) e dalle carte <b>30 e lode</b>: ognuna che scende in campo in una battaglia vinta dà da 1 a 5 jolly (quanti i potenziatori normali di quella battaglia) e 15 monete (non nell'Arena). Scegli tu su quale carta metterli e quanti: poi la potenzi come sempre, con le monete. <b>+N</b> mette quelli che mancano per il prossimo livello.</p>
       ${mie.length ? `<div class="jolly-lista">${mie.map(riga).join("")}</div>` : `<p class="nota">Tutte le tue carte sono già al livello 30!</p>`}</div>`);
   }
 

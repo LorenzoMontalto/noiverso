@@ -495,7 +495,7 @@ const Scena3D = (() => {
       this.aggiornatori.push((t, dt) => {
         const k = 1 - Math.exp(-dt * 8);
         for (const l of [0, 1]) this.lati[l].forEach((u, i) => {
-          if (u.occupata) return;
+          if (u.occupata) { if (performance.now() - u.occupataDa() < 6000 / imp.velocita) return; u.occupata = false; u.gruppo.rotation.z = 0; }
           const attiva = i === this.attivoIdx[l];
           const p = attiva ? this.posAttiva(l) : this.posPanchina(l, i);
           const sc = attiva ? this.L.scalaAtt[l] : this.L.scalaPan;
@@ -630,7 +630,12 @@ const Scena3D = (() => {
       // entra in scena volando dal proprio angolo
       gruppo.position.set(l ? 9 : -9, 2, l ? -6 : 5);
       this.scena.add(gruppo);
-      const u = { gruppo, carta, targa, cv, tex, id: x.id, i, pv: x.pv, pvMax: x.pvMax, stat: statVisibili(x), occupata: false };
+      const u = { gruppo, carta, targa, cv, tex, id: x.id, i, pv: x.pv, pvMax: x.pvMax, stat: statVisibili(x) };
+      // segno quando una carta diventa "occupata" (un'animazione la sta muovendo): se resta così troppo a lungo
+      // (animazione interrotta, due animazioni sovrapposte), il ciclo qui sotto la libera e lei torna al suo posto
+      let occ = false, occDa = 0;
+      Object.defineProperty(u, "occupata", { get: () => occ, set: v => { occ = !!v; occDa = occ ? performance.now() : 0; }, enumerable: true });
+      u.occupataDa = () => occDa;
       this._targa(u);
       return u;
     }
@@ -743,13 +748,19 @@ const Scena3D = (() => {
       u.gruppo.position.copy(dove);
       this.esplosione(dove, colore, 30, { velocita: 1.2, su: 1, gravita: -.3, durata: 700 });
       await this.anima(160, t => mats.forEach(m => { m.opacity = t; }));
-      return { u, p0, torna: async () => {
+      let tornata = false;
+      const torna = async () => {
+        if (tornata) return; tornata = true;
         await this.anima(150, t => mats.forEach(m => { m.opacity = 1 - t; }));
         u.gruppo.position.copy(p0);
         await this.anima(150, t => mats.forEach(m => { m.opacity = t; }));
         mats.forEach(m => { m.transparent = false; m.opacity = 1; });
         u.occupata = false;
-      } };
+      };
+      // nov 2026: tante mosse si teletrasportavano dietro al nemico e non chiamavano mai torna(): la carta restava lì.
+      // Ora attacco() riporta indietro, a fine mossa, ogni carta che è ancora dall'altra parte.
+      (this._daTornare = this._daTornare || []).push(torna);
+      return { u, p0, torna };
     }
     async proiettile(da, a, { colore = 0xffffff, dim = .5, arco = .5, dur = 420, scia = true, simbolo = null, ruota = 0, ritorno = false } = {}) {
       const corpo = simbolo ? glifo(simbolo, "#" + colore.toString(16).padStart(6, "0"), dim) : aloneSprite(colore, dim);
@@ -1013,6 +1024,8 @@ const Scena3D = (() => {
         if (ricetta) await ricetta(this, l, e);
         else await this.generica(l, e);
       } catch (err) { /* un'animazione rotta non deve bloccare la partita */ }
+      const resta = this._daTornare || []; this._daTornare = [];
+      try { await Promise.all(resta.map(f => f())); } catch (err) { /* idem */ }
       const p1 = this.punta.clone();
       this.anima(600, t => { this.punta.copy(p1).multiplyScalar(1 - t); }, easing.inOut);
     }
