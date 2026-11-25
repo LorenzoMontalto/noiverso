@@ -28,6 +28,7 @@ const SERIE = {
   inutili: { nome: "Dei Inutili", colore: "#ffa07a", simbolo: "☁", desc: "Un Olimpo tra le nuvole dove nessuno ha voglia di fare niente: dei del divano, del ritardo, delle docce infinite e del Wi-Fi che non va. Inutili sì, ma guai a svegliarli." },
   colori: { nome: "Colori", colore: "#ff4fd8", simbolo: "🎨", desc: "Un colore per ognuno, dipinto sull'Italia più bella: girasoli e colline toscane, il mare di Capri, la costiera al tramonto, Roma di notte. Insieme fanno l'arcobaleno." },
   arte: { nome: "Opere d'Arte", colore: "#d8a84a", simbolo: "🖼", desc: "Il museo più strano del mondo: nei quadri più famosi della storia, al posto dei soliti volti, ci sono i tuoi amici. Cornici d'oro, vernice ancora fresca e guai a toccare." },
+  ospiti: { nome: "Ospiti Indesiderati", colore: "#e8443a", simbolo: "🃏", jolly: true, desc: "Non fanno parte del gruppo, nessuno li ha invitati, eppure sono sempre in mezzo. Sono carte Jolly: si uniscono alla sinergia che vuoi tu (al massimo una per squadra)." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -39,7 +40,11 @@ const RARITA = {
   rara:        { nome: "Rara",        peso: 28,  peso4: 70, forza: 1.10 },
   epica:       { nome: "Epica",       peso: 8.5, peso4: 24, forza: 1.20 },
   leggendaria: { nome: "Leggendaria", peso: 1.5, peso4: 6,  forza: 1.30 },
+  // nov 2026: carte Jolly (serie Ospiti Indesiderati). Non stanno in ORDINE_RARITA: escono nelle bustine con una
+  // probabilità a parte (PROB_JOLLY) e non salgono di rarità. Forza tra rara ed epica: il loro vantaggio è la flessibilità.
+  jolly:       { nome: "Jolly",       peso: 0,   peso4: 0,  forza: 1.14 },
 };
+const PROB_JOLLY = 0.02;   // ogni carta di una bustina ha il 2% di probabilità di essere un Jolly
 const ORDINE_RARITA = ["comune", "rara", "epica", "leggendaria"];
 const RARE_TOP = r => r === "leggendaria" || r === "ultra";   // per la regola "una a persona per serie"
 
@@ -797,6 +802,11 @@ const CARTE = [
     mosse: [m("Specchio Incrinato", 0, 26), m("Maledizione", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Corrente del Fiume", 5, 13, { colpi: 6 })] },
   { id: "pecorella", nome: "La famiglia Pecorella", serie: "arte", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "Mamma, papà, due bambini e il cane: tutti tondi, tutti in posa, tutti appena finito di pranzare. In famiglia ci si cura a forza di cibo.",
     mosse: [m("Abbraccio di Famiglia", 0, 26), m("Pranzo della Domenica", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Peso Massimo", 5, 76, { eff: { tipo: "stordisci", val: 30 } })] },
+  // ---------------- Ospiti Indesiderati (carte Jolly) ----------------
+  { id: "arciulo", nome: "Arciulo", serie: "ospiti", rarita: "jolly", stile: "DIF", ruolo: "guaritore", frase: "La cameriera che non hai mai assunto, ma che ormai è sempre in casa. Piumino in mano, grembiule perfetto: pulisce tutto, anche le tue ferite.",
+    mosse: [m("Colpo di Piumino", 0, 28), m("Pulizie di Primavera", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Grembiule Volante", 5, 82, { eff: { tipo: "stordisci", val: 30 } })] },
+  { id: "michele", nome: "Michele", serie: "ospiti", rarita: "jolly", stile: "FOR", ruolo: "tank", frase: "L'ospite che entra per caso, ma occupa tutto lo spazio. Maglietta strappata e muscoli ovunque: una volta che si è seduto, non lo sposta più nessuno.",
+    mosse: [m("Spallata", 0, 30), m("Occupo Tutto Io", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Maglietta Strappata", 5, 88)] },
 ];
 
 
@@ -873,6 +883,8 @@ const PERSONE = {
   // Colori
   aurormo: "Aurora", pipscuro: "Pips", lolloblitz: "Lorenzo", mauzzurro: "Maurizio", giulilla: "Giulia", simoborg: "Simone", vikfuchsia: "Viky",
   diegosa: "Diego", ritavola: "Rita", samuarancio: "Samuele", ludovirde: "Ludovico", alessiallo: "Alessia", aliverde: "Alice", tizianverde: "Tiziano", seneocra: "Senè",
+  // Ospiti Indesiderati (fuori dal gruppo)
+  arciulo: "Arciulo", michele: "Michele",
   // Opere d'Arte
   monnarita: "Rita", urlosamu: "Samuele", aliceperla: "Alice", bonaparte: "Tiziano", lollante: "Lorenzo", seneberta: "Senè", pipsgothic: "Pips",
   auroraermellino: "Aurora", giuvvsage: "Giulia", vikith: "Viky", mortesimons: "Simone", diegazzo: "Diego", dinoludovico: "Ludovico", damaalessiott: "Alessia", pecorella: "Maurizio",
@@ -944,11 +956,11 @@ const fattoreLivello = (liv = 1, lode = false) => (1 + 0.02 * (liv - 1)) * (lode
 // (di più se è rara, perché i suoi doppioni escono meno). Per ogni livello servono potenziatori + monete.
 // Esempio: Lv1→2 costa 3 potenziatori e 5 monete; Lv10→11: 8 e 20; Lv29→30: 17 e 110.
 // In tutto, dal 1 al 30: 297 potenziatori e 1205 monete (nov 2026: le monete erano il doppio).
-const POT_DOPPIONE = { comune: 10, rara: 12, epica: 24, leggendaria: 60 };   // nov 2026: epica 30→24, leggendaria 100→60 (un doppione fortunato non porta più una carta al 16 in un colpo)
+const POT_DOPPIONE = { comune: 10, rara: 12, epica: 24, leggendaria: 60, jolly: 20 };   // nov 2026: epica 30→24, leggendaria 100→60 (un doppione fortunato non porta più una carta al 16 in un colpo)
 // Doppione di una carta già al 30 (nov 2026: prima 15 / 20 / 40 / 100).
 // Tetto: anche con TUTTE le carte di una bustina al 30, una bustina da 150 restituisce in media circa 138 monete,
 // quindi comprare bustine non diventa mai un modo per fare soldi.
-const MONETE_DOPPIONE_30 = { comune: 25, rara: 30, epica: 60, leggendaria: 150 };
+const MONETE_DOPPIONE_30 = { comune: 25, rara: 30, epica: 60, leggendaria: 150, jolly: 50 };
 const potPerLivello = L => 3 + Math.floor(L / 2);
 
 // ---------------- Ascesa ----------------
@@ -961,7 +973,7 @@ const potPerLivello = L => 3 + Math.floor(L / 2);
 // costo per salire DA questa rarità. nov 2026: raddoppiato (era 500 / 1000 / 2000) perché ora l'ascesa non fa più ripartire dal livello 1
 const ASCESA_MONETE = { comune: 1000, rara: 2000, epica: 4000 };
 const ASCESA_MONETE_PRIMA = { comune: 500, rara: 1000, epica: 2000 };   // i prezzi di prima, per i rimborsi delle ascese vecchie
-const rarDopo = (base, passi) => ORDINE_RARITA[Math.min(ORDINE_RARITA.length - 1, Math.max(0, ORDINE_RARITA.indexOf(base)) + Math.max(0, Math.min(3, passi | 0)))] || base;
+const rarDopo = (base, passi) => !ORDINE_RARITA.includes(base) ? base : ORDINE_RARITA[Math.min(ORDINE_RARITA.length - 1, Math.max(0, ORDINE_RARITA.indexOf(base)) + Math.max(0, Math.min(3, passi | 0)))] || base;
 // nov 2026: costo in monete dimezzato (prima 5 · arrotonda((10 + L²/4) / 5): dal 1 al 30 servivano 2410 monete, ora 1205)
 const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 10);
 
@@ -987,6 +999,8 @@ function impronta(id) {
 // Bilanciamento per carta (nov 2026): un piccolo correttivo a PV, attacco e difesa, calcolato con migliaia di partite simulate,
 // perché ogni carta valga quanto le altre della sua rarità (le mosse e i ruoli non sono tutti uguali). 1 = nessuna correzione.
 const BILANCIO = {
+  // carte Jolly (nov 2026): un po' sotto le epiche, il loro vantaggio è che si uniscono alla sinergia che vuoi
+  arciulo: 0.945, michele: 0.915,
   // Opere d'Arte (nov 2026), dalle simulazioni
   monnarita: 1.12, aliceperla: 0.96, bonaparte: 0.935, lollante: 0.955, seneberta: 0.955, pipsgothic: 1.03, auroraermellino: 0.99, giuvvsage: 1.07, mortesimons: 1.055, diegazzo: 1.01, dinoludovico: 1.01, damaalessiott: 1.16, pecorella: 1.0,
   // Colori (nov 2026), dalle simulazioni

@@ -8,7 +8,7 @@
 // ============================================================
 const Tutorial = (() => {
   const PREMIO = 150;
-  const VERSIONE = 17;   // quando il tutorial cambia molto, chi l'aveva già fatto riceve un avviso (una volta)
+  const VERSIONE = 18;   // quando il tutorial cambia molto, chi l'aveva già fatto riceve un avviso (una volta)
   let passi = [], i = 0, attivo = false, timer = null, radice = null, entrato = 0;
 
   const vis = el => { if (!el) return null; const r = el.getBoundingClientRect(); return r.width > 2 && r.height > 2 ? r : null; };
@@ -202,7 +202,7 @@ const Tutorial = (() => {
       setTimeout(() => mostraAvviso("Novità: c'è un tutorial! Lo trovi nel tuo profilo, in alto a destra."), 1600);
     } else if ((S.tutorial.versione || 1) < VERSIONE) {
       S.tutorial = Object.assign({}, S.tutorial, { versione: VERSIONE }); salva();
-      setTimeout(() => mostraAvviso("Il tutorial è aggiornato con le novità (serie Opere d'Arte, serie Colori, serie Dei Inutili, serie Circo Intergalattico, serie Mitologia Giapponese, serie Apocalisse, serie Far West, serie Paesi del Mondo, serie Carte da Gioco, serie Cyborg, serie Creature Mistiche, serie Elementi, serie Star Wars, serie Barbapapà, serie Simpson, sinergie ribilanciate, Ascesa delle carte, leggendaria garantita, scambi per potenziare, campi di battaglia…). Lo rifai dal tuo profilo, in alto a destra."), 1600);
+      setTimeout(() => mostraAvviso("Il tutorial è aggiornato con le novità (carte Jolly degli Ospiti Indesiderati, serie Opere d'Arte, serie Colori, serie Dei Inutili, serie Circo Intergalattico, serie Mitologia Giapponese, serie Apocalisse, serie Far West, serie Paesi del Mondo, serie Carte da Gioco, serie Cyborg, serie Creature Mistiche, serie Elementi, serie Star Wars, serie Barbapapà, serie Simpson, sinergie ribilanciate, Ascesa delle carte, leggendaria garantita, scambi per potenziare, campi di battaglia…). Lo rifai dal tuo profilo, in alto a destra."), 1600);
     }
   }
 

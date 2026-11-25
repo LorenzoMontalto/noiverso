@@ -19,7 +19,7 @@ const Livello = (() => {
   const PUNTI = {
     computer: { recluta: 10, sfidante: 15, boss: 25, leggenda: 40 }, settimana: 30, bossGiorno: 60, bossGiornoAncora: 15,
     storia: 20, storiaBoss: 40, stella: 15, vivo: 50, vivoPersa: 15, amico: 25, amicoPersa: 5, bossGruppo: 20, persa: 3,
-    carta: { comune: 5, rara: 10, epica: 20, leggendaria: 50 }, olo: 25, ultra: 100,
+    carta: { comune: 5, rara: 10, epica: 20, leggendaria: 50, jolly: 30 }, olo: 25, ultra: 100,
     potenzia: 2, al30: 40, lode: 80, ascesa: 60, missione: 20, missioneSett: 60, trofeo: 40, accesso: 10,
   };
   const COME = [

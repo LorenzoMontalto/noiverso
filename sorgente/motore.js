@@ -114,17 +114,32 @@ function applicaSinergie(cfg) {
   MULTIVERSO.v3 = num(mv.v3, 4, 40);
 }
 // Quali sinergie ha una squadra (array di id carte). Usata dal motore e dalla schermata Squadre.
-function sinergieDi(ids) {
+// ---------------- Carte Jolly ----------------
+// Le carte di rarità "jolly" (serie Ospiti Indesiderati) non hanno una sinergia loro: si uniscono a una serie della
+// squadra, scelta dal giocatore (squadra.jolly) o, se non l'ha scelta, quella dove servono di più. Contano per arrivare
+// a 2 o a 3 carte, mai a 5 (il bonus pieno resta per le squadre di 5 carte vere). Ne conta una sola per squadra.
+const eJolly = c => !!c && c.rarita === "jolly";
+const livSinergia = n => n >= 5 ? 3 : n >= 3 ? 2 : n >= 2 ? 1 : 0;
+function serieJollyAuto(perSerie, cand) {
+  // prima dove il jolly fa salire di livello la sinergia, poi la serie con più carte (a parità, in ordine alfabetico: deve
+  // venire uguale su tutti e due i telefoni nelle partite dal vivo)
+  const guadagno = k => livSinergia(Math.min(4, perSerie[k].length + 1)) - livSinergia(perSerie[k].length);
+  return cand.slice().sort((a, b) => guadagno(b) - guadagno(a) || perSerie[b].length - perSerie[a].length || (a < b ? -1 : 1))[0];
+}
+function sinergieDi(ids, sceltaJolly) {
   const carte = ids.map(id => _PER_ID[id]).filter(Boolean);
   const perSerie = {}, perPersona = {};
-  for (const c of carte) { (perSerie[c.serie] = perSerie[c.serie] || []).push(c.id); if (c.persona) (perPersona[c.persona] = perPersona[c.persona] || []).push(c.id); }
+  const jolly = carte.find(eJolly);
+  for (const c of carte) { if (!eJolly(c)) (perSerie[c.serie] = perSerie[c.serie] || []).push(c.id); if (c.persona) (perPersona[c.persona] = perPersona[c.persona] || []).push(c.id); }
+  const scelte = Object.keys(perSerie).filter(k => SINERGIE[k]);
+  const conJolly = jolly && scelte.length ? (scelte.includes(sceltaJolly) ? sceltaJolly : serieJollyAuto(perSerie, scelte)) : null;
   const serie = Object.entries(perSerie).filter(([k]) => SINERGIE[k]).map(([k, lista]) => {
-    const n = lista.length, liv = n >= 5 ? 3 : n >= 3 ? 2 : n >= 2 ? 1 : 0, s = SINERGIE[k];
-    return { serie: k, n, liv, ids: lista, tipo: s.tipo, val: valSinergia(s, liv) };
+    const conJ = k === conJolly, n = conJ ? Math.min(4, lista.length + 1) : lista.length, liv = livSinergia(n), s = SINERGIE[k];
+    return { serie: k, n, liv, ids: conJ ? lista.concat(jolly.id) : lista, tipo: s.tipo, val: valSinergia(s, liv), jolly: conJ ? jolly.id : null };
   }).sort((a, b) => b.n - a.n);
   const multiverso = Object.entries(perPersona).filter(([, l]) => l.length >= 2)
     .map(([persona, lista]) => ({ persona, ids: lista, n: lista.length, val: lista.length >= 3 ? MULTIVERSO.v3 : MULTIVERSO.v2 }));
-  return { serie, multiverso };
+  return { serie, multiverso, jolly: jolly ? { id: jolly.id, serie: conJolly, scelte, auto: !scelte.includes(sceltaJolly) } : null };
 }
 
 // ---------------- Campi di battaglia ----------------
@@ -179,18 +194,18 @@ class Battaglia {
     this.vincitore = -1;
     this.ev = [];
     this.graffitiAnnullati = null;
-    this.lati.forEach(L => { this._sinergie(L); if (L.squadra[0]) L.squadra[0].usata = true; });   // "usata": è scesa in campo (per i premi)
+    this.lati.forEach((L, i) => { const sj = [sqG, sqC][i].find(x => x && typeof x.js === "string" && x.js); L.sceltaJolly = sj ? sj.js : ""; this._sinergie(L); if (L.squadra[0]) L.squadra[0].usata = true; });   // "usata": è scesa in campo (per i premi)
     this.campo = null;
     this.impostaCampo(ORDINE_CAMPI[Math.floor(this.rng() * ORDINE_CAMPI.length)]);
   }
   // applica le sinergie di una squadra ai suoi combattenti
   _sinergie(L) {
-    const sin = sinergieDi(L.squadra.map(x => x.id));
+    const sin = sinergieDi(L.squadra.map(x => x.id), L.sceltaJolly);
     L.sinergie = sin;
     for (const s of sin.serie) {
       if (!s.liv) continue;
       for (const x of L.squadra) {
-        if (x.c.serie !== s.serie) continue;
+        if (!s.ids.includes(x.id)) continue;   // le carte della serie, più il Jolly se si è unito a questa
         x.sin = x.sin || {};
         if (s.tipo === "att") { x.att *= 1 + s.val / 100; x.sinAtt = 1 + s.val / 100; }
         else if (s.tipo === "dif") x.dif *= 1 + s.val / 100;

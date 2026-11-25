@@ -21,14 +21,16 @@ function hashTesto(t) { let h = 2166136261; for (const ch of String(t)) { h ^= c
 // Il boss del giorno si sceglie tra le serie uscite prima di quel giorno, con un sorteggio che non dipende da quante sono.
 const INIZIO_GIRI = new Date(2026, 10, 9);   // lunedì 9 novembre 2026: così la settimana del 23 novembre è quella degli Dei
 // Serie nuove: giorno di uscita ("AAAA-MM-GG"). Entrano nel giro successivo e tra i boss dal giorno dopo. Le altre ci sono da sempre.
-const USCITA_SERIE = { giappone: "2026-11-24", circo: "2026-11-24", inutili: "2026-11-25", colori: "2026-11-25", arte: "2026-11-25" };   // quando esce una serie nuova: AAAA-MM-GG
+const USCITA_SERIE = { giappone: "2026-11-24", circo: "2026-11-24", inutili: "2026-11-25", colori: "2026-11-25", arte: "2026-11-25", ospiti: "2026-11-25" };   // quando esce una serie nuova: AAAA-MM-GG
 const uscitaPrima = (s, d) => { const u = USCITA_SERIE[s]; if (!u) return true; const [a, m, g] = u.split("-").map(Number); return new Date(a, m - 1, g) < d; };
+// le serie Jolly (Ospiti Indesiderati) non fanno da serie della settimana né da boss del giorno: hanno poche carte e nessuna leggendaria
+const SERIE_EVENTI = () => ORDINE_SERIE.filter(k => !SERIE[k].jolly);
 const piuSettimane = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + 7 * n);
 function serieDellaSettimana(lun) {
   const n = Math.round((lun - INIZIO_GIRI) / (7 * 864e5));
-  if (n < 0) { const v = Math.round((lun - new Date(2026, 0, 5)) / (7 * 864e5)); return ORDINE_SERIE[((v % ORDINE_SERIE.length) + ORDINE_SERIE.length) % ORDINE_SERIE.length]; }
+  if (n < 0) { const v = Math.round((lun - new Date(2026, 0, 5)) / (7 * 864e5)); const OS = SERIE_EVENTI(); return OS[((v % OS.length) + OS.length) % OS.length]; }
   for (let inizio = 0; ;) {
-    const giro = ORDINE_SERIE.filter(s => uscitaPrima(s, piuSettimane(INIZIO_GIRI, inizio)));
+    const giro = SERIE_EVENTI().filter(s => uscitaPrima(s, piuSettimane(INIZIO_GIRI, inizio)));
     if (n < inizio + giro.length) return giro[n - inizio];
     inizio += giro.length;
   }
@@ -191,7 +193,7 @@ const BossGiorno = (() => {
   function oggi(data = new Date()) {
     const k = chiaveGiorno(data), h = n => hashTesto(k + ":" + n);
     // fino al 24 novembre 2026 il boss resta quello calcolato col sistema vecchio (con le 17 serie di allora); dal 25 il sorteggio stabile
-    const vecchio = k <= "2026-11-24", VECCHIE = ORDINE_SERIE.slice(0, 17), pool = ORDINE_SERIE.filter(x => uscitaPrima(x, new Date(data.getFullYear(), data.getMonth(), data.getDate())));
+    const vecchio = k <= "2026-11-24", VECCHIE = ORDINE_SERIE.slice(0, 17), pool = SERIE_EVENTI().filter(x => uscitaPrima(x, new Date(data.getFullYear(), data.getMonth(), data.getDate())));
     const s = vecchio ? VECCHIE[h("serie") % VECCHIE.length] : sorteggio(pool, k + ":boss"), id = BOSS[s] && PER_ID[BOSS[s]] ? BOSS[s] : CARTE.find(c => c.serie === s && c.rarita === "leggendaria").id;
     const c = PER_ID[id], kc = Object.keys(CORAZZE), kd = Object.keys(DEBOLEZZE);
     const corazza = kc[h("cor") % kc.length];

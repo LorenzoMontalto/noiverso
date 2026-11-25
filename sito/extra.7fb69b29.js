@@ -201,8 +201,8 @@ const Maestria = (() => {
 // ma resta un traguardo da giocatore che ha già tanto.
 // Esempio: una bustina normale con tutte le carte al 30 dà in media circa 16 ◈; una leggendaria a scelta ne costa 1500 (circa 90 bustine).
 const Frammenti = (() => {
-  const DA_DOPPIONE = { comune: 2, rara: 4, epica: 10, leggendaria: 25 };
-  const COSTO = { comune: 100, rara: 250, epica: 600, leggendaria: 1500 };
+  const DA_DOPPIONE = { comune: 2, rara: 4, epica: 10, leggendaria: 25, jolly: 12 };
+  const COSTO = { comune: 100, rara: 250, epica: 600, leggendaria: 1500, jolly: 900 };
   const quanti = () => num(S.framm);
   function aggiungi(n, avvisa = true) { if (!attivoExtra() || !(n > 0)) return; S.framm = quanti() + Math.round(n); if (avvisa) setTimeout(() => mostraAvviso(`+${n} frammenti ◈ (ne hai ${S.framm}).`), 1200); }
   function daEsiti(esiti) { const n = (esiti || []).reduce((a, e) => a + num(e.framm), 0); aggiungi(n); }
@@ -231,7 +231,7 @@ const Frammenti = (() => {
     apriModale(`<div class="framm-info"><div class="fi-ico">◈</div><h2>${q.toLocaleString("it-IT")} frammenti</h2>
       <p>Servono a <b>creare le carte che ti mancano</b>: nell'album tocca una carta coperta. Su ognuna c'è scritto quanti frammenti costa.</p>
       <table class="fi-tab"><thead><tr><th>Rarità</th><th>Costa</th><th>Doppione al 30 dà</th></tr></thead><tbody>
-        ${ORDINE_RARITA.map(r => `<tr><td>${esc(RARITA[r].nome)}</td><td><b>◈ ${COSTO[r].toLocaleString("it-IT")}</b></td><td>+${DA_DOPPIONE[r]} ◈</td></tr>`).join("")}</tbody></table>
+        ${[...ORDINE_RARITA, "jolly"].map(r => `<tr><td>${esc(RARITA[r].nome)}</td><td><b>◈ ${COSTO[r].toLocaleString("it-IT")}</b></td><td>+${DA_DOPPIONE[r]} ◈</td></tr>`).join("")}</tbody></table>
       <p class="nota">Arrivano dai doppioni delle carte già al livello 30, dall'Arena e dalla quinta stella di maestria. Ti mancano ${mancano.length} carte${creabili ? `: <b>${creabili}</b> le puoi già creare` : ""}.</p>
       <div class="azioni centro"><button class="btn primario" data-azione="vai-album">Vai all'album</button><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }
@@ -446,7 +446,7 @@ const Arena = (() => {
 // Le bustine restano tutte come prima. In più, ogni giorno 3 offerte diverse per ogni giocatore:
 // una carta che ti manca (mai leggendaria), potenziatori per una tua carta, un cosmetico.
 const Offerte = (() => {
-  const PREZZO_CARTA = { comune: 400, rara: 900, epica: 2000 }, POT = 20, PREZZO_POT = 300;
+  const PREZZO_CARTA = { comune: 400, rara: 900, epica: 2000, jolly: 2500 }, POT = 20, PREZZO_POT = 300;
   const giorno = () => chiaveGiorno(new Date());
   const sorteggia = (lista, chiave) => lista.length ? lista[hashTesto(chiave) % lista.length] : null;
   // le offerte si decidono una volta al giorno e restano quelle (anche dopo aver comprato la carta)
@@ -589,7 +589,8 @@ const Consiglio = (() => {
   const membro = id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0 });
   const valore = id => { const s = statistiche(PER_ID[id], livello(id) || 1, haLode(id), rarCarta(id)); return s.pv * s.att * (1 + s.vel / 200); };
   function candidate() {
-    const mie = possedute().map(c => c.id).sort((a, b) => valore(b) - valore(a));
+    // al massimo un Jolly per squadra: tiene solo il migliore
+    const mie = possedute().map(c => c.id).sort((a, b) => valore(b) - valore(a)).filter((id, k, l) => PER_ID[id].rarita !== "jolly" || l.findIndex(x => PER_ID[x].rarita === "jolly") === k);
     const out = [], chiave = new Set(), add = l => { if (l.length < CARTE_SQUADRA) return; const k = l.slice().sort().join(); if (!chiave.has(k)) { chiave.add(k); out.push(l); } };
     add(mie.slice(0, CARTE_SQUADRA));
     const perSerie = {}; for (const id of mie) (perSerie[PER_ID[id].serie] = perSerie[PER_ID[id].serie] || []).push(id);
@@ -604,7 +605,7 @@ const Consiglio = (() => {
     const pesca = rar => { const l = CARTE.filter(c => rar.includes(c.rarita)); return l[Math.floor(R() * l.length)].id; };
     const out = [];
     for (let i = 0; i < 6; i++) { const s = new Set(); while (s.size < CARTE_SQUADRA) s.add(pesca(i < 3 ? ["epica", "leggendaria"] : ["rara", "epica", "leggendaria"])); out.push([...s]); }
-    for (let i = 0; i < 4; i++) { const ser = ORDINE_SERIE[Math.floor(R() * ORDINE_SERIE.length)], l = CARTE.filter(c => c.serie === ser).map(c => c.id); const s = new Set(); while (s.size < Math.min(CARTE_SQUADRA, l.length)) s.add(l[Math.floor(R() * l.length)]); while (s.size < CARTE_SQUADRA) s.add(pesca(["epica"])); out.push([...s]); }
+    for (let i = 0; i < 4; i++) { const OSE = ORDINE_SERIE.filter(k => !SERIE[k].jolly), ser = OSE[Math.floor(R() * OSE.length)], l = CARTE.filter(c => c.serie === ser).map(c => c.id); const s = new Set(); while (s.size < Math.min(CARTE_SQUADRA, l.length)) s.add(l[Math.floor(R() * l.length)]); while (s.size < CARTE_SQUADRA) s.add(pesca(["epica"])); out.push([...s]); }
     return out.map(l => l.map(id => ({ id, liv: lv, lode: lv >= 30 })));
   }
   function combatti(mia, nemica, R) {

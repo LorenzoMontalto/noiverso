@@ -6,8 +6,8 @@
 
 const Scena3D = (() => {
   const T = window.THREE;
-  const COL_RARITA = { comune: 0x9aa3ad, rara: 0x4c95ff, epica: 0xb866ff, leggendaria: 0xf2c14e, ultra: 0xffe9a8 };
-  const HEX_RARITA = { comune: "#9aa3ad", rara: "#4c95ff", epica: "#b866ff", leggendaria: "#f2c14e", ultra: "#ffe9a8" };
+  const COL_RARITA = { comune: 0x9aa3ad, rara: 0x4c95ff, epica: 0xb866ff, leggendaria: 0xf2c14e, ultra: 0xffe9a8, jolly: 0xe8443a };
+  const HEX_RARITA = { comune: "#9aa3ad", rara: "#4c95ff", epica: "#b866ff", leggendaria: "#f2c14e", ultra: "#ffe9a8", jolly: "#e8443a" };
   const COL_STILE = { FOR: 0xff7a45, VEL: 0x3fd8ff, DIF: 0x7ddc6a };
   const ridotto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -2697,6 +2697,20 @@ const Scena3D = (() => {
     "vikyrobata:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#f2c14e"); ar.schermo("spazio", 1700); const a = ar.pos(l), d = ar.pos(1 - l);
       await ar.salto(l, { h: 2.2, dur: 600, giri: 1, colore: 0xf2c14e }); await ar.proiettile(a.clone().add(V(0, 1.6, 0)), d, { colore: 0xf2c14e, simbolo: "◯", dim: .9, arco: .3, dur: 380, ruota: 8 });
       ar.esplosione(d, 0xf2c14e, 55, { velocita: 2.7 }); ar.simboli(d, "★", "#ffe08a", { n: 4, dim: .35, su: 1.3 }); ar.scossa = .4; },
+    // ================= Ospiti Indesiderati (carte Jolly) =================
+    // ---- Arciulo ----
+    "arciulo:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: .9, andata: 120, ritorno: 160, ruota: .6, colore: 0x2a2a2a }); ar.simboli(d, "🪶", "#ffffff", { n: 2, dim: .35 }); ar.esplosione(d, 0xd8d0c8, 14, { velocita: 1.4 }); },
+    "arciulo:1": async (ar, l) => { const p = ar.pos(l); ar.schermo("bianco", 260); await ar.orbita(l, { colore: 0xffffff, testo: "✨", n: 6, dur: 700, raggio: .9 }); ar.colonna(p, 0x7dffb0, { alt: 2.2 }); ar.simboli(p, "♥", "#7dffb0", { n: 3, dim: .35, su: 1.3 }); },
+    "arciulo:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#e8443a"); ar.schermo("festa", 1800); const a = ar.pos(l), d = ar.pos(1 - l);
+      ar.simboli(a.clone().add(V(0, 1.6, 0)), "🧹", "#ffffff", { n: 1, dim: .7 }); for (let k = 0; k < 5; k++) { ar.proiettile(a.clone().add(V((k - 2) * .15, 1.1, 0)), d.clone().add(V((k - 2) * .1, .3, 0)), { colore: 0xffffff, simbolo: k % 2 ? "🧽" : "🪶", dim: .45, arco: .5, dur: 300, ruota: 7 }); await ar.attendi(90); }
+      await ar.scatto(l, { k: 1, andata: 110, ritorno: 150, ruota: 1.2, colore: 0x2a2a2a }); ar.esplosione(d, 0xffffff, 55, { velocita: 2.8 }); ar.simboli(d, "💫", "#ffd04a", { n: 2, dim: .4 }); ar.scossa = .5; },
+    // ---- Michele ----
+    "michele:0": async (ar, l) => { const d = ar.pos(1 - l); await ar.scatto(l, { k: 1, andata: 150, ritorno: 200, ruota: .3, colore: 0x8a1a2a }); ar.ondaTerra(d, 0x8a1a2a, 3); ar.esplosione(d, 0xc8843a, 16, { velocita: 1.6 }); },
+    "michele:1": async (ar, l) => { const p = ar.pos(l); ar.schermo("calore", 900); ar.simboli(p.clone().add(V(0, 1.6, 0)), "💪", "#ffffff", { n: 1, dim: .6 }); await ar.colonna(p, 0x8a1a2a, { alt: 2.4, larg: 1 }); ar.simboli(p, "🛡", "#ffffff", { n: 1, dim: .5 }); },
+    "michele:2": async (ar, l, e) => { await ar.cutin(l, e.id, e.nome, "#8a1a2a"); ar.schermo("terremoto", 1800); ar.luceScena(0x4a1010, { intensita: .6, dur: 1800 }); const a = ar.pos(l), d = ar.pos(1 - l);
+      ar.simboli(a.clone().add(V(0, 1.7, 0)), "RRRIP!", "#ff6a6a", { n: 1, dim: .6 }); for (let k = 0; k < 6; k++) ar.simboli(a.clone().add(V((k - 2.5) * .2, 1.1, 0)), "▰", "#8a1a2a", { n: 1, dim: .3, su: 1.6 });
+      await ar.attendi(300); await ar.salto(l, { h: 1.8, dur: 600, giri: 0, colore: 0x8a1a2a }); ar.ondaTerra(d, 0x8a1a2a, 10);
+      ar.esplosione(d, 0xc8843a, 65, { velocita: 3 }); ar.esplosione(d, 0x8a1a2a, 30, { velocita: 2.3 }); ar.scossa = .7; },
     // ================= Opere d'Arte =================
     // ---- Monnarita (Ultra) ----
     "monnarita:0": async (ar, l) => { const d = ar.pos(1 - l); ar.simboli(ar.pos(l).add(V(0, 1.5, 0)), "🙂", "#ffffff", { n: 1, dim: .45 }); await ar.raggio(ar.pos(l).add(V(0, 1.1, 0)), d, { colore: 0xd8b890, spessore: .06, dur: 240 }); ar.esplosione(d, 0xd8a84a, 14, { velocita: 1.5 }); },
@@ -3193,7 +3207,7 @@ const Scena3D = (() => {
   //  1. tocchi la bustina: trema e si illumina del colore della carta migliore che c'è dentro (più è rara, più a lungo)
   //  2. le carte escono in un mazzetto coperto: a ogni tocco se ne scopre una, la più rara è sempre l'ultima
   //  3. leggendarie e Ultra hanno un'entrata speciale: buio, serie, ruolo e tipo, poi la carta
-  const VAL_RARITA = { comune: 0, rara: 1, epica: 2, leggendaria: 3, ultra: 4 };
+  const VAL_RARITA = { comune: 0, rara: 1, epica: 2, leggendaria: 3, ultra: 4, jolly: 2 };
   const suono = (nome, ...a) => { try { if (typeof Suoni !== "undefined") Suoni[nome](...a); } catch (e) {} };
   class Apertura extends Base {
     constructor(contenitore, esiti, tipo, callback = {}) {
@@ -3383,7 +3397,7 @@ const Scena3D = (() => {
         const s = scala * (1 + Math.sin(t * Math.PI) * .1); c.scale.set(s, s, s);
       }, easing.back);
       c.rotation.y = 0; c.userData.girata = true;
-      const n = { comune: 20, rara: 40, epica: 70, leggendaria: 130, ultra: 220 }[r];
+      const n = { comune: 20, rara: 40, epica: 70, leggendaria: 130, ultra: 220, jolly: 90 }[r];
       this.esplosione(davanti.clone().add(new T.Vector3(0, 0, .2)), col, n, { velocita: top ? 4 : 2.6, su: 1.2 });
       if (top) {
         this.scossa = r === "ultra" ? .45 : .25;

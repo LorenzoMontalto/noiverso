@@ -34,6 +34,7 @@
   --r-epica: #b866ff;
   --r-leggendaria: var(--oro);
   --r-ultra: #ffe9a8;
+  --r-jolly: #e8443a;
   --s-FOR: #ff7a45;
   --s-VEL: #3fd8ff;
   --s-DIF: #7ddc6a;
@@ -119,6 +120,12 @@ h2 { font-size: 1.35rem; }
 .carta.r-leggendaria { --rc: var(--r-leggendaria); box-shadow: 0 6px 20px rgba(0, 0, 0, .5), 0 0 18px rgba(242, 193, 78, .45); }
 .carta.r-leggendaria::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255, 240, 200, .28) 45%, transparent 60%);
   background-size: 250% 100%; animation: luccica 4.5s infinite linear; pointer-events: none; mix-blend-mode: screen; }
+/* nov 2026: carte Jolly (Ospiti Indesiderati) */
+.carta.r-jolly { --rc: var(--r-jolly); box-shadow: 0 6px 20px rgba(0, 0, 0, .5), 0 0 16px rgba(232, 68, 58, .45); }
+.carta.r-jolly::after { content: ""; position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; opacity: .5;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 210, 120, .35) 48%, rgba(255, 90, 80, .3) 52%, transparent 65%); background-size: 260% 100%; animation: luccica 5s infinite linear; }
+.pallino.r-jolly { background: var(--r-jolly); }
+.ed-riga select.sel-r-jolly { border-color: var(--r-jolly); color: var(--r-jolly); font-weight: 700; }
 .carta img { width: 100%; height: 100%; object-fit: cover; }
 .carta[role=button] { cursor: pointer; transition: transform .2s var(--molla); }
 .carta[role=button]:hover { transform: translateY(-4px) rotate(-1deg); }
@@ -1763,6 +1770,9 @@ body.in-accesso { overflow: hidden; }
 .sin-lista li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 12px; font-size: .86rem; line-height: 1.35; border-left: 3px solid var(--c, #b866ff); background: rgba(255, 255, 255, .03); }
 .sin-lista li b { color: var(--c, #b866ff); } .sin-lista li small { display: block; color: var(--spento); }
 .sin-lista li.sin-quasi { opacity: .65; border-left-style: dashed; }
+.sin-lista li.sin-jolly { --c: var(--r-jolly); background: rgba(232, 68, 58, .08); }
+.sin-jolly-scelte { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; } .sin-jolly-scelte .chip { padding: 4px 10px; font-size: .8rem; }
+.sin-jolly-scelte .chip[aria-pressed="true"] { border-color: var(--c, var(--r-jolly)); background: color-mix(in srgb, var(--c, var(--r-jolly)) 20%, transparent); }
 .sin-lista li.multiverso { --c: #c38bff; }
 .sin-ico { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--c, #b866ff); color: #0b0a10; font-weight: 900; }
 .sin-icone { display: inline-flex; gap: 3px; margin-left: 4px; }
@@ -2310,26 +2320,26 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <div id="avviso" role="status" hidden></div>
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
-<script src="carte.2d52e1f9.js"></script>
-<script src="motore.5320dd5f.js"></script>
+<script src="carte.6a14eac2.js"></script>
+<script src="motore.848d59f2.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
 <script src="suoni.75417e9f.js"></script>
-<script src="scena3d.72d6594f.js"></script>
+<script src="scena3d.b8e0e550.js"></script>
 <script src="mappe.8922ee6b.js"></script>
 <script src="storia.c200db04.js"></script>
-<script src="tutorial.a83fc5bd.js"></script>
+<script src="tutorial.0c117bcd.js"></script>
 <script src="missioni.5d6745fb.js"></script>
 <script src="sociale.250f8d4a.js"></script>
-<script src="collezione.89d23b76.js"></script>
+<script src="collezione.19644a17.js"></script>
 <script src="graffiti.87ba5b2f.js"></script>
 <script src="zaino.f42c2817.js"></script>
 <script src="online.546aed30.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
-<script src="eventi.c59d12ef.js"></script>
-<script src="progressi.07b8e2a1.js"></script>
-<script src="extra.d10d32a3.js"></script>
+<script src="eventi.81a9145b.js"></script>
+<script src="progressi.4c1b6331.js"></script>
+<script src="extra.7fb69b29.js"></script>
 <script src="avvento.355b1396.js"></script>
-<script src="app.a956d0e7.js"></script>
+<script src="app.f11f9f58.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

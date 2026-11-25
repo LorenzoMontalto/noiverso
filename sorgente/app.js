@@ -615,7 +615,7 @@ const StatCarte = (() => {
 // Al 30 una comune, rara o epica può salire di rarità: resta al livello 30 (e con la lode, se ce l'ha) con la forza della rarità nuova.
 function htmlAscesa(id) {
   const c = PER_ID[id], inf = infoCarta(id), ora = rarCarta(id);
-  if (!S.carte[id] || ora === "leggendaria") return "";
+  if (!S.carte[id] || ora === "leggendaria" || ora === "jolly") return "";
   const dopo = rarDopo(c.rarita, ((S.asc || {})[id] || 0) + 1), costo = ASCESA_MONETE[ora];
   if (inf.liv < LIVELLO_MAX) return `<p class="nota piccola">⬆ <b>Ascesa</b>: al livello 30 questa carta potrà diventare ${esc(RARITA[dopo].nome.toLowerCase())} (${costo} monete).</p>`;
   const ok = S.admin || S.monete >= costo;
@@ -625,7 +625,7 @@ function htmlAscesa(id) {
 }
 function ascendiCarta(id, conferma, el) {
   const c = PER_ID[id], inf = infoCarta(id), ora = rarCarta(id);
-  if (!c || !S.carte[id] || inf.liv < LIVELLO_MAX || ora === "leggendaria") return;
+  if (!c || !S.carte[id] || inf.liv < LIVELLO_MAX || ora === "leggendaria" || ora === "jolly") return;
   const passi = ((S.asc || {})[id] || 0) + 1, dopo = rarDopo(c.rarita, passi), costo = ASCESA_MONETE[ora];
   if (!conferma) {
     const a = statistiche(c, LIVELLO_MAX, inf.lode, ora), b30 = statistiche(c, LIVELLO_MAX, inf.lode, dopo);
@@ -1026,6 +1026,8 @@ function apriBustina(tipo) {
     const k = ORDINE_RARITA.indexOf(r);
     for (let d = 1; !pool.length && d < ORDINE_RARITA.length; d++)
       for (const kk of [k - d, k + d]) if (!pool.length && ORDINE_RARITA[kk]) pool = CARTE.filter(c => c.rarita === ORDINE_RARITA[kk] && vale(c));
+    // carte Jolly: una carta normale (non l'ultima, quella garantita) ogni tanto diventa un Jolly; non nelle bustine di una serie o di uno stile
+    if (i < T.carte - 1 && !T.serie && !T.stile && !T.versioneUltra && Math.random() < PROB_JOLLY) { const jj = CARTE.filter(c => c.rarita === "jolly"); if (jj.length) pool = jj; }
     if (T.distinte) { const libere = pool.filter(c => !uscite.includes(c.id)); if (libere.length) pool = libere; }
     uscite.push(pool[Math.floor(Math.random() * pool.length)].id);
   }
@@ -1056,7 +1058,7 @@ function apriBustina(tipo) {
   S.pieta = esiti.some(e => PER_ID[e.id].rarita === "leggendaria") ? 0 : (S.pieta || 0) + 1;
   // riempie da sola la prima squadra finché non è completa
   const sq = S.squadre[S.attiva];
-  for (const e of esiti) if (sq.carte.length < CARTE_SQUADRA && !sq.carte.includes(e.id)) sq.carte.push(e.id);
+  for (const e of esiti) if (sq.carte.length < CARTE_SQUADRA && !sq.carte.includes(e.id) && PER_ID[e.id].rarita !== "jolly") sq.carte.push(e.id);
   return esiti;
 }
 
@@ -1268,7 +1270,7 @@ function htmlSezioneSerie(id, conTitolo) {
   if (filtrando && !elenco.length) return conTitolo ? "" : `<section class="serie-sezione" style="--c:${se.colore}"><p class="nota">Nessuna carta trovata di questa serie con questi filtri.</p></section>`;
   // Esempio: 3 leggendarie nella serie, ne hai trovate 2 e una comune è salita a leggendaria → "Leggendaria 2/3 +1 ⬆";
   // e quella comune non conta più tra le comuni ("Comune 3/5" invece di 4/5).
-  const perRarita = ORDINE_RARITA.slice().reverse().filter(r => st.carte.some(c => c.rarita === r || rarOra(c) === r)).map(r => {
+  const perRarita = [...ORDINE_RARITA, "jolly"].slice().reverse().filter(r => st.carte.some(c => c.rarita === r || rarOra(c) === r)).map(r => {
     const cs = st.carte.filter(c => c.rarita === r), qui = cs.filter(c => S.carte[c.id] && rarOra(c) === r).length;
     const salite = st.carte.filter(c => c.rarita !== r && S.carte[c.id] && rarOra(c) === r).length, andate = cs.filter(c => S.carte[c.id] && rarOra(c) !== r).length;
     const titolo = [salite ? `${salite} salite a ${RARITA[r].nome.toLowerCase()} con l'Ascesa` : "", andate ? `${andate} salite alla rarità dopo` : ""].filter(Boolean).join(" · ");
@@ -1298,7 +1300,7 @@ function htmlLegendaPot() {
 }
 function htmlBottonePot(id) {
   const inf = infoCarta(id);
-  if (inf.liv >= LIVELLO_MAX && rarCarta(id) !== "leggendaria") return `<button type="button" class="btn btn-pot" data-azione="ascesa" data-id="${id}">⬆ Ascesa a ${esc(RARITA[rarDopo(PER_ID[id].rarita, ((S.asc || {})[id] || 0) + 1)].nome.toLowerCase())} · ${ASCESA_MONETE[rarCarta(id)]} 🪙</button>`;
+  if (inf.liv >= LIVELLO_MAX && rarCarta(id) !== "leggendaria" && rarCarta(id) !== "jolly") return `<button type="button" class="btn btn-pot" data-azione="ascesa" data-id="${id}">⬆ Ascesa a ${esc(RARITA[rarDopo(PER_ID[id].rarita, ((S.asc || {})[id] || 0) + 1)].nome.toLowerCase())} · ${ASCESA_MONETE[rarCarta(id)]} 🪙</button>`;
   if (!inf.liv || inf.liv >= LIVELLO_MAX) return "";
   if (inf.puoi) return `<button type="button" class="btn btn-pot" data-fx="stelle" data-sq-az="potenzia">▲ Potenzia a Lv ${inf.liv + 1} · ${S.admin ? "gratis" : inf.serveMon + " 🪙"}</button>`;
   if (inf.pronta) return `<button type="button" class="btn" disabled>▲ Potenzia: mancano ${inf.serveMon - S.monete} monete</button>`;
@@ -1418,7 +1420,7 @@ function vistaSquadra() {
     <div class="slot5">${slot.join("")}</div>
     ${Jolly.htmlSquadra()}
     ${Graffiti.htmlSquadra()}
-    ${Sinergie.htmlSquadra(sq.carte)}
+    ${Sinergie.htmlSquadra(sq.carte, sq.jolly)}
     <div class="riepilogo">
       <div><span>Stili</span>${Object.entries(stili).map(([k, n]) => `<b class="stile s-${k}">${k} ${n}</b>`).join(" ")}</div>
       <div><span>Ruoli</span>${ruoli.length ? ruoli.map(r => `<b class="ruolo-pill">${esc(r)}</b>`).join(" ") : "—"}</div>
@@ -1452,14 +1454,21 @@ const Sinergie = (() => {
   const nomeTra = (k, liv) => { const n = nomeSinergia(k, liv); return n ? `«${esc(n)}» ` : ""; };   // il nome scelto dall'admin, se c'è
   const prossima = n => SOGLIE_SINERGIA.find(x => x > n);
   // riquadro nella pagina Squadre: sinergie attive e quelle a cui manca poco
-  function htmlSquadra(ids) {
-    const sin = sinergieDi(ids);
+  function htmlSquadra(ids, sceltaJolly) {
+    const sin = sinergieDi(ids, sceltaJolly);
     const righe = []; let suggerimenti = 0;
+    // carta Jolly: a quale sinergia si unisce (la sceglie il giocatore; "Automatico" = dove serve di più)
+    if (sin.jolly) {
+      const J = PER_ID[sin.jolly.id];
+      righe.push(sin.jolly.scelte.length ? `<li class="sin-jolly"><span class="sin-ico">🃏</span><span><b>${esc(J.nome)} è un Jolly</b> · si unisce alla sinergia che scegli tu (conta per arrivare a 2 o 3 carte, non a 5):
+        <span class="sin-jolly-scelte"><button class="chip" data-jolly-serie="" aria-pressed="${sin.jolly.auto}">Automatico${sin.jolly.auto ? ` (${esc(SERIE[sin.jolly.serie].nome)})` : ""}</button>${sin.jolly.scelte.map(k => `<button class="chip" style="--c:${SERIE[k].colore}" data-jolly-serie="${k}" aria-pressed="${!sin.jolly.auto && sin.jolly.serie === k}">${SERIE[k].simbolo} ${esc(SERIE[k].nome)}</button>`).join("")}</span></span></li>`
+        : `<li class="sin-jolly"><span class="sin-ico">🃏</span><span><b>${esc(J.nome)} è un Jolly</b> · si unirà a una sinergia appena metti in squadra altre carte.</span></li>`);
+    }
     for (const s of sin.serie) {
       const se = SERIE[s.serie];
       const p = prossima(s.n), pl = p ? SOGLIE_SINERGIA.indexOf(p) + 1 : 0;
-      const dopo = p ? ` <small>${p - s.n === 1 ? "Con un'altra" : `Con ${p} carte`}: ${nomeTra(s.serie, pl)}${testoSerie(s.serie, pl)}.</small>` : "";
-      if (s.liv) righe.push(`<li class="sin-attiva" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${nomeSinergia(s.serie, s.liv) ? `${esc(nomeSinergia(s.serie, s.liv))} · ` : ""}${esc(se.nome)} ${s.n}${p ? `/${p}` : ""}</b> · carte ${esc(se.nome)}: ${testoSerie(s.serie, s.liv)}.${dopo}</span></li>`);
+      const dopo = p ? ` <small>${s.jolly && p === 5 ? `Con 5 carte ${esc(se.nome)} vere (senza Jolly)` : p - s.n === 1 ? "Con un'altra" : `Con ${p} carte`}: ${nomeTra(s.serie, pl)}${testoSerie(s.serie, pl)}.</small>` : "";
+      if (s.liv) righe.push(`<li class="sin-attiva" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${nomeSinergia(s.serie, s.liv) ? `${esc(nomeSinergia(s.serie, s.liv))} · ` : ""}${esc(se.nome)} ${s.n}${p ? `/${p}` : ""}${s.jolly ? " (con 🃏 " + esc(PER_ID[s.jolly].nome) + ")" : ""}</b> · carte ${esc(se.nome)}${s.jolly ? " e il Jolly" : ""}: ${testoSerie(s.serie, s.liv)}.${dopo}</span></li>`);
       else if (suggerimenti++ < 2) righe.push(`<li class="sin-quasi" style="--c:${se.colore}"><span class="sin-ico">${se.simbolo}</span><span><b>${esc(se.nome)} 1/2</b> · aggiungine un'altra: carte ${esc(se.nome)}, ${nomeTra(s.serie, 1)}${testoSerie(s.serie, 1)}.</span></li>`);
     }
     for (const m of sin.multiverso) righe.push(`<li class="sin-attiva multiverso"><span class="sin-ico">∞</span><span><b>Multiverso: ${esc(m.persona)} ×${m.n}</b> +${m.val}% a PV, attacco e difesa di ${m.ids.map(id => esc(PER_ID[id].nome)).join(", ")}.${m.n === 2 ? ` <small>Con 3 versioni: +${MULTIVERSO.v3}%.</small>` : ""}</span></li>`);
@@ -1503,6 +1512,7 @@ const Sinergie = (() => {
   }
   // Album: cosa fa la sinergia di una serie (sotto il titolo della serie)
   function htmlSerieAlbum(k) {
+    if (SERIE[k] && SERIE[k].jolly) return `<p class="sin-album"><b>🃏 Carte Jolly</b> <span>Non hanno una sinergia loro: in squadra si uniscono alla sinergia che scegli tu (conta per arrivare a 2 o 3 carte, non a 5). Al massimo un Jolly per squadra.</span></p>`;
     if (!SINERGIE[k]) return "";
     return `<p class="sin-album"><b>Sinergia</b> <span>2 carte: ${nomeTra(k, 1)}${testoSerie(k, 1)}</span><span>3 carte: ${nomeTra(k, 2)}${testoSerie(k, 2)}</span><span>5 carte: ${nomeTra(k, 3)}${testoSerie(k, 3)}</span></p>`;
   }
@@ -1595,6 +1605,14 @@ function scorriAlleCarteAlbum() {
     scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + scrollY - 12), behavior: fermo ? "auto" : "smooth" });
   }));
 }
+// carte Jolly: al massimo una per squadra. Vero (e avviso) se far entrare "entra" al posto di "esce" ne metterebbe due
+function dueJolly(sq, entra, esce) {
+  if (!PER_ID[entra] || PER_ID[entra].rarita !== "jolly") return false;
+  const altro = sq.carte.find(x => x !== esce && x !== entra && PER_ID[x] && PER_ID[x].rarita === "jolly");
+  if (!altro) return false;
+  mostraAvviso(`In una squadra ci sta un solo Jolly: togli prima ${PER_ID[altro].nome}.`);
+  return true;
+}
 // tocco su una carta (della collezione o della squadra) mentre sta scegliendo
 function toccoCartaSquadra(id) {
   const sq = squadraAttiva();
@@ -1602,7 +1620,7 @@ function toccoCartaSquadra(id) {
   if (selSq && selSq.modo === "carta" && id !== selSq.id) {
     const i = sq.carte.indexOf(selSq.id);
     if (sq.carte.includes(id)) { const j = sq.carte.indexOf(id); [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]]; mostraAvviso("Ordine scambiato."); }
-    else { sq.carte[i] = id; mostraAvviso(`${PER_ID[selSq.id].nome} esce, entra ${PER_ID[id].nome}.`); }
+    else { if (dueJolly(sq, id, selSq.id)) return; sq.carte[i] = id; mostraAvviso(`${PER_ID[selSq.id].nome} esce, entra ${PER_ID[id].nome}.`); }
     selSq = null; salva(); ridisegnaSquadra(); return;
   }
   if (selSq && selSq.modo === "slot") {
@@ -1610,7 +1628,7 @@ function toccoCartaSquadra(id) {
     if (j < 0 || id === selSq.id) return;
     const i = sq.carte.indexOf(selSq.id);
     if (i >= 0) [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]];
-    else { mostraAvviso(`${PER_ID[id].nome} esce, entra ${PER_ID[selSq.id].nome}.`); sq.carte[j] = selSq.id; }
+    else { if (dueJolly(sq, selSq.id, id)) return; mostraAvviso(`${PER_ID[id].nome} esce, entra ${PER_ID[selSq.id].nome}.`); sq.carte[j] = selSq.id; }
     selSq = null; salva(); ridisegnaSquadra(); return;
   }
   selSq = selSq && selSq.id === id && !selSq.modo ? null : { id };
@@ -1623,6 +1641,7 @@ function azioneCartaSquadra(az) {
   else if (az === "annulla") selSq = { id };
   else if (az === "aggiungi") {
     if (sq.carte.length < CARTE_SQUADRA && !sq.carte.includes(id)) {
+      if (dueJolly(sq, id, null)) return;
       sq.carte.push(id);
     }
     selSq = null; salva();
@@ -2976,7 +2995,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
     : Lp && Lp.arena ? carteForzate.slice(0, n).map(id => ({ id, liv: 20, lode: false, olo: false, ultra: false, asc: 0 }))   // Arena: tutti uguali al livello 20
-    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id), cc: S.admin ? "" : Cosmetici.corniceCarta(id) }));
+    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, js: PER_ID[id] && PER_ID[id].rarita === "jolly" && !carteForzate ? (squadraAttiva().jolly || "") : undefined, liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id), cc: S.admin ? "" : Cosmetici.corniceCarta(id) }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   // contro il computer: battaglia con un seme, così gli amici possono guardarla in diretta (le scelte del computer restano a caso)
@@ -3386,6 +3405,7 @@ function SquadraTrascina(tipo, valore, j) {
     const id = valore; if (!PER_ID[id] || !S.carte[id]) return;
     const i = sq.carte.indexOf(id);
     if (i >= 0) { if (j >= sq.carte.length || i === j) return; [sq.carte[i], sq.carte[j]] = [sq.carte[j], sq.carte[i]]; }
+    else if (dueJolly(sq, id, j < sq.carte.length ? sq.carte[j] : null)) return;
     else if (j < sq.carte.length) { mostraAvviso(`${PER_ID[sq.carte[j]].nome} esce, entra ${PER_ID[id].nome}.`); sq.carte[j] = id; }
     else if (sq.carte.length < CARTE_SQUADRA) sq.carte.push(id);
     else return;
@@ -3580,7 +3600,7 @@ document.addEventListener("click", e => {
   if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
   if (e.target.id === "avviso") { mostraAvviso.prossimo(); return; }
-  const t = e.target.closest("[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-jolly-serie],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3590,6 +3610,7 @@ document.addEventListener("click", e => {
   if (t.dataset.mistero) { Frammenti.apriMistero(t.dataset.mistero); return; }
   if (t.dataset.arenaScegli) { Arena.scegli(t.dataset.arenaScegli); return; }
   if (t.dataset.arenaInfo) { Arena.info(t.dataset.arenaInfo); return; }
+  if (t.dataset.jollySerie !== undefined) { const sq = squadraAttiva(); sq.jolly = t.dataset.jollySerie; salva(); disegnaQuieto(); return; }
   if (t.dataset.cosmCompra) { Cosmetici.compra(t.dataset.cosmCompra, t); return; }
   if (t.dataset.ccUsa !== undefined) { const [c, cc] = t.dataset.ccUsa.split(":"); Cosmetici.usaCarta(c, cc); return; }
   if (t.dataset.offertaSp) { Offerte.compra(t.dataset.offertaSp, t); return; }

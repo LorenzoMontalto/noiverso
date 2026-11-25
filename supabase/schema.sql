@@ -262,7 +262,9 @@ begin
           when coalesce(d->'cosm'->'carte'->>x, '') = 'cc-maestro' then
             case when jsonb_typeof(d->'maestria'->x->'presi') = 'array' and jsonb_array_length(d->'maestria'->x->'presi') >= 5 then 'cc-maestro' else '' end
           when coalesce(d->'cosm'->'carte'->>x, '') ~ '^cc-[a-z]{1,15}$' and coalesce(d->'cosm'->'have'->>(d->'cosm'->'carte'->>x), '') = 'true' then d->'cosm'->'carte'->>x
-          else '' end) order by n)
+          else '' end,
+        -- nov 2026: carte Jolly: a quale sinergia si unisce (la sceglie il giocatore; vuoto = automatico)
+        'js', case when coalesce(d->'squadre'->att->>'jolly', '') ~ '^[a-z]{1,20}$' then d->'squadre'->att->>'jolly' else '' end) order by n)
       from jsonb_array_elements_text(coalesce(d->'squadre'->att->'carte', '[]'::jsonb)) with ordinality as t(x, n)), '[]'::jsonb));
 end $$;
 
@@ -660,12 +662,12 @@ $$;
 -- FINE RARITA
 create or replace function public.rarita_carta(carta text) returns text
 language sql stable security definer set search_path = public as $$
-  select coalesce((select case when dati->'carte'->carta->>'rarita' in ('comune', 'rara', 'epica', 'leggendaria', 'ultra') then dati->'carte'->carta->>'rarita' end
+  select coalesce((select case when dati->'carte'->carta->>'rarita' in ('comune', 'rara', 'epica', 'leggendaria', 'ultra', 'jolly') then dati->'carte'->carta->>'rarita' end
                    from public.config where id = 'carte'), public.rarita_base(carta));
 $$;
 create or replace function public.costo_scambio(carta text) returns integer
 language sql stable security definer set search_path = public as $$
-  select case public.rarita_carta(carta) when 'comune' then 10 when 'rara' then 12 when 'epica' then 24 when 'leggendaria' then 60 when 'ultra' then 120 end;
+  select case public.rarita_carta(carta) when 'comune' then 10 when 'rara' then 12 when 'epica' then 24 when 'leggendaria' then 60 when 'ultra' then 120 when 'jolly' then 20 end;
 $$;
 create or replace function public.possiede(u uuid, carta text) returns boolean
 language sql stable security definer set search_path = public as $$
@@ -887,7 +889,7 @@ language sql immutable as $$
     when 'vittoria-1' then 'Recluta' when 'vittorie-50' then 'Veterano' when 'vittorie-200' then 'Leggenda'
     when 'carte-25' then 'Collezionista' when 'carte-50' then 'Archivista' when 'carte-tutte' then 'Completista'
     when 'serie-eroi' then 'Supereroe' when 'serie-db' then 'Guerriero leggendario' when 'serie-dei' then 'Divinità'
-    when 'serie-nueve' then 'Boss della mala' when 'serie-maghi' then 'Arcimago' when 'serie-demoni' then 'Signore degli Inferi' when 'serie-mestieri' then 'Stacanovista' when 'serie-simpson' then 'Re di Springfield' when 'serie-barbapapa' then 'Barbatrucco' when 'serie-starwars' then 'Maestro Jedi' when 'serie-elementi' then 'Avatar degli Elementi' when 'serie-creature' then 'Signore della Notte' when 'serie-cyborg' then 'Cyborg Supremo' when 'serie-carte' then 'Re del Mazzo' when 'serie-paesi' then 'Cittadino del Mondo' when 'serie-farwest' then 'Sceriffo della Frontiera' when 'serie-apocalisse' then 'Ultimo Sopravvissuto' when 'serie-giappone' then 'Shogun del Sol Levante' when 'serie-circo' then 'Direttore del Circo Stellare' when 'serie-inutili' then 'Re del Dolce Far Niente' when 'serie-colori' then 'Maestro dell''Arcobaleno' when 'serie-arte' then 'Curatore del Museo' when 'giocatore-10' then 'Veterano' when 'giocatore-20' then 'Campione' when 'giocatore-30' then 'Gran Maestro' when 'giocatore-40' then 'Leggenda vivente' when 'giocatore-50' then 'Mito del Noiverso' when 'giocatore-60' then 'Signore delle carte' when 'giocatore-70' then 'Imbattibile' when 'giocatore-80' then 'Leggenda del gruppo' when 'giocatore-90' then 'Semidio' when 'giocatore-100' then 'Il Numero Uno'
+    when 'serie-nueve' then 'Boss della mala' when 'serie-maghi' then 'Arcimago' when 'serie-demoni' then 'Signore degli Inferi' when 'serie-mestieri' then 'Stacanovista' when 'serie-simpson' then 'Re di Springfield' when 'serie-barbapapa' then 'Barbatrucco' when 'serie-starwars' then 'Maestro Jedi' when 'serie-elementi' then 'Avatar degli Elementi' when 'serie-creature' then 'Signore della Notte' when 'serie-cyborg' then 'Cyborg Supremo' when 'serie-carte' then 'Re del Mazzo' when 'serie-paesi' then 'Cittadino del Mondo' when 'serie-farwest' then 'Sceriffo della Frontiera' when 'serie-apocalisse' then 'Ultimo Sopravvissuto' when 'serie-giappone' then 'Shogun del Sol Levante' when 'serie-circo' then 'Direttore del Circo Stellare' when 'serie-inutili' then 'Re del Dolce Far Niente' when 'serie-colori' then 'Maestro dell''Arcobaleno' when 'serie-arte' then 'Curatore del Museo' when 'serie-ospiti' then 'Amico di Tutti' when 'giocatore-10' then 'Veterano' when 'giocatore-20' then 'Campione' when 'giocatore-30' then 'Gran Maestro' when 'giocatore-40' then 'Leggenda vivente' when 'giocatore-50' then 'Mito del Noiverso' when 'giocatore-60' then 'Signore delle carte' when 'giocatore-70' then 'Imbattibile' when 'giocatore-80' then 'Leggenda del gruppo' when 'giocatore-90' then 'Semidio' when 'giocatore-100' then 'Il Numero Uno'
     when 'olo-1' then 'Brillante' when 'olo-5' then 'Arcobaleno' when 'livello-10' then 'Allenatore' when 'livello-30' then 'Maestro'
     when 'lode-1' then 'Lodato' when 'bustine-50' then 'Strappabustine' when 'stelle-30' then 'Narratore' when 'stelle-120' then 'Giramondo' when 'ultra-1' then 'Ultra' when 'pass-50' then 'Fedelissimo'
     when 'accessi-7' then 'Sempre presente' when 'amici-10' then 'Bullo di quartiere' when 'boss-20000' then 'Ammazzaboss' when 'scambi-3' then 'Mercante'
