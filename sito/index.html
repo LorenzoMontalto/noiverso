@@ -2038,8 +2038,11 @@ td.chi[data-profilo-amico] { cursor: pointer; } td.chi[data-profilo-amico]:hover
 /* trascinare le carte */
 [data-trascina] { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 [data-trascina] img { -webkit-user-drag: none; pointer-events: none; }
-.trascina-fantasma { position: fixed; z-index: 9500; pointer-events: none; opacity: .92; filter: drop-shadow(0 12px 18px rgba(0, 0, 0, .6)); transition: none; animation: none !important; }
-.trascinata { opacity: .3; }
+/* la copia che segue il dito: deve stare fissa sullo schermo qualunque classe abbia la carta (es. .scegli/.cella sono position: relative) */
+.trascina-fantasma { position: fixed !important; margin: 0 !important; z-index: 9500; pointer-events: none; opacity: .96; outline: none !important;
+  filter: drop-shadow(0 14px 22px rgba(0, 0, 0, .65)) drop-shadow(0 0 12px rgba(57, 243, 255, .6)); transition: none !important; animation: none !important; }
+.trascina-fantasma::after { content: none !important; }
+.trascinata { opacity: .28; outline: 2px dashed rgba(255, 255, 255, .45); outline-offset: 3px; border-radius: 14px; }
 body.trascinando, body.trascinando * { cursor: grabbing !important; }
 [data-rilascia].sopra { outline: 3px dashed var(--oro); outline-offset: 3px; border-radius: 12px; }
 @media (hover: hover) { [data-trascina] { cursor: grab; } }
@@ -2242,7 +2245,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <script src="eventi.bcacd432.js"></script>
 <script src="progressi.07b8e2a1.js"></script>
 <script src="extra.9a16d26d.js"></script>
-<script src="app.1517ef18.js"></script>
+<script src="app.2afb9fa1.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

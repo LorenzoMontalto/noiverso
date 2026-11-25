@@ -1559,6 +1559,14 @@ function disegnaQuieto() {
   main.classList.add("quieta");
   morfaFigli(main, t);
 }
+// album: dopo aver toccato una serie, la pagina scende da sola fin dove iniziano le sue carte
+function scorriAlleCarteAlbum() {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const el = document.querySelector("#vista .serie-sezione"); if (!el) return;
+    const fermo = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + scrollY - 12), behavior: fermo ? "auto" : "smooth" });
+  }));
+}
 // tocco su una carta (della collezione o della squadra) mentre sta scegliendo
 function toccoCartaSquadra(id) {
   const sq = squadraAttiva();
@@ -3269,6 +3277,7 @@ const Trascina = (() => {
     if (!p) return;
     clearTimeout(p.timer);
     if (p.fantasma) p.fantasma.remove();
+    cancelAnimationFrame(p.giro);
     if (p.el) p.el.classList.remove("trascinata");
     if (p.sopra) p.sopra.classList.remove("sopra");
     document.body.classList.remove("trascinando");
@@ -3282,9 +3291,22 @@ const Trascina = (() => {
     document.body.appendChild(f); p.fantasma = f; p.attivo = true;
     p.el.classList.add("trascinata"); document.body.classList.add("trascinando");
     sposta(x, y);
+    // vicino al bordo alto o basso dello schermo la pagina scorre da sola (sul telefono la squadra e la lista non stanno insieme)
+    const ciclo = () => {
+      if (!p || !p.attivo) return;
+      const m = 90, h = innerHeight; let v = 0;
+      if (p.ly < m) v = -Math.ceil((m - p.ly) / 5); else if (p.ly > h - m) v = Math.ceil((p.ly - (h - m)) / 5);
+      if (v) { const prima = scrollY; scrollBy(0, v); if (scrollY !== prima) segnaSotto(p.lx, p.ly); }
+      p.giro = requestAnimationFrame(ciclo);
+    };
+    p.giro = requestAnimationFrame(ciclo);
   }
   function sposta(x, y) {
-    p.fantasma.style.transform = `translate(${x - p.dx}px, ${y - p.dy}px) rotate(-4deg) scale(1.06)`;
+    p.lx = x; p.ly = y;
+    p.fantasma.style.transform = `translate(${x - p.dx}px, ${y - p.dy}px) rotate(-4deg) scale(1.08)`;
+    segnaSotto(x, y);
+  }
+  function segnaSotto(x, y) {
     const sotto = document.elementFromPoint(x, y), t = sotto && sotto.closest("[data-rilascia]");
     if (t !== p.sopra) { if (p.sopra) p.sopra.classList.remove("sopra"); p.sopra = t; if (t) t.classList.add("sopra"); }
   }
@@ -3571,7 +3593,7 @@ document.addEventListener("click", e => {
   if (t.dataset.scrigno) { const [k, id] = t.dataset.scrigno.split(":"); riscuotiScrigno(+k, id, t); return; }
   if (t.dataset.edFiltro) { edFiltro = t.dataset.edFiltro; aggiornaEditor(true); return; }
   if (t.dataset.vista) { if (B) return; vai(t.dataset.vista); return; }
-  if (t.dataset.filtro) { filtroAlbum = t.dataset.filtro; disegnaQuieto(); return; }
+  if (t.dataset.filtro) { filtroAlbum = t.dataset.filtro; disegnaQuieto(); scorriAlleCarteAlbum(); return; }
   if (t.dataset.filtroSq) { filtroSquadra = t.dataset.filtroSq; disegna(); return; }
   if (t.dataset.filtra) {
     const [dove, campo, val] = t.dataset.filtra.split(":"), f = filtri[dove];
