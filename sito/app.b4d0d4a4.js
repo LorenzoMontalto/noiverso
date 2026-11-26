@@ -1795,17 +1795,29 @@ function azioneCartaSquadra(az) {
   ridisegnaSquadra();
 }
 // Confronto di due carte, fianco a fianco: la statistica migliore è evidenziata
+// nov 2026: con la spunta «Al massimo» le due carte si confrontano al livello 30 con la lode e con tutte le ascese
+// (fino a leggendaria): così si capisce quale conviene far crescere, non solo quale è più forte adesso
+let confrontoMax = false, confrontoUltimo = null;
+const rarMassima = id => rarDopo(PER_ID[id].rarita, 3);
 function confrontaCarte(a, b) {
   const ca = PER_ID[a], cb = PER_ID[b]; if (!ca || !cb) return;
-  const sa = statistiche(ca, livello(a), haLode(a), rarCarta(a)), sb = statistiche(cb, livello(b), haLode(b), rarCarta(b));
+  confrontoUltimo = [a, b];
+  const st = id => confrontoMax ? statistiche(PER_ID[id], LIVELLO_MAX, true, rarMassima(id)) : statistiche(PER_ID[id], livello(id), haLode(id), rarCarta(id));
+  const sa = st(a), sb = st(b);
+  const manca = id => { const l = LIVELLO_MAX - livello(id), asc = ORDINE_RARITA.includes(rarCarta(id)) ? ORDINE_RARITA.indexOf(rarMassima(id)) - ORDINE_RARITA.indexOf(rarCarta(id)) : 0, lode = !haLode(id);
+    const p = [l > 0 ? `${l} livell${l > 1 ? "i" : "o"}` : "", lode ? "la lode" : "", asc > 0 ? `${asc} asces${asc > 1 ? "e" : "a"}` : ""].filter(Boolean);
+    return p.length ? `Mancano ${p.join(", ").replace(/, ([^,]*)$/, " e $1")}` : "Già al massimo"; };
   const righe = [["PV", "pv"], ["Attacco", "att"], ["Difesa", "dif"], ["Velocità", "vel"]];
   const cella = (x, y) => x > y ? "meglio" : x < y ? "peggio" : "";
   const vs = multStile(ca.stile, cb.stile), testoVs = vs > 1 ? `${esc(ca.nome)} batte ${esc(cb.nome)}: fa il 30% di danni in più, e prende il 20% in meno.`
     : vs < 1 ? `${esc(cb.nome)} batte ${esc(ca.nome)}: fa il 30% di danni in più, e prende il 20% in meno.` : "Stesso tipo: nessun vantaggio tra loro.";
-  const colonna = (c, st) => `<div class="confronto-col"><div class="confronto-carta">${htmlCarta(c, { piccola: true })}</div><b>${esc(c.nome)}</b>
-    <small><span class="r-testo r-${c.rarita}">${RARITA[c.rarita].nome}</span> · Lv ${livello(c.id)}</small>
-    <small><span class="s-${c.stile}">${STILI[c.stile].icona} ${STILI[c.stile].nome}</span> · ${esc(RUOLI[c.ruolo].nome)}</small></div>`;
+  const colonna = (c, st) => { const r = confrontoMax ? rarMassima(c.id) : rarCarta(c.id); return `<div class="confronto-col"><div class="confronto-carta">${htmlCarta(c, { piccola: true, ...(confrontoMax ? { liv: LIVELLO_MAX, lode: true, rar: r } : {}) })}</div><b>${esc(c.nome)}</b>
+    <small><span class="r-testo r-${r}">${RARITA[r].nome}</span> · ${confrontoMax ? "Lv 30 e lode" : `Lv ${livello(c.id)}`}</small>
+    ${confrontoMax ? `<small class="confronto-manca">${manca(c.id)}</small>` : ""}
+    <small><span class="s-${c.stile}">${STILI[c.stile].icona} ${STILI[c.stile].nome}</span> · ${esc(RUOLI[c.ruolo].nome)}</small></div>`; };
+  const corpo = $("#modale-corpo"), su = corpo && $(".confronto", corpo) ? corpo.scrollTop : 0;
   apriModale(`<div class="confronto"><h2>Confronto</h2>
+    <label class="confronto-max"><input type="checkbox" data-confronto-max ${confrontoMax ? "checked" : ""}> <span><b>Al massimo</b><small>livello 30 con la lode e tutte le ascese (fino a leggendaria): per capire quale conviene far crescere</small></span></label>
     <div class="confronto-testa">${colonna(ca, sa)}<span class="confronto-vs">VS</span>${colonna(cb, sb)}</div>
     <table class="confronto-tab"><tbody>${righe.map(([n, k]) => `<tr><td class="${cella(sa[k], sb[k])}">${sa[k]}</td><th>${n}</th><td class="${cella(sb[k], sa[k])}">${sb[k]}</td></tr>`).join("")}
       <tr><td class="piccolo">${esc(RUOLI[ca.ruolo].passiva)}</td><th>Abilità</th><td class="piccolo">${esc(RUOLI[cb.ruolo].passiva)}</td></tr>
@@ -1813,6 +1825,7 @@ function confrontaCarte(a, b) {
     </tbody></table>
     <p class="nota centro">${testoVs}</p>
     <div class="azioni centro"><button class="btn primario" data-azione="chiudi">Ok</button></div></div>`);
+  if (su) { const c2 = $("#modale-corpo"); if (c2) c2.scrollTop = su; }
 }
 
 function vuoto(testo, bottone, azione) {
@@ -3782,6 +3795,7 @@ function esciBattaglia() {
 // ============================================================
 document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#form-graffiti")) Graffiti.anteprimaAdmin(e.target); });
 document.addEventListener("change", e => {
+  if (e.target.dataset && e.target.dataset.confrontoMax !== undefined) { confrontoMax = e.target.checked; if (confrontoUltimo) confrontaCarte(...confrontoUltimo); return; }
   const d = e.target.dataset && e.target.dataset.filtraRuolo;
   if (!d || !filtri[d]) return;
   filtri[d].ruolo = e.target.value; disegnaQuieto();
