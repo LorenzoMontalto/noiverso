@@ -701,7 +701,7 @@ function apriModale(html, opz = {}) {
 function chiudiModale() {
   const eraApertura = !!$("#modale-corpo .apertura2d"), eraOrdine = !!$("#modale-corpo .ordine-entrata");
   $("#modale").hidden = true; $("#modale-corpo").innerHTML = "";
-  if (eraApertura) { SerieCompleta.svuota(); Trofei.controlla(); }   // chiusa la bustina: annunci rimandati (e la serie, se non avevi girato tutto)
+  if (eraApertura) { SerieCompleta.svuota(); Trofei.controlla(); setTimeout(() => { if ($("#modale").hidden && $("#apertura").hidden) mostraAvviso.libera(); }, 300); }   // chiusa la bustina: annunci rimandati (e la serie, se non avevi girato tutto)
   // chiusa la scelta della squadra senza scegliere: niente battaglia, si esce dallo schermo intero
   if (typeof scegliSquadra === "function" && scegliSquadra.poi) { scegliSquadra.poi = null; if (!B) schermoIntero(false); }
   if (eraOrdine && !B) schermoIntero(false);   // chiuso l'ordine di entrata senza combattere
@@ -712,11 +712,22 @@ function chiudiModale() {
 function mostraAvviso(testo) {
   testo = String(testo == null ? "" : testo).trim(); if (!testo) return;
   if (Riepilogo.attivo()) { Riepilogo.aggiungi(testo); return; }
+  // nov 2026: mentre apri una bustina gli avvisi (frammenti, monete, missioni, trofei…) aspettano: arrivano dopo le carte
+  if (mostraAvviso.trattieni) { const t = mostraAvviso.trattenuti || (mostraAvviso.trattenuti = []); if (!t.includes(testo)) t.push(testo); return; }
   const c = mostraAvviso.coda || (mostraAvviso.coda = []);
   if (mostraAvviso.ora === testo || c.includes(testo)) return;
   c.push(testo);
   if (!mostraAvviso.ora) mostraAvviso.prossimo(); else mostraAvviso.conta();
 }
+mostraAvviso.trattieni = false;
+mostraAvviso.tieni = () => { mostraAvviso.trattieni = true; clearTimeout(mostraAvviso._sblocca); mostraAvviso._sblocca = setTimeout(mostraAvviso.libera, 180000); };   // per sicurezza mai più di 3 minuti
+mostraAvviso.libera = (dopo = 0) => {
+  clearTimeout(mostraAvviso._sblocca);
+  if (!mostraAvviso.trattieni) return;
+  mostraAvviso.trattieni = false;
+  const l = mostraAvviso.trattenuti || []; mostraAvviso.trattenuti = [];
+  if (l.length) setTimeout(() => l.forEach(mostraAvviso), dopo);
+};
 mostraAvviso.conta = () => { const el = $("#avviso"), n = (mostraAvviso.coda || []).length; if (el && mostraAvviso.ora) el.dataset.altri = n ? `+${n}` : ""; };
 mostraAvviso.prossimo = () => {
   const el = $("#avviso"), c = mostraAvviso.coda || [];
@@ -1258,6 +1269,7 @@ function usaBustina(tipo, pagando) {
     S.inventario[tipo]--;
   }
   const incomplete = S.admin ? [] : ORDINE_SERIE.filter(k => { const st = statSerie(k); return st.tot && st.mie < st.tot; });
+  mostraAvviso.tieni();
   const esiti = apriBustina(tipo);
   SerieCompleta.prepara(esiti, incomplete);
   Livello.carteNuove(esiti); Frammenti.daEsiti(esiti);
@@ -1404,6 +1416,7 @@ function chiudiApertura(perRiepilogo) {
   chiudiSchedaCarta(); SerieCompleta.svuota();
   if (apertura) { apertura.distruggi(); apertura = null; }
   const ov = $("#apertura"); ov.hidden = true; ov.innerHTML = "";
+  if (!perRiepilogo) mostraAvviso.libera(300);
   disegna();
   if (versioneNuova && !perRiepilogo) setTimeout(applicaAggiornamento, 600);
 }
@@ -1426,6 +1439,7 @@ function mostraRiepilogoBustina() {
   const ord = u.esiti.map((e, i) => ({ e, i, v: e.ultra ? 9 : rangoRarita(PER_ID[e.id].rarita) })).sort((a, b) => a.v - b.v || a.i - b.i);
   const nuove = u.esiti.filter(e => e.nuova).length, pot = u.esiti.reduce((n, e) => n + (e.nuova ? 0 : e.pot || 0), 0);
   const g = u.graffito && Graffiti.info(u.graffito.id);
+  setTimeout(() => mostraAvviso.libera(), 0);
   apriModale(`<div class="riepilogo-bustina">
     <h2>Riepilogo · ${esc(T.nome || "Bustina")}</h2>
     <p class="nota centro">${nuove ? `<b>${nuove}</b> ${nuove > 1 ? "carte nuove" : "carta nuova"}` : "Nessuna carta nuova"}${pot ? ` · <b>+${pot}</b> potenziatori dai doppioni` : ""} · tocca una carta per le statistiche</p>
@@ -1438,7 +1452,7 @@ function mostraRiepilogoBustina() {
     </div></div>`, { bloccata: true });
 }
 function chiudiRiepilogoBustina(poi) {
-  chiudiSchedaCarta(); chiudiModale(); Trofei.controlla(); disegna();
+  chiudiSchedaCarta(); chiudiModale(); Trofei.controlla(); mostraAvviso.libera(); disegna();
   if (poi) poi(); else if (versioneNuova) setTimeout(applicaAggiornamento, 600);
 }
 let esitiAperti = [];

@@ -6,8 +6,8 @@
 
 const Scena3D = (() => {
   const T = window.THREE;
-  const COL_RARITA = { comune: 0x9aa3ad, rara: 0x4c95ff, epica: 0xb866ff, leggendaria: 0xf2c14e, ultra: 0xffe9a8, jolly: 0xe8443a };
-  const HEX_RARITA = { comune: "#9aa3ad", rara: "#4c95ff", epica: "#b866ff", leggendaria: "#f2c14e", ultra: "#ffe9a8", jolly: "#e8443a" };
+  const COL_RARITA = { comune: 0x9aa3ad, rara: 0x4c95ff, epica: 0xb866ff, leggendaria: 0xf2c14e, ultra: 0xffe9a8, jolly: 0xffffff };
+  const HEX_RARITA = { comune: "#9aa3ad", rara: "#4c95ff", epica: "#b866ff", leggendaria: "#f2c14e", ultra: "#ffe9a8", jolly: "#ffffff" };
   const COL_STILE = { FOR: 0xff7a45, VEL: 0x3fd8ff, DIF: 0x7ddc6a };
   const ridotto = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -3233,7 +3233,7 @@ const Scena3D = (() => {
   //  1. tocchi la bustina: trema e si illumina del colore della carta migliore che c'è dentro (più è rara, più a lungo)
   //  2. le carte escono in un mazzetto coperto: a ogni tocco se ne scopre una, la più rara è sempre l'ultima
   //  3. leggendarie e Ultra hanno un'entrata speciale: buio, serie, ruolo e tipo, poi la carta
-  const VAL_RARITA = { comune: 0, rara: 1, epica: 2, leggendaria: 3, ultra: 4, jolly: 2 };
+  const VAL_RARITA = { comune: 0, rara: 1, epica: 2, leggendaria: 3, ultra: 4, jolly: 3.5 };
   const suono = (nome, ...a) => { try { if (typeof Suoni !== "undefined") Suoni[nome](...a); } catch (e) {} };
   class Apertura extends Base {
     constructor(contenitore, esiti, tipo, callback = {}) {
@@ -3404,7 +3404,7 @@ const Scena3D = (() => {
       if (this._tutte && this.mazzo.length) this.prossima();
     }
     async rivela(i) {
-      const c = this.carte[i], r = this.rar[i], col = COL_RARITA[r], top = r === "leggendaria" || r === "ultra", veloce = !!this._tutte;
+      const c = this.carte[i], r = this.rar[i], col = COL_RARITA[r], top = r === "leggendaria" || r === "ultra" || r === "jolly", veloce = !!this._tutte;
       c.userData.occupata = true;
       const davanti = this.fronteCarta.clone(), scala = 1.3;
       // la carta sale dal mazzetto e si mette davanti
@@ -3427,9 +3427,10 @@ const Scena3D = (() => {
       this.esplosione(davanti.clone().add(new T.Vector3(0, 0, .2)), col, n, { velocita: top ? 4 : 2.6, su: 1.2 });
       if (top) {
         this.scossa = r === "ultra" ? .45 : .25;
-        const colori = r === "ultra" ? [0xffe9a8, 0x111111, 0xf2c14e, 0xffffff, 0xc9a13a, 0x000000] : [0xf2c14e, 0xffffff, 0xff2e46];
+        const colori = r === "ultra" ? [0xffe9a8, 0x111111, 0xf2c14e, 0xffffff, 0xc9a13a, 0x000000] : r === "jolly" ? [0xffffff, 0xe8f0ff, 0xffffff, 0xd8d8e8] : [0xf2c14e, 0xffffff, 0xff2e46];
         colori.forEach((cc, k) => setTimeout(() => this.esplosione(davanti.clone().add(new T.Vector3(0, .3, .2)), cc, 50, { velocita: 3.8, su: 1.6, durata: 1300 }), (k + 1) * 180));
         if (r === "ultra") this.scritta("ULTRA!", "#ffe9a8", davanti.clone().add(new T.Vector3(0, 1.2, .3)), .45, 2400);
+        if (r === "jolly") this.scritta("JOLLY!", "#ffffff", davanti.clone().add(new T.Vector3(0, 1.5, .3)), .45, 2400);
       }
       const e = this.esiti[i];
       const etichetta = e.ultra ? "" : e.olo ? "Olografica!" : e.nuova ? "Nuova!" : e.pot ? `+${e.pot} potenziatori` : e.extra ? `+${e.extra} monete` : "";

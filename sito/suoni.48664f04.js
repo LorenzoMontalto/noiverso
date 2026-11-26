@@ -228,13 +228,13 @@ const Suoni = (() => {
     gira(rarita) {
       if (!effettiAttivi()) return;
       if (!c("carta-gira", .9)) soffio("highpass", 3000, .06, .25, { a: .001 });
-      const sting = { rara: ["rivela-rara", .45], epica: ["rivela-epica", .55], leggendaria: ["rivela-leggendaria", .75], ultra: ["rivela-leggendaria", .8] }[rarita];
+      const sting = { rara: ["rivela-rara", .45], epica: ["rivela-epica", .55], leggendaria: ["rivela-leggendaria", .75], ultra: ["rivela-leggendaria", .8], jolly: ["rivela-leggendaria", .8] }[rarita];
       if (sting && c(sting[0], sting[1], { t: .08, varia: 0 })) {
-        if (rarita === "leggendaria" || rarita === "ultra") { c("campana", .4, { t: .1 }); c("fiches", .5, { t: .5 }); }
+        if (rarita === "leggendaria" || rarita === "ultra" || rarita === "jolly") { c("campana", .4, { t: .1 }); c("fiches", .5, { t: .5 }); }
         if (rarita === "ultra") c("boato", .8, { t: .05 });
         return;
       }
-      const n = { comune: [72], rara: [72, 79], epica: [72, 76, 79, 84], leggendaria: [72, 76, 79, 84, 88], ultra: [60, 67, 72, 76, 79, 84, 88] }[rarita] || [72];
+      const n = { comune: [72], rara: [72, 79], epica: [72, 76, 79, 84], leggendaria: [72, 76, 79, 84, 88], ultra: [60, 67, 72, 76, 79, 84, 88], jolly: [72, 79, 84, 91, 96] }[rarita] || [72];
       if (rarita !== "comune" || !campioni["carta-gira"]) n.forEach((x, k) => tono(rarita === "comune" ? "sine" : "triangle", nota(x), .35, .06, { t: .05 + k * .06 }));
     },
     rullo() { if (!effettiAttivi()) return; c("legno", .9, { rate: .8 }) || tonfo(.9, 0, 70); tonfo(.5, 0, 70); },   // i colpi dell'entrata speciale
