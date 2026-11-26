@@ -1048,8 +1048,30 @@ const BILANCIO = {
   wonderrita: 1.034, zeutiz: 1.062,
   aurorrigan: 1.02,
 };
+// nov 2026: correzione di forza che vale SOLO per le carte salite di rarità (Ascesa). BILANCIO è tarato sulla rarità
+// di partenza: salendo fino a leggendaria alcune carte diventavano troppo forti (soprattutto i guaritori: una comune
+// guaritrice al massimo vinceva il 65-71%, più delle leggendarie vere) e altre troppo deboli. Valori misurati con
+// 3000 partite per carta al livello 30 con lode e tutte le ascese (media di tutte le carte salite: 57,6%), tenendo solo
+// le carte fuori di più di 3 punti. Con le ascese a metà strada la correzione si applica in proporzione ai passi fatti.
+const BILANCIO_ASCESA = {
+  samuba: 0.898, fiesta: 0.91, aurothma: 0.878, senecate: 0.887, ritaloon: 0.889, ritarena: 0.898, auroravive: 0.899, giuliflora: 0.921,
+  seneocra: 0.923, aurera: 0.925, pecorella: 0.927, tizievil: 0.928, ludasso: 0.931, alessieno: 0.934, maurilanders: 0.935, vikappone: 0.936,
+  giulibyte: 0.937, simondo: 0.941, lollirlanda: 0.922, ritanimatrice: 0.946, ludraco: 0.947, senebula: 0.95, adelrizio: 0.951, demviky: 0.953,
+  herdiego: 0.953, lollocallo: 0.956, tizomer: 0.981, chichice: 0.959, aurante: 0.959, diego17: 0.961, samulmine: 0.964, ludosbadiglio: 0.965,
+  diegombie: 0.965, mauriziente: 0.967, tizianator: 0.968, lollonova: 1.03, vikitsune: 1.031, giulancia: 1.032, pipstolero: 1.032, diegial: 1.032,
+  diegkeye: 1.033, simonducer: 1.033, ludohouse: 1.033, simarney: 1.034, alessante: 1.034, rojo: 1.034, simocallo: 1.034, elcuervo: 1.034,
+  vedovagreca: 1.035, diegoren: 1.035, alicircuit: 1.035, vikylasso: 1.037, alisombra: 1.037, comora: 1.039, waspy: 1.07, tiziazel: 1.051,
+  simopa: 1.057, criliziano: 1.06, samudead: 1.068,
+};
+function fattoreAscesa(c, rar) {
+  const base = (PER_ID[c.id] || c).rarita, f = BILANCIO_ASCESA[c.id];
+  if (!f || !ORDINE_RARITA.includes(base)) return 1;
+  const i0 = ORDINE_RARITA.indexOf(base), passi = ORDINE_RARITA.indexOf(rar) - i0, max = ORDINE_RARITA.length - 1 - i0;
+  return passi > 0 && max > 0 ? 1 + (f - 1) * Math.min(1, passi / max) : 1;
+}
 function statistiche(c, liv = 1, lode = false, rar) {
-  const b = RUOLI[c.ruolo], fr = RARITA[RARITA[rar] ? rar : c.rarita].forza * (BILANCIO[c.id] || 1), f = fattoreLivello(liv, lode), t = BONUS_TIPO[c.stile] || {};
+  const rf = RARITA[rar] ? rar : c.rarita;
+  const b = RUOLI[c.ruolo], fr = RARITA[rf].forza * (BILANCIO[c.id] || 1) * fattoreAscesa(c, rf), f = fattoreLivello(liv, lode), t = BONUS_TIPO[c.stile] || {};
   const g = f - 1, fT = 1 + g * CRESCITA_TIPO, im = impronta(c.id);
   const pv = b.pv * (t.pv || 1) * fr * f * (1 + im.pv);
   const att = b.att * (t.att || 1) * fr * (c.stile === "FOR" ? fT : f) * (1 + im.att);
