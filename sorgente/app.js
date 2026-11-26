@@ -800,6 +800,7 @@ function htmlBarraFiltri(dove, extra = "") {
   </div>`;
 }
 
+const SCORREVOLI = ".capitoli, .mv-carte, .notte-strada, .pass-pista, .tab-scorri, .tr-tabellone, .st-scorri, .mondo";
 // nov 2026: ogni cambio di sezione è una voce della cronologia, così il tasto Indietro del telefono torna alla
 // sezione di prima (prima usciva dal gioco). Con Indietro si ritrova anche il punto della pagina dov'eri.
 const posizioni = {};
@@ -840,7 +841,8 @@ function disegna() {
   let memo = null;
   if (stessa) {
     memo = { y: scrollY, aperti: $$("details[open] > summary", main).map(s => s.textContent.trim()),
-      lato: $$("*", main).filter(el => el.scrollLeft > 0 && el.scrollWidth > el.clientWidth).map(el => [el.className, el.scrollLeft]) };
+      // solo le file che scorrono di lato (controllarle tutte rallentava l'Album: 7.500 elementi a ogni ridisegno)
+      lato: $$(SCORREVOLI, main).filter(el => el.scrollLeft > 0).map(el => [el.className, el.scrollLeft]) };
   }
   main.innerHTML = FUNZIONI_VISTE()[vista]();
   ultimaVistaDisegnata = vista;
