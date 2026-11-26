@@ -48,7 +48,7 @@ async def giro(b, nome, w, h, mobile):
     controlla(f"[{nome}] bustina aperta con riepilogo delle carte", await J("document.querySelectorAll('.riepilogo-bustina .rb-carta').length >= 4"))
     await J("document.querySelector('[data-azione=\"chiudi-riepilogo\"]')?.click()"); await pg.wait_for_timeout(600)
     # le pagine principali
-    for v in ["squadra", "album", "negozio", "sfida", "pass", "storia", "classifica", "strada"]:
+    for v in ["squadra", "album", "negozio", "sfida", "notte", "scalata", "pass", "storia", "classifica", "strada"]:
         await J(f"chiudiModale(); vai('{v}')"); await pg.wait_for_timeout(700)
         controlla(f"[{nome}] pagina {v}", await J(f"vista === '{v}' && document.querySelector('#vista').innerText.length > 40"))
     # una battaglia vera contro il computer: si gioca finché finisce (o per un massimo di mosse)

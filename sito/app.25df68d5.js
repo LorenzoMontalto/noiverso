@@ -768,7 +768,9 @@ const Riepilogo = {
 // ============================================================
 //  VISTE
 // ============================================================
-const VISTE = ["strada", "storia", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin"];
+const VISTE = ["strada", "storia", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin", "notte", "scalata"];
+// le modalità a corsa (Lunga Notte, Scalata) stanno dentro "Sfida": nella barra in alto si illumina quella
+const VISTA_NAV = v => ["notte", "scalata"].includes(v) ? "sfida" : v;
 let vista = "strada";
 let filtroAlbum = "tutte", filtroSquadra = "tutte", albumScheda = "carte";
 // Ricerca per tipo, serie e nome (album e squadre)
@@ -811,21 +813,21 @@ function vai(v, indietro = false) {
   if (location.hash.slice(1) !== v) {
     try { if (cambiata && location.hash && !indietro) history.pushState(null, "", "#" + v); else history.replaceState(null, "", "#" + v); } catch (e) { location.hash = v; }
   }
-  $$(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.vista === v ? "page" : "false"));
+  $$(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.vista === VISTA_NAV(v) ? "page" : "false"));
   spostaIndicatore();
   disegna();
   if (cambiata) { FX.riavvia($("#vista"), "vista-entra"); scrollTo(0, indietro ? posizioni[v] || 0 : 0); }
 }
 
 function spostaIndicatore() {
-  const b = $(`.nav button[data-vista="${vista}"]`), ind = $(".nav-indicatore");
+  const b = $(`.nav button[data-vista="${VISTA_NAV(vista)}"]`), ind = $(".nav-indicatore");
   if (!b || !ind) return;
   ind.style.width = b.offsetWidth + "px";
   ind.style.transform = `translateX(${b.offsetLeft}px)`;
   if (b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
-const FUNZIONI_VISTE = () => ({ strada: vistaStrada, bustine: vistaBustine, negozio: vistaNegozio, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria });
+const FUNZIONI_VISTE = () => ({ strada: vistaStrada, bustine: vistaBustine, negozio: vistaNegozio, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria, notte: () => Notte.html(), scalata: () => Scalata.html() });
 let ultimaVistaDisegnata = "";
 function disegna() {
   aggiornaTesta();
@@ -1882,6 +1884,7 @@ function vistaSfida() {
     ${BossGiorno.htmlSfida()}
     ${Settimana.htmlSfida()}
     ${Arena.htmlSfida()}
+    <div class="modi-corsa">${Notte.htmlSfida()}${Scalata.htmlSfida()}</div>
     ${socialeAttivo() ? `<div class="sfida-sociale">${Boss.htmlGrande()}<div class="amici-invito"><b>Sfida un amico</b><span class="nota">Combatti contro la squadra vera di un amico, guidata dal computer. Se vinci gli rubi un punto in classifica.</span><button class="btn primario" data-fx="spinta" data-azione="vai-amici">Scegli chi sfidare</button></div></div>
     <div class="titolo-riga piccola"><h3>Contro il computer</h3></div>` : ""}
     <div class="modo-riga">${segmento("modalita", "Modalità", [["classica", "Classica 5 contro 5"], ["rapida", "Rapida 3 contro 3"]])}</div>
@@ -3231,28 +3234,34 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   // nov 2026: mi segno da quale pagina parte la battaglia (il boss della settimana si avvia sia dalla Strada sia
   // dalle Sfide): alla fine si torna lì, non sempre alle Sfide. La rivincita parte da dentro la battaglia e lo tiene.
   if (Lp && !B) Lp.da = VISTE.includes(vista) ? vista : "sfida";
-  const n = carteForzate ? CARTE_SQUADRA : carteBattaglia();
+  const n = Lp && Lp.modo ? 99 : carteForzate ? CARTE_SQUADRA : carteBattaglia();   // le modalità a corsa hanno squadre di misura variabile
   const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
+    : Lp && Lp.squadraMia ? Lp.squadraMia.map(x => Object.assign({}, x))   // Lunga Notte e Scalata: la squadra della modalità, non della collezione
     : Lp && Lp.arena ? carteForzate.slice(0, n).map(id => ({ id, liv: 20, lode: false, olo: false, ultra: false, asc: 0 }))   // Arena: tutti uguali al livello 20
     : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, ...(PER_ID[id] && PER_ID[id].rarita === "jolly" && !carteForzate ? { js: squadraAttiva().jolly || "", jm: squadraAttiva().jollyModo || "rinforzo", jt: squadraAttiva().jollyTipo || "" } : {}), liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id), cc: S.admin ? "" : Cosmetici.corniceCarta(id) }));
   const L = livelloAttuale;
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
   // contro il computer: battaglia con un seme, così gli amici possono guardarla in diretta (le scelte del computer restano a caso)
-  const seme = Math.floor(Math.random() * 2 ** 31);
+  const seme = L.seme || Math.floor(Math.random() * 2 ** 31);   // le modalità a corsa salvano il seme per poter riprendere dopo un F5
   if (!L.spettatore) avvisoFineConsigli();
   B = L.spettatore ? Online.creaGuarda(mia, nemici) : L.vivo ? Online.creaBattaglia(mia, nemici) : new Battaglia(mia, nemici, "Tu", L.nome, mulberry32(seme));
   if (!L.spettatore && !L.vivo) B.rngIA = Math.random;
-  const gMio = L.spettatore ? L.spettatore.gA : L.vivo ? L.vivo.graffitoMio : Graffiti.mio(), gNem = Graffiti.nemico(L);   // una volta sola: per i bot può essere a caso
+  const gMio = L.modo ? null : L.spettatore ? L.spettatore.gA : L.vivo ? L.vivo.graffitoMio : Graffiti.mio(), gNem = L.modo ? null : Graffiti.nemico(L);   // una volta sola: per i bot può essere a caso
   B.impostaGraffiti(gMio, gNem);
   const campoFisso = L.spettatore ? L.spettatore.campo : L.campo;   // storia: il campo della mappa (e chi guarda lo riceve)
   if (campoFisso) { B.impostaCampo(campoFisso); B.campoBloccato = true; }   // storia: il campo della mappa resta tutta la partita
   const bossG = L.spettatore ? L.spettatore.bossGiorno : L.bossGiorno;   // boss del giorno: corazza e punto debole
   if (bossG) BossGiorno.prepara(B, bossG);
-  B.zaino = L.spettatore || L.arena ? null : Zaino.perBattaglia();
+  B.zaino = L.spettatore || L.arena || L.modo ? null : Zaino.perBattaglia();
+  if (L.modo) {
+    L.modo.prepara(B);
+    // ripresa dopo un F5: rigioco le mosse già fatte (stesso seme = stessi risultati), così non si può ricaricare per riprovare
+    for (const e of L.rigioca || []) { if (B.vincitore >= 0) break; if (e.o === "turno") B.risolviTurno(e.a, e.b); else if (e.o === "sost") B.sostituisci(e.l, e.i); }
+  }
   if (L.spettatore) Online.rigioca(B);   // porta la battaglia al punto in cui è adesso, prima di disegnare l'arena
   if (L.bossGruppo) Boss.prepara(B);
-  if (!L.spettatore && !L.vivo && !L.provaAdmin && !S.admin)
+  if (!L.spettatore && !L.vivo && !L.provaAdmin && !S.admin && !L.modo)
     Online.iniziaDiretta({ seme, sqA: mia, sqB: nemici, gA: gMio, gB: gNem, nomeA: (S.profilo.nome || "Giocatore").slice(0, 22), nomeB: `${L.nome} (computer)`,
       bossPv: L.bossGruppo ? B.lati[1].squadra[0].pvMax : null, campo: campoFisso || null, bossGiorno: L.bossGiorno || null });
   document.body.classList.add("in-battaglia");
@@ -3417,6 +3426,7 @@ function htmlPanchina(perSostituire) {
 function htmlAzioni() {
   const finita = B.vincitore >= 0 && !animazione;   // il risultato si vede solo dopo l'ultima animazione
   if (finita && livelloAttuale.storia) return htmlFineStoria();
+  if (finita && livelloAttuale.modo) return livelloAttuale.modo.htmlFine();
   if (finita && livelloAttuale.amico) return Amici.htmlFine();
   if (finita && livelloAttuale.bossGruppo) return Boss.htmlFine();
   if (finita && livelloAttuale.vivo) return Online.htmlFine();
@@ -3715,20 +3725,22 @@ async function riproduci(eventi) {
   aggiornaBattaglia();
 }
 
+// Lunga Notte e Scalata: ogni mossa si salva subito (prima delle animazioni), per riprendere dopo un F5
+function passoModo(e) { if (livelloAttuale && livelloAttuale.modo && livelloAttuale.modo.passo) livelloAttuale.modo.passo(e); }
 async function turnoGiocatore(az) {
   if (animazione || !B || B.vincitore >= 0 || livelloAttuale.spettatore) return;
   if (livelloAttuale.vivo) return Online.scegli(az);
   const azC = B.scegliAzione(1, livelloAttuale.abilita);
   let ev = B.risolviTurno(az, azC);
-  Online.loggaDiretta({ o: "turno", a: az, b: azC });
-  if (B.serveSostituzione(1)) { const i = B.scegliSostituto(1); ev = ev.concat(B.sostituisci(1, i)); Online.loggaDiretta({ o: "sost", l: 1, i }); }
+  Online.loggaDiretta({ o: "turno", a: az, b: azC }); passoModo({ o: "turno", a: az, b: azC });
+  if (B.serveSostituzione(1)) { const i = B.scegliSostituto(1); ev = ev.concat(B.sostituisci(1, i)); Online.loggaDiretta({ o: "sost", l: 1, i }); passoModo({ o: "sost", l: 1, i }); }
   await riproduci(ev);
   if (B.vincitore >= 0) chiudiSfida();
 }
 async function sostituisciGiocatore(i) {
   if (animazione || (livelloAttuale && livelloAttuale.spettatore)) return;
   if (livelloAttuale && livelloAttuale.vivo) return Online.sostituisci(i);
-  const ev = B.sostituisci(0, i); Online.loggaDiretta({ o: "sost", l: 0, i });
+  const ev = B.sostituisci(0, i); Online.loggaDiretta({ o: "sost", l: 0, i }); passoModo({ o: "sost", l: 0, i });
   await riproduci(ev);
 }
 
@@ -3781,6 +3793,7 @@ function htmlEspCarte() {
 function chiudiSfida() {
   if (livelloAttuale && !livelloAttuale.vivo && !livelloAttuale.spettatore) Online.fineDiretta(B.vincitore);
   if (livelloAttuale && livelloAttuale.storia) return chiudiStoria();
+  if (livelloAttuale && livelloAttuale.modo) return livelloAttuale.modo.chiudi();   // niente XP alle carte, missioni o classifica
   if (livelloAttuale && livelloAttuale.amico) return Amici.chiudi();
   if (livelloAttuale && livelloAttuale.bossGruppo) return Boss.chiudi();
   if (livelloAttuale && livelloAttuale.vivo) return Online.chiudi();
@@ -3815,7 +3828,7 @@ function esciBattaglia() {
   schermoIntero(false);
   const L = livelloAttuale, daStoria = L && L.storia;
   if (daStoria) capStoria = daStoria.k;
-  vai(daStoria ? "storia" : (L && L.da) || "sfida");
+  vai(daStoria ? "storia" : L && L.modo ? L.modo.vista : (L && L.da) || "sfida");
   // i due boss sono separati: si torna al riquadro di quello appena combattuto
   if (L && L.bossGruppo) scorriA("#vista [data-boss-box]");
   else if (L && L.bossGiorno) scorriA("#vista .boss-giorno");
@@ -3845,7 +3858,7 @@ document.addEventListener("click", e => {
   if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
   if (e.target.id === "avviso") { if (mostraAvviso._salta) { mostraAvviso._salta = false; return; } mostraAvviso.prossimo(); return; }
-  const t = e.target.closest("[data-titolo-profilo],[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-notte-partenza],[data-notte-bivio],[data-notte-premio],[data-notte-lascia],[data-notte-compra-carta],[data-notte-compra-cim],[data-notte-imp],[data-notte-carta],[data-cimelio-info],[data-scalata-scegli],[data-scalata-pot],[data-scalata-carta],[data-scalata-nuova],[data-scalata-info],[data-titolo-profilo],[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3933,6 +3946,22 @@ document.addEventListener("click", e => {
   if (t.dataset.schedaAlbum) { albumScheda = t.dataset.schedaAlbum; if (albumScheda === "scambi") Scambi.carica(); disegna(); return; }
   if (t.dataset.trofeo) { Trofei.riscuoti(t.dataset.trofeo, t); return; }
   if (t.dataset.titolo !== undefined) { Trofei.scegliTitolo(t.dataset.titolo); return; }
+  // Lunga Notte e Scalata
+  const d = t.dataset;
+  if (d.nottePartenza !== undefined) { Notte.scegliPartenza(+d.nottePartenza); return; }
+  if (d.notteBivio !== undefined) { Notte.scegliBivio(+d.notteBivio); return; }
+  if (d.nottePremio !== undefined) { Notte.scegliPremio(+d.nottePremio); return; }
+  if (d.notteLascia !== undefined) { Notte.lascia(+d.notteLascia); return; }
+  if (d.notteCompraCarta !== undefined) { Notte.compra("carta", +d.notteCompraCarta); return; }
+  if (d.notteCompraCim !== undefined) { Notte.compra("cim", +d.notteCompraCim); return; }
+  if (d.notteImp !== undefined) { Notte.imprevisto(d.notteImp); return; }
+  if (d.notteCarta !== undefined) { Notte.infoCarta(+d.notteCarta); return; }
+  if (d.cimelioInfo !== undefined) { Notte.infoCimelio(d.cimelioInfo); return; }
+  if (d.scalataScegli !== undefined) { Scalata.scegli(d.scalataScegli); return; }
+  if (d.scalataPot !== undefined) { Scalata.scegliPot(+d.scalataPot); return; }
+  if (d.scalataCarta !== undefined) { Scalata.suCarta(+d.scalataCarta); return; }
+  if (d.scalataNuova !== undefined) { Scalata.nuovaCarta(d.scalataNuova); return; }
+  if (d.scalataInfo !== undefined) { Scalata.info(+d.scalataInfo); return; }
   if (t.dataset.titoloProfilo !== undefined) {
     const corpo = $("#modale-corpo"), su = corpo ? corpo.scrollTop : 0, aperto = !!$(".profilo-modifica[open]");
     Trofei.scegliTitolo(t.dataset.titoloProfilo); apriProfilo();
@@ -3992,6 +4021,24 @@ document.addEventListener("click", e => {
     case "adesso-potenzia": filtri.squadra.pot = true; vai("squadra"); break;
     case "adesso-avvento": Avvento.apri(); break;
     case "vai-admin": vai("admin"); break;
+    case "notte-entra": case "notte-vai": Notte.entra(); break;
+    case "notte-riprendi": Notte.riprendi(); break;
+    case "notte-salta": Notte.salta(); break;
+    case "notte-annulla-lascia": Notte.annullaLascia(); break;
+    case "notte-bar-riposo": Notte.bar("riposo"); break;
+    case "notte-bar-allena": Notte.bar("allena"); break;
+    case "notte-compra-cura": Notte.compra("cura"); break;
+    case "notte-compra-livello": Notte.compra("livello"); break;
+    case "notte-avanti": Notte.avanti(); break;
+    case "notte-abbandona": Notte.abbandona(t); break;
+    case "notte-riscuoti": Notte.riscuoti(t); break;
+    case "scalata-entra": case "scalata-vai": Scalata.entra(); break;
+    case "scalata-riprendi": Scalata.riprendi(); break;
+    case "scalata-combatti": Scalata.combatti(); break;
+    case "scalata-fermati": Scalata.fermati(t); break;
+    case "scalata-annulla-carta": Scalata.annullaCarta(); break;
+    case "scalata-no-cambio": Scalata.noCambio(); break;
+    case "scalata-riscuoti": Scalata.riscuoti(t); break;
     case "vai-bilancio": vai("admin"); setTimeout(() => { const b = $("#admin-stat"); if (b) { b.scrollIntoView({ block: "start" }); const c = b.querySelector('[data-admin="stat-carica"]'); if (c && !b.querySelector(".st-bilancio")) c.click(); } }, 300); break;
     case "ricontrolla-server": StatoServer.controlla(true); break;
     case "consiglio-usa": Consiglio.usa(); break;

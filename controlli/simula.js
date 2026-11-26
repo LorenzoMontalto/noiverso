@@ -52,3 +52,16 @@ console.log("partite", partite, "turni", turni, "errori", errori);
 this.__errori = errori; this.__partite = partite;
 `, ctx);
 if (ctx.__errori !== 0 || !(ctx.__partite > 0)) { console.error("ERRORE: le battaglie simulate non tornano"); process.exit(1); }
+
+// Lunga Notte e Scalata: 200 corse a testa giocate dal bot. Niente errori, e i risultati devono restare
+// nell'ordine di quelli della taratura (se cambia qualcosa nel motore o nelle carte e diventano troppo facili o
+// troppo difficili, il controllo si ferma e lo dice).
+{
+  const m = require("./modalita.js").carica();
+  const n = m.RISULTATI.notte(200), s = m.RISULTATI.scalata(200);
+  console.log(`notte: medio ${n.medio.arrivo.toFixed(1)} fermate (alba ${(n.medio.alba * 100).toFixed(0)}%), bravo ${n.bravo.arrivo.toFixed(1)} (alba ${(n.bravo.alba * 100).toFixed(0)}%) · scalata: medio ${s.medio.arrivo.toFixed(1)} piani, bravo ${s.bravo.arrivo.toFixed(1)}`);
+  const ok = n.medio.errori + n.bravo.errori + s.medio.errori + s.bravo.errori === 0
+    && n.medio.alba >= .02 && n.medio.alba <= .3 && n.bravo.arrivo >= 3.5 && n.bravo.arrivo <= 8.5
+    && s.medio.arrivo >= 2 && s.medio.arrivo <= 9 && s.bravo.arrivo >= 3.5 && s.bravo.arrivo <= 12;
+  if (!ok) { console.error("ERRORE: Lunga Notte o Scalata fuori taratura (vedi controlli/modalita.js)"); process.exit(1); }
+}
