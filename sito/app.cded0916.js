@@ -989,7 +989,7 @@ function apriComeSiGioca() {
       ["Potenziare", `Le carte salgono di livello solo se le potenzi tu, dal dettaglio della carta (il segno ▲ verde dice quando puoi). Ogni doppione dà potenziatori per quella carta: ${POT_DOPPIONE.comune} se è Comune, ${POT_DOPPIONE.rara} Rara, ${POT_DOPPIONE.epica} Epica, ${POT_DOPPIONE.leggendaria} Leggendaria. Ogni livello costa potenziatori e monete, sempre di più: da ${potPerLivello(1)} potenziatori e ${monetePerLivello(1)} monete per il livello 2 fino a ${potPerLivello(29)} e ${monetePerLivello(29)} per il 30. Ogni livello dà +2% a PV e danni.`],
       ["30 e lode", `Una carta al 30 fa esperienza in battaglia: dopo ${XP_LODE} XP prende la lode, che la potenzia di un altro 5%. I doppioni di una carta al 30 danno monete e frammenti ◈.`],
       ["Frammenti e maestria", "Con i frammenti ◈ crei le carte che ti mancano. Ogni carta ha 5 stelle di maestria da conquistare giocandola."],
-      ["Jolly", "Carte bianche rarissime (circa 3 ogni 1.000 carte trovate nelle bustine). Non hanno una serie: in squadra si uniscono alla sinergia che scegli tu. Al massimo uno per squadra."],
+      ["Jolly", `Carte bianche rarissime: nelle bustine classiche ogni carta tranne l'ultima ha lo ${(PROB_JOLLY * 100).toLocaleString("it-IT")}% di essere un Jolly. Non hanno una serie: in squadra si uniscono alla sinergia che scegli tu. Al massimo uno per squadra.`],
       ["Confronto", "Dalle Squadre o dal dettaglio di una carta nell'Album puoi confrontare due carte, anche come sarebbero al massimo."],
     ])}
     ${gruppo("La battaglia", [
@@ -1122,8 +1122,10 @@ function vistaNegozio() {
     <table class="probabilita">
       <caption>Probabilità per carta nella bustina classica</caption>
       <thead><tr><th>Rarità</th><th>Prime carte</th><th>Ultima carta</th></tr></thead>
-      <tbody>${ORDINE_RARITA.map(r => `<tr><td><span class="pallino r-${r}"></span>${RARITA[r].nome}</td><td>${(RARITA[r].peso / peso * 100).toFixed(1)}%</td><td>${RARITA[r].peso4}%</td></tr>`).join("")}</tbody>
-    </table>`;
+      <tbody>${ORDINE_RARITA.map(r => `<tr><td><span class="pallino r-${r}"></span>${RARITA[r].nome}</td><td>${(RARITA[r].peso / peso * (1 - PROB_JOLLY) * 100).toFixed(1)}%</td><td>${RARITA[r].peso4}%</td></tr>`).join("")}
+        <tr><td><span class="pallino r-jolly"></span>Jolly</td><td>${(PROB_JOLLY * 100).toFixed(1)}%</td><td>0%</td></tr></tbody>
+    </table>
+    <p class="nota piccola">I Jolly escono solo nelle bustine classiche (non in quelle di una serie, di uno stile o nella Ultra) e mai come ultima carta: circa 1 bustina normale su ${Math.round(1 / (1 - Math.pow(1 - PROB_JOLLY, 3)))} e 1 Mega bustina su ${Math.round(1 / (1 - Math.pow(1 - PROB_JOLLY, 7)))}.</p>`;
   else if (sch === "battaglia") corpo = `${Graffiti.htmlNegozio()}${Zaino.htmlNegozio()}`;
   else corpo = Cosmetici.htmlNegozio();
   return `
@@ -2062,7 +2064,10 @@ function tessereGioca() {
 function vistaSfida() {
   const t = tessereGioca();
   const GR = [["inizia", "Per iniziare"], ["corse", "Avventure", "Si paga l'ingresso e il premio dipende da quanto vai avanti. Le tue carte qui non contano."], ["eventi", "Eventi"], ["amici", "Con gli amici"]];
-  const tessera = x => `<button class="tessera${x.chiusa ? " chiusa" : ""}" data-fx="spinta" ${x.azione ? `data-azione="${x.azione}"` : `data-vista="${x.vista}"`} data-tessera="${x.id}">
+  // nov 2026: ogni tessera ha lo sfondo della copertina della sua modalità
+  const colSett = (SERIE[Settimana.serie()] || {}).colore;
+  const tessera = x => `<button class="tessera tema-${x.id}${x.chiusa ? " chiusa" : ""}" data-fx="spinta" ${x.azione ? `data-azione="${x.azione}"` : `data-vista="${x.vista}"`} data-tessera="${x.id}"${x.id === "settimana" && colSett ? ` style="--c:${colSett}"` : ""}>
+      <span class="cop-sfondo" aria-hidden="true">${decoroModo(x.id)}</span>
       <span class="t-ico" aria-hidden="true">${x.ico}</span><span class="t-testo"><b>${esc(x.nome)}</b><small>${esc(x.desc)}</small>${x.stato ? `<em>${esc(x.stato)}</em>` : ""}</span>${x.n ? `<span class="badge">${x.n}</span>` : ""}</button>`;
   return `<section class="gioca">
     <div class="titolo-riga"><h2>Gioca</h2></div>
@@ -2693,7 +2698,7 @@ async function vaiAccesso() {
 // ---------- Da sistemare (solo admin): database da aggiornare e carte senza immagine ----------
 // La versione del database è un'impronta di supabase/schema.sql scritta da costruisci.py sia qui sia nel server:
 // se il server ne restituisce un'altra (o non ha ancora la funzione), schema.sql va eseguito di nuovo.
-const VERSIONE_SCHEMA = "1361dd4d16";
+const VERSIONE_SCHEMA = "c72aca509e";
 const StatoServer = (() => {
   let schema = null, mancano = null, quando = 0, inCorso = false;
   async function controlla(forza) {

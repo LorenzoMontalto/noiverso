@@ -1,9 +1,9 @@
 // Service worker di Noiverso: fa partire il gioco in fretta e tiene in memoria codice e immagini.
 // La pagina principale arriva sempre dalla rete (così gli aggiornamenti arrivano subito);
 // i file con il codice hanno nel nome un'impronta, quindi una volta scaricati non cambiano più.
-const VERSIONE = "ce61203a";
+const VERSIONE = "19227d03";
 const CACHE = "noiverso-" + VERSIONE;
-const BASE = ["./", "installa.html", "manifest.webmanifest", "icone/icona-192.png", "icone/icona-512.png", "icone/apple-touch-icon.png", "carte.50ddcadc.js", "motore.a252ab6e.js", "effetti.9fb9bc7f.js", "suoni.48664f04.js", "scena3d.69277890.js", "mappe.8922ee6b.js", "storia.75ab2ff4.js", "tutorial.b7098382.js", "missioni.cd5c4dc5.js", "sociale.d0c1d199.js", "collezione.356b56d0.js", "graffiti.e550f7a5.js", "zaino.ba1e8b12.js", "online.546aed30.js", "reazioni.4a0e6db8.js", "eventi.62e522d9.js", "progressi.2892477a.js", "extra.3036717e.js", "avvento.355b1396.js", "notte.fc31b477.js", "scalata.0c485016.js", "app.f7badf83.js", "supabase-ponte.7c0d3cac.js", "immagini.1e35aa5a.js", "three.min.9274bbce.js", "supabase.min.8816af04.js"];
+const BASE = ["./", "installa.html", "manifest.webmanifest", "icone/icona-192.png", "icone/icona-512.png", "icone/apple-touch-icon.png", "carte.ae067d54.js", "motore.a252ab6e.js", "effetti.9fb9bc7f.js", "suoni.48664f04.js", "scena3d.69277890.js", "mappe.8922ee6b.js", "storia.75ab2ff4.js", "tutorial.b7098382.js", "missioni.cd5c4dc5.js", "sociale.d0c1d199.js", "collezione.356b56d0.js", "graffiti.e550f7a5.js", "zaino.ba1e8b12.js", "online.546aed30.js", "reazioni.4a0e6db8.js", "eventi.62e522d9.js", "progressi.2892477a.js", "extra.fa07ec9d.js", "avvento.355b1396.js", "notte.fc31b477.js", "scalata.0c485016.js", "app.cded0916.js", "supabase-ponte.7c0d3cac.js", "immagini.1e35aa5a.js", "three.min.9274bbce.js", "supabase.min.8816af04.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASE)).then(() => self.skipWaiting()));

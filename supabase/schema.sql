@@ -1177,7 +1177,22 @@ begin
     'notteMax', case when coalesce(s->'stats'->>'notteMax', '') ~ '^[0-9]{1,2}$' then least((s->'stats'->>'notteMax')::int, 10) else 0 end,
     'scalataMax', case when coalesce(s->'stats'->>'scalataMax', '') ~ '^[0-9]{1,4}$' then (s->'stats'->>'scalataMax')::int else 0 end,
     'arenaMax', case when coalesce(s->'stats'->>'arenaMax', '') ~ '^[0-9]{1,2}$' then least((s->'stats'->>'arenaMax')::int, 7) else 0 end,
-    'arene', case when coalesce(s->'stats'->>'arene', '') ~ '^[0-9]{1,6}$' then (s->'stats'->>'arene')::int else 0 end);
+    'arene', case when coalesce(s->'stats'->>'arene', '') ~ '^[0-9]{1,6}$' then (s->'stats'->>'arene')::int else 0 end,
+    -- le carte della vetrina come sono nella collezione: livello, lode, olografica, Ultra, ascese, cornice e maestria
+    'vetrinaDett', coalesce((select jsonb_agg(jsonb_build_object(
+        'id', v,
+        'liv', least(30, greatest(1, case when coalesce(s->'liv'->>v, '') ~ '^[0-9]{1,2}$' then (s->'liv'->>v)::int else 1 end)),
+        'lode', coalesce(s->'liv'->>v, '') ~ '^[0-9]{1,2}$' and (s->'liv'->>v)::int >= 30 and coalesce(s->'lodeXp'->>v, '') ~ '^[0-9]{1,7}$' and (s->'lodeXp'->>v)::int >= 2000,
+        'olo', coalesce(s->'olo'->>v, '') = 'true',
+        'ultra', coalesce(s->'ultra'->>v, '') = 'true',
+        'asc', case when coalesce(s->'asc'->>v, '') ~ '^[0-3]$' then (s->'asc'->>v)::int else 0 end,
+        'stelle', case when jsonb_typeof(s->'maestria'->v->'presi') = 'array' then least(5, jsonb_array_length(s->'maestria'->v->'presi')) else 0 end,
+        'cc', case when coalesce(s->'cosm'->'carte'->>v, '') ~ '^cc-[a-z0-9-]{1,30}$'
+                    and ((s->'cosm'->'carte'->>v) <> 'cc-maestro' and coalesce(s->'cosm'->'have'->>(s->'cosm'->'carte'->>v), '') = 'true'
+                      or (s->'cosm'->'carte'->>v) = 'cc-maestro' and jsonb_typeof(s->'maestria'->v->'presi') = 'array' and jsonb_array_length(s->'maestria'->v->'presi') >= 5)
+                   then s->'cosm'->'carte'->>v else '' end))
+      from (select v from jsonb_array_elements_text(case when jsonb_typeof(s->'vetrina') = 'array' then s->'vetrina' else '[]'::jsonb end) v
+            where v ~ '^[a-z0-9_-]{1,40}$' and coalesce((s->'carte'->>v)::int, 0) > 0 limit 3) x), '[]'::jsonb));
   new.aggiornato := now();
   return new;
 end $$;
@@ -1560,6 +1575,6 @@ grant execute on function public.registra_carte(text[], boolean, text), public.s
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select '1361dd4d16'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select 'c72aca509e'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE

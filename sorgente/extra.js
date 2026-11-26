@@ -256,11 +256,21 @@ const Vetrina = (() => {
   function metti(i, id) { const v = lista().concat(["", "", ""]).slice(0, 3); v[i] = id && S.carte[id] ? id : ""; S.vetrina = v.filter(Boolean).filter((x, k, a) => a.indexOf(x) === k); salva(); Archivio.pubblicaClassifica(); apriProfilo(); }
   const pct = (v, p) => v + p ? Math.round(v / (v + p) * 100) : 0;
   const quando = t => { const m = Math.round((Date.now() - t) / 60000); return m < 60 ? `${Math.max(1, m)} min fa` : m < 1440 ? `${Math.round(m / 60)} h fa` : `${Math.round(m / 1440)} g fa`; };
+  // nov 2026: le carte della vetrina come sono nella collezione (livello, lode, rarità dopo le ascese, olografica, Ultra,
+  // cornice e stelle di maestria). Le mie le leggo dal salvataggio, quelle di un amico arrivano dal server.
+  function cartaVetrina(id, d) {
+    const c = PER_ID[id];
+    if (d.mio) return htmlCarta(c, { piccola: true });
+    const x = (Array.isArray(d.dett) ? d.dett : []).find(y => y && y.id === id);
+    if (!x) return htmlCarta(c, { piccola: true, liv: 0, lode: false });
+    return htmlCarta(c, { piccola: true, liv: Math.min(LIVELLO_MAX, num(x.liv) || 1), lode: !!x.lode, olo: !!x.olo, ultra: !!x.ultra && !!c.ultra,
+      rar: rarDopo(c.rarita, num(x.asc)), stelle: Math.min(5, num(x.stelle)), cc: typeof x.cc === "string" && (Cosmetici.CAT[x.cc] || x.cc === Cosmetici.MAESTRO) ? x.cc : "" });
+  }
   // il riquadro (anche per gli amici, dai dati della classifica)
   function htmlRiquadro(d) {
     const v = (d.vetrina || []).filter(id => PER_ID[id]);
     return `<div class="vetrina-profilo ${Cosmetici.classeSfondo(d.sfondo)}">
-      <div class="vp-carte">${[0, 1, 2].map(i => v[i] ? htmlCarta(PER_ID[v[i]], { piccola: true, liv: 0, lode: false }) : `<div class="vp-vuota">${d.mio ? "Scegli una carta" : "—"}</div>`).join("")}</div>
+      <div class="vp-carte">${[0, 1, 2].map(i => v[i] ? cartaVetrina(v[i], d) : `<div class="vp-vuota">${d.mio ? "Scegli una carta" : "—"}</div>`).join("")}</div>
       <div class="vp-numeri">
         <div><b>${d.livello ? Livello.badge(d.livello, "mini") : "–"}</b><span>Livello</span></div>
         <div><b>${esc(Gradi.nome(num(d.punti)))}</b><span>Grado</span></div>
@@ -295,7 +305,7 @@ const Vetrina = (() => {
     apriModale(`<div class="profilo-modale"><div class="profilo-testa">${Cosmetici.avatar(String(r.avatar || ""), r.cornice, "grande")}<div><small>Giocatore</small>
       <h2 class="${Cosmetici.classeNome(r.stileNome)}">${esc(String(r.nome || "Giocatore"))}</h2>${r.titolo ? `<span class="nota">«${esc(r.titolo)}»</span>` : ""}</div></div>
       ${htmlRiquadro({ vetrina: r.vetrina || [], sfondo: r.sfondo, livello: num(r.livello), punti: num(r.punti), vittorie: num(r.vittorie), sconfitte: num(r.sconfitte), stelle: num(r.stelle), preferita: r.preferita, serie: r.seriePref,
-        albe: r.albe, notteMax: r.notteMax, scalataMax: r.scalataMax, arenaMax: r.arenaMax, arene: r.arene })}
+        albe: r.albe, notteMax: r.notteMax, scalataMax: r.scalataMax, arenaMax: r.arenaMax, arene: r.arene, dett: r.vetrinaDett })}
       <div class="azioni centro"><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }
   return { fineBattaglia, preferita, seriePreferita, lista, metti, htmlProfilo, apriAmico, htmlRiquadro };
