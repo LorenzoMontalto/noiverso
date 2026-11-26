@@ -275,6 +275,9 @@ h1.neon { font-size: clamp(2.6rem, 8vw, 4.6rem); line-height: .95; margin-bottom
 .suggerimento { margin: 0; font-family: var(--display); font-size: 1.1rem; color: var(--testo); text-shadow: 0 0 12px var(--neon-alone); animation: respira 1.8s ease-in-out infinite; min-height: 1.4em; }
 /* riserva 2D */
 .apertura2d { text-align: center; }
+/* nov 2026: pacco da 5 scontato */
+.pacco5 s { opacity: .55; font-weight: 500; margin-right: 2px; }
+.pacco5 em { font-style: normal; font-size: .72rem; font-weight: 800; background: var(--ok, #4fd38a); color: #08200f; border-radius: 6px; padding: 1px 5px; margin-left: 4px; }
 /* nov 2026: confronto al massimo */
 .confronto-max { display: flex; align-items: flex-start; gap: 10px; margin: 4px 0 12px; padding: 10px 12px; border: 1px solid rgba(242, 193, 78, .4); border-radius: 12px; background: rgba(242, 193, 78, .06); cursor: pointer; }
 .confronto-max input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--oro); flex: none; }
@@ -2403,7 +2406,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <script src="progressi.4c1b6331.js"></script>
 <script src="extra.89229d04.js"></script>
 <script src="avvento.355b1396.js"></script>
-<script src="app.b4d0d4a4.js"></script>
+<script src="app.d8cb9558.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

@@ -944,6 +944,9 @@ function offertaDelGiorno() {
   const t = tipi[h % tipi.length];
   return { t, prezzo: Math.round(TIPI_BUSTINA[t].prezzo * (1 - SCONTO_OFFERTA) / 10) * 10, presa: S.offerta === oggi() };
 }
+// nov 2026: il pacco da 5 bustine costa il 15% in meno (arrotondato alle decine), anche sopra lo sconto della serie della settimana
+const SCONTO_PACCO5 = .15;
+const prezzoPacco5 = t => Math.round(Settimana.prezzo(t) * 5 * (1 - SCONTO_PACCO5) / 10) * 10;
 function htmlProdotto(t) {
   const T = TIPI_BUSTINA[t], n = S.inventario[t] || 0, ev = Settimana.inEvidenza(t), prezzo = Settimana.prezzo(t);
   return `<div class="prodotto ${ev ? "in-evidenza" : ""}" style="--c:${T.colore}">
@@ -954,7 +957,7 @@ function htmlProdotto(t) {
     ${n ? `<span class="ne-hai">Ne hai ${n}</span>` : ""}
     <div class="prodotto-prezzi">
       ${ev ? `<s class="nota">${T.prezzo}</s>` : ""}<button class="btn primario" data-fx="monete" data-compra="${t}:1" ${S.admin || S.monete >= prezzo ? "" : "disabled"}>${prezzo} <i class="moneta-ico"></i></button>
-      <button class="btn" data-fx="monete" data-compra="${t}:5" ${S.admin || S.monete >= prezzo * 5 ? "" : "disabled"}>×5 · ${prezzo * 5}</button>
+      <button class="btn pacco5" data-fx="monete" data-compra="${t}:5" ${S.admin || S.monete >= prezzoPacco5(t) ? "" : "disabled"} title="5 bustine scontate del ${Math.round(SCONTO_PACCO5 * 100)}%">×5 · <s>${prezzo * 5}</s> ${prezzoPacco5(t)} <em>−${Math.round(SCONTO_PACCO5 * 100)}%</em></button>
     </div>
   </div>`;
 }
@@ -1007,7 +1010,7 @@ function compraBustina(arg, el) {
   const off = offertaDelGiorno();
   let n = 1, costo = T.prezzo;
   if (q === "offerta") { if (off.t !== t || off.presa) return; costo = off.prezzo; S.offerta = oggi(); }
-  else { n = +q || 1; costo = Settimana.prezzo(t) * n; }
+  else { n = +q || 1; costo = n === 5 ? prezzoPacco5(t) : Settimana.prezzo(t) * n; }
   if (!S.admin && S.monete < costo) { mostraAvviso("Non hai abbastanza monete."); return; }
   if (!S.admin) S.monete -= costo;
   S.inventario[t] = (S.inventario[t] || 0) + n;
