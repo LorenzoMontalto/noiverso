@@ -139,10 +139,13 @@ const Zaino = (() => {
   }
 
   // ---------- pagina Sfida: lo zaino per la prossima partita ----------
-  function htmlPannello() {
+  // conNegozio (in Squadre): in più il tasto per comprare, così ci si ricorda di rifornirsi prima di giocare
+  function htmlPannello(conNegozio) {
     const p = porta(), pronti = perBattaglia();
-    return `<div class="zaino-pannello">
-      <div class="zaino-testa"><b>Zaino</b><span class="nota">Quello che porti nella prossima partita. Tocca un posto per cambiarlo.</span></div>
+    const tot = ORDINE.reduce((n, id) => n + quanti(id), 0), vuoti = p.filter((id, i) => !id || !pronti[i]).length;
+    return `<div class="zaino-pannello ${conNegozio ? "in-squadra" : ""}">
+      <div class="zaino-testa"><b>🎒 Zaino</b><span class="nota">${conNegozio ? `Quello che porti nella prossima partita${tot ? ` · ne hai ${tot} in tutto` : ""}. Tocca un posto per cambiarlo.` : "Quello che porti nella prossima partita. Tocca un posto per cambiarlo."}</span>
+        ${conNegozio ? `<button type="button" class="btn piccolo oro" data-azione="vai-negozio">🛒 ${vuoti ? "Compra oggetti" : "Negozio"}</button>` : ""}</div>
       <div class="zaino-posti">${p.map((id, i) => {
         if (!id) return `<button type="button" class="zaino-posto vuoto" data-zaino-posto="${i}"><span class="oggetto-ico vuoto"><i>+</i></span><small>Vuoto</small></button>`;
         const o = info(id), ok = !!pronti[i];
@@ -165,7 +168,7 @@ const Zaino = (() => {
   function metti(id) {
     const z = stato(), p = porta(); p[postoScelto] = id || null; z.porta = p;
     salva(); chiudiModale();
-    if (vista === "sfida") disegna();
+    if (vista === "sfida" || vista === "squadra") disegna();
   }
 
   // ---------- in battaglia ----------

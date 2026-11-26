@@ -59,7 +59,7 @@ const RARE_TOP = r => r === "leggendaria" || r === "ultra";   // per la regola "
 const STILI = {
   FOR: { nome: "Forza",    icona: "⚔️", batte: "DIF", bonus: "+25% attacco, e potenziando l'attacco cresce di più" },
   DIF: { nome: "Difesa",   icona: "🛡️", batte: "VEL", bonus: "+5% difesa, e potenziando la difesa cresce di più" },
-  VEL: { nome: "Velocità", icona: "⚡", batte: "FOR", bonus: "+5 velocità (a parità di livello attacca sempre per prima) e +15% attacco, e potenziando la velocità cresce di più" },
+  VEL: { nome: "Velocità", icona: "💨", batte: "FOR", bonus: "+5 velocità (a parità di livello attacca sempre per prima) e +15% attacco, e potenziando la velocità cresce di più" },
 };
 const BONUS_TIPO = { FOR: { att: 1.25 }, DIF: { dif: 1.05 }, VEL: { vel: 5, att: 1.15 } };
 

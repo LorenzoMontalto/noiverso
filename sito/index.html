@@ -275,6 +275,18 @@ h1.neon { font-size: clamp(2.6rem, 8vw, 4.6rem); line-height: .95; margin-bottom
 .suggerimento { margin: 0; font-family: var(--display); font-size: 1.1rem; color: var(--testo); text-shadow: 0 0 12px var(--neon-alone); animation: respira 1.8s ease-in-out infinite; min-height: 1.4em; }
 /* riserva 2D */
 .apertura2d { text-align: center; }
+/* nov 2026: zaino anche in Squadre */
+.zaino-pannello.in-squadra { margin: 12px 0; }
+.zaino-pannello.in-squadra .zaino-testa { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.zaino-pannello.in-squadra .zaino-testa .nota { flex: 1 1 200px; }
+/* nov 2026: titoli nel profilo */
+.titolo-profilo { display: block; color: var(--oro); font-weight: 700; font-style: italic; margin: 2px 0; }
+.profilo-titoli h3 small { font-weight: 500; margin-left: 6px; }
+.titoli-scelta { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.chip-titolo { border: 1px solid var(--linea); background: rgba(255, 255, 255, .04); color: var(--testo); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: .9rem; cursor: pointer; }
+.chip-titolo:hover { border-color: var(--oro); }
+.chip-titolo.sel { background: var(--oro); border-color: var(--oro); color: #1b1206; font-weight: 700; }
+.link { background: none; border: 0; padding: 0; color: var(--oro); text-decoration: underline; font: inherit; cursor: pointer; }
 /* nov 2026: bilanciamento del mese (admin) */
 .st-bilancio { border: 1px solid rgba(242, 193, 78, .4); border-radius: 12px; padding: 10px 12px; margin: 10px 0; }
 .st-bil-colonne { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 8px; }
@@ -497,7 +509,8 @@ body.in-battaglia { overflow: hidden; }
 .stat-bat .att { color: #ff8a5c; } .stat-bat .dif { color: #6aa8ff; } .stat-bat .vel { color: #ffe066; }
 .stat-bat .att i { clip-path: polygon(80% 0, 100% 0, 100% 20%, 40% 80%, 50% 90%, 40% 100%, 30% 90%, 15% 100%, 0 85%, 10% 70%, 0 60%, 10% 50%, 20% 60%); }
 .stat-bat .dif i { clip-path: polygon(50% 0, 100% 15%, 92% 60%, 50% 100%, 8% 60%, 0 15%); }
-.stat-bat .vel i { clip-path: polygon(60% 0, 10% 58%, 45% 58%, 35% 100%, 90% 40%, 55% 40%); }
+/* velocità: doppia freccia » (il fulmine ⚡ ora è solo l'energia) */
+.stat-bat .vel i { -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2 3h6l8 9-8 9H2l8-9zM10 3h6l8 9-8 9h-6l8-9z'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M2 3h6l8 9-8 9H2l8-9zM10 3h6l8 9-8 9h-6l8-9z'/%3E%3C/svg%3E") center / contain no-repeat; }
 .stat-bat .att.su b { color: #6fe3a0; } .stat-bat .att.giu b { color: #ff6b7a; }
 .stat-bat.corto { gap: 7px; margin-top: 1px; } .stat-bat.corto .sb b { font-size: .74rem; } .stat-bat.corto .sb i { width: 9px; height: 9px; }
 .hud-1 { border-color: #5a2232; }
@@ -532,12 +545,15 @@ body.in-battaglia { overflow: hidden; }
 .pannello { display: grid; gap: 6px; }
 .mana-riga { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: linear-gradient(90deg, rgba(63, 216, 255, .1), transparent 70%); border: 1px solid #1f4652; border-radius: 12px; padding: 6px 12px; }
 .mana-etichetta { font-family: var(--display); font-size: .82rem; color: var(--s-VEL); letter-spacing: .04em; }
-.cristalli { display: flex; gap: 4px; }
-.cristalli i { width: 20px; height: 20px; transform: rotate(45deg) scale(.78); background: var(--muro); border: 1px solid var(--linea); transition: background .25s, box-shadow .25s, transform .25s; }
-.cristalli i.piena { background: linear-gradient(135deg, #b8f3ff, var(--s-VEL)); border-color: #b8f3ff; box-shadow: 0 0 10px rgba(63, 216, 255, .7); }
-.cristalli i.arriva { border-color: var(--s-VEL); border-style: dashed; background: rgba(63, 216, 255, .08); }
-.cristalli i.spesa { background: var(--oro); border-color: #fff1bd; box-shadow: 0 0 12px rgba(242, 193, 78, .9); transform: rotate(45deg) scale(.95); animation: pulsa .7s infinite; }
-.cristalli i.guadagno { background: rgba(79, 211, 138, .4); border-color: var(--ok); box-shadow: 0 0 10px rgba(79, 211, 138, .7); }
+/* nov 2026: l'energia è ⚡ come nei costi delle mosse. Spento = grigio, pieno = acceso, in arrivo = mezzo acceso,
+   quella che la mossa consumerebbe lampeggia, quella che guadagneresti si illumina di verde */
+.cristalli { display: flex; gap: 2px; }
+.cristalli i { width: 20px; height: 22px; display: grid; place-items: center; font-style: normal; font-size: 18px; line-height: 1; filter: grayscale(1) brightness(.55); opacity: .4; transition: filter .25s, opacity .25s, transform .25s; }
+.cristalli i::before { content: "⚡"; }
+.cristalli i.piena { filter: drop-shadow(0 0 5px rgba(255, 204, 51, .85)); opacity: 1; }
+.cristalli i.arriva { filter: grayscale(.5) brightness(.85); opacity: .6; transform: scale(.88); }
+.cristalli i.spesa { filter: brightness(1.35) drop-shadow(0 0 7px rgba(255, 120, 40, 1)); opacity: 1; transform: scale(1.18); animation: pulsa .7s infinite; }
+.cristalli i.guadagno { filter: hue-rotate(70deg) drop-shadow(0 0 6px rgba(79, 211, 138, .9)); opacity: 1; transform: scale(1.1); }
 .mana-num { font-family: var(--display); font-weight: 400; font-size: 1.3rem; color: var(--s-VEL); font-variant-numeric: tabular-nums; }
 .mana-num small { font-size: .85rem; color: var(--spento); }
 .mana-prossimo { color: var(--spento); font-size: .82rem; margin-left: auto; }
@@ -656,7 +672,7 @@ body.in-battaglia { overflow: hidden; }
   .lato-mio .legenda-tipi { padding: 3px 8px; font-size: .74rem; }
   .lato-mio .legenda-tipi small { display: none; }
   .lato-mio .mana-riga { padding: 3px 10px; }
-  .lato-mio .cristalli i { width: 16px; height: 16px; }
+  .lato-mio .cristalli i { width: 16px; height: 18px; font-size: 15px; }
   .lato-mio .consiglio { padding: 3px 10px; font-size: .8rem; }
   .lato-mio .zaino-usa { padding-top: 2px; padding-bottom: 2px; }
   .lato-mio .mossa { min-height: 48px; padding: 4px 8px; gap: 1px; }
@@ -1145,7 +1161,7 @@ body.in-accesso { overflow: hidden; }
   .slot .carta-piede { padding: 18px 5px 5px; } .slot .carta-nome { font-size: .62rem; } .slot .ruolo-tag { font-size: .52rem; padding: 0 3px; }
   .slot .carta-testa .liv { display: none; }
   .mosse { grid-template-columns: 1fr 1fr; } .mossa { min-height: 60px; padding: 6px 8px; } .mossa small { font-size: .72rem; }
-  .cristalli i { width: 15px; height: 15px; } .cristalli { gap: 2px; } .mana-prossimo { font-size: .74rem; } .mana-etichetta { font-size: .72rem; }
+  .cristalli i { width: 15px; height: 17px; font-size: 14px; } .cristalli { gap: 1px; } .mana-prossimo { font-size: .74rem; } .mana-etichetta { font-size: .72rem; }
   .mana-riga { gap: 6px 8px; padding: 5px 10px; } .consiglio { font-size: .84rem; }
   .arena-vs { display: none; } .registro { right: 10px; font-size: .76rem; }
   .stat-griglia { grid-template-columns: repeat(2, 1fr); }
@@ -2363,7 +2379,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <div id="avviso" role="status" hidden></div>
 <div id="caricamento"><span class="neon">Noiverso</span></div>
 
-<script src="carte.5cc56d39.js"></script>
+<script src="carte.df410eff.js"></script>
 <script src="motore.56ab702e.js"></script>
 <script src="effetti.9fb9bc7f.js"></script>
 <script src="suoni.75417e9f.js"></script>
@@ -2373,16 +2389,16 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <script src="tutorial.0cd83cd8.js"></script>
 <script src="missioni.d2040597.js"></script>
 <script src="sociale.250f8d4a.js"></script>
-<script src="collezione.d3f0f209.js"></script>
+<script src="collezione.87a5365b.js"></script>
 <script src="graffiti.87ba5b2f.js"></script>
-<script src="zaino.f42c2817.js"></script>
+<script src="zaino.56fef583.js"></script>
 <script src="online.546aed30.js"></script>
 <script src="reazioni.4a0e6db8.js"></script>
 <script src="eventi.87b035d1.js"></script>
 <script src="progressi.4c1b6331.js"></script>
 <script src="extra.89229d04.js"></script>
 <script src="avvento.355b1396.js"></script>
-<script src="app.eaa6636c.js"></script>
+<script src="app.a5ac324c.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

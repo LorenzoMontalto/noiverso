@@ -104,7 +104,9 @@ const Trofei = (() => {
   // trofei di cui si occupa qualcun altro (la serie completata si annuncia quando giri la carta, non prima)
   const silenzia = ids => ids.forEach(id => annunciati.add(id));
   const trova = id => elenco().find(t => t.id === id);
-  return { html, pronti, controlla, riscuoti, scegliTitolo, titoloAttuale, titoloId, silenzia, trova };
+  const titoliPresi = () => elenco().filter(t => presi()[t.id] && t.titolo);
+  const titoliTotali = () => elenco().filter(t => t.titolo).length;
+  return { html, pronti, controlla, riscuoti, scegliTitolo, titoloAttuale, titoloId, silenzia, trova, titoliPresi, titoliTotali };
 })();
 
 // ---------------- SCAMBI ----------------

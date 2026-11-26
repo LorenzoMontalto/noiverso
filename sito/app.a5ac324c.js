@@ -1540,6 +1540,7 @@ function vistaSquadra() {
     </div>
     <div class="slot5">${slot.join("")}</div>
     ${Jolly.htmlSquadra()}
+    ${Zaino.htmlPannello(true)}
     ${Graffiti.htmlSquadra()}
     ${Sinergie.htmlSquadra(sq.carte, sq.jolly, sq)}
     <div class="riepilogo">
@@ -1714,9 +1715,10 @@ function disegnaQuieto() {
   if (vista === "squadra") avviaAltreCarte();
 }
 // album: dopo aver toccato una serie, la pagina scende da sola fin dove iniziano le sue carte
-function scorriAlleCarteAlbum() {
+function scorriAlleCarteAlbum() { scorriA("#vista .serie-sezione"); }
+function scorriA(sel) {
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    const el = document.querySelector("#vista .serie-sezione"); if (!el) return;
+    const el = document.querySelector(sel); if (!el) return;
     const fermo = matchMedia("(prefers-reduced-motion: reduce)").matches;
     scrollTo({ top: Math.max(0, el.getBoundingClientRect().top + scrollY - 12), behavior: fermo ? "auto" : "smooth" });
   }));
@@ -2296,12 +2298,23 @@ function segmento(chiave, etichetta, opzioni, aiuto) {
   return `<div class="imp-riga"><div><b>${etichetta}</b>${aiuto ? `<small>${aiuto}</small>` : ""}</div>
     <div class="segmenti" role="radiogroup" aria-label="${esc(etichetta)}">${opzioni.map(([val, testo]) => `<button type="button" class="seg ${String(v) === String(val) ? "sel" : ""}" data-fx="gelatina" data-imp="${chiave}" data-val="${val}" role="radio" aria-checked="${String(v) === String(val)}">${testo}</button>`).join("")}</div></div>`;
 }
+// nov 2026: il titolo (quello che gli altri vedono accanto al tuo nome in classifica) si sceglie anche dal profilo
+function htmlTitoliProfilo() {
+  const miei = Trofei.titoliPresi(), ora = Trofei.titoloAttuale(), restano = Trofei.titoliTotali() - miei.length;
+  return `<div class="profilo-titoli"><h3>Titolo <small class="nota">${ora ? `ora: «${esc(ora)}»` : "nessuno"}</small></h3>
+    ${miei.length ? `<div class="titoli-scelta">
+      <button type="button" class="chip-titolo ${ora ? "" : "sel"}" data-titolo-profilo="">Nessuno</button>
+      ${miei.map(t => `<button type="button" class="chip-titolo ${t.id === S.titolo ? "sel" : ""}" data-titolo-profilo="${t.id}" title="${esc(t.nome)}">${esc(t.titolo)}</button>`).join("")}</div>`
+      : `<p class="nota">Non hai ancora titoli: li dà ogni trofeo che conquisti.</p>`}
+    ${restano > 0 ? `<p class="nota piccola">Altri ${restano} titoli si sbloccano con i trofei · <button type="button" class="link" data-azione="vai-trofei">vedi i trofei</button></p>` : ""}</div>`;
+}
 function apriProfilo() {
   avatarScelto = avatarValido(S.profilo.avatar) ? S.profilo.avatar : "";
   const tipo = S.admin ? "Account admin" : Archivio.modo === "cloud" ? (window.NOIVERSO_SUPABASE ? `Account · ${Archivio.nomeAccount}` : "Account Claude") : "Profilo su questo dispositivo";
   apriModale(`
     <div class="profilo-modale">
       <div class="profilo-testa">${Cosmetici.avatar(S.profilo.avatar, S.admin ? "" : Cosmetici.stato().cornice, "grande")}<div><small>${tipo}</small><h2 class="${S.admin ? "" : Cosmetici.classeNome(Cosmetici.stato().nome)}">${esc(S.profilo.nome || "Giocatore")}</h2>
+        ${!S.admin && Trofei.titoloAttuale() ? `<span class="titolo-profilo">«${esc(Trofei.titoloAttuale())}»</span>` : ""}
         <span class="nota">${S.admin ? "Monete infinite · tutte le carte · fuori classifica" : `${S.stats.vittorie} vittorie · ${possedute().length}/${CARTE.length} carte · pass Lv ${livelloPass()}`}</span>
         ${!S.admin && S.lv ? `<button class="btn piccolo lv-profilo" data-azione="livello-pagina">${Livello.badge(Livello.info().liv, "mini")} Livello giocatore ${Livello.info().liv} · vedi livelli e premi${Livello.daRiscuotere().length ? ` (${Livello.daRiscuotere().length} da riscuotere)` : ""}</button>` : ""}</div></div>
       <details class="profilo-modifica" ${!S.profilo.avatar && possedute().length ? "open" : ""}>
@@ -2313,6 +2326,7 @@ function apriProfilo() {
           <button class="btn primario" data-fx="onda" type="submit">Salva profilo</button>
         </form>
       </details>
+      ${S.admin ? "" : htmlTitoliProfilo()}
       ${Vetrina.htmlProfilo()}
       <h3>Impostazioni</h3>
       ${segmento("modalita", "Modalità di gioco", [["classica", "Classica 5 contro 5"], ["rapida", "Rapida 3 contro 3"]], "La rapida usa le prime 3 carte della squadra e dà premi ridotti.")}
@@ -3389,7 +3403,7 @@ function htmlAzioni() {
     : primo === 1 ? `<b>${esc(d.c.nome)} attacca per primo</b> (${perche})`
     : `Velocità pari (${a.vel}): il primo attacco si decide a sorte, poi si va a turno`;
   return `${vivo}${diretta}${htmlCampo()}${Graffiti.htmlBattaglia(B)}
-  <p class="ordine-turno ${primo === 0 ? "mio" : primo === 1 ? "suo" : ""}">⚡ ${ordine}</p>
+  <p class="ordine-turno ${primo === 0 ? "mio" : primo === 1 ? "suo" : ""}">💨 ${ordine}</p>
   ${htmlLegendaTipi()}
   <div class="mana-riga">
     <span class="mana-etichetta">Energia</span>
@@ -3779,7 +3793,7 @@ document.addEventListener("click", e => {
   if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
   if (e.target.id === "avviso") { if (mostraAvviso._salta) { mostraAvviso._salta = false; return; } mostraAvviso.prossimo(); return; }
-  const t = e.target.closest("[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-titolo-profilo],[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3815,7 +3829,7 @@ document.addEventListener("click", e => {
   }
   if (t.dataset.profilo) { entra("partita", t.dataset.profilo); return; }
   if (t.dataset.admin) { azioneAdmin(t.dataset.admin, t); return; }
-  if (t.dataset.capitolo !== undefined) { capStoria = +t.dataset.capitolo; disegna(); return; }
+  if (t.dataset.capitolo !== undefined) { capStoria = +t.dataset.capitolo; disegna(); scorriA("#vista .cap-testa"); return; }
   if (t.dataset.tappa) { const [k, i] = t.dataset.tappa.split(":").map(Number); apriTappa(k, i); return; }
   if (t.dataset.tappaSquadra !== undefined) {
     const q = +t.dataset.tappaSquadra, box = $("#tappa-scelta");
@@ -3867,6 +3881,12 @@ document.addEventListener("click", e => {
   if (t.dataset.schedaAlbum) { albumScheda = t.dataset.schedaAlbum; if (albumScheda === "scambi") Scambi.carica(); disegna(); return; }
   if (t.dataset.trofeo) { Trofei.riscuoti(t.dataset.trofeo, t); return; }
   if (t.dataset.titolo !== undefined) { Trofei.scegliTitolo(t.dataset.titolo); return; }
+  if (t.dataset.titoloProfilo !== undefined) {
+    const corpo = $("#modale-corpo"), su = corpo ? corpo.scrollTop : 0, aperto = !!$(".profilo-modifica[open]");
+    Trofei.scegliTitolo(t.dataset.titoloProfilo); apriProfilo();
+    const c2 = $("#modale-corpo"); if (c2) c2.scrollTop = su; if (!aperto) { const d = $(".profilo-modifica"); if (d) d.open = false; }
+    mostraAvviso(t.dataset.titoloProfilo ? `Ora sei «${Trofei.titoloAttuale()}»: lo vedono tutti in classifica.` : "Titolo tolto."); return;
+  }
   if (t.dataset.scambioAmico) { Scambi.sceltoAmico(t.dataset.scambioAmico); return; }
   if (t.dataset.scambioChiedo) { Scambi.scegli("chiedo", t.dataset.scambioChiedo); return; }
   if (t.dataset.scambioOffro) { Scambi.scegli("offro", t.dataset.scambioOffro); return; }
@@ -3912,7 +3932,7 @@ document.addEventListener("click", e => {
     case "vai-pass": vai("pass"); break;
     case "vai-album": chiudiModale(); albumScheda = "carte"; vai("album"); break;
     case "framm-info": Frammenti.apriInfo(); break;
-    case "vai-trofei": albumScheda = "trofei"; vai("album"); break;
+    case "vai-trofei": chiudiModale(); albumScheda = "trofei"; vai("album"); break;
     case "vai-missioni": { const el = $(".oggi"); if (el) el.scrollIntoView({ behavior: ridotto ? "auto" : "smooth", block: "start" }); break; }
     case "consiglio-calcola": Consiglio.calcola(); break;
     case "altre-squadra": altreCarteSquadra(); break;
