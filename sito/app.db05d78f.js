@@ -1805,22 +1805,30 @@ const rarMassima = id => rarDopo(PER_ID[id].rarita, 3);
 function confrontaCarte(a, b) {
   const ca = PER_ID[a], cb = PER_ID[b]; if (!ca || !cb) return;
   confrontoUltimo = [a, b];
-  const st = id => confrontoMax ? statistiche(PER_ID[id], LIVELLO_MAX, true, rarMassima(id)) : statistiche(PER_ID[id], livello(id), haLode(id), rarCarta(id));
+  // olografica (+5%) e Ultra (+10%, solo se la carta ha la versione Ultra) aumentano PV e danni, come in battaglia
+  const versioni = id => confrontoMax ? { olo: true, ultra: !!PER_ID[id].ultra } : { olo: haOlo(id), ultra: haUltra(id) };
+  const st = id => { const s = confrontoMax ? statistiche(PER_ID[id], LIVELLO_MAX, true, rarMassima(id)) : statistiche(PER_ID[id], livello(id), haLode(id), rarCarta(id));
+    const v = versioni(id), k = (v.olo ? BONUS_OLO : 1) * (v.ultra ? BONUS_ULTRA : 1);
+    return k === 1 ? s : { ...s, pv: Math.round(s.pv * k), att: Math.round(s.att * k * 10) / 10 }; };
   const sa = st(a), sb = st(b);
   const manca = id => { const l = LIVELLO_MAX - livello(id), asc = ORDINE_RARITA.includes(rarCarta(id)) ? ORDINE_RARITA.indexOf(rarMassima(id)) - ORDINE_RARITA.indexOf(rarCarta(id)) : 0, lode = !haLode(id);
-    const p = [l > 0 ? `${l} livell${l > 1 ? "i" : "o"}` : "", lode ? "la lode" : "", asc > 0 ? `${asc} asces${asc > 1 ? "e" : "a"}` : ""].filter(Boolean);
+    const p = [l > 0 ? `${l} livell${l > 1 ? "i" : "o"}` : "", lode ? "la lode" : "", asc > 0 ? `${asc} asces${asc > 1 ? "e" : "a"}` : "",
+      haOlo(id) ? "" : "l'olografica", PER_ID[id].ultra && !haUltra(id) ? "la Ultra" : ""].filter(Boolean);
     return p.length ? `Mancano ${p.join(", ").replace(/, ([^,]*)$/, " e $1")}` : "Già al massimo"; };
   const righe = [["PV", "pv"], ["Attacco", "att"], ["Difesa", "dif"], ["Velocità", "vel"]];
   const cella = (x, y) => x > y ? "meglio" : x < y ? "peggio" : "";
   const vs = multStile(ca.stile, cb.stile), testoVs = vs > 1 ? `${esc(ca.nome)} batte ${esc(cb.nome)}: fa il 30% di danni in più, e prende il 20% in meno.`
     : vs < 1 ? `${esc(cb.nome)} batte ${esc(ca.nome)}: fa il 30% di danni in più, e prende il 20% in meno.` : "Stesso tipo: nessun vantaggio tra loro.";
-  const colonna = (c, st) => { const r = confrontoMax ? rarMassima(c.id) : rarCarta(c.id); return `<div class="confronto-col"><div class="confronto-carta">${htmlCarta(c, { piccola: true, ...(confrontoMax ? { liv: LIVELLO_MAX, lode: true, rar: r } : {}) })}</div><b>${esc(c.nome)}</b>
+  const colonna = (c, st) => { const r = confrontoMax ? rarMassima(c.id) : rarCarta(c.id); return `<div class="confronto-col"><div class="confronto-carta">${htmlCarta(c, { piccola: true, ...(confrontoMax ? { liv: LIVELLO_MAX, lode: true, rar: r, ...versioni(c.id) } : {}) })}</div><b>${esc(c.nome)}</b>
     <small><span class="r-testo r-${r}">${RARITA[r].nome}</span> · ${confrontoMax ? "Lv 30 e lode" : `Lv ${livello(c.id)}`}</small>
+    ${(() => { const v = versioni(c.id), parti = [v.ultra ? `<span class="r-ultra">◆ Ultra</span>` : "", v.olo ? `<span class="olo-testo">✦ Olografica</span>` : "",
+      confrontoMax && !PER_ID[c.id].ultra ? `<span class="nota">niente versione Ultra</span>` : ""].filter(Boolean);
+      return parti.length ? `<small class="confronto-versioni">${parti.join(" · ")}</small>` : ""; })()}
     ${confrontoMax ? `<small class="confronto-manca">${manca(c.id)}</small>` : ""}
     <small><span class="s-${c.stile}">${STILI[c.stile].icona} ${STILI[c.stile].nome}</span> · ${esc(RUOLI[c.ruolo].nome)}</small></div>`; };
   const corpo = $("#modale-corpo"), su = corpo && $(".confronto", corpo) ? corpo.scrollTop : 0;
   apriModale(`<div class="confronto"><h2>Confronto</h2>
-    <label class="confronto-max"><input type="checkbox" data-confronto-max ${confrontoMax ? "checked" : ""}> <span><b>Al massimo</b><small>livello 30 con la lode e tutte le ascese (fino a leggendaria): per capire quale conviene far crescere</small></span></label>
+    <label class="confronto-max"><input type="checkbox" data-confronto-max ${confrontoMax ? "checked" : ""}> <span><b>Al massimo</b><small>livello 30 con la lode, tutte le ascese (fino a leggendaria), olografica e Ultra (se la carta ce l'ha): per capire quale conviene far crescere</small></span></label>
     <div class="confronto-testa">${colonna(ca, sa)}<span class="confronto-vs">VS</span>${colonna(cb, sb)}</div>
     <table class="confronto-tab"><tbody>${righe.map(([n, k]) => `<tr><td class="${cella(sa[k], sb[k])}">${sa[k]}</td><th>${n}</th><td class="${cella(sb[k], sa[k])}">${sb[k]}</td></tr>`).join("")}
       <tr><td class="piccolo">${esc(RUOLI[ca.ruolo].passiva)}</td><th>Abilità</th><td class="piccolo">${esc(RUOLI[cb.ruolo].passiva)}</td></tr>
