@@ -46,7 +46,8 @@ function nuovoCombattente(id, liv, lode, olo, ultra, asc, stile) {
 // Serie: 2, 3 o 5 carte della stessa serie in squadra danno un bonus (sempre più grande) alle carte di quella serie.
 // Multiverso: 2 o più versioni della stessa persona (es. Lollifer + Lollinista) danno +2% / +4% a PV, attacco e difesa di quelle carte (non alla velocità).
 // I valori si possono cambiare dal pannello admin (config "sinergie"): li legge applicaSinergie.
-const _il = v => (v === 1 || v === 11 || String(v)[0] === "8") ? `l'${v}%` : `il ${v}%`;
+const _il = v => { const t = String(v).replace(".", ",");   // i decimali con la virgola: «l'1,5%»
+  return (v === 1 || v === 11 || String(v)[0] === "8" || (v >= 1 && v < 2)) ? `l'${t}%` : `il ${t}%`; };
 // Tre livelli: 2 carte della stessa serie (bonus piccolo), 3 (medio), 5 (grande). liv = 1, 2, 3.
 const SOGLIE_SINERGIA = [2, 3, 5];
 // nov 2026: tutti i valori ricalcolati con migliaia di partite simulate, perché nessuna serie domini le altre:
@@ -129,7 +130,7 @@ function serieJollyAuto(perSerie, cand) {
   return cand.slice().sort((a, b) => guadagno(b) - guadagno(a) || perSerie[b].length - perSerie[a].length || (a < b ? -1 : 1))[0];
 }
 // Modi del Jolly: "rinforzo" (si unisce a una sinergia, il modo normale), "camaleonte" (niente sinergia, sceglie il suo tipo),
-// "imbucato" (niente sinergia; quando entra in campo il nemico perde 1 energia e i potenziamenti attivi)
+// "imbucato" (niente sinergia; quando entra in campo il nemico perde IMBUCATO_ENERGIA (2) energia e i potenziamenti attivi)
 const MODI_JOLLY = ["rinforzo", "camaleonte", "imbucato"];
 var IMBUCATO_ENERGIA = 2;   // quanta energia toglie il Jolly Imbucato quando entra in campo
 function sinergieDi(ids, sceltaJolly, modoJolly) {
@@ -441,7 +442,7 @@ class Battaglia {
     // Paesi del mondo: chi entra in campo si sente a casa e recupera un po' di PV
     if (dentro.sin && dentro.sin.duello) dentro.pronta = true;   // Far West: rientrando in campo la pistola è di nuovo carica
     if (dentro.sin && dentro.sin.ospitalita && dentro.pv < dentro.pvMax) this._cura(l, dentro, Math.max(1, Math.round(dentro.pvMax * dentro.sin.ospitalita / 100)));
-    // Jolly Imbucato: rovina la festa, il nemico perde 1 energia e i potenziamenti attivi (attacco potenziato, scudo, nebbia)
+    // Jolly Imbucato: rovina la festa, il nemico perde IMBUCATO_ENERGIA (2) energia e i potenziamenti attivi (attacco potenziato, scudo, nebbia)
     if (dentro.imbucato) {
       const O = this.lati[1 - l], o = this.attivo(1 - l), tolti = [];
       const pe = Math.min(O.energia, IMBUCATO_ENERGIA); if (pe > 0) { O.energia -= pe; tolti.push(`${pe} energia`); }

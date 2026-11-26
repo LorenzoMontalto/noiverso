@@ -977,6 +977,8 @@ const potPerLivello = L => 3 + Math.floor(L / 2);
 // costo per salire DA questa rarità. nov 2026: raddoppiato (era 500 / 1000 / 2000) perché ora l'ascesa non fa più ripartire dal livello 1
 const ASCESA_MONETE = { comune: 1000, rara: 2000, epica: 4000 };
 const ASCESA_MONETE_PRIMA = { comune: 500, rara: 1000, epica: 2000 };   // i prezzi di prima, per i rimborsi delle ascese vecchie
+// ordine delle rarità negli elenchi: il Jolly (fuori da ORDINE_RARITA, quindi -1) va tra epica e leggendaria
+const rangoRarita = r => r === "jolly" ? 2.5 : ORDINE_RARITA.indexOf(r);
 const rarDopo = (base, passi) => !ORDINE_RARITA.includes(base) ? base : ORDINE_RARITA[Math.min(ORDINE_RARITA.length - 1, Math.max(0, ORDINE_RARITA.indexOf(base)) + Math.max(0, Math.min(3, passi | 0)))] || base;
 // nov 2026: costo in monete dimezzato (prima 5 · arrotonda((10 + L²/4) / 5): dal 1 al 30 servivano 2410 monete, ora 1205)
 const monetePerLivello = L => 5 * Math.round((10 + L * L / 4) / 10);

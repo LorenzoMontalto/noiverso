@@ -205,7 +205,7 @@ const Scambi = (() => {
   function passo() {
     const corpo = $("#modale-corpo"); if (!corpo || !nuovo) return;
     // prima le carte che ti mancano, poi quelle che hai già (da quelle ricevi potenziatori)
-    const ordina = l => l.map(id => PER_ID[id]).sort((a, b) => (S.carte[a.id] ? 1 : 0) - (S.carte[b.id] ? 1 : 0) || ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita));
+    const ordina = l => l.map(id => PER_ID[id]).sort((a, b) => (S.carte[a.id] ? 1 : 0) - (S.carte[b.id] ? 1 : 0) || rangoRarita(b.rarita) - rangoRarita(a.rarita));
     if (!nuovo.chiedo) {
       corpo.innerHTML = `<div class="amici-modale"><h2>Cosa vuoi da ${esc(nuovo.nome)}?</h2>
         ${nuovo.doppioni.length ? `<p class="nota">Carte che ${esc(nuovo.nome)} può scambiare (ha abbastanza potenziatori di quella carta). Se la carta ti manca la ricevi; se ce l'hai già ricevi i suoi <b>potenziatori</b>, come un doppione: così vi aiutate a potenziare. Solo carte della stessa rarità.</p>${griglia(ordina(nuovo.doppioni), "data-scambio-chiedo")}`

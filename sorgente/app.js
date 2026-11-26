@@ -423,7 +423,7 @@ const haOlo = id => !!(S.olo && S.olo[id]);
 const rarCarta = id => PER_ID[id] ? rarDopo(PER_ID[id].rarita, (S.asc || {})[id]) : "comune";
 function puoAscendere(id) {
   if (!S.carte[id] || infoCarta(id).liv < LIVELLO_MAX) return false;
-  const r = rarCarta(id); return r !== "leggendaria" && (S.admin || S.monete >= ASCESA_MONETE[r]);
+  const r = rarCarta(id); return r !== "leggendaria" && r !== "jolly" && (S.admin || S.monete >= ASCESA_MONETE[r]);
 }
 const haUltra = id => !!(S.ultra && S.ultra[id] && PER_ID[id] && PER_ID[id].ultra);
 const PROB_ULTRA = .15;   // quando trovi una carta che ha la versione Ultra, 15 volte su 100 è Ultra (circa 1 bustina su 180, 1 Leggendaria su 18)
@@ -798,17 +798,23 @@ function htmlBarraFiltri(dove, extra = "") {
   </div>`;
 }
 
-function vai(v) {
+// nov 2026: ogni cambio di sezione è una voce della cronologia, così il tasto Indietro del telefono torna alla
+// sezione di prima (prima usciva dal gioco). Con Indietro si ritrova anche il punto della pagina dov'eri.
+const posizioni = {};
+function vai(v, indietro = false) {
   if (!VISTE.includes(v)) v = "strada";
   const cambiata = v !== vista;
+  if (cambiata && ultimaVistaDisegnata === vista) posizioni[vista] = scrollY;
   if (cambiata) selSq = null;
   if (cambiata && v === "squadra") limSq = PASSO_SQ;
   vista = v;
-  if (location.hash.slice(1) !== v) { try { history.replaceState(null, "", "#" + v); } catch (e) { location.hash = v; } }
+  if (location.hash.slice(1) !== v) {
+    try { if (cambiata && location.hash && !indietro) history.pushState(null, "", "#" + v); else history.replaceState(null, "", "#" + v); } catch (e) { location.hash = v; }
+  }
   $$(".nav button").forEach(b => b.setAttribute("aria-current", b.dataset.vista === v ? "page" : "false"));
   spostaIndicatore();
   disegna();
-  if (cambiata) FX.riavvia($("#vista"), "vista-entra");
+  if (cambiata) { FX.riavvia($("#vista"), "vista-entra"); scrollTo(0, indietro ? posizioni[v] || 0 : 0); }
 }
 
 function spostaIndicatore() {
@@ -826,8 +832,21 @@ function disegna() {
   if (B && $("#azioni")) return;   // durante una battaglia la pagina sotto non si ridisegna (la classifica può aggiornarsi in qualsiasi momento)
   const main = $("#vista");
   main.classList.remove("quieta");
+  // nov 2026: se si ridisegna la stessa sezione (dopo un acquisto, un riscatto, una scelta) resto nello stesso punto,
+  // con i riquadri <details> aperti e le file scorrevoli dove le avevo lasciate
+  const stessa = ultimaVistaDisegnata === vista && main.firstElementChild;
+  let memo = null;
+  if (stessa) {
+    memo = { y: scrollY, aperti: $$("details[open] > summary", main).map(s => s.textContent.trim()),
+      lato: $$("*", main).filter(el => el.scrollLeft > 0 && el.scrollWidth > el.clientWidth).map(el => [el.className, el.scrollLeft]) };
+  }
   main.innerHTML = FUNZIONI_VISTE()[vista]();
   ultimaVistaDisegnata = vista;
+  if (memo) {
+    if (memo.aperti.length) for (const s of $$("details > summary", main)) if (memo.aperti.includes(s.textContent.trim())) s.parentElement.open = true;
+    for (const [cl, x] of memo.lato) { const el = cl && [...main.getElementsByClassName(String(cl).split(" ")[0])].find(e => e.className === cl); if (el) el.scrollLeft = x; }
+    if (Math.abs(scrollY - memo.y) > 1) scrollTo(0, memo.y);
+  }
   if (vista === "classifica") avviaClassifica();
   if (vista === "pass") dopoPass();
   if (vista === "storia") dopoStoria();
@@ -954,7 +973,7 @@ function htmlProdotto(t) {
     ${htmlBustina(t)}
     <b>${esc(T.nome)}</b>
     <span class="nota">${esc(T.desc)}</span>
-    ${n ? `<span class="ne-hai">Ne hai ${n}</span>` : ""}
+    ${n ? `<span class="ne-hai">Ne hai ${n}</span><button type="button" class="btn piccolo oro apri-subito" data-fx="spinta" data-apri="${t}">Apri subito</button>` : ""}
     <div class="prodotto-prezzi">
       ${ev ? `<s class="nota">${T.prezzo}</s>` : ""}<button class="btn primario" data-fx="monete" data-compra="${t}:1" ${S.admin || S.monete >= prezzo ? "" : "disabled"}>${prezzo} <i class="moneta-ico"></i></button>
       <button class="btn pacco5" data-fx="monete" data-compra="${t}:5" ${S.admin || S.monete >= prezzoPacco5(t) ? "" : "disabled"} title="5 bustine scontate del ${Math.round(SCONTO_PACCO5 * 100)}%">×5 · <s>${prezzo * 5}</s> ${prezzoPacco5(t)} <em>−${Math.round(SCONTO_PACCO5 * 100)}%</em></button>
@@ -1016,7 +1035,7 @@ function compraBustina(arg, el) {
   S.inventario[t] = (S.inventario[t] || 0) + n;
   salva(); aggiornaTesta();
   FX.volaIcona(el, $('[data-vista="bustine"]'), "b-normale");
-  mostraAvviso(`${n > 1 ? n + " × " : ""}${T.nome} ${n > 1 ? "aggiunte" : "aggiunta"}: la apri nella pagina Bustine.`);
+  mostraAvviso(`${n > 1 ? n + " × " : ""}${T.nome} ${n > 1 ? "aggiunte: aprile" : "aggiunta: aprila"} subito qui o nella pagina Bustine.`);
   disegna();
 }
 
@@ -1118,7 +1137,7 @@ function apriBustina(tipo) {
   }
   // l'ultima (la più rara) resta per ultima, le altre in ordine di rarità crescente
   const ultima = uscite.pop();
-  uscite.sort((a, b) => ORDINE_RARITA.indexOf(PER_ID[a].rarita) - ORDINE_RARITA.indexOf(PER_ID[b].rarita));
+  uscite.sort((a, b) => rangoRarita(PER_ID[a].rarita) - rangoRarita(PER_ID[b].rarita));
   uscite.push(ultima);
   const esiti = uscite.map((id, n) => {
     const prima = S.carte[id] || 0, infoPrima = infoCarta(id), r = PER_ID[id].rarita;
@@ -1335,7 +1354,7 @@ function mostraRiepilogoBustina() {
   if (apertura || !$("#apertura").hidden) chiudiApertura(true);
   if ($("#modale-corpo .apertura2d")) chiudiModale();
   const T = TIPI_BUSTINA[u.tipo] || {}, resta = S.inventario[u.tipo] || 0;
-  const ord = u.esiti.map((e, i) => ({ e, i, v: e.ultra ? 9 : ORDINE_RARITA.indexOf(PER_ID[e.id].rarita) })).sort((a, b) => a.v - b.v || a.i - b.i);
+  const ord = u.esiti.map((e, i) => ({ e, i, v: e.ultra ? 9 : rangoRarita(PER_ID[e.id].rarita) })).sort((a, b) => a.v - b.v || a.i - b.i);
   const nuove = u.esiti.filter(e => e.nuova).length, pot = u.esiti.reduce((n, e) => n + (e.nuova ? 0 : e.pot || 0), 0);
   const g = u.graffito && Graffiti.info(u.graffito.id);
   apriModale(`<div class="riepilogo-bustina">
@@ -1361,7 +1380,7 @@ function mostraApertura2D(esiti, graffito) {
       <h2>Tocca le carte per girarle</h2>
       <p class="nota centro">Tocca di nuovo una carta girata per vedere le statistiche.</p>
       <div class="apertura-carte">
-        ${esiti.map((e, i) => ({ e, i, v: e.ultra ? 4 : ORDINE_RARITA.indexOf(PER_ID[e.id].rarita) })).sort((a, b) => a.v - b.v || a.i - b.i).map(({ e, i }) => `
+        ${esiti.map((e, i) => ({ e, i, v: e.ultra ? 4 : rangoRarita(PER_ID[e.id].rarita) })).sort((a, b) => a.v - b.v || a.i - b.i).map(({ e, i }) => `
           <button class="gira r-${PER_ID[e.id].rarita}" data-i="${i}" aria-label="Gira la carta ${i + 1}">
             <div class="faccia retro"><span class="neon">NV</span></div>
             <div class="faccia fronte">
@@ -1390,7 +1409,7 @@ function htmlSezioneSerie(id, conTitolo) {
   // con un filtro attivo si vedono solo le carte già trovate (le altre restano una sorpresa)
   // rarità attuale: una carta salita con l'Ascesa conta (e si ordina) con la rarità nuova
   const rarOra = c => S.carte[c.id] ? rarCarta(c.id) : c.rarita;
-  const elenco = [...st.carte].filter(c => !filtrando || (S.carte[c.id] && passaFiltri(c, fa))).sort((a, b) => ORDINE_RARITA.indexOf(rarOra(b)) - ORDINE_RARITA.indexOf(rarOra(a)) || a.nome.localeCompare(b.nome));
+  const elenco = [...st.carte].filter(c => !filtrando || (S.carte[c.id] && passaFiltri(c, fa))).sort((a, b) => rangoRarita(rarOra(b)) - rangoRarita(rarOra(a)) || a.nome.localeCompare(b.nome));
   if (filtrando && !elenco.length) return conTitolo ? "" : `<section class="serie-sezione" style="--c:${se.colore}"><p class="nota">Nessuna carta trovata di questa serie con questi filtri.</p></section>`;
   // Esempio: 3 leggendarie nella serie, ne hai trovate 2 e una comune è salita a leggendaria → "Leggendaria 2/3 +1 ⬆";
   // e quella comune non conta più tra le comuni ("Comune 3/5" invece di 4/5).
@@ -1438,7 +1457,7 @@ function htmlCopertinaPot() {
 }
 function htmlSezionePot() {
   const sq = new Set(squadraAttiva().carte);
-  const pr = cartePronte().filter(c => passaFiltri(c, filtri.album)).sort((a, b) => (sq.has(b.id) ? 1 : 0) - (sq.has(a.id) ? 1 : 0) || (infoCarta(b.id).puoi ? 1 : 0) - (infoCarta(a.id).puoi ? 1 : 0) || ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita));
+  const pr = cartePronte().filter(c => passaFiltri(c, filtri.album)).sort((a, b) => (sq.has(b.id) ? 1 : 0) - (sq.has(a.id) ? 1 : 0) || (infoCarta(b.id).puoi ? 1 : 0) - (infoCarta(a.id).puoi ? 1 : 0) || rangoRarita(b.rarita) - rangoRarita(a.rarita));
   if (!pr.length) return `<section class="serie-sezione"><p class="nota">Nessuna carta da potenziare per ora: i potenziatori arrivano dai doppioni che trovi nelle bustine.</p></section>`;
   return `<section class="serie-sezione sezione-pot">
     <div class="serie-testa"><span class="serie-stemma" aria-hidden="true">▲</span><div class="serie-info"><h2>Da potenziare</h2>
@@ -1464,7 +1483,7 @@ function vistaAlbum() {
       ${htmlCopertinaPot()}
       ${ORDINE_SERIE.map((id, k) => {
         const se = SERIE[id], st = statSerie(id);
-        const anteprima = [...st.carte].sort((a, b) => (S.carte[b.id] ? 1 : 0) - (S.carte[a.id] ? 1 : 0) || ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita)).slice(0, 3);
+        const anteprima = [...st.carte].sort((a, b) => (S.carte[b.id] ? 1 : 0) - (S.carte[a.id] ? 1 : 0) || rangoRarita(b.rarita) - rangoRarita(a.rarita)).slice(0, 3);
         return `<button class="copertina ${filtroAlbum === id ? "scelta" : ""}" data-inclina data-fx="gelatina" data-filtro="${id}" style="--c:${se.colore};--i:${k}" aria-pressed="${filtroAlbum === id}">
           <span class="copertina-carte">${anteprima.map(c => `<img src="${imgCarta(c.id)}" alt="" class="${S.carte[c.id] ? "" : "buia"}">`).join("")}</span>
           <span class="copertina-testo"><span class="serie-stemma piccolo">${se.simbolo}</span><b>${esc(se.nome)}</b><small>${st.mie}/${st.tot}</small></span>
@@ -1527,7 +1546,7 @@ function vistaSquadra() {
   // nov 2026: dal livello più alto al più basso (30 e lode in cima), poi rarità e nome
   const liv = c => livello(c.id) + (haLode(c.id) ? .5 : 0);
   const elenco = mie.filter(c => passaFiltri(c, filtri.squadra))
-    .sort((a, b) => liv(b) - liv(a) || ORDINE_RARITA.indexOf(rarCarta(b.id)) - ORDINE_RARITA.indexOf(rarCarta(a.id)) || a.nome.localeCompare(b.nome));
+    .sort((a, b) => liv(b) - liv(a) || rangoRarita(rarCarta(b.id)) - rangoRarita(rarCarta(a.id)) || a.nome.localeCompare(b.nome));
   elencoSquadra = elenco;
   return `
   <section>
@@ -2036,7 +2055,7 @@ async function scegliPremioPass(l, j, origine) {
 // Scelta della carta a cui dare i potenziatori (non si può chiudere senza scegliere: il premio resta in sospeso)
 function apriSceltaPotenziatori(n) {
   if (!n) return;
-  const ok = possedute().filter(c => infoCarta(c.id).liv < LIVELLO_MAX).sort((a, b) => livello(b.id) - livello(a.id) || ORDINE_RARITA.indexOf(b.rarita) - ORDINE_RARITA.indexOf(a.rarita));
+  const ok = possedute().filter(c => infoCarta(c.id).liv < LIVELLO_MAX).sort((a, b) => livello(b.id) - livello(a.id) || rangoRarita(b.rarita) - rangoRarita(a.rarita));
   if (!ok.length) {
     const m = n * 10; S.monete += m; S.pass.potInSospeso = 0; salva(); aggiornaTesta();
     mostraAvviso(`Hai tutte le carte al livello 30: i ${n} potenziatori diventano ${m} monete.`); return;
@@ -2257,7 +2276,8 @@ function mostraAccesso(vistaForm) {
   el.innerHTML = sfondo + corpo;
 }
 
-async function entra(slot, profiloLocale) {
+async function entra(slot, profiloLocale, daRicarica) {
+  try { sessionStorage.setItem("nv-dentro", slot); } catch (e) {}   // nov 2026: con F5 si rientra da soli (vedi avvia)
   $("#accesso").classList.add("esce");
   await Archivio.usaSlot(slot);
   if (profiloLocale) Archivio.profiloLocale = profiloLocale;
@@ -2271,7 +2291,8 @@ async function entra(slot, profiloLocale) {
   document.body.classList.remove("in-accesso");
   aggiornaSalvataggio();
   aggiornaTesta();
-  vai(S.admin ? "admin" : VISTE.includes(location.hash.slice(1)) && location.hash.slice(1) !== "admin" ? location.hash.slice(1) : "strada");
+  const h = location.hash.slice(1);
+  vai(S.admin ? (daRicarica && VISTE.includes(h) ? h : "admin") : VISTE.includes(h) && h !== "admin" ? h : "strada");
   if (nuova && S.stats.bustine > 0 && !S.admin) setTimeout(() => mostraAvviso("È arrivata la bustina del giorno!"), 500);
   if (slot === "admin") setTimeout(() => mostraAvviso("Modalità admin: monete infinite e tutte le carte. Questi progressi non vanno in classifica."), 400);
   Tutorial.allIngresso();
@@ -3952,7 +3973,7 @@ document.addEventListener("click", e => {
     case "esci-admin": chiudiModale(); entra("partita"); break;
     case "nuovo-profilo": avatarScelto = ""; mostraAccesso("nuovo"); break;
     case "torna-accesso": mostraAccesso(); break;
-    case "vai-accesso": vaiAccesso(); break;
+    case "vai-accesso": try { sessionStorage.removeItem("nv-dentro"); } catch (e) {} vaiAccesso(); break;
     case "vai-strada": vai("strada"); break;
     case "admin-energia": if (B && S.admin && !animazione) { B.lati[0].energia = ENERGIA_MAX; aggiornaBattaglia(); } break;
     case "admin-vinci": if (B && S.admin && !animazione && B.vincitore < 0) { B.lati[1].squadra.forEach(x => { x.pv = 0; }); B.vincitore = 0; if (arena) arena.sincronizza(B); chiudiSfida(); } break;
@@ -4027,7 +4048,7 @@ document.addEventListener("click", e => {
     case "ascesa": ascendiCarta(t.dataset.id, false); break;
     case "ascesa-ok": ascendiCarta(t.dataset.id, true, t); break;
     case "rifai-tutorial": chiudiModale(); if (!B) setTimeout(() => Tutorial.avvia(), 150); break;
-    case "esci-account": (async () => { chiudiModale(); try { await Archivio.aspettaScritture(); } catch (e) {} try { await window.NoiversoAccesso.esci(); } catch (e) {} ImmaginiCarte.dimentica(); location.reload(); })(); break;
+    case "esci-account": try { sessionStorage.removeItem("nv-dentro"); } catch (e) {} (async () => { chiudiModale(); try { await Archivio.aspettaScritture(); } catch (e) {} try { await window.NoiversoAccesso.esci(); } catch (e) {} ImmaginiCarte.dimentica(); location.reload(); })(); break;
     case "ricarica": Archivio.aspettaScritture().catch(() => {}).then(() => location.reload()); break;
     case "controlla-versione": controllaAggiornamento().then(v => mostraAvviso(!v ? "Non riesco a controllare la versione da qui." : v === VERSIONE ? `Hai l'ultima versione (${VERSIONE}).` : "Versione nuova trovata: aggiorno…")); break;
     case "esci-battaglia": esciBattaglia(); break;
@@ -4078,7 +4099,23 @@ document.addEventListener("keydown", e => {
   if ((e.key === "Enter" || e.key === " ") && e.target.matches("[role=button]")) { e.preventDefault(); e.target.click(); }
 });
 $("#modale-chiudi").addEventListener("click", chiudiModale);
-window.addEventListener("hashchange", () => { if (!B && $("#accesso").hidden) vai(location.hash.slice(1)); });
+// Indietro: prima si chiude quello che sta SOPRA la pagina (scheda della carta, bustina, finestra); in battaglia si resta;
+// solo se non c'è niente aperto si torna alla sezione di prima. Negli altri casi rimetto la sezione attuale nella
+// cronologia, così il prossimo Indietro funziona ancora.
+window.addEventListener("hashchange", () => {
+  if (!$("#accesso").hidden) return;
+  const h = location.hash.slice(1); if (h === vista) return;
+  const rimetti = () => { try { history.pushState(null, "", "#" + vista); } catch (e) {} };
+  if ($(".scheda-veloce")) { chiudiSchedaCarta(); rimetti(); return; }
+  if (!$("#apertura").hidden) { const sk = $('[data-azione="riepilogo-bustina"]'); if (sk && !sk.hidden) mostraRiepilogoBustina(); rimetti(); return; }
+  if (!$("#modale").hidden) {
+    if ($("#modale-corpo .riepilogo-bustina")) chiudiRiepilogoBustina();
+    else if ($("#modale").dataset.bloccata !== "1") chiudiModale();
+    rimetti(); return;
+  }
+  if (B) { mostraAvviso("Sei in battaglia: per uscire usa «Abbandona»."); rimetti(); return; }
+  vai(h, true);
+});
 window.addEventListener("resize", spostaIndicatore);
 
 // ============================================================
@@ -4239,6 +4276,10 @@ async function avvia() {
   applicaImpostazioni();
   aggiornaSalvataggio();
   $("#caricamento").hidden = true;
+  // nov 2026: dopo un F5 (o un aggiornamento del gioco) si rientra direttamente, senza la schermata «Bentornato»
+  let dentro = null; try { dentro = sessionStorage.getItem("nv-dentro"); } catch (e) {}
+  if (Archivio.modo === "cloud" && dentro === "partita" && S.profilo && S.profilo.nome) { entra("partita", null, true); return; }
+  if (Archivio.modo === "cloud" && dentro === "admin" && Archivio.proprietario) { entra("admin", null, true); return; }
   mostraAccesso();
 }
 
