@@ -268,9 +268,15 @@ const Vetrina = (() => {
         <div><b>${num(d.stelle)} ★</b><span>Maestria</span></div>
         <div><b>${d.preferita && PER_ID[d.preferita] ? esc(PER_ID[d.preferita].nome) : "–"}</b><span>Carta più usata</span></div>
         <div><b>${d.serie && SERIE[d.serie] ? `${SERIE[d.serie].simbolo} ${esc(SERIE[d.serie].nome)}` : "–"}</b><span>Serie preferita</span></div>
+      </div>
+      <div class="vp-record"><span class="vp-record-tit">Record</span>
+        <div><b>🌙 ${num(d.albe) ? `${num(d.albe)} ${num(d.albe) === 1 ? "alba" : "albe"}` : num(d.notteMax) ? `fermata ${num(d.notteMax)}` : "–"}</b><span>Lunga Notte</span></div>
+        <div><b>🗼 ${num(d.scalataMax) ? `piano ${num(d.scalataMax)}` : "–"}</b><span>Scalata</span></div>
+        <div><b>⚔️ ${d.arenaMax != null && (num(d.arenaMax) || num(d.arene)) ? `${num(d.arenaMax)} vittorie` : "–"}</b><span>Arena (su 7)</span></div>
       </div></div>`;
   }
-  const miei = () => ({ mio: true, vetrina: lista(), sfondo: Cosmetici.stato().sfondo, livello: S.lv ? Livello.info().liv : 1, punti: Gradi.mieiPunti(), vittorie: S.stats.vittorie, sconfitte: S.stats.sconfitte, stelle: Maestria.totaleStelle(), preferita: preferita(), serie: seriePreferita() });
+  const miei = () => ({ mio: true, vetrina: lista(), sfondo: Cosmetici.stato().sfondo, livello: S.lv ? Livello.info().liv : 1, punti: Gradi.mieiPunti(), vittorie: S.stats.vittorie, sconfitte: S.stats.sconfitte, stelle: Maestria.totaleStelle(), preferita: preferita(), serie: seriePreferita(),
+    albe: S.stats.albe, notteMax: S.stats.notteMax, scalataMax: S.stats.scalataMax, arenaMax: S.stats.arenaMax, arene: S.stats.arene });
   function htmlProfilo() {
     if (S.admin) return "";
     const v = lista(), mie = possedute().slice().sort((a, b) => a.nome.localeCompare(b.nome));
@@ -288,7 +294,8 @@ const Vetrina = (() => {
     if (!r) return;
     apriModale(`<div class="profilo-modale"><div class="profilo-testa">${Cosmetici.avatar(String(r.avatar || ""), r.cornice, "grande")}<div><small>Giocatore</small>
       <h2 class="${Cosmetici.classeNome(r.stileNome)}">${esc(String(r.nome || "Giocatore"))}</h2>${r.titolo ? `<span class="nota">«${esc(r.titolo)}»</span>` : ""}</div></div>
-      ${htmlRiquadro({ vetrina: r.vetrina || [], sfondo: r.sfondo, livello: num(r.livello), punti: num(r.punti), vittorie: num(r.vittorie), sconfitte: num(r.sconfitte), stelle: num(r.stelle), preferita: r.preferita, serie: r.seriePref })}
+      ${htmlRiquadro({ vetrina: r.vetrina || [], sfondo: r.sfondo, livello: num(r.livello), punti: num(r.punti), vittorie: num(r.vittorie), sconfitte: num(r.sconfitte), stelle: num(r.stelle), preferita: r.preferita, serie: r.seriePref,
+        albe: r.albe, notteMax: r.notteMax, scalataMax: r.scalataMax, arenaMax: r.arenaMax, arene: r.arene })}
       <div class="azioni centro"><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }
   return { fineBattaglia, preferita, seriePreferita, lista, metti, htmlProfilo, apriAmico, htmlRiquadro };
@@ -550,14 +557,14 @@ const Progressi = (() => {
 
 // ---------------- Novità (una volta sola per ogni aggiornamento) ----------------
 const Novita = (() => {
-  const VERSIONE = "2026-11-extra";
+  const VERSIONE = "2026-11-menu";
   const SCHEDE = [
-    { ico: "⚔", titolo: "Arena", testo: "Nella pagina Sfida: paghi 300 monete, scegli 5 carte (ogni volta tra 3) e giochi finché non perdi 3 volte. Tutte le carte sono al livello 20: vince chi sceglie e gioca meglio. Fino a 7 vittorie, e il premio cresce a ogni vittoria." },
-    { ico: "★", titolo: "Maestria delle carte", testo: "Ogni carta ha 5 obiettivi: vittorie, danni, KO e mosse finali. Ogni obiettivo è una stella con potenziatori per quella carta e monete in premio. Li vedi nel dettaglio della carta e si prendono da soli giocando." },
-    { ico: "◈", titolo: "Frammenti", testo: "I doppioni delle carte già al 30 ora danno anche frammenti. Con i frammenti crei le carte che ti mancano: tocca una carta coperta nell'album." },
-    { ico: "💎", titolo: "Gradi della stagione", testo: "Con i punti dal vivo sali da Bronzo a Leggenda. A fine stagione riscuoti il premio del grado più alto che hai raggiunto." },
-    { ico: "🛒", titolo: "Offerte speciali", testo: "Nel negozio, ogni giorno, 3 offerte solo per te: una carta che ti manca, potenziatori, un cosmetico. Le bustine sono tutte lì come prima." },
-    { ico: "🎨", titolo: "Vetrina e cosmetici", testo: "Nel profilo scegli 3 carte da mostrare, cornici per l'avatar, il colore del nome e lo sfondo; dal dettaglio di ogni carta le metti una cornice. Tocca un nome in classifica per vedere il profilo di un amico." },
+    { ico: "🧭", titolo: "Il menu è cambiato", testo: "Ora le sezioni sono 5: Home, Gioca, Carte, Negozio e Amici. Dentro Carte trovi Bustine, Album e Squadre; dentro Amici la Classifica e il Pass. Il numerino su una sezione vuol dire che lì c'è qualcosa da fare." },
+    { ico: "⚔️", titolo: "Tutto in «Gioca»", testo: "Ogni modalità è un riquadro: tocca e vedi come funziona, quanto costa e a che punto sei. La Storia è il primo riquadro, e in Home c'è sempre il tasto «Continua» per la prossima tappa." },
+    { ico: "🌙", titolo: "La Lunga Notte", testo: "Dieci fermate dal tramonto all'alba con carte trovate per strada (le tue qui non contano). I PV restano tra una battaglia e l'altra, ai bivi scegli la strada e raccogli cimeli. Puoi tornare a casa quando vuoi e incassare." },
+    { ico: "🗼", titolo: "La Scalata", testo: "Scegli 5 carte che partono dal livello 1 e sali piano dopo piano: a ogni vittoria la squadra cresce e scegli un potenziamento. Hai 3 vite. Il piano più alto della settimana va nella classifica degli amici." },
+    { ico: "🃏", titolo: "Jolly", testo: "Carte bianche rarissime che non hanno una serie: in squadra si uniscono alla sinergia che scegli tu. Se ne trovi uno, la bustina si accende di bianco." },
+    { ico: "🏅", titolo: "Trofei, record e confronto", testo: "Nuovi trofei e titoli per la Notte e la Scalata, i tuoi record nel profilo (anche quelli degli amici) e il tasto «Confronta» anche dal dettaglio di una carta nell'Album. Le regole complete sono in Home › «Come si gioca»." },
   ];
   let i = 0;
   function controlla() {

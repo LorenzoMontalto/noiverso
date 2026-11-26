@@ -380,7 +380,8 @@ function aggiornaTesta() {
   const fr = $("#framm-testa"); if (fr) { fr.hidden = !!S.admin || !S.profilo.nome; fr.querySelector("span").textContent = (Number(S.framm) || 0).toLocaleString("it-IT"); }
   const pb = $("#profilo-btn");
   if (pb) { pb.hidden = !S.profilo.nome; pb.innerHTML = `${S.admin ? htmlAvatar(S.profilo.avatar) : Cosmetici.avatar(S.profilo.avatar, Cosmetici.stato().cornice)}${!S.admin && S.lv ? Livello.badge(Livello.info().liv, "testa") : ""}<span>${esc(S.profilo.nome || "")}</span>${S.admin ? `<em>Admin</em>` : ""}`; }
-  const na = $('[data-vista="admin"]'); if (na) na.hidden = !S.admin;
+  // nov 2026: «Admin» non sta più nel menu (stringeva le 5 sezioni sul telefono): si apre dal profilo, e nel menu compare solo mentre ci sei
+  const na = $('.nav [data-vista="admin"]'); if (na) { const h = !(S.admin && vista === "admin"); if (na.hidden !== h) { na.hidden = h; requestAnimationFrame(spostaIndicatore); } }
   Trofei.controlla();
   const pallino = (g, q) => { const el = $(`.nav [data-vista="${g}"] .badge`); if (el) { el.textContent = q; el.hidden = !q; } };
   pallino("strada", S.admin ? Missioni.pronte() + Livello.daRiscuotere().length : Progressi.totale());
@@ -780,7 +781,7 @@ const Riepilogo = {
 // ============================================================
 // nov 2026: il menu ha 5 sezioni (Home, Gioca, Carte, Negozio, Amici). Le pagine restano quelle di prima, ma ognuna sta
 // dentro una sezione: «Gioca» è la griglia delle modalità, e ogni modalità ha la sua pagina (modo-…) con «‹ Tutte le modalità».
-const MODI_PAGINA = ["modo-computer", "modo-arena", "modo-settimana", "modo-boss", "modo-bossgiorno", "modo-amici", "modo-vivo"];
+const MODI_PAGINA = ["modo-storia", "modo-computer", "modo-arena", "modo-settimana", "modo-boss", "modo-bossgiorno", "modo-amici", "modo-vivo"];
 const VISTE = ["strada", "storia", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin", "notte", "scalata", ...MODI_PAGINA];
 const GRUPPI = { strada: ["strada"], sfida: ["sfida", "storia", "notte", "scalata", ...MODI_PAGINA], carte: ["bustine", "album", "squadra"], negozio: ["negozio"], amici: ["classifica", "pass"], admin: ["admin"] };
 const VISTA_NAV = v => Object.keys(GRUPPI).find(g => GRUPPI[g].includes(v)) || v;
@@ -817,7 +818,9 @@ function passaFiltri(c, f) {
 function htmlBarraFiltri(dove, extra = "") {
   const f = filtri[dove];
   const chipTipo = ["", "FOR", "DIF", "VEL"].map(t => `<button class="chip ${t ? "s-" + t : ""}" data-fx="gelatina" data-filtra="${dove}:tipo:${t}" aria-pressed="${f.tipo === t}">${t ? `${STILI[t].icona} ${STILI[t].nome}` : "Tutti i tipi"}</button>`).join("");
-  const chipSerie = "serie" in f ? `<div class="filtri filtri-riga"><span class="filtri-etichetta">Serie</span>${["", ...ORDINE_SERIE].map(s => `<button class="chip" data-fx="gelatina" data-filtra="${dove}:serie:${s}" aria-pressed="${f.serie === s}">${s ? SERIE[s].simbolo + " " + esc(SERIE[s].nome) : "Tutte"}</button>`).join("")}</div>` : "";
+  // nov 2026: la serie si sceglie da un menu (prima erano 25 bottoni, quasi una schermata su telefono)
+  const chipSerie = "serie" in f ? `<label class="filtro-ruolo"><span class="filtri-etichetta">Serie</span><select data-filtra-serie="${dove}" aria-label="Filtra per serie">
+      ${["", ...ORDINE_SERIE].map(s => `<option value="${s}" ${f.serie === s ? "selected" : ""}>${s ? SERIE[s].simbolo + " " + esc(SERIE[s].nome) : "Tutte le serie"}</option>`).join("")}</select></label>` : "";
   const attivi = f.tipo || f.ruolo || f.cerca || f.serie || f.pot;
   const sceltaRuolo = `<label class="filtro-ruolo"><span class="filtri-etichetta">Ruolo</span><select data-filtra-ruolo="${dove}" aria-label="Filtra per ruolo">
       <option value="">Tutti i ruoli</option>${Object.entries(RUOLI).sort((a, b) => a[1].nome.localeCompare(b[1].nome)).map(([k, r]) => `<option value="${k}" ${f.ruolo === k ? "selected" : ""}>${esc(r.nome)} · ${esc(r.cosa)}</option>`).join("")}</select></label>`;
@@ -865,6 +868,7 @@ function adattaNomi(radice) {
 const posizioni = {};
 function vai(v, indietro = false) {
   if (GRUPPI[v] && !VISTE.includes(v)) v = primaDelGruppo(v);
+  if (v === "sfida") for (const k in modoDentro) delete modoDentro[k];
   if (!VISTE.includes(v)) v = "strada";
   ultimaDelGruppo[VISTA_NAV(v)] = v;
   const cambiata = v !== vista;
@@ -968,25 +972,50 @@ function htmlContinua() {
 }
 // il regolamento completo: prima stava in fondo alla home, ora si apre in una finestra
 function apriComeSiGioca() {
+  // nov 2026: regole divise per argomento, con i nomi del menu nuovo e le modalità nuove
+  const gruppo = (tit, voci) => `<h3 class="csg-tit">${tit}</h3><ul class="csg-lista">${voci.map(([t, d]) => `<li><b>${t}.</b> ${d}</li>`).join("")}</ul>`;
   apriModale(`<div class="come-si-gioca"><span class="codice-tag">Regole</span>
   <section class="regole">
-    <div class="titolo-riga"><h2>Come si gioca</h2><div class="azioni"><button class="btn piccolo" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button>${S.admin ? "" : `<button class="btn piccolo" data-azione="novita-rivedi">Le novità</button>`}</div></div>
-    <ol>
-      <li><b>Bustine.</b> Ogni giorno ricevi una bustina gratis; le altre le compri nel <b>Negozio</b> (classiche, per serie e per stile) o arrivano dal pass. Le apri dalla pagina Bustine. La prima è di benvenuto: 5 carte tutte diverse.</li>
-      <li><b>Potenziare.</b> Le carte salgono di livello solo se le potenzi tu, dal dettaglio della carta (il segno ▲ verde dice quando puoi). Ogni doppione dà potenziatori per quella carta: ${POT_DOPPIONE.comune} se è Comune, ${POT_DOPPIONE.rara} Rara, ${POT_DOPPIONE.epica} Epica, ${POT_DOPPIONE.leggendaria} Leggendaria. Ogni livello costa potenziatori e monete, sempre di più: da ${potPerLivello(1)} potenziatori e ${monetePerLivello(1)} monete per il livello 2 fino a ${potPerLivello(29)} e ${monetePerLivello(29)} per il 30. Ogni livello dà +2% a PV e danni.</li>
-      <li><b>30 e lode.</b> Una carta al 30 fa esperienza in battaglia: dopo ${XP_LODE} XP prende la lode, che la potenzia di un altro 5%. I doppioni di una carta al 30 danno monete.</li>
-      <li><b>Squadre.</b> Prepari fino a ${NUM_SQUADRE} squadre da ${CARTE_SQUADRA}, nell'ordine che vuoi: la prima entra in campo per prima.</li>
-      <li><b>Battaglia.</b> Cinque contro cinque. Ogni turno scegli una mossa, <i>Carica</i> (+2 energia e ti proteggi) o un cambio. Ogni carta fa una sola mossa per turno: la più veloce attacca per prima (a pari velocità si alterna). L'energia è della squadra: si parte da 3 e si guadagnano 2 punti a turno.</li>
-      <li><b>Classifica.</b> Si fanno punti solo con le sfide dal vivo contro gli amici online: +3 per ogni vittoria, 0 per le sconfitte.</li>
-      <li><b>Tipi.</b> Ogni carta è di un tipo che potenzia una sua statistica: <span class="s-FOR stile">FOR</span> Forza +25% attacco, <span class="s-DIF stile">DIF</span> Difesa +5% difesa, <span class="s-VEL stile">VEL</span> Velocità +5 velocità e +15% attacco (a parità di livello una carta Velocità attacca sempre prima delle altre). Potenziando salgono attacco, difesa, velocità e PV di tutte le carte, e la statistica del tipo sale di più. Forza batte Difesa, Difesa batte Velocità, Velocità batte Forza: il vantaggio vale ×1,3, lo svantaggio ×0,8.</li>
-      <li><b>Pass.</b> Le sfide del pass (3 al giorno, 4 alla settimana) danno tanta esperienza; battaglie e bustine ne danno un po'. Ogni livello del pass sblocca un premio.</li>
-      <li><b>Livello giocatore.</b> Sale con tutto quello che fai (battaglie, storia, carte nuove, potenziamenti) fino al 100. Ogni livello ha un premio, alcuni anche un titolo o un cosmetico.</li>
-      <li><b>Campi.</b> Ogni battaglia si gioca su un campo (Pioggia, Notte, Stadio, Lava, Tempio) che cambia una regola. Dopo 10 turni il campo cambia, quindi tieniti pronto ad adattarti (nella storia invece resta quello della mappa).</li>
-      <li><b>Bruciature.</b> Chi brucia perde PV a ogni turno e le sue cure valgono la metà.</li>
-      <li><b>Arena.</b> Scegli 5 carte tra quelle proposte, tutte al livello 20, e gioca finché non perdi 3 volte: più vittorie fai (fino a 7), più ricco è il premio.</li>
-      <li><b>Maestria e frammenti.</b> Ogni carta ha 5 stelle di maestria da conquistare giocandola. I doppioni delle carte al 30 danno frammenti ◈, con cui crei le carte che ti mancano.</li>
-      <li><b>Gradi.</b> I punti dal vivo del mese ti danno un grado, da Bronzo a Leggenda: a fine stagione riscuoti il premio del più alto.</li>
-    </ol>
+    <div class="titolo-riga"><h2>Come si gioca</h2></div>
+    ${gruppo("Il menu", [
+      ["🏠 Home", "Cosa c'è da fare adesso, il premio di accesso, le missioni e i tuoi progressi"],
+      ["⚔️ Gioca", "Tutte le modalità: tocca un riquadro per vedere come funziona e iniziare"],
+      ["🎴 Carte", "Le <b>Bustine</b> da aprire, l'<b>Album</b> (carte, trofei e scambi) e le <b>Squadre</b>."],
+      ["🛒 Negozio", "Bustine, oggetti per la battaglia (graffiti e zaino) e cornici"],
+      ["🏆 Amici", "La <b>Classifica</b> del gruppo e il <b>Pass</b>"],
+    ])}
+    ${gruppo("Le carte", [
+      ["Bustine", `Ogni giorno ne ricevi una gratis; le altre le compri nel Negozio o arrivano dal pass e dalle missioni. Le apri da Carte › Bustine. Le carte sono Comuni, Rare, Epiche e Leggendarie; ogni tanto una esce olografica o in versione Ultra.`],
+      ["Potenziare", `Le carte salgono di livello solo se le potenzi tu, dal dettaglio della carta (il segno ▲ verde dice quando puoi). Ogni doppione dà potenziatori per quella carta: ${POT_DOPPIONE.comune} se è Comune, ${POT_DOPPIONE.rara} Rara, ${POT_DOPPIONE.epica} Epica, ${POT_DOPPIONE.leggendaria} Leggendaria. Ogni livello costa potenziatori e monete, sempre di più: da ${potPerLivello(1)} potenziatori e ${monetePerLivello(1)} monete per il livello 2 fino a ${potPerLivello(29)} e ${monetePerLivello(29)} per il 30. Ogni livello dà +2% a PV e danni.`],
+      ["30 e lode", `Una carta al 30 fa esperienza in battaglia: dopo ${XP_LODE} XP prende la lode, che la potenzia di un altro 5%. I doppioni di una carta al 30 danno monete e frammenti ◈.`],
+      ["Frammenti e maestria", "Con i frammenti ◈ crei le carte che ti mancano. Ogni carta ha 5 stelle di maestria da conquistare giocandola."],
+      ["Jolly", "Carte bianche rarissime (circa 3 ogni 1.000 carte trovate nelle bustine). Non hanno una serie: in squadra si uniscono alla sinergia che scegli tu. Al massimo uno per squadra."],
+      ["Confronto", "Dalle Squadre o dal dettaglio di una carta nell'Album puoi confrontare due carte, anche come sarebbero al massimo."],
+    ])}
+    ${gruppo("La battaglia", [
+      ["Squadre", `Prepari fino a ${NUM_SQUADRE} squadre da ${CARTE_SQUADRA}, nell'ordine che vuoi: la prima entra in campo per prima. Bastano 2 carte della stessa serie per un bonus (sinergia), che cresce con 3 e con 5.`],
+      ["Turni", "Ogni turno scegli una mossa, <i>Carica</i> (+2 energia e ti proteggi) o un cambio. Ogni carta fa una sola mossa per turno: la più veloce attacca per prima. L'energia è della squadra: si parte da 3 e si guadagnano 2 punti a turno."],
+      ["Tipi", `<span class="s-FOR stile">FOR</span> Forza +25% attacco, <span class="s-DIF stile">DIF</span> Difesa +5% difesa, <span class="s-VEL stile">VEL</span> Velocità +5 velocità e +15% attacco. Forza batte Difesa, Difesa batte Velocità, Velocità batte Forza: il vantaggio vale ×1,3, lo svantaggio ×0,8.`],
+      ["Campi", "Ogni battaglia si gioca su un campo (Pioggia, Notte, Stadio, Lava, Tempio) che cambia una regola. Dopo 10 turni il campo cambia (nella storia resta quello della mappa)."],
+      ["Zaino e graffito", "Nello zaino porti fino a 3 oggetti (cure, energia e altro): ne usi uno per turno. Il graffito è un piccolo bonus per tutta la partita."],
+      ["Bruciature", "Chi brucia perde PV a ogni turno e le sue cure valgono la metà."],
+    ])}
+    ${gruppo("Le modalità (in Gioca)", [
+      ["Storia", `${STORIA.length} capitoli su mappe da esplorare: ogni tappa vinta dà stelle, monete e bustine.`],
+      ["Contro il computer", "Quattro avversari, dalla Recluta alla Leggenda: più è difficile, più vinci."],
+      ["Arena", `Ingresso ${Arena.INGRESSO} monete. Scegli 5 carte tra quelle proposte, tutte al livello 20 (le tue non contano), e gioca finché non perdi 3 volte: più vittorie fai (fino a 7), più ricco è il premio.`],
+      ["La Lunga Notte", `Ingresso ${PremiModalita.INGRESSO_NOTTE} monete. Dieci fermate dal tramonto all'alba con carte trovate per strada. I PV restano tra una battaglia e l'altra, a ogni bivio scegli la strada e raccogli cimeli. Se perdi la notte finisce; puoi tornare a casa quando vuoi e incassare.`],
+      ["La Scalata", `Ingresso ${PremiModalita.INGRESSO_SCALATA} monete. Scegli 5 carte che partono dal livello 1: a ogni piano vinto salgono e scegli un potenziamento. Hai 3 vite e i piani non finiscono mai; il piano più alto della settimana va nella classifica degli amici.`],
+      ["Eventi", "Le sfide della settimana sulla serie in evidenza, il boss della settimana che tutto il gruppo colpisce insieme e, finita la storia, il boss del giorno."],
+      ["Con gli amici", "Dal vivo sfidi un amico connesso adesso; con «Sfida un amico» combatti contro la sua squadra anche se non c'è."],
+    ])}
+    ${gruppo("Progressi e classifica", [
+      ["Classifica", "Si fanno punti solo con le sfide dal vivo: +3 per ogni vittoria, 0 per le sconfitte. I punti del mese danno un grado, da Bronzo a Leggenda: a fine stagione riscuoti il premio del più alto."],
+      ["Pass", "Le sfide del pass (3 al giorno, 4 alla settimana) danno tanta esperienza; battaglie e bustine ne danno un po'. Ogni livello del pass sblocca un premio."],
+      ["Livello giocatore", "Sale con tutto quello che fai fino al 100. Ogni livello ha un premio, alcuni anche un titolo o un cosmetico."],
+      ["Trofei e titoli", "Nell'Album, scheda Trofei: ognuno dà monete e un titolo da mostrare sotto il tuo nome."],
+    ])}
+    <div class="azioni centro"><button class="btn piccolo" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button>${S.admin ? "" : `<button class="btn piccolo" data-azione="novita-rivedi">Le novità</button>`}</div>
   </section>
   </div>`);
 }
@@ -1666,12 +1695,13 @@ function vistaSquadra() {
       <label for="nome-squadra">Nome</label>
       <input id="nome-squadra" maxlength="22" value="${esc(sq.nome)}" autocomplete="off">
       <button class="btn piccolo" data-fx="stelle" data-azione="consiglio-calcola">✦ Squadra consigliata</button>
-      <span class="nota">Tieni premuta una carta e trascinala su un posto della squadra per scambiarla. ${sq.carte.length === CARTE_SQUADRA ? "Squadra pronta per le sfide." : `Mancano ${CARTE_SQUADRA - sq.carte.length} ${CARTE_SQUADRA - sq.carte.length === 1 ? "carta" : "carte"}.`}</span>
+      <span class="nota">Trascina una carta su un posto della squadra per scambiarla. ${sq.carte.length === CARTE_SQUADRA ? "Squadra pronta per le sfide." : `Mancano ${CARTE_SQUADRA - sq.carte.length} ${CARTE_SQUADRA - sq.carte.length === 1 ? "carta" : "carte"}.`}</span>
     </div>
     <div class="slot5">${slot.join("")}</div>
     ${Jolly.htmlSquadra()}
-    ${Zaino.htmlPannello(true)}
-    ${Graffiti.htmlSquadra()}
+    ${(() => { const z = (S.zaino && S.zaino.porta || []).filter(Boolean).length; let g = ""; try { const id = Graffiti.scelto(); if (id) g = ` · graffito ${esc(Graffiti.info(id).nome)}`; } catch (e) {}
+      return `<details class="squadra-extra"><summary><span>🎒 <b>Zaino e graffito</b></span><small>${z ? `${z} ${z === 1 ? "oggetto" : "oggetti"} nello zaino` : "zaino vuoto"}${g}</small><span class="pp-apri">Apri</span></summary>
+      <div class="pp-pannelli">${Zaino.htmlPannello(true)}${Graffiti.htmlSquadra()}</div></details>`; })()}
     ${Sinergie.htmlSquadra(sq.carte, sq.jolly, sq)}
     <div class="riepilogo">
       <div><span>Stili</span>${Object.entries(stili).map(([k, n]) => `<b class="stile s-${k}">${k} ${n}</b>`).join(" ")}</div>
@@ -1679,7 +1709,7 @@ function vistaSquadra() {
       <div><span>PV totali</span><b>${pv}</b></div>
     </div>
     <div class="titolo-riga piccola">
-      <p class="nota">Tocca una carta per vedere cosa puoi fare: aggiungerla, scambiarla con una della squadra, confrontarla o <b>potenziarla</b>. Le frecce cambiano l'ordine.</p>
+      <p class="nota">Tocca una carta per aggiungerla, scambiarla, confrontarla o <b>potenziarla</b>.</p>
       ${htmlLegendaPot()}
       ${htmlBarraFiltri("squadra", nPot ? `<button class="chip chip-pot" data-fx="gelatina" data-filtra="squadra:pot:" aria-pressed="${filtri.squadra.pot}">▲ Da potenziare · ${nPot}</button>` : "")}
     </div>
@@ -2005,7 +2035,7 @@ function tessereGioca() {
   const t = [], soc = socialeAttivo(), ingr = n => `Ingresso ${n} monete`;
   // per iniziare
   const p = prossimaTappa(), sc = scrigniPronti();
-  t.push({ g: "inizia", id: "storia", ico: "📖", nome: "Storia", desc: "Il racconto a capitoli: batti i nemici tappa dopo tappa", stato: p ? `Capitolo ${p.k + 1} di ${STORIA.length}` : "Completata!", n: sc, vista: "storia" });
+  t.push({ g: "inizia", id: "storia", ico: "📖", nome: "Storia", desc: "Il racconto a capitoli: batti i nemici tappa dopo tappa", stato: p ? `Capitolo ${p.k + 1} di ${STORIA.length}` : "Completata!", n: sc, vista: "modo-storia" });
   t.push({ g: "inizia", id: "computer", ico: "🤖", nome: "Contro il computer", desc: "Allenati con la tua squadra: 4 livelli di difficoltà", stato: "Gratis", vista: "modo-computer" });
   // avventure a pagamento: la tua collezione non conta, conta come giochi
   if (attivoExtra()) { const a = Arena.stato();
@@ -2025,7 +2055,7 @@ function tessereGioca() {
   if (soc) {
     const on = Online.quantiOnline();
     t.push({ g: "amici", id: "vivo", ico: "🟢", nome: "Dal vivo", desc: "Sfida un amico connesso adesso: si gioca a turni insieme. Dà punti in classifica", stato: on ? `${on} ${on === 1 ? "amico online" : "amici online"}` : "Nessuno online adesso", vista: "modo-vivo" });
-    t.push({ g: "amici", id: "amici", ico: "👥", nome: "Sfida un amico", desc: "Combatti contro la squadra di un amico, guidata dal computer", stato: "Anche se non è online", azione: "vai-amici" });
+    t.push({ g: "amici", id: "amici", ico: "👥", nome: "Sfida un amico", desc: "Combatti contro la squadra di un amico, guidata dal computer", stato: "Anche se non è online", vista: "modo-amici" });
   }
   return t;
 }
@@ -2040,11 +2070,84 @@ function vistaSfida() {
     ${GR.map(([g, tit, nota]) => { const l = t.filter(x => x.g === g); return l.length ? `<h3 class="gioca-gruppo">${tit}</h3>${nota ? `<p class="nota gioca-nota">${nota}</p>` : ""}<div class="tessere">${l.map(tessera).join("")}</div>` : ""; }).join("")}
   </section>`;
 }
+// nov 2026: ogni modalità si apre con una copertina a tema: sfondo disegnato, titolo al centro, «Come si gioca» piccolo
+// in alto e «Entra» in basso al centro. Per le modalità gratuite «Entra» mostra il contenuto (e ci resti finché non
+// torni alla griglia); per quelle a pagamento chiede conferma dell'ingresso.
+const modoDentro = {};
+const stelline = (n, seme = 3) => { let s = seme; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  return Array.from({ length: n }, () => `<i style="left:${(r() * 100).toFixed(1)}%;top:${(r() * 70).toFixed(1)}%;--d:${(r() * 3).toFixed(2)}s;--s:${(1 + r() * 2).toFixed(1)}px"></i>`).join(""); };
+function decoroModo(id) {
+  const sky = `<svg class="cop-sky" viewBox="0 0 1200 260" preserveAspectRatio="xMidYMax slice">${skyline().replace(/^<svg[^>]*>|<\/svg>$/g, "")}</svg>`;
+  switch (id) {
+    case "storia": return `<span class="cop-sole"></span><span class="cop-stelle">${stelline(26, 5)}</span>${sky}`;
+    case "notte": return `<span class="cop-luna"></span><span class="cop-stelle">${stelline(60, 9)}</span>${sky}`;
+    case "computer": return `<span class="cop-griglia"></span><span class="cop-scan"></span>`;
+    case "arena": return `<span class="cop-fari"></span><span class="cop-archi"></span>`;
+    case "scalata": return `<span class="cop-nuvole"></span><span class="cop-torre"></span><span class="cop-stelle">${stelline(30, 13)}</span>`;
+    case "settimana": { const se = SERIE[Settimana.serie()]; return `<span class="cop-motivo">${se ? Array.from({ length: 18 }, () => `<b>${se.simbolo}</b>`).join("") : ""}</span>`; }
+    case "boss": { const b = Boss.stato; let img = ""; try { if (b && b.settimana) img = `<img class="cop-boss" src="${imgCarta(Boss.carta ? Boss.carta(b.settimana).id : "")}" alt="">`; } catch (e) {} return `${img}<span class="cop-crepe"></span>`; }
+    case "bossgiorno": { let img = ""; try { if (BossGiorno.sbloccato()) img = `<img class="cop-boss" src="${imgCarta(BossGiorno.oggi().id)}" alt="">`; } catch (e) {} return `${img}<span class="cop-nebbia"></span>`; }
+    case "vivo": return `<span class="cop-radar"><i></i><i></i><i></i></span>`;
+    case "amici": return `<span class="cop-bolle">${stelline(14, 21)}</span>`;
+  }
+  return "";
+}
+function htmlCopertinaModo(id, o) {
+  const e = o.entra || {};
+  const attr = e.vista ? `data-vista="${e.vista}"` : e.azione ? `data-azione="${e.azione}"` : "";
+  return `<section class="cop-modo tema-${id}"${o.colore ? ` style="--c:${o.colore}"` : ""}>
+    <div class="cop-sfondo" aria-hidden="true">${decoroModo(id)}</div>
+    <button class="cop-regole" data-azione="regole-modo" data-modo="${id}">📘 Come si gioca</button>
+    <div class="cop-centro"><span class="cop-ico" aria-hidden="true">${o.ico}</span><h2>${esc(o.titolo)}</h2>${o.sotto ? `<p>${esc(o.sotto)}</p>` : ""}${o.stato ? `<em>${esc(o.stato)}</em>` : ""}</div>
+    <div class="cop-piede"><button class="btn oro grande cop-entra" data-fx="spinta" ${attr} data-modo="${id}" ${e.no ? "disabled" : ""}>${esc(e.testo || "Entra")}</button>${e.nota ? `<small>${esc(e.nota)}</small>` : ""}</div>
+  </section>`;
+}
+// le regole di ogni modalità (Lunga Notte e Scalata hanno le loro, più lunghe)
+function apriRegoleModo(id) {
+  if (id === "notte") return Notte.regole();
+  if (id === "scalata") return Scalata.regole();
+  const x = tessereGioca().find(t => t.id === id) || { ico: "", nome: "" };
+  const R = {
+    storia: [`<b>${STORIA.length} capitoli</b>, ognuno su una mappa: tocca una tappa per vedere i nemici e combattere.`, "Ogni tappa dà fino a <b>3 stelle</b> (vincere, vincere bene, vincere senza KO); con le stelle si aprono gli <b>scrigni</b> del capitolo.", "In fondo a ogni capitolo c'è un <b>boss</b>: battilo per andare avanti. I nemici diventano più forti capitolo dopo capitolo.", "Il campo resta quello della mappa per tutta la battaglia. Le tappe si possono rigiocare per le stelle che mancano."],
+    computer: [`Scegli un avversario tra 4: ${LIVELLI_SFIDA.map(L => `<b>${esc(L.nome)}</b>`).join(", ")}. Più è difficile, più monete ed esperienza vinci.`, "Giochi con la squadra che hai scelto in cima alla pagina (la cambi in Carte › Squadre).", "<b>Classica</b>: 5 contro 5. <b>Rapida</b>: le prime 3 carte, partite più corte e premi ridotti.", "È il posto per allenarsi e far crescere le carte: non toglie e non dà punti in classifica."],
+    arena: [`Ingresso <b>${Arena.INGRESSO} monete</b>. Scegli 5 carte, ogni volta tra 3 proposte: tutte al <b>livello 20</b>, anche quelle che non hai. La tua collezione qui non conta.`, "Giochi una partita dopo l'altra finché non perdi <b>3 volte</b> o arrivi a <b>7 vittorie</b>.", "Più vittorie fai, più ricco è il premio:", `<span class="csg-premi">${Arena.PREMI.map((p, i) => `<span><b>${i}</b> ${esc(testoPremio(p))}${p.frammenti ? ` + ${p.frammenti} ◈` : ""}</span>`).join("")}</span>`],
+    settimana: ["Ogni settimana una serie è in evidenza: <b>3 sfide</b> (Facile, Media, Difficile) contro squadre fatte solo di carte di quella serie, sul campo della settimana.", "La <b>prima vittoria</b> di ogni sfida nella settimana dà un premio; poi puoi rigiocarle quanto vuoi.", "Ci sono anche missioni speciali sulla serie, e la sua bustina in negozio costa meno."],
+    boss: ["Un boss gigante che <b>tutto il gruppo</b> colpisce insieme durante la settimana.", "Hai <b>3 attacchi al giorno</b>; ogni attacco fa al massimo 6.000 danni.", "Se cade entro domenica, chi ha partecipato riceve 300 monete e una Bustina Leggendaria; chi ha fatto più danni anche una Bustina Epica.", "Lunedì arriva un boss nuovo."],
+    bossgiorno: ["Si sblocca <b>finendo la storia</b> (battendo il boss dell'ultimo capitolo).", "Ogni giorno un boss diverso, al livello 30 con la lode, con delle guardie. Ha una <b>corazza</b> e un <b>punto debole</b> che cambiano ogni giorno: leggili prima di scegliere la squadra.", "La prima vittoria del giorno dà 600 monete, una Bustina Leggendaria e 5 potenziatori a ogni carta che scende in campo."],
+    vivo: ["Sfidi un amico <b>connesso adesso</b>: si gioca insieme, turno per turno.", "È l'unica modalità che dà punti in classifica: <b>+3</b> per ogni vittoria, 0 per le sconfitte. I punti del mese danno il grado, da Bronzo a Leggenda.", "Durante la partita puoi mandare reazioni; gli altri amici possono guardarla."],
+    amici: ["Combatti contro la <b>squadra di un amico</b>, guidata dal computer: lui non deve essere online.", "Le sue carte hanno i livelli veri che ha lui.", "Se vinci gli rubi un punto in classifica."],
+  }[id] || [];
+  apriModale(`<div class="modo-regole"><span class="codice-tag">${x.ico} ${esc(x.nome)}</span><h2>Come si gioca</h2><ol>${R.map(r => `<li>${r}</li>`).join("")}</ol>
+    <div class="azioni centro"><button class="btn" data-azione="chiudi">Ho capito</button></div></div>`);
+}
+function confermaArena() {
+  if (S.monete < Arena.INGRESSO && !S.admin) { mostraAvviso(`L'ingresso costa ${Arena.INGRESSO} monete.`); return; }
+  apriModale(`<div class="modo-conferma"><span class="codice-tag">⚔️ Arena</span><h2>Entri nell'Arena?</h2>
+    <p>L'ingresso costa <b>${Arena.INGRESSO} monete</b> e non si restituisce: il premio dipende da quante partite vinci (fino a 7).</p>
+    <div class="azioni centro"><button class="btn oro grande" data-fx="spinta" data-azione="arena-entra-ok">Sì, entro (${Arena.INGRESSO} monete)</button><button class="btn" data-azione="chiudi">Non ora</button></div>
+    <button class="btn piccolo link" data-azione="regole-modo" data-modo="arena">Come si gioca</button></div>`);
+}
+// la copertina di ogni modalità (null = si va dritti al contenuto, per esempio una partita già in corso)
+function copertinaPer(id) {
+  const x = tessereGioca().find(t => t.id === id) || { ico: "", nome: "", desc: "" };
+  const base = { ico: x.ico, titolo: x.nome, sotto: x.desc, stato: x.stato };
+  if (id === "storia") { const p = prossimaTappa(); return Object.assign(base, { stato: p ? `Capitolo ${p.k + 1} di ${STORIA.length} · ${stelleTotali()} ★` : `Completata · ${stelleTotali()} ★`, entra: { testo: p ? (stelleTotali() ? "Continua" : "Inizia") : "Apri la mappa", vista: "storia" } }); }
+  if (id === "arena") { if (Arena.stato()) return null; return Object.assign(base, { entra: { testo: `Entra · ${Arena.INGRESSO} monete`, azione: "arena-conferma" } }); }
+  if (id === "notte") return Object.assign(base, { entra: { testo: `Esci stasera · ${PremiModalita.INGRESSO_NOTTE} monete`, azione: "notte-entra" } });
+  if (id === "scalata") return Object.assign(base, { entra: { testo: `Inizia a salire · ${PremiModalita.INGRESSO_SCALATA} monete`, azione: "scalata-entra" } });
+  if (id === "bossgiorno" && !BossGiorno.sbloccato()) return Object.assign(base, { entra: { testo: "🔒 Si sblocca finendo la storia", no: true } });
+  if (id === "settimana") { const se = SERIE[Settimana.serie()]; Object.assign(base, { colore: se ? se.colore : "" }); }
+  if (id === "amici") return Object.assign(base, { entra: { testo: "Scegli chi sfidare", azione: "vai-amici" } });
+  if (modoDentro[id]) return null;
+  return Object.assign(base, { entra: { testo: "Entra", azione: "modo-dentro" } });
+}
 // la pagina di una modalità: titolo, cosa si fa, e il pannello di sempre (con regole, premi e tasto per giocare)
 function vistaModo(id) {
+  const cop = copertinaPer(id);
+  if (cop) return htmlCopertinaModo(id, cop);
   const serveSquadra = ["computer", "settimana", "boss", "bossgiorno", "vivo"].includes(id);
   const x = tessereGioca().find(t => t.id === id) || { ico: "", nome: "" };
-  const testa = `<div class="modo-testa"><span class="t-ico" aria-hidden="true">${x.ico}</span><div><h2>${esc(x.nome)}</h2>${x.desc ? `<p class="nota">${esc(x.desc)}</p>` : ""}</div></div>`;
+  const testa = `<div class="modo-testa"><span class="t-ico" aria-hidden="true">${x.ico}</span><div><h2>${esc(x.nome)}</h2>${x.desc ? `<p class="nota">${esc(x.desc)}</p>` : ""}</div><button class="cop-regole piatta" data-azione="regole-modo" data-modo="${id}">📘 Come si gioca</button></div>`;
   if (serveSquadra && !squadreProntePer().length) return `<section>${testa}</section>${avvisoSenzaSquadra()}`;
   let corpo = "";
   if (id === "computer") {
@@ -2568,6 +2671,7 @@ function apriProfilo() {
       ${segmento("suoni", "Suoni", [["0", "No"], ["40", "Bassi"], ["80", "Medi"], ["100", "Alti"]], "Bottoni, mosse, colpi e bustine. Vale per questo dispositivo.")}
       <h3>Account</h3>
       <div class="azioni">
+        ${S.admin ? `<button class="btn oro" data-fx="salto" data-azione="vai-admin">⚙ Pannello admin</button>` : ""}
         ${Archivio.proprietario && Archivio.modo === "cloud" ? (S.admin ? `<button class="btn" data-fx="onda" data-azione="esci-admin">Torna al tuo profilo</button>` : `<button class="btn oro" data-fx="coriandoli" data-azione="entra-admin">Passa ad admin</button>`) : ""}
         <button class="btn" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button>
         <button class="btn" data-fx="salto" data-azione="vai-accesso">${Archivio.modo === "cloud" ? "Torna all'accesso" : "Cambia giocatore"}</button>
@@ -4025,6 +4129,8 @@ function esciBattaglia() {
 document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#form-graffiti")) Graffiti.anteprimaAdmin(e.target); });
 document.addEventListener("change", e => {
   if (e.target.dataset && e.target.dataset.confrontoMax !== undefined) { confrontoMax = e.target.checked; if (confrontoUltimo) confrontaCarte(...confrontoUltimo); return; }
+  const ds = e.target.dataset && e.target.dataset.filtraSerie;
+  if (ds && filtri[ds]) { filtri[ds].serie = e.target.value; disegnaQuieto(); return; }
   const d = e.target.dataset && e.target.dataset.filtraRuolo;
   if (!d || !filtri[d]) return;
   filtri[d].ruolo = e.target.value; disegnaQuieto();
@@ -4211,7 +4317,7 @@ document.addEventListener("click", e => {
     case "jolly-apri": Jolly.apri(); break;
     case "adesso-potenzia": filtri.squadra.pot = true; vai("squadra"); break;
     case "adesso-avvento": Avvento.apri(); break;
-    case "vai-admin": vai("admin"); break;
+    case "vai-admin": chiudiModale(); vai("admin"); break;
     case "notte-entra": case "notte-vai": Notte.entra(); break;
     case "notte-conferma": Notte.entra(true); break;
     case "notte-regole": Notte.regole(); break;
@@ -4244,6 +4350,10 @@ document.addEventListener("click", e => {
     case "novita-fine": Novita.fine(); break;
     case "novita-rivedi": chiudiModale(); Novita.rivedi(); break;
     case "come-si-gioca": apriComeSiGioca(); break;
+    case "regole-modo": apriRegoleModo(t.dataset.modo); break;
+    case "modo-dentro": modoDentro[t.dataset.modo] = true; disegna(); scrollTo(0, 0); break;
+    case "arena-conferma": confermaArena(); break;
+    case "arena-entra-ok": chiudiModale(); Arena.entra(); break;
     case "album-confronta": confrontoAlbum = t.dataset.id; chiudiModale(); disegnaQuieto(); break;
     case "album-confronta-annulla": confrontoAlbum = null; disegnaQuieto(); break;
     case "livello-riscuoti": Livello.riscuoti(t); break;
@@ -4297,7 +4407,7 @@ document.addEventListener("click", e => {
     case "ricarica": Archivio.aspettaScritture().catch(() => {}).then(() => location.reload()); break;
     case "controlla-versione": controllaAggiornamento().then(v => mostraAvviso(!v ? "Non riesco a controllare la versione da qui." : v === VERSIONE ? `Hai l'ultima versione (${VERSIONE}).` : "Versione nuova trovata: aggiorno…")); break;
     case "esci-battaglia": esciBattaglia(); break;
-    case "arena-entra": Arena.entra(); break;
+    case "arena-entra": confermaArena(); break;
     case "arena-scelta": Arena.apriScelta(); break;
     case "arena-gioca": Arena.gioca(); break;
     case "arena-riscuoti": Arena.riscuoti(t); break;

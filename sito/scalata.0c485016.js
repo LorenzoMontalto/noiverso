@@ -152,7 +152,7 @@ const Scalata = (typeof document === "undefined") ? null : (() => {
   const cim = c => Object.keys(c).map(id => `<button type="button" class="cimelio-chip" data-cimelio-info="${id}" title="${esc(CIMELI[id].desc)}">${CIMELI[id].ico}${c[id] > 1 ? `<small>×${c[id]}</small>` : ""}</button>`).join("");
   function vista() {
     const s = st();
-    if (!s) return `<section class="modo scalata"><div class="titolo-riga"><h2>🗼 La Scalata</h2></div>${htmlSfida()}</section>`;
+    if (!s) return htmlCopertinaModo("scalata", copertinaPer("scalata"));
     if (s.battaglia && !B) setTimeout(riprendi, 0);
     let corpo = "";
     if (s.fase === "draft") corpo = `<div class="notte-riquadro"><h3>Scelta ${s.scelte.length + 1} di 5: ${esc(RARITA[R.GIRI[s.scelte.length]].nome.toLowerCase())}</h3><p class="nota">Tutte partono dal livello 1 e crescono piano dopo piano.</p>

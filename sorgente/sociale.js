@@ -271,5 +271,5 @@ const Boss = (() => {
       carica(true);
     } catch (e) { mostraAvviso(e.message); carica(true); }
   }
-  return { carica, htmlCompatto, htmlGrande, attacca, prepara, chiudi, htmlFine, riscatta, get stato() { return stato; } };
+  return { carta: cartaBoss, carica, htmlCompatto, htmlGrande, attacca, prepara, chiudi, htmlFine, riscatta, get stato() { return stato; } };
 })();

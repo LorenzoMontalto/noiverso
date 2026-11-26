@@ -1172,7 +1172,12 @@ begin
     -- nov 2026: Lunga Notte e Scalata (classifica tra amici: albe di sempre e piano più alto della settimana)
     'albe', case when coalesce(s->'stats'->>'albe', '') ~ '^[0-9]{1,6}$' then (s->'stats'->>'albe')::int else 0 end,
     'scalataSett', case when coalesce(s->'stats'->'scalataSett'->>'sett', '') ~ '^[0-9]{4}-W[0-9]{2}$' then s->'stats'->'scalataSett'->>'sett' else '' end,
-    'scalataPiano', case when coalesce(s->'stats'->'scalataSett'->>'piano', '') ~ '^[0-9]{1,4}$' then (s->'stats'->'scalataSett'->>'piano')::int else 0 end);
+    'scalataPiano', case when coalesce(s->'stats'->'scalataSett'->>'piano', '') ~ '^[0-9]{1,4}$' then (s->'stats'->'scalataSett'->>'piano')::int else 0 end,
+    -- record nel profilo (anche per gli amici): fermata più lontana della Notte, piano più alto della Scalata, miglior Arena
+    'notteMax', case when coalesce(s->'stats'->>'notteMax', '') ~ '^[0-9]{1,2}$' then least((s->'stats'->>'notteMax')::int, 10) else 0 end,
+    'scalataMax', case when coalesce(s->'stats'->>'scalataMax', '') ~ '^[0-9]{1,4}$' then (s->'stats'->>'scalataMax')::int else 0 end,
+    'arenaMax', case when coalesce(s->'stats'->>'arenaMax', '') ~ '^[0-9]{1,2}$' then least((s->'stats'->>'arenaMax')::int, 7) else 0 end,
+    'arene', case when coalesce(s->'stats'->>'arene', '') ~ '^[0-9]{1,6}$' then (s->'stats'->>'arene')::int else 0 end);
   new.aggiornato := now();
   return new;
 end $$;
@@ -1555,6 +1560,6 @@ grant execute on function public.registra_carte(text[], boolean, text), public.s
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select '1e2a39c44a'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select '1361dd4d16'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE

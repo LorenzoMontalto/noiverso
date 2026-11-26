@@ -286,7 +286,7 @@ const Notte = (typeof document === "undefined") ? null : (() => {
   // ---------- la pagina ----------
   function vista() {
     const s = st();
-    if (!s) return `<section class="modo notte"><div class="titolo-riga"><h2>🌙 La Lunga Notte</h2></div>${htmlSfida()}</section>`;
+    if (!s) return htmlCopertinaModo("notte", copertinaPer("notte"));
     if (s.battaglia && !B) setTimeout(riprendi, 0);
     let corpo = "";
     if (s.fase === "partenza") corpo = `<h3>Con chi esci stasera?</h3><p class="nota">Tutte le carte partono dal livello ${R.LIV0} e restano solo per questa notte.</p>
