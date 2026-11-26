@@ -267,7 +267,7 @@ const Graffiti = (() => {
       <img src="${url(id)}" alt="">
       <div class="graffito-info"><small>Graffito di ${esc(squadraAttiva().nome)}</small><b>${esc(g.nome)} <span class="graffito-liv">Lv ${l}</span></b><span class="nota">${esc(descrivi(id, l))}</span>
         <span class="nota piccola">Si annulla contro «${esc(nomeOpposto(id))}».</span></div>
-      <div class="graffito-azioni"><button class="btn" data-fx="salto" data-azione="graffiti-collezione">Cambia</button><button class="btn piccolo" data-fx="salto" data-azione="vai-negozio">Negozio</button></div>
+      <div class="graffito-azioni"><button class="btn" data-fx="salto" data-azione="graffiti-collezione">Cambia</button><button class="btn piccolo" data-fx="salto" data-azione="vai-negozio" data-scheda="battaglia">Negozio</button></div>
     </div>`;
   }
   function htmlCollezione() {
@@ -279,7 +279,7 @@ const Graffiti = (() => {
             <img src="${url(id)}" alt=""><b>${esc(g.nome)}</b><span class="graffito-liv">Lv ${l}${l < LIV_MAX ? ` · ${c}/${LIV_MAX}` : " · max"}</span>
             <small>${esc(descrivi(id, l))}</small>${usato ? `<span class="graffito-inuso">✓ In questa squadra</span>` : ""}</button>`
           : `<div class="graffito-carta bloccato r-${g.rarita}"><div class="graffito-ombra">?</div><b>???</b><span class="graffito-liv">${RARITA[g.rarita] ? RARITA[g.rarita].nome : g.rarita}</span><small>Ancora da trovare</small></div>`; }).join("")}</div>
-      <div class="azioni centro"><button class="btn" data-scegli-graffito="">Nessun graffito</button><button class="btn oro" data-fx="salto" data-azione="vai-negozio">Compra graffiti</button></div>
+      <div class="azioni centro"><button class="btn" data-scegli-graffito="">Nessun graffito</button><button class="btn oro" data-fx="salto" data-azione="vai-negozio" data-scheda="battaglia">Compra graffiti</button></div>
     </div>`;
   }
   function apriCollezione(i) { perSquadra = i ?? S.attiva; apriModale(htmlCollezione()); }

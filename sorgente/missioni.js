@@ -197,12 +197,11 @@ const Missioni = (() => {
           <ol class="missioni">${M.lista.map((m, i) => htmlRiga(m, i, false)).join("")}</ol>
           <div class="missione-bonus ${M.bonus ? "riscossa" : ""}"><span>Completa tutte e 3: <b>${esc(testoPremio(BONUS))}</b></span>${bonusPronto(M) ? `<button class="btn oro piccolo" data-fx="coriandoli" data-missione="bonus">Riscuoti</button>` : M.bonus ? `<span class="missione-fatta">✓</span>` : ""}</div>
         </div>
-        <div class="missioni-box">
-          <h3>Missioni della settimana</h3>
+        <details class="missioni-box sett" ${M.sett.some(m => m.prog >= m.n && !m.riscossa) ? "open" : ""}>
+          <summary><h3>Missioni della settimana</h3><span class="nota">${M.sett.filter(m => m.prog >= m.n).length} di ${M.sett.length} fatte</span></summary>
           <ol class="missioni">${M.sett.map((m, i) => htmlRiga(m, i, true)).join("")}</ol>
-        </div>
+        </details>
       </div>
-      ${online() ? `<div class="oggi-sociale">${Boss.htmlCompatto()}<div class="amici-invito"><b>Sfida un amico</b><span class="nota">Combatti contro la squadra vera di un amico: se vinci gli rubi un punto in classifica.</span><button class="btn primario" data-fx="spinta" data-azione="vai-amici">Scegli chi sfidare</button></div></div>` : ""}
     </section>`;
   }
 

@@ -382,13 +382,11 @@ function aggiornaTesta() {
   if (pb) { pb.hidden = !S.profilo.nome; pb.innerHTML = `${S.admin ? htmlAvatar(S.profilo.avatar) : Cosmetici.avatar(S.profilo.avatar, Cosmetici.stato().cornice)}${!S.admin && S.lv ? Livello.badge(Livello.info().liv, "testa") : ""}<span>${esc(S.profilo.nome || "")}</span>${S.admin ? `<em>Admin</em>` : ""}`; }
   const na = $('[data-vista="admin"]'); if (na) na.hidden = !S.admin;
   Trofei.controlla();
-  const nst = $('[data-vista="strada"] .badge'); if (nst) { const q = S.admin ? Missioni.pronte() + Livello.daRiscuotere().length : Progressi.totale(); nst.textContent = q; nst.hidden = !q; }
-  const ns = $('[data-vista="storia"] .badge'); if (ns) { const q = scrigniPronti(); ns.textContent = q; ns.hidden = !q; }
-  const nal = $('[data-vista="album"] .badge'); if (nal) { const q = potenziabili() + Trofei.pronti() + Scambi.inArrivo; nal.textContent = q; nal.hidden = !q; }
-  const b = bustineTotali(), r = daRiscuotere();
-  const nb = $('[data-vista="bustine"] .badge'), np = $('[data-vista="pass"] .badge');
-  if (nb) { nb.textContent = b; nb.hidden = !b; }
-  if (np) { np.textContent = r; np.hidden = !r; }
+  const pallino = (g, q) => { const el = $(`.nav [data-vista="${g}"] .badge`); if (el) { el.textContent = q; el.hidden = !q; } };
+  pallino("strada", S.admin ? Missioni.pronte() + Livello.daRiscuotere().length : Progressi.totale());
+  try { pallino("sfida", scrigniPronti() + tessereGioca().filter(t => t.id !== "storia" && t.id !== "boss").reduce((n, t) => n + (t.n || 0), 0) + (Boss.stato && (Boss.stato.da_riscuotere || []).length ? 1 : 0)); } catch (e) { /* prima che il gioco sia pronto */ }
+  pallino("carte", bustineTotali() + potenziabili() + Trofei.pronti() + Scambi.inArrivo);
+  pallino("amici", daRiscuotere());
 }
 
 function bustinaDelGiorno() {
@@ -768,9 +766,29 @@ const Riepilogo = {
 // ============================================================
 //  VISTE
 // ============================================================
-const VISTE = ["strada", "storia", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin", "notte", "scalata"];
-// le modalità a corsa (Lunga Notte, Scalata) stanno dentro "Sfida": nella barra in alto si illumina quella
-const VISTA_NAV = v => ["notte", "scalata"].includes(v) ? "sfida" : v;
+// nov 2026: il menu ha 5 sezioni (Home, Gioca, Carte, Negozio, Amici). Le pagine restano quelle di prima, ma ognuna sta
+// dentro una sezione: «Gioca» è la griglia delle modalità, e ogni modalità ha la sua pagina (modo-…) con «‹ Tutte le modalità».
+const MODI_PAGINA = ["modo-computer", "modo-arena", "modo-settimana", "modo-boss", "modo-bossgiorno", "modo-amici", "modo-vivo"];
+const VISTE = ["strada", "storia", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin", "notte", "scalata", ...MODI_PAGINA];
+const GRUPPI = { strada: ["strada"], sfida: ["sfida", "storia", "notte", "scalata", ...MODI_PAGINA], carte: ["bustine", "album", "squadra"], negozio: ["negozio"], amici: ["classifica", "pass"], admin: ["admin"] };
+const VISTA_NAV = v => Object.keys(GRUPPI).find(g => GRUPPI[g].includes(v)) || v;
+const ultimaDelGruppo = {};
+// toccando «Carte» o «Amici» si torna alla pagina dove eri rimasto (Carte apre le Bustine se ce n'è qualcuna da aprire)
+function primaDelGruppo(g) {
+  if (g === "carte") return bustineTotali() ? "bustine" : ultimaDelGruppo.carte || "album";
+  if (g === "amici") return ultimaDelGruppo.amici || "classifica";
+  return g;
+}
+// sopra le pagine di Carte e Amici: le sotto-schede; sopra le pagine delle modalità: il ritorno alla griglia
+function testaGruppo(v) {
+  const g = VISTA_NAV(v), num = n => n ? `<span class="badge">${n}</span>` : "";
+  const schede = voci => `<div class="sotto-nav" role="tablist">${voci.map(([id, t, n]) => `<button role="tab" data-vista="${id}" data-fx="salto" aria-current="${id === v ? "page" : "false"}">${t}${num(n)}</button>`).join("")}</div>`;
+  if (g === "carte") return schede([["bustine", "Bustine", bustineTotali()], ["album", "Album", potenziabili() + Trofei.pronti() + Scambi.inArrivo], ["squadra", "Squadre", 0]]);
+  if (g === "amici") return schede([["classifica", "Classifica", 0], ["pass", "Pass", daRiscuotere()]]);
+  if (g === "sfida" && v !== "sfida") return `<button class="torna-gioca" data-vista="sfida" data-fx="salto">‹ Tutte le modalità</button>`;
+  return "";
+}
+const htmlVista = v => testaGruppo(v) + FUNZIONI_VISTE()[v]();
 let vista = "strada";
 let filtroAlbum = "tutte", filtroSquadra = "tutte", albumScheda = "carte";
 // Ricerca per tipo, serie e nome (album e squadre)
@@ -810,7 +828,7 @@ function adattaNomi(radice) {
   const els = tutti.filter(el => el.dataset.adattato !== el.textContent);
   if (!els.length) return;
   // prima tutte le letture, poi tutte le scritture (così il browser ricalcola l'impaginazione una volta sola)
-  els.forEach(el => { el.style.fontSize = ""; el.style.whiteSpace = ""; el.style.letterSpacing = ""; });
+  els.forEach(el => { el.style.fontSize = ""; el.style.whiteSpace = ""; el.style.letterSpacing = ""; el.style.overflowWrap = ""; el.style.hyphens = ""; });
   const misure = els.map(el => [el, el.clientWidth, el.scrollWidth]);
   const troppo = [];
   for (const [el, w, sw] of misure) { if (!w) continue; el.dataset.adattato = el.textContent;
@@ -820,7 +838,7 @@ function adattaNomi(radice) {
   // seconda passata per gli arrotondamenti (spaziatura tra le lettere), poi, solo se proprio serve, va a capo
   let ancora = troppo.filter(([el]) => el.scrollWidth > el.clientWidth + 1);
   for (const [el] of ancora) { el.style.letterSpacing = "0"; el.style.fontSize = Math.max(7, parseFloat(el.style.fontSize) * 0.92) + "px"; }
-  for (const [el] of ancora.filter(([el]) => el.scrollWidth > el.clientWidth + 1)) el.style.whiteSpace = "normal";
+  for (const [el] of ancora.filter(([el]) => el.scrollWidth > el.clientWidth + 1)) { el.style.whiteSpace = "normal"; el.style.overflowWrap = "anywhere"; el.style.hyphens = "auto"; }
 }
 (() => {
   let coda = new Set(), atteso = false;
@@ -834,7 +852,9 @@ function adattaNomi(radice) {
 // sezione di prima (prima usciva dal gioco). Con Indietro si ritrova anche il punto della pagina dov'eri.
 const posizioni = {};
 function vai(v, indietro = false) {
+  if (GRUPPI[v] && !VISTE.includes(v)) v = primaDelGruppo(v);
   if (!VISTE.includes(v)) v = "strada";
+  ultimaDelGruppo[VISTA_NAV(v)] = v;
   const cambiata = v !== vista;
   if (cambiata && ultimaVistaDisegnata === vista) posizioni[vista] = scrollY;
   if (cambiata) selSq = null;
@@ -858,7 +878,7 @@ function spostaIndicatore() {
   if (b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
-const FUNZIONI_VISTE = () => ({ strada: vistaStrada, bustine: vistaBustine, negozio: vistaNegozio, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria, notte: () => Notte.html(), scalata: () => Scalata.html() });
+const FUNZIONI_VISTE = () => ({ strada: vistaStrada, bustine: vistaBustine, negozio: vistaNegozio, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria, notte: () => Notte.html(), scalata: () => Scalata.html(), ...Object.fromEntries(MODI_PAGINA.map(v => [v, () => vistaModo(v.slice(5))])) });
 let ultimaVistaDisegnata = "";
 function disegna() {
   aggiornaTesta();
@@ -874,7 +894,7 @@ function disegna() {
       // solo le file che scorrono di lato (controllarle tutte rallentava l'Album: 7.500 elementi a ogni ridisegno)
       lato: $$(SCORREVOLI, main).filter(el => el.scrollLeft > 0).map(el => [el.className, el.scrollLeft]) };
   }
-  main.innerHTML = FUNZIONI_VISTE()[vista]();
+  main.innerHTML = htmlVista(vista);
   ultimaVistaDisegnata = vista;
   if (memo) {
     if (memo.aperti.length) for (const s of $$("details > summary", main)) if (memo.aperti.includes(s.textContent.trim())) s.parentElement.open = true;
@@ -909,38 +929,34 @@ function htmlAdesso() {
     <div class="adesso-lista">${vis.map(x => `<button type="button" class="adesso-voce" data-fx="spinta" data-azione="${x.az}"><span class="adesso-ico">${x.ico}</span><span>${esc(x.t)}</span><span class="adesso-freccia">›</span></button>`).join("")}</div></section>`;
 }
 function vistaStrada() {
-  const tot = CARTE.length, mie = possedute().length;
-  const b = bustineTotali(), r = daRiscuotere();
-  const giocate = S.stats.vittorie + S.stats.sconfitte;
-  const anteprima = ["reina", "gokiele", "zeutiz", "ironlus", "brolymone"].map(id => PER_ID[id]).filter(Boolean);
   return `${htmlAdesso()}
+  ${htmlContinua()}
   ${Avvento.htmlStrada()}
+  ${Missioni.htmlStrada()}
   ${Online.htmlStrada()}
   ${Torneo.htmlStrada()}
   ${Settimana.htmlStrada()}
-  ${Livello.htmlStrada()}
-  <section class="eroe">
-    <div class="eroe-testo">
-      <h1 class="neon">Noiverso</h1>
-      <p>Il gioco di carte del gruppo. Apri bustine, completa l'album, porta in strada la tua squadra di cinque e scala la classifica.</p>
-      <div class="azioni">
-        ${b ? `<button class="btn primario" data-fx="onda" data-azione="vai-bustine">Apri ${b === 1 ? "la tua bustina" : `le tue ${b} bustine`}</button>` : `<button class="btn primario" data-fx="onda" data-azione="vai-bustine">Vai all'edicola</button>`}
-        <button class="btn" data-fx="spinta" data-azione="vai-sfida">Sfida il computer</button>
-        ${r ? `<button class="btn oro" data-fx="coriandoli" data-azione="vai-pass">${r} ${r === 1 ? "premio" : "premi"} del pass</button>` : ""}
-      </div>
-    </div>
-    <div class="ventaglio" aria-hidden="true">${anteprima.map(c => htmlCarta(c, { liv: 0, piccola: true })).join("")}</div>
-  </section>
   ${Progressi.htmlStrada()}
-  ${Missioni.htmlStrada()}
-  ${(() => { const p = prossimaTappa(); const c = p ? STORIA[p.k] : STORIA[STORIA.length - 1];
-    return `<section class="storia-banner" style="--c:${c.colore}">
-      <img src="${imgCarta(p ? c.tappe[p.i].parla : "aresorenzo")}" alt="">
-      <div><p class="serie-nome">Modalità storia · ${stelleTotali()}/${STORIA.length * 18} ★</p>
-        <h2>${p ? `Capitolo ${p.k + 1}: ${esc(c.titolo)}` : "Storia completata!"}</h2>
-        <p class="nota">${p ? `Prossima tappa: ${esc(c.tappe[p.i].titolo)}. Vinci per sbloccare monete, bustine e il resto della storia.` : "Rigioca le tappe per prendere tutte le stelle e aprire gli scrigni."}</p></div>
-      <button class="btn primario" data-fx="onda" data-azione="vai-storia">${p ? "Continua la storia" : "Apri la mappa"}</button>
-    </section>`; })()}
+  <div class="casa-piede">
+    <button class="btn piccolo" data-fx="salto" data-azione="come-si-gioca">📘 Come si gioca</button>
+    <button class="btn piccolo" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button>
+    ${S.admin ? "" : `<button class="btn piccolo" data-azione="novita-rivedi">Le novità</button>`}
+  </div>`;
+}
+// nov 2026: in home una riga sola per riprendere a giocare (la storia, o tutte le modalità)
+function htmlContinua() {
+  const p = prossimaTappa(), c = p ? STORIA[p.k] : STORIA[STORIA.length - 1];
+  return `<section class="continua" style="--c:${c.colore}">
+    <img src="${imgCarta(p ? c.tappe[p.i].parla : "aresorenzo")}" alt="">
+    <div class="ct-testo"><small>Storia · ${p ? `capitolo ${p.k + 1} di ${STORIA.length}` : "completata"} · ${stelleTotali()} ★</small>
+      <b>${p ? esc(c.tappe[p.i].titolo) : "Rigioca le tappe per le stelle che mancano"}</b></div>
+    <div class="ct-tasti"><button class="btn primario" data-fx="onda" data-azione="vai-storia">${p ? "Continua" : "Mappa"}</button>
+      <button class="btn piccolo" data-fx="salto" data-vista="sfida">Altre modalità</button></div>
+  </section>`;
+}
+// il regolamento completo: prima stava in fondo alla home, ora si apre in una finestra
+function apriComeSiGioca() {
+  apriModale(`<div class="come-si-gioca"><span class="codice-tag">Regole</span>
   <section class="regole">
     <div class="titolo-riga"><h2>Come si gioca</h2><div class="azioni"><button class="btn piccolo" data-fx="salto" data-azione="rifai-tutorial">Rifai il tutorial</button>${S.admin ? "" : `<button class="btn piccolo" data-azione="novita-rivedi">Le novità</button>`}</div></div>
     <ol>
@@ -959,7 +975,8 @@ function vistaStrada() {
       <li><b>Maestria e frammenti.</b> Ogni carta ha 5 stelle di maestria da conquistare giocandola. I doppioni delle carte al 30 danno frammenti ◈, con cui crei le carte che ti mancano.</li>
       <li><b>Gradi.</b> I punti dal vivo del mese ti danno un grado, da Bronzo a Leggenda: a fine stagione riscuoti il premio del più alto.</li>
     </ol>
-  </section>`;
+  </section>
+  </div>`);
 }
 
 // ---------- BUSTINE ----------
@@ -973,7 +990,7 @@ function vistaBustine() {
   return `
   <section>
     <div class="titolo-riga"><h2>Le tue bustine</h2><p class="nota">${tot ? `Ne hai ${tot} da aprire. Ogni bustina aperta dà ${XP_BUSTINA} XP al pass.` : "Non hai bustine da aprire."}</p>
-      <button class="btn oro" data-fx="salto" data-azione="vai-negozio">Vai al negozio</button></div>
+      <button class="btn oro" data-fx="salto" data-azione="vai-negozio" data-scheda="bustine">Vai al negozio</button></div>
     ${htmlPieta()}
     ${disponibili.length ? `<div class="scaffale">
       ${disponibili.map(t => `
@@ -986,7 +1003,7 @@ function vistaBustine() {
     </div>` : `<div class="vuoto-bustine">
       ${htmlBustina("normale", true)}
       <p>Ogni giorno ne ricevi una gratis. Le altre le trovi nel negozio, nel pass e negli scrigni della storia.</p>
-      <button class="btn primario" data-fx="onda" data-azione="vai-negozio">Compra bustine</button>
+      <button class="btn primario" data-fx="onda" data-azione="vai-negozio" data-scheda="bustine">Compra bustine</button>
     </div>`}
   </section>`;
 }
@@ -1001,8 +1018,16 @@ function offertaDelGiorno() {
 // nov 2026: il pacco da 5 bustine costa il 15% in meno (arrotondato alle decine), anche sopra lo sconto della serie della settimana
 const SCONTO_PACCO5 = .15;
 const prezzoPacco5 = t => Math.round(Settimana.prezzo(t) * 5 * (1 - SCONTO_PACCO5) / 10) * 10;
-function htmlProdotto(t) {
+function htmlProdotto(t, compatta) {
   const T = TIPI_BUSTINA[t], n = S.inventario[t] || 0, ev = Settimana.inEvidenza(t), prezzo = Settimana.prezzo(t);
+  // riga compatta: bustina piccola, nome, prezzi (la descrizione è nel titolo del gruppo)
+  if (compatta) return `<div class="prodotto riga ${ev ? "in-evidenza" : ""}" style="--c:${T.colore}">
+    ${htmlBustina(t)}
+    <div class="pr-testo"><b>${esc(T.nome.replace(/^Bustina /, ""))}</b>${ev ? `<span class="ev-mini">Serie della settimana −${Math.round(Settimana.SCONTO * 100)}%</span>` : ""}${n ? `<button type="button" class="btn piccolo oro apri-subito" data-fx="spinta" data-apri="${t}">Ne hai ${n}: apri</button>` : ""}</div>
+    <div class="prodotto-prezzi">
+      <button class="btn primario" data-fx="monete" data-compra="${t}:1" ${S.admin || S.monete >= prezzo ? "" : "disabled"}>${ev ? `<s>${T.prezzo}</s> ` : ""}${prezzo} <i class="moneta-ico"></i></button>
+      <button class="btn pacco5" data-fx="monete" data-compra="${t}:5" ${S.admin || S.monete >= prezzoPacco5(t) ? "" : "disabled"} title="5 bustine scontate del ${Math.round(SCONTO_PACCO5 * 100)}%">×5 · ${prezzoPacco5(t)} <em>−${Math.round(SCONTO_PACCO5 * 100)}%</em></button>
+    </div></div>`;
   return `<div class="prodotto ${ev ? "in-evidenza" : ""}" style="--c:${T.colore}">
     ${ev ? `<span class="ev-etichetta">Serie della settimana · −${Math.round(Settimana.SCONTO * 100)}%</span>` : ""}
     ${htmlBustina(t)}
@@ -1015,15 +1040,19 @@ function htmlProdotto(t) {
     </div>
   </div>`;
 }
+// nov 2026: il negozio è diviso in 4 schede, così non si scorrono più 20 schermate
+let negozioScheda = "offerte";
+const SCHEDE_NEGOZIO = [["offerte", "Offerte"], ["bustine", "Bustine"], ["battaglia", "Battaglia"], ["stile", "Stile"]];
 function vistaNegozio() {
   const off = offertaDelGiorno(), TO = TIPI_BUSTINA[off.t];
   const peso = ORDINE_RARITA.reduce((a, r) => a + RARITA[r].peso, 0);
-  const gruppo = (g, titolo, nota) => `<div class="titolo-riga piccola"><h3>${titolo}</h3><p class="nota">${nota}</p></div>
-    <div class="vetrina">${ORDINE_BUSTINE.filter(t => TIPI_BUSTINA[t].gruppo === g).map(htmlProdotto).join("")}</div>`;
+  // classiche: schede grandi; per serie e per stile: righe compatte (la descrizione è la stessa per tutte, la dico una volta)
+  const gruppo = (g, titolo, nota, compatta) => `<div class="titolo-riga piccola"><h3>${titolo}</h3><p class="nota">${nota}</p></div>
+    <div class="vetrina${compatta ? " compatta" : ""}">${ORDINE_BUSTINE.filter(t => TIPI_BUSTINA[t].gruppo === g).map(t => htmlProdotto(t, compatta)).join("")}</div>`;
   const segreti = (S.codici || []).filter(x => x.titolo);
-  return `
-  <section class="negozio">
-    <div class="titolo-riga"><h2>Negozio</h2><p class="nota">Hai <b>${S.admin ? "∞" : S.monete}</b> monete. Le bustine che compri finiscono in <b>Bustine</b>, pronte da aprire.</p></div>
+  const sch = SCHEDE_NEGOZIO.some(([k]) => k === negozioScheda) ? negozioScheda : "offerte";
+  let corpo = "";
+  if (sch === "offerte") corpo = `
     <div class="offerta" style="--c:${TO.colore}">
       <div class="offerta-etichetta">Offerta del giorno · −${Math.round(SCONTO_OFFERTA * 100)}%</div>
       ${htmlBustina(off.t, off.presa)}
@@ -1034,12 +1063,6 @@ function vistaNegozio() {
       </div>
     </div>
     ${Offerte.html()}
-    ${gruppo("classiche", "Classiche", "Da tutte le serie.")}
-    ${gruppo("serie", "Per serie", "Solo carte di una serie: per completare l'album.")}
-    ${gruppo("stile", "Per stile", "Solo carte di uno stile: per costruire la squadra.")}
-    ${Graffiti.htmlNegozio()}
-    ${Zaino.htmlNegozio()}
-    ${Cosmetici.htmlNegozio()}
     <div class="codice-box">
       <h3>Codice promozionale</h3>
       <p class="nota">Hai un codice? Scrivilo qui. Alcuni nascondono delle sorprese…</p>
@@ -1048,14 +1071,25 @@ function vistaNegozio() {
         <button class="btn primario" data-fx="onda" type="submit">Usa</button>
       </form>
       <p id="codice-esito" class="nota" aria-live="polite"></p>
-      ${segreti.length ? `<div class="segreti"><span class="nota">Sorprese trovate:</span> ${segreti.map(x => `<button class="chip" data-fx="gelatina" data-riapri-codice="${esc(x.codice)}">${esc(x.titolo)}</button>`).join("")}</div>` : ""}
-    </div>
+      ${segreti.length ? `<div class="segreti"><span class="nota">Sorprese trovate:</span> ${segreti.map(x => `<button class="chip" data-fx="gelatina" data-riapri-codice="${esc(x.codice)}">${esc(x.titolo)}</button>`).join(" ")}</div>` : ""}
+    </div>`;
+  else if (sch === "bustine") corpo = `
+    ${gruppo("classiche", "Classiche", "Da tutte le serie.")}
+    ${gruppo("serie", "Per serie", `4 carte solo di quella serie, l'ultima almeno Rara: per completare l'album. Il pacco da 5 costa il ${Math.round(SCONTO_PACCO5 * 100)}% in meno.`, true)}
+    ${gruppo("stile", "Per stile", "4 carte solo di quello stile, l'ultima almeno Rara: per costruire la squadra.", true)}
     ${htmlPieta()}
     <table class="probabilita">
       <caption>Probabilità per carta nella bustina classica</caption>
       <thead><tr><th>Rarità</th><th>Prime carte</th><th>Ultima carta</th></tr></thead>
       <tbody>${ORDINE_RARITA.map(r => `<tr><td><span class="pallino r-${r}"></span>${RARITA[r].nome}</td><td>${(RARITA[r].peso / peso * 100).toFixed(1)}%</td><td>${RARITA[r].peso4}%</td></tr>`).join("")}</tbody>
-    </table>
+    </table>`;
+  else if (sch === "battaglia") corpo = `${Graffiti.htmlNegozio()}${Zaino.htmlNegozio()}`;
+  else corpo = Cosmetici.htmlNegozio();
+  return `
+  <section class="negozio">
+    <div class="titolo-riga"><h2>Negozio</h2><p class="nota">Hai <b>${S.admin ? "∞" : S.monete}</b> monete. Le bustine che compri finiscono in <b>Carte › Bustine</b>, pronte da aprire.</p></div>
+    <div class="sotto-nav negozio-schede" role="tablist">${SCHEDE_NEGOZIO.map(([k, t]) => `<button role="tab" data-negozio-scheda="${k}" data-fx="salto" aria-current="${k === sch ? "page" : "false"}">${t}</button>`).join("")}</div>
+    ${corpo}
   </section>`;
 }
 function compraBustina(arg, el) {
@@ -1069,7 +1103,7 @@ function compraBustina(arg, el) {
   if (!S.admin) S.monete -= costo;
   S.inventario[t] = (S.inventario[t] || 0) + n;
   salva(); aggiornaTesta();
-  FX.volaIcona(el, $('[data-vista="bustine"]'), "b-normale");
+  FX.volaIcona(el, $('.nav [data-vista="carte"]'), "b-normale");
   mostraAvviso(`${n > 1 ? n + " × " : ""}${T.nome} ${n > 1 ? "aggiunte: aprile" : "aggiunta: aprila"} subito qui o nella pagina Bustine.`);
   disegna();
 }
@@ -1789,7 +1823,7 @@ function disegnaQuieto() {
   aggiornaTesta();
   if (B && $("#azioni")) return;
   const t = document.createElement("div");
-  t.innerHTML = FUNZIONI_VISTE()[vista]();
+  t.innerHTML = htmlVista(vista);
   main.classList.add("quieta");
   morfaFigli(main, t);
   if (vista === "squadra") avviaAltreCarte();
@@ -1922,30 +1956,80 @@ function vuoto(testo, bottone, azione) {
 }
 
 // ---------- SFIDA ----------
-function vistaSfida() {
-  const pronte = S.squadre.map((s, i) => ({ s, i })).filter(x => x.s.carte.length === CARTE_SQUADRA);
-  if (!pronte.length) {
-    return possedute().length >= CARTE_SQUADRA
-      ? vuoto(`Per sfidare il computer serve una squadra da ${CARTE_SQUADRA}.`, "Prepara la squadra", "vai-squadra")
-      : vuoto(`Per sfidare il computer servono ${CARTE_SQUADRA} carte diverse. Ne hai ${possedute().length}.`, "Apri una bustina", "vai-bustine");
-  }
+// nov 2026: «Gioca» è una griglia di tessere, una per modalità (icona, nome, una riga, a che punto sei). Toccandola si apre
+// la pagina della modalità, con regole, premi e il tasto per giocare. Così chi gioca poco vede subito cosa c'è da fare.
+function squadreProntePer() { return S.squadre.map((s, i) => ({ s, i })).filter(x => x.s.carte.length === CARTE_SQUADRA); }
+function avvisoSenzaSquadra() {
+  return possedute().length >= CARTE_SQUADRA
+    ? vuoto(`Per questa modalità serve una squadra da ${CARTE_SQUADRA}.`, "Prepara la squadra", "vai-squadra")
+    : vuoto(`Per questa modalità servono ${CARTE_SQUADRA} carte diverse. Ne hai ${possedute().length}.`, "Apri una bustina", "vai-bustine");
+}
+// la squadra che userai, con graffito e zaino: chiusa è una riga sola, aperta mostra tutto
+function htmlPrimaPartita() {
+  const pronte = squadreProntePer();
+  if (!pronte.length) return `<div class="prima-partita vuota"><span>🃏 Ti serve una squadra da ${CARTE_SQUADRA} carte per sfidare il computer, i boss e gli amici.</span><button class="btn piccolo primario" data-azione="${possedute().length >= CARTE_SQUADRA ? "vai-squadra" : "vai-bustine"}">${possedute().length >= CARTE_SQUADRA ? "Prepara la squadra" : "Apri una bustina"}</button></div>`;
   if (squadraAttiva().carte.length !== CARTE_SQUADRA) S.attiva = pronte[0].i;
-  const sq = squadraAttiva();
-  return `
-  <section>
-    <div class="titolo-riga"><h2>Scegli l'avversario</h2>
-      <div class="filtri">${pronte.map(x => `<button class="chip" data-fx="gelatina" data-squadra-sfida="${x.i}" aria-pressed="${x.i === S.attiva}">${esc(x.s.nome)}</button>`).join("")}</div>
-    </div>
-    ${Online.htmlAmici()}
-    <div class="prima-partita">${Graffiti.htmlPannello()}${Zaino.htmlPannello()}</div>
-    ${BossGiorno.htmlSfida()}
-    ${Settimana.htmlSfida()}
-    ${Arena.htmlSfida()}
-    <div class="modi-corsa">${Notte.htmlSfida()}${Scalata.htmlSfida()}</div>
-    ${socialeAttivo() ? `<div class="sfida-sociale">${Boss.htmlGrande()}<div class="amici-invito"><b>Sfida un amico</b><span class="nota">Combatti contro la squadra vera di un amico, guidata dal computer. Se vinci gli rubi un punto in classifica.</span><button class="btn primario" data-fx="spinta" data-azione="vai-amici">Scegli chi sfidare</button></div></div>
-    <div class="titolo-riga piccola"><h3>Contro il computer</h3></div>` : ""}
+  const sq = squadraAttiva(), z = (S.zaino && S.zaino.porta || []).filter(Boolean).length;
+  let gr = ""; try { const g = Graffiti.scelto(); if (g) gr = ` · graffito ${esc(Graffiti.info(g).nome)}`; } catch (e) {}
+  return `<details class="prima-partita">
+    <summary><span class="pp-volti">${sq.carte.slice(0, 5).map(id => `<img src="${imgCarta(id)}" alt="">`).join("")}</span>
+      <span class="pp-testo"><b>${esc(sq.nome)}</b><small>${z ? `Zaino: ${z} ${z === 1 ? "oggetto" : "oggetti"}` : "Zaino vuoto"}${gr}</small></span><span class="pp-apri">Cambia</span></summary>
+    ${pronte.length > 1 ? `<div class="filtri pp-squadre"><span class="filtri-etichetta">Gioca con</span>${pronte.map(x => `<button class="chip" data-fx="gelatina" data-squadra-sfida="${x.i}" aria-pressed="${x.i === S.attiva}">${esc(x.s.nome)}</button>`).join("")}</div>` : ""}
+    <div class="pp-pannelli">${Graffiti.htmlPannello()}${Zaino.htmlPannello()}</div>
+  </details>`;
+}
+function tessereGioca() {
+  const t = [], soc = socialeAttivo(), ingr = n => `Ingresso ${n} monete`;
+  // per iniziare
+  const p = prossimaTappa(), sc = scrigniPronti();
+  t.push({ g: "inizia", id: "storia", ico: "📖", nome: "Storia", desc: "Il racconto a capitoli: batti i nemici tappa dopo tappa", stato: p ? `Capitolo ${p.k + 1} di ${STORIA.length}` : "Completata!", n: sc, vista: "storia" });
+  t.push({ g: "inizia", id: "computer", ico: "🤖", nome: "Contro il computer", desc: "Allenati con la tua squadra: 4 livelli di difficoltà", stato: "Gratis", vista: "modo-computer" });
+  // avventure a pagamento: la tua collezione non conta, conta come giochi
+  if (attivoExtra()) { const a = Arena.stato();
+    t.push({ g: "corse", id: "arena", ico: "⚔️", nome: "Arena", desc: "Scegli 5 carte forti e vinci più partite che puoi", stato: !a ? ingr(Arena.INGRESSO) : a.finita ? "Premio da riscuotere" : a.scelte.length < 5 ? "Scelta delle carte in corso" : `In corso · ${a.vinte} vittorie`, n: a && a.finita ? 1 : 0, vista: "modo-arena" }); }
+  const sn = Notte.stato();
+  t.push({ g: "corse", id: "notte", ico: "🌙", nome: "La Lunga Notte", desc: "Dieci fermate fino all'alba con carte trovate per strada", stato: !sn ? ingr(PremiModalita.INGRESSO_NOTTE) : sn.fase === "fine" ? "Premio da riscuotere" : `In corso · fermata ${sn.fermata} di 10`, n: sn && sn.fase === "fine" ? 1 : 0, vista: "notte" });
+  const ss = Scalata.stato();
+  t.push({ g: "corse", id: "scalata", ico: "🗼", nome: "La Scalata", desc: "Sali piano dopo piano: hai 3 vite", stato: !ss ? ingr(PremiModalita.INGRESSO_SCALATA) : ss.fase === "fine" ? "Premio da riscuotere" : ss.fase === "draft" ? "Scelta delle carte in corso" : `In corso · piano ${ss.piano} · ${"❤️".repeat(ss.vite)}`, n: ss && ss.fase === "fine" ? 1 : 0, vista: "scalata" });
+  // eventi che cambiano ogni giorno o settimana
+  const se = SERIE[Settimana.serie()];
+  t.push({ g: "eventi", id: "settimana", ico: se ? se.simbolo : "📅", nome: "Sfide della settimana", desc: "3 sfide speciali sulla serie della settimana", stato: se ? `Serie: ${se.nome}` : "", vista: "modo-settimana" });
+  if (soc) { const b = Boss.stato, colpi = b ? b.colpi_oggi || 0 : 0, pr = b && (b.da_riscuotere || []).length;
+    t.push({ g: "eventi", id: "boss", ico: "👹", nome: "Boss della settimana", desc: "Un boss gigante che tutto il gruppo colpisce insieme", stato: !b ? "…" : pr ? "Premio da riscuotere" : `Attacchi oggi ${colpi} di 3`, n: b && !S.admin && (pr || colpi < 3) ? (pr ? 1 : 3 - colpi) : 0, vista: "modo-boss" }); }
+  const bg = BossGiorno.sbloccato();
+  t.push({ g: "eventi", id: "bossgiorno", ico: "☠️", nome: "Boss del giorno", desc: "Un boss diverso ogni giorno, molto forte", stato: !bg ? "🔒 Si sblocca finendo la storia" : BossGiorno.battutoOggi() ? "Battuto oggi ✓" : "Nuovo oggi", chiusa: !bg, vista: "modo-bossgiorno" });
+  // con gli amici
+  if (soc) {
+    const on = Online.quantiOnline();
+    t.push({ g: "amici", id: "vivo", ico: "🟢", nome: "Dal vivo", desc: "Sfida un amico connesso adesso: si gioca a turni insieme. Dà punti in classifica", stato: on ? `${on} ${on === 1 ? "amico online" : "amici online"}` : "Nessuno online adesso", vista: "modo-vivo" });
+    t.push({ g: "amici", id: "amici", ico: "👥", nome: "Sfida un amico", desc: "Combatti contro la squadra di un amico, guidata dal computer", stato: "Anche se non è online", azione: "vai-amici" });
+  }
+  return t;
+}
+function vistaSfida() {
+  const t = tessereGioca();
+  const GR = [["inizia", "Per iniziare"], ["corse", "Avventure", "Si paga l'ingresso e il premio dipende da quanto vai avanti. Le tue carte qui non contano."], ["eventi", "Eventi"], ["amici", "Con gli amici"]];
+  const tessera = x => `<button class="tessera${x.chiusa ? " chiusa" : ""}" data-fx="spinta" ${x.azione ? `data-azione="${x.azione}"` : `data-vista="${x.vista}"`} data-tessera="${x.id}">
+      <span class="t-ico" aria-hidden="true">${x.ico}</span><span class="t-testo"><b>${esc(x.nome)}</b><small>${esc(x.desc)}</small>${x.stato ? `<em>${esc(x.stato)}</em>` : ""}</span>${x.n ? `<span class="badge">${x.n}</span>` : ""}</button>`;
+  return `<section class="gioca">
+    <div class="titolo-riga"><h2>Gioca</h2></div>
+    ${htmlPrimaPartita()}
+    ${GR.map(([g, tit, nota]) => { const l = t.filter(x => x.g === g); return l.length ? `<h3 class="gioca-gruppo">${tit}</h3>${nota ? `<p class="nota gioca-nota">${nota}</p>` : ""}<div class="tessere">${l.map(tessera).join("")}</div>` : ""; }).join("")}
+  </section>`;
+}
+// la pagina di una modalità: titolo, cosa si fa, e il pannello di sempre (con regole, premi e tasto per giocare)
+function vistaModo(id) {
+  const serveSquadra = ["computer", "settimana", "boss", "bossgiorno", "vivo"].includes(id);
+  const x = tessereGioca().find(t => t.id === id) || { ico: "", nome: "" };
+  const testa = `<div class="modo-testa"><span class="t-ico" aria-hidden="true">${x.ico}</span><div><h2>${esc(x.nome)}</h2>${x.desc ? `<p class="nota">${esc(x.desc)}</p>` : ""}</div></div>`;
+  if (serveSquadra && !squadreProntePer().length) return `<section>${testa}</section>${avvisoSenzaSquadra()}`;
+  let corpo = "";
+  if (id === "computer") {
+    const sq = squadraAttiva();
+    corpo = `${htmlPrimaPartita()}
     <div class="modo-riga">${segmento("modalita", "Modalità", [["classica", "Classica 5 contro 5"], ["rapida", "Rapida 3 contro 3"]])}</div>
-    <div class="slot5 piccola">${sq.carte.map((id, i) => `<div class="${i >= carteBattaglia() ? "fuori-gioco" : ""}">${htmlCarta(PER_ID[id], { piccola: true })}</div>`).join("")}</div>
+    <div class="slot5 piccola">${sq.carte.map((cid, i) => `<div class="${i >= carteBattaglia() ? "fuori-gioco" : ""}">${htmlCarta(PER_ID[cid], { piccola: true })}</div>`).join("")}</div>
+    <h3 class="gioca-gruppo">Scegli l'avversario</h3>
     <div class="livelli">
       ${LIVELLI_SFIDA.map((L, i) => `
         <button class="livello l-${L.id}" data-inclina data-fx="spinta" data-sfida="${L.id}" style="--i:${i}">
@@ -1954,8 +2038,14 @@ function vistaSfida() {
           <span>${L.desc}</span>
           <small>${(() => { const pr = premiSfida(L); return `Vittoria: +${pr.monete} monete · +${pr.xp} XP`; })()}</small>
         </button>`).join("")}
-    </div>
-  </section>`;
+    </div>`;
+  }
+  else if (id === "arena") corpo = Arena.htmlSfida();
+  else if (id === "settimana") corpo = htmlPrimaPartita() + Settimana.htmlSfida();
+  else if (id === "boss") corpo = htmlPrimaPartita() + Boss.htmlGrande();
+  else if (id === "bossgiorno") corpo = (BossGiorno.sbloccato() ? htmlPrimaPartita() : "") + BossGiorno.htmlSfida();
+  else if (id === "vivo") corpo = htmlPrimaPartita() + Online.htmlAmici() + `<p class="nota">Le sfide dal vivo sono le uniche che danno punti in classifica: +3 per ogni vittoria.</p>`;
+  return `<section class="modo-pagina modo-${id}">${testa}${corpo}</section>`;
 }
 
 // ---------- PASS BATTAGLIA ----------
@@ -2075,7 +2165,7 @@ function daiPremio(p) {
 async function animaPremio(r, origine) {
   const anim = [];
   if (r.monete) anim.push(FX.volaMonete(origine, $(".monete"), Math.min(14, 4 + Math.round(r.monete / 150))));
-  if (r.bustine) anim.push(FX.volaIcona(origine, $('[data-vista="bustine"]'), "b-normale"));
+  if (r.bustine) anim.push(FX.volaIcona(origine, $('.nav [data-vista="carte"]'), "b-normale"));
   aggiornaTesta();
   await Promise.all(anim.concat(attesa(650)));
 }
@@ -2969,7 +3059,7 @@ async function azioneAdmin(cosa, el) {
   if (cosa === "tutte-speciali") { CARTE.forEach(c => { if (!S.carte[c.id]) { S.carte[c.id] = 1; S.liv[c.id] = S.liv[c.id] || 1; } }); S.olo = Object.fromEntries(CARTE.map(c => [c.id, true])); S.ultra = Object.fromEntries(CARTE.filter(c => c.ultra).map(c => [c.id, true])); }
   if (cosa === "togli-speciali") { S.olo = {}; S.ultra = {}; }
   if (cosa === "carte-zero") { S.carte = {}; S.liv = {}; S.pot = {}; S.lodeXp = {}; S.squadre.forEach(s => { s.carte = []; }); }
-  if (cosa === "bustine") { for (const t of ["normale", "epica", "leggendaria", "ultra"]) S.inventario[t] = (S.inventario[t] || 0) + 10; FX.volaIcona(el, $('[data-vista="bustine"]'), "b-normale"); }
+  if (cosa === "bustine") { for (const t of ["normale", "epica", "leggendaria", "ultra"]) S.inventario[t] = (S.inventario[t] || 0) + 10; FX.volaIcona(el, $('.nav [data-vista="carte"]'), "b-normale"); }
   if (cosa === "pass") { S.pass.xp = +$("#admin-pass").value * PASS.xpLivello; }
   if (cosa === "pass-reset") { S.pass.riscossi = []; S.pass.scelte = {}; S.pass.bonus = 0; S.pass.potInSospeso = 0; }
   if (cosa === "pass-bonus") S.pass.xp = Math.max(S.pass.xp, PASS.livelli * PASS.xpLivello) + PASS.xpBonus * 3;
@@ -3219,7 +3309,7 @@ async function riscuotiScrigno(k, id, el) {
   if (!sc || S.storia.scrigni.includes(id) || stelleCapitolo(k) < sc.stelle) return;
   S.storia.scrigni.push(id);
   if (sc.monete) { S.monete += sc.monete; FX.volaMonete(el, $(".monete"), 10); }
-  if (sc.bustina) { S.inventario[sc.bustina]++; FX.volaIcona(el, $('[data-vista="bustine"]'), "b-normale"); }
+  if (sc.bustina) { S.inventario[sc.bustina]++; FX.volaIcona(el, $('.nav [data-vista="carte"]'), "b-normale"); }
   salva(); aggiornaTesta();
   el.classList.add("si-apre");
   await attesa(700);
@@ -3929,7 +4019,7 @@ document.addEventListener("click", e => {
   if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
   if (e.target.id === "avviso") { if (mostraAvviso._salta) { mostraAvviso._salta = false; return; } mostraAvviso.prossimo(); return; }
-  const t = e.target.closest("[data-notte-partenza],[data-notte-bivio],[data-notte-premio],[data-notte-lascia],[data-notte-compra-carta],[data-notte-compra-cim],[data-notte-imp],[data-notte-carta],[data-cimelio-info],[data-scalata-scegli],[data-scalata-pot],[data-scalata-carta],[data-scalata-nuova],[data-scalata-info],[data-titolo-profilo],[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-negozio-scheda],[data-notte-partenza],[data-notte-bivio],[data-notte-premio],[data-notte-lascia],[data-notte-compra-carta],[data-notte-compra-cim],[data-notte-imp],[data-notte-carta],[data-cimelio-info],[data-scalata-scegli],[data-scalata-pot],[data-scalata-carta],[data-scalata-nuova],[data-scalata-info],[data-titolo-profilo],[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -3977,6 +4067,7 @@ document.addEventListener("click", e => {
   if (t.dataset.tappaVia) { const [k, i] = t.dataset.tappaVia.split(":").map(Number); schermoIntero(true); Ordine.apri(() => setTimeout(() => avviaStoria(k, i), ridotto ? 0 : 200), "", () => { schermoIntero(false); apriTappa(k, i); }); return; }
   if (t.dataset.scrigno) { const [k, id] = t.dataset.scrigno.split(":"); riscuotiScrigno(+k, id, t); return; }
   if (t.dataset.edFiltro) { edFiltro = t.dataset.edFiltro; aggiornaEditor(true); return; }
+  if (t.dataset.negozioScheda) { negozioScheda = t.dataset.negozioScheda; disegna(); return; }
   if (t.dataset.vista) { if (B) return; vai(t.dataset.vista); return; }
   if (t.dataset.filtro) { filtroAlbum = t.dataset.filtro; limSerieAlb = PASSO_ALB; disegnaQuieto(); scorriAlleCarteAlbum(); return; }
   if (t.dataset.filtroSq) { filtroSquadra = t.dataset.filtroSq; disegna(); return; }
@@ -4122,11 +4213,12 @@ document.addEventListener("click", e => {
     case "novita-avanti": Novita.avanti(); break;
     case "novita-indietro": Novita.indietro(); break;
     case "novita-fine": Novita.fine(); break;
-    case "novita-rivedi": Novita.rivedi(); break;
+    case "novita-rivedi": chiudiModale(); Novita.rivedi(); break;
+    case "come-si-gioca": apriComeSiGioca(); break;
     case "livello-riscuoti": Livello.riscuoti(t); break;
     case "livello-info": Livello.apriInfo(); break;
     case "livello-pagina": Livello.apriLivelli(); break;
-    case "vai-negozio": vai("negozio"); break;
+    case "vai-negozio": chiudiModale(); if (t.dataset.scheda) negozioScheda = t.dataset.scheda; vai("negozio"); break;
     case "vai-amici": Amici.apriElenco(); break;
     case "graffiti-collezione": Graffiti.apriCollezione(); break;
     case "nuovo-scambio": Scambi.apriNuovo(); break;

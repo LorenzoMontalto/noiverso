@@ -145,7 +145,7 @@ const Zaino = (() => {
     const tot = ORDINE.reduce((n, id) => n + quanti(id), 0), vuoti = p.filter((id, i) => !id || !pronti[i]).length;
     return `<div class="zaino-pannello ${conNegozio ? "in-squadra" : ""}">
       <div class="zaino-testa"><b>🎒 Zaino</b><span class="nota">${conNegozio ? `Quello che porti nella prossima partita${tot ? ` · ne hai ${tot} in tutto` : ""}. Tocca un posto per cambiarlo.` : "Quello che porti nella prossima partita. Tocca un posto per cambiarlo."}</span>
-        ${conNegozio ? `<button type="button" class="btn piccolo oro" data-azione="vai-negozio">🛒 ${vuoti ? "Compra oggetti" : "Negozio"}</button>` : ""}</div>
+        ${conNegozio ? `<button type="button" class="btn piccolo oro" data-azione="vai-negozio" data-scheda="battaglia">🛒 ${vuoti ? "Compra oggetti" : "Negozio"}</button>` : ""}</div>
       <div class="zaino-posti">${p.map((id, i) => {
         if (!id) return `<button type="button" class="zaino-posto vuoto" data-zaino-posto="${i}"><span class="oggetto-ico vuoto"><i>+</i></span><small>Vuoto</small></button>`;
         const o = info(id), ok = !!pronti[i];
@@ -162,7 +162,7 @@ const Zaino = (() => {
       ${posseduti.length ? `<div class="zaino-scelta">${posseduti.map(id => { const o = info(id), sel = porta()[i] === id;
         return `<button type="button" class="zaino-opzione ${sel ? "sel" : ""}" data-zaino-metti="${id}" style="--c:${o.colore}">${htmlIcona(id)}<span><b>${esc(o.nome)}</b> <small class="ne-hai-2">× ${quanti(id)}</small><br><small>${esc(o.desc)}</small></span></button>`; }).join("")}</div>`
         : `<p class="nota">Lo zaino è vuoto: gli oggetti si comprano nel negozio.</p>`}
-      <div class="azioni centro">${porta()[i] ? `<button class="btn" data-zaino-metti="">Lascia vuoto</button>` : ""}<button class="btn oro" data-azione="vai-negozio">Compra oggetti</button></div>
+      <div class="azioni centro">${porta()[i] ? `<button class="btn" data-zaino-metti="">Lascia vuoto</button>` : ""}<button class="btn oro" data-azione="vai-negozio" data-scheda="battaglia">Compra oggetti</button></div>
     </div>`);
   }
   function metti(id) {

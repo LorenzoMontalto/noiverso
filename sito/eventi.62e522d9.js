@@ -135,7 +135,7 @@ const Settimana = (() => {
     const se = SERIE[serie()];
     return `<div class="evidenza-strada" style="--c:${se.colore}"><span class="ev-stemma">${se.simbolo}</span>
       <div><small>Serie della settimana · ${testoFine()}</small><b>${esc(se.nome)}</b><span class="nota">Bustina ${esc(se.nome)} −${Math.round(SCONTO * 100)}%, sfide e missioni speciali.</span></div>
-      <button class="btn piccolo" data-azione="vai-sfida">Vai alle sfide</button></div>`;
+      <button class="btn piccolo" data-vista="modo-settimana">Vai alle sfide</button></div>`;
   }
   function htmlSfida() {
     const s = serie(), se = SERIE[s], st = stato(), c = CAMPI[campo()];

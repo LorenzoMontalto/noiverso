@@ -35,7 +35,7 @@ async def giro(b, nome, w, h, mobile):
     await pg.click("#form-profilo button[type=submit]"); await pg.wait_for_timeout(2500)
     if await J("!!document.querySelector('[data-tut=\"esci\"]')"): await pg.click('[data-tut="esci"]'); await pg.wait_for_timeout(1000)
     await J("chiudiModale()")
-    controlla(f"[{nome}] il gioco parte e mostra la home", await J("vista === 'strada' && !!document.querySelector('#vista .eroe')"))
+    controlla(f"[{nome}] il gioco parte e mostra la home", await J("vista === 'strada' && !!document.querySelector('#vista .continua')"))
     # bustina: apertura, Skippa, riepilogo
     await J("S.inventario.normale = (S.inventario.normale || 0) + 2; salva(); vai('bustine')"); await pg.wait_for_timeout(800)
     await pg.click('[data-apri="normale"]'); await pg.wait_for_timeout(3500)
@@ -48,9 +48,20 @@ async def giro(b, nome, w, h, mobile):
     controlla(f"[{nome}] bustina aperta con riepilogo delle carte", await J("document.querySelectorAll('.riepilogo-bustina .rb-carta').length >= 4"))
     await J("document.querySelector('[data-azione=\"chiudi-riepilogo\"]')?.click()"); await pg.wait_for_timeout(600)
     # le pagine principali
-    for v in ["squadra", "album", "negozio", "sfida", "notte", "scalata", "pass", "storia", "classifica", "strada"]:
+    for v in ["squadra", "album", "negozio", "sfida", "notte", "scalata", "pass", "storia", "classifica", "strada",
+              "modo-computer", "modo-arena", "modo-settimana", "modo-boss", "modo-bossgiorno", "modo-vivo"]:
         await J(f"chiudiModale(); vai('{v}')"); await pg.wait_for_timeout(700)
         controlla(f"[{nome}] pagina {v}", await J(f"vista === '{v}' && document.querySelector('#vista').innerText.length > 40"))
+        controlla(f"[{nome}] pagina {v}: niente esce di lato", await J("document.documentElement.scrollWidth <= innerWidth + 1"))
+    # nov 2026: il menu a 5 sezioni e le schede del negozio
+    for g, attesa in [("sfida", "sfida"), ("carte", "bustine|album|squadra"), ("negozio", "negozio"), ("amici", "classifica|pass"), ("strada", "strada")]:
+        await J(f"chiudiModale(); document.querySelector('.nav [data-vista=\"{g}\"]').click()"); await pg.wait_for_timeout(700)
+        controlla(f"[{nome}] menu: {g}", await J(f"/^({attesa})$/.test(vista)"))
+    await J("vai('negozio')"); await pg.wait_for_timeout(500)
+    for sch in ["offerte", "bustine", "battaglia", "stile"]:
+        await J(f"document.querySelector('[data-negozio-scheda=\"{sch}\"]').click()"); await pg.wait_for_timeout(500)
+        controlla(f"[{nome}] negozio, scheda {sch}", await J(f"negozioScheda === '{sch}' && document.querySelector('#vista').innerText.length > 80"))
+    await J("negozioScheda = 'offerte'")
     # una battaglia vera contro il computer: si gioca finché finisce (o per un massimo di mosse)
     await J("chiudiModale(); Scena3D.imposta({ velocita: 3 }); avviaSfida('recluta', null, null, true)"); await pg.wait_for_timeout(5000)
     controlla(f"[{nome}] la battaglia parte", await J("!!B && !!document.querySelector('#azioni')"))

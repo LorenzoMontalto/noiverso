@@ -525,20 +525,21 @@ const Progressi = (() => {
     return [
       { ico: "⬆", nome: "Livello giocatore", valore: `Lv ${lv.liv}`, barra: lv.max ? 100 : Math.round(lv.dentro / lv.serve * 100), sotto: lv.max ? "Massimo!" : `${lv.dentro}/${lv.serve} punti`, pronti: Livello.daRiscuotere().length, azione: "livello-pagina" },
       { ico: "🎟", nome: "Pass", valore: `Lv ${livelloPass()}`, barra: (S.pass.xp % PASS.xpLivello) / PASS.xpLivello * 100, sotto: passR ? `${passR} premi da prendere` : "Sfide del pass per salire", pronti: passR, azione: "vai-pass" },
-      { ico: "🎯", nome: "Sfide del pass", valore: `${sfideFatte}/${sfideTot}`, barra: sfideTot ? sfideFatte / sfideTot * 100 : 0, sotto: "Oggi e questa settimana", pronti: 0, azione: "vai-pass" },
-      { ico: "📋", nome: "Missioni di oggi", valore: Missioni.pronte() ? `${Missioni.pronte()} ${Missioni.pronte() === 1 ? "pronta" : "pronte"}` : "In corso", sotto: "Le trovi qui sotto", pronti: Missioni.pronte(), azione: "vai-missioni" },
+      { fuori: true, ico: "🎯", nome: "Sfide del pass", valore: `${sfideFatte}/${sfideTot}`, barra: sfideTot ? sfideFatte / sfideTot * 100 : 0, sotto: "Oggi e questa settimana", pronti: 0, azione: "vai-pass" },
+      { fuori: true, ico: "📋", nome: "Missioni di oggi", valore: Missioni.pronte() ? `${Missioni.pronte()} ${Missioni.pronte() === 1 ? "pronta" : "pronte"}` : "In corso", sotto: "Le trovi qui sotto", pronti: Missioni.pronte(), azione: "vai-missioni" },
       { ico: "★", nome: "Maestria", valore: `${st} ★`, barra: stelleMax ? st / stelleMax * 100 : 0, sotto: `su ${stelleMax} possibili`, pronti: 0, azione: "vai-album" },
-      { ico: "⚔", nome: "Arena", valore: !a ? "Libera" : a.finita ? "Finita!" : `${a.vinte} V · ${a.perse} S`, sotto: !a ? `Ingresso ${Arena.INGRESSO} monete` : a.finita ? "Riscuoti il premio" : a.scelte.length < 5 ? "Scelta in corso" : "Partita in corso", pronti: a && a.finita ? 1 : 0, azione: "vai-sfida" },
+      { fuori: true, gioca: true, ico: "⚔", nome: "Arena", valore: !a ? "Libera" : a.finita ? "Finita!" : `${a.vinte} V · ${a.perse} S`, sotto: !a ? `Ingresso ${Arena.INGRESSO} monete` : a.finita ? "Riscuoti il premio" : a.scelte.length < 5 ? "Scelta in corso" : "Partita in corso", pronti: a && a.finita ? 1 : 0, azione: "vai-sfida" },
       { ico: G.ico, nome: "Grado della stagione", valore: G.nome, sotto: Gradi.GRADI[gr + 1] ? `${Gradi.GRADI[gr + 1].nome} a ${Gradi.GRADI[gr + 1].da} punti` : "Grado massimo", pronti: Gradi.daRiscuotere().length, azione: "vai-classifica" },
       { ico: "🏆", nome: "Trofei", valore: Trofei.pronti() ? `${Trofei.pronti()} ${Trofei.pronti() === 1 ? "pronto" : "pronti"}` : "Collezione", sotto: "Nell'album, scheda Trofei", pronti: Trofei.pronti(), azione: "vai-trofei" },
       { ico: "📖", nome: "Album", valore: `${mie}/${CARTE.length}`, barra: mie / CARTE.length * 100, sotto: `◈ ${Frammenti.quanti()} frammenti`, pronti: 0, azione: "vai-album" },
     ];
   }
-  const totale = () => attivoExtra() ? voci().reduce((n, v) => n + (v.pronti || 0), 0) : 0;
+  // il pallino di Home conta anche le missioni (sono in home); l'Arena conta nel pallino di Gioca
+  const totale = () => attivoExtra() ? voci().filter(v => !v.gioca).reduce((n, v) => n + (v.pronti || 0), 0) : 0;
   function htmlStrada() {
     if (!attivoExtra()) return "";
-    return `<section class="progressi-hub"><div class="titolo-riga piccola"><h2>I tuoi progressi</h2><p class="nota">Tutto in un posto: il puntino rosso vuol dire che c'è qualcosa da riscuotere.</p></div>
-      <div class="ph-griglia">${voci().map(v => `<button class="ph-voce ${v.pronti ? "pronta" : ""}" data-azione="${v.azione}">
+    return `<section class="progressi-hub"><div class="titolo-riga piccola"><h2>I tuoi progressi</h2></div>
+      <div class="ph-griglia">${voci().filter(v => !v.fuori).map(v => `<button class="ph-voce ${v.pronti ? "pronta" : ""}" data-azione="${v.azione}">
         ${v.pronti ? `<span class="ph-punto">${v.pronti}</span>` : ""}
         <span class="ph-ico">${v.ico}</span><span class="ph-nome">${esc(v.nome)}</span><b>${esc(v.valore)}</b>
         ${v.barra !== undefined ? `<span class="ph-barra"><i style="--p:${Math.max(0, Math.min(100, Math.round(v.barra)))}%"></i></span>` : ""}
