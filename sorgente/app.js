@@ -3183,6 +3183,9 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   // prima: scegli la squadra (non serve se guardi, se sei dal vivo, o se le carte sono già decise)
   if (!giaScelta && !carteForzate && Lp && !Lp.spettatore && !Lp.vivo) { scegliSquadra(() => avviaSfida(idLivello, carteForzate, nemiciForzati, true)); return; }
   livelloAttuale = Lp;
+  // nov 2026: mi segno da quale pagina parte la battaglia (il boss della settimana si avvia sia dalla Strada sia
+  // dalle Sfide): alla fine si torna lì, non sempre alle Sfide. La rivincita parte da dentro la battaglia e lo tiene.
+  if (Lp && !B) Lp.da = VISTE.includes(vista) ? vista : "sfida";
   const n = carteForzate ? CARTE_SQUADRA : carteBattaglia();
   const mia = livelloAttuale.spettatore ? livelloAttuale.spettatore.sqA.map(x => Object.assign({}, x))   // spettatore: le squadre dei due amici
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
@@ -3386,7 +3389,7 @@ function htmlAzioni() {
       <span>${(() => { const pr = premiSfida(livelloAttuale); return livelloAttuale.arena ? (vinto ? `+${pr.xp} XP · le monete arrivano tutte insieme alla fine dell'Arena` : `+10 monete · +${XP_SCONFITTA} XP`) : vinto ? `+${pr.monete} monete · +${pr.xp} XP` : `+10 monete · +${XP_SCONFITTA} XP`; })()}</span>
       ${(vinto || livelloAttuale.arena) && livelloAttuale.extraFine ? `<span class="punti-amico">${livelloAttuale.extraFine}</span>` : ""}
       ${htmlEspCarte()}
-      <div class="azioni centro">${livelloAttuale.arena && (!Arena.stato() || Arena.stato().finita) ? "" : `<button class="btn primario" data-fx="onda" data-azione="rivincita">${livelloAttuale.arena ? "Prossima partita" : "Rivincita"}</button>`}<button class="btn" data-fx="salto" data-azione="esci-battaglia">${livelloAttuale.arena && Arena.stato() && Arena.stato().finita ? "Riscuoti il premio" : "Torna alle sfide"}</button></div>
+      <div class="azioni centro">${livelloAttuale.arena && (!Arena.stato() || Arena.stato().finita) ? "" : `<button class="btn primario" data-fx="onda" data-azione="rivincita">${livelloAttuale.arena ? "Prossima partita" : "Rivincita"}</button>`}<button class="btn" data-fx="salto" data-azione="esci-battaglia">${livelloAttuale.arena && Arena.stato() && Arena.stato().finita ? "Riscuoti il premio" : livelloAttuale.bossGiorno ? "Torna al boss del giorno" : livelloAttuale.da === "strada" ? "Torna in strada" : "Torna alle sfide"}</button></div>
     </div>`;
   }
   if (!animazione && B.serveSostituzione(0)) {
@@ -3765,9 +3768,12 @@ function esciBattaglia() {
   document.body.classList.remove("in-battaglia");
   $("#app").classList.remove("in-battaglia");
   schermoIntero(false);
-  const daStoria = livelloAttuale && livelloAttuale.storia;
+  const L = livelloAttuale, daStoria = L && L.storia;
   if (daStoria) capStoria = daStoria.k;
-  vai(daStoria ? "storia" : "sfida");
+  vai(daStoria ? "storia" : (L && L.da) || "sfida");
+  // i due boss sono separati: si torna al riquadro di quello appena combattuto
+  if (L && L.bossGruppo) scorriA("#vista [data-boss-box]");
+  else if (L && L.bossGiorno) scorriA("#vista .boss-giorno");
   if (versioneNuova) setTimeout(applicaAggiornamento, 600);
 }
 

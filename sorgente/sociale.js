@@ -177,7 +177,7 @@ const Boss = (() => {
     return `<div class="boss-box ${caduto ? "caduto" : ""}" data-boss-box="${tipo}">
       <div class="boss-testa">
         <img src="${imgCarta(c.id)}" alt="">
-        <div><small class="boss-etichetta">Boss del gruppo · finisce tra ${tempo()}</small>
+        <div><small class="boss-etichetta">Boss della settimana · finisce tra ${tempo()}</small>
           <b>${esc(c.nome)} Gigante</b>
           <div class="boss-pv"><i style="--p:${pct}%"></i><span>${caduto ? "SCONFITTO!" : `${r.toLocaleString("it-IT")} / ${stato.pv_max.toLocaleString("it-IT")} PV`}</span></div>
         </div>
@@ -252,7 +252,7 @@ const Boss = (() => {
       ${info}
       <span>+${e.monete} monete · +${e.xp} XP</span>
       ${htmlEspCarte()}
-      <div class="azioni centro"><button class="btn primario" data-fx="salto" data-azione="esci-boss">Torna al boss</button></div>
+      <div class="azioni centro"><button class="btn primario" data-fx="salto" data-azione="esci-boss">Torna al boss della settimana</button></div>
     </div>`;
   }
   async function riscatta(sett, el) {
