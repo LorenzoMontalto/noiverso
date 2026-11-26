@@ -502,6 +502,7 @@ function apriDettaglio(id) {
         <p class="serie-nome">${esc(SERIE[c.serie].nome)}</p>
         <h2>${esc(c.nome)}</h2>
         <p class="frase">${esc(c.frase)}</p>
+        ${copie && vista === "album" && !B ? `<button class="btn piccolo dett-confronta" data-azione="album-confronta" data-id="${id}">⚖ Confronta con un'altra carta</button>` : ""}
         <div class="ruolo-box"><b>${esc(r.nome)}</b><span>${esc(r.cosa)}</span><p>${esc(r.passiva)}</p></div>
         ${htmlStatGriglia(c, s)}
         ${htmlBonusRarita(rar === c.rarita ? c : Object.assign({}, c, { rarita: rar }))}${rar !== c.rarita ? `<p class="nota">⬆ Salita di rarità: in origine era ${esc(RARITA[c.rarita].nome.toLowerCase())}.</p>` : ""}
@@ -868,7 +869,7 @@ function vai(v, indietro = false) {
   ultimaDelGruppo[VISTA_NAV(v)] = v;
   const cambiata = v !== vista;
   if (cambiata && ultimaVistaDisegnata === vista) posizioni[vista] = scrollY;
-  if (cambiata) selSq = null;
+  if (cambiata) { selSq = null; confrontoAlbum = null; }
   if (cambiata && v === "squadra") limSq = PASSO_SQ;
   if (cambiata && v === "album" && !indietro) limSerieAlb = PASSO_ALB;   // con Indietro tengo le serie già caricate, per ritrovare il punto
   vista = v;
@@ -1559,6 +1560,7 @@ function vistaAlbum() {
   const tot = possedute().length, olo = Object.keys(S.olo || {}).filter(id => S.olo[id] && PER_ID[id]).length;
   return `
   <section>
+    ${htmlConfrontoAlbum()}
     ${htmlSchedeAlbum()}
     <div class="titolo-riga"><h2>Album</h2><p class="nota">${tot}/${CARTE.length} carte trovate in ${ORDINE_SERIE.length} serie${S.admin ? "" : ` · <span class="framm-testo" title="Frammenti: tocca una carta coperta per crearla">◈ ${Frammenti.quanti()} frammenti</span>`}${olo ? ` · <span class="olo-testo">✦ ${olo} olografiche</span>` : ""}.</p></div>
     ${htmlBarraFiltri("album")}${filtri.album.tipo || filtri.album.ruolo || filtri.album.cerca ? `<p class="nota">Con un filtro attivo vedi solo le carte che hai già trovato.${filtroAlbum === "pot" ? "" : " Tocca una serie qui sotto per cercare solo lì."}</p>` : ""}
@@ -1927,6 +1929,13 @@ function azioneCartaSquadra(az) {
 // nov 2026: con la spunta «Al massimo» le due carte si confrontano al livello 30 con la lode e con tutte le ascese
 // (fino a leggendaria): così si capisce quale conviene far crescere, non solo quale è più forte adesso
 let confrontoMax = false, confrontoUltimo = null;
+// nov 2026: confronto anche dall'album: dal dettaglio di una carta tocchi «Confronta», poi tocchi l'altra carta
+let confrontoAlbum = null;
+function htmlConfrontoAlbum() {
+  if (!confrontoAlbum || !PER_ID[confrontoAlbum]) return "";
+  const c = PER_ID[confrontoAlbum];
+  return `<div class="confronto-album" role="status"><span class="ca-mini">${htmlCarta(c, { mini: true })}</span><span>⚖ Tocca un'altra carta da confrontare con <b>${esc(c.nome)}</b></span><button class="btn piccolo" data-azione="album-confronta-annulla">Annulla</button></div>`;
+}
 const rarMassima = id => rarDopo(PER_ID[id].rarita, 3);
 function confrontaCarte(a, b) {
   const ca = PER_ID[a], cb = PER_ID[b]; if (!ca || !cb) return;
@@ -4170,6 +4179,12 @@ document.addEventListener("click", e => {
   if (t.dataset.scegliSquadra !== undefined) { S.attiva = +t.dataset.scegliSquadra; salva(); const f = scegliSquadra.poi; scegliSquadra.poi = null; Ordine.apri(f, $(".scelta-squadra h3") ? $(".scelta-squadra h3").textContent : ""); return; }
   if (t.dataset.ordTocca !== undefined) { Ordine.tocca(+t.dataset.ordTocca); return; }
   if (t.classList.contains("gira")) { if (t.classList.contains("girata")) apriSchedaCarta(esitiAperti[+t.dataset.i]); else { t.classList.add("girata"); SerieCompleta.scoperta(+t.dataset.i); const e = esitiAperti[+t.dataset.i]; Suoni.gira(e.ultra ? "ultra" : PER_ID[e.id].rarita); } return; }
+  if (confrontoAlbum && vista === "album" && (t.matches(".carta[role=button]") || t.dataset.dettaglio)) {
+    const id = t.dataset.id || t.dataset.dettaglio;
+    if (id === confrontoAlbum) { mostraAvviso("Scegli una carta diversa da confrontare."); return; }
+    if (!S.carte[id]) { mostraAvviso("Puoi confrontare solo le carte che hai già trovato."); return; }
+    const a = confrontoAlbum; confrontoAlbum = null; disegnaQuieto(); confrontaCarte(a, id); return;
+  }
   if (t.matches(".carta[role=button]")) { apriDettaglio(t.dataset.id); return; }
   if (t.dataset.dettaglio) { apriDettaglio(t.dataset.dettaglio); return; }
   switch (t.dataset.azione) {
@@ -4229,6 +4244,8 @@ document.addEventListener("click", e => {
     case "novita-fine": Novita.fine(); break;
     case "novita-rivedi": chiudiModale(); Novita.rivedi(); break;
     case "come-si-gioca": apriComeSiGioca(); break;
+    case "album-confronta": confrontoAlbum = t.dataset.id; chiudiModale(); disegnaQuieto(); break;
+    case "album-confronta-annulla": confrontoAlbum = null; disegnaQuieto(); break;
     case "livello-riscuoti": Livello.riscuoti(t); break;
     case "livello-info": Livello.apriInfo(); break;
     case "livello-pagina": Livello.apriLivelli(); break;
