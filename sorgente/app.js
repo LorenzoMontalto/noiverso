@@ -3241,7 +3241,9 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
     : Lp && Lp.arena ? carteForzate.slice(0, n).map(id => ({ id, liv: 20, lode: false, olo: false, ultra: false, asc: 0 }))   // Arena: tutti uguali al livello 20
     : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, ...(PER_ID[id] && PER_ID[id].rarita === "jolly" && !carteForzate ? { js: squadraAttiva().jolly || "", jm: squadraAttiva().jollyModo || "rinforzo", jt: squadraAttiva().jollyTipo || "" } : {}), liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id), cc: S.admin ? "" : Cosmetici.corniceCarta(id) }));
   const L = livelloAttuale;
-  const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1)); return { id, liv, lode: liv >= LIVELLO_MAX && L.storia && STORIA[L.storia.k].tappe[L.storia.i].boss }; }) : squadraCPU(L, n);
+  const tS = L.storia && STORIA[L.storia.k].tappe[L.storia.i], ex = (tS && tS.extra) || 0;   // storia: in fondo i nemici possono avere lode, olografica, Ultra
+  const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1));
+    return { id, liv, lode: liv >= LIVELLO_MAX && !!tS && (tS.boss || ex >= 1), olo: ex >= 2, ultra: ex >= 3 }; }) : squadraCPU(L, n);
   // contro il computer: battaglia con un seme, così gli amici possono guardarla in diretta (le scelte del computer restano a caso)
   const seme = L.seme || Math.floor(Math.random() * 2 ** 31);   // le modalità a corsa salvano il seme per poter riprendere dopo un F5
   if (!L.spettatore) avvisoFineConsigli();

@@ -531,17 +531,17 @@ const STORIA = [
     id: "c5", campo: "notte", titolo: "Los Nueve", serie: null, colore: "#b866ff", simbolo: "✦",
     intro: "Tutte le storie portano qui. I più forti di ogni serie si sono uniti in un'unica squadra. È la sfida finale.",
     tappe: [
-      { titolo: "Ombre dal passato", nemici: ["ombra", "eltigre", "labruja", "comora", "criliziano"], liv: [4, 4], abilita: 0.86, monete: 260,
+      { titolo: "Ombre dal passato", nemici: ["ombra", "eltigre", "labruja", "comora", "criliziano"], liv: [4, 4], abilita: 0.95, monete: 260,
         parla: "ombra", frase: "Ti ho seguito per tutta la strada. Adesso tocca a me." },
-      { titolo: "Fulmini e saette", nemici: ["mauthor", "zeutiz", "vegerizio", "artalice", "ironlus"], liv: [4, 4], abilita: 0.88, monete: 270,
-        parla: "mauthor", frase: "Senti l'aria? Sta arrivando il temporale." },
-      { titolo: "Il caos", nemici: ["loca", "wandessia", "dionpips", "panky", "lasombra"], liv: [4, 4], abilita: 0.9, monete: 280, bustina: "epica",
-        parla: "wandessia", frase: "Le regole? Le ho appena cambiate tutte." },
-      { titolo: "I giganti", nemici: ["ligulk", "brolymone", "poseludovico", "pelado", "wonderrita"], liv: [4, 5], abilita: 0.92, monete: 290,
-        parla: "brolymone", frase: "Siete piccoli... Tutti così piccoli..." },
-      { titolo: "Gli strateghi", nemici: ["reina", "freezovico", "mieloki", "adelrizio", "atharita"], liv: [4, 5], abilita: 0.94, monete: 300,
+      { titolo: "Gli strateghi", nemici: ["reina", "freezovico", "mieloki", "adelrizio", "atharita"], liv: [4, 5], abilita: 0.96, monete: 300,
         parla: "atharita", frase: "Ogni tua mossa l'ho già prevista. Anche questa." },
-      { titolo: "La squadra finale", boss: true, nemici: ["gokiele", "zeutiz", "reina", "ironlus", "aresorenzo"], liv: [5, 5], abilita: 0.97, monete: 700, bustina: "leggendaria", bustine: 2,
+      { titolo: "Il caos", nemici: ["loca", "wandessia", "dionpips", "panky", "lasombra"], liv: [4, 4], abilita: 0.97, monete: 280, bustina: "epica",
+        parla: "wandessia", frase: "Le regole? Le ho appena cambiate tutte." },
+      { titolo: "I giganti", nemici: ["ligulk", "brolymone", "poseludovico", "pelado", "wonderrita"], liv: [4, 5], abilita: 0.98, monete: 290,
+        parla: "brolymone", frase: "Siete piccoli... Tutti così piccoli..." },
+      { titolo: "Fulmini e saette", nemici: ["mauthor", "zeutiz", "vegerizio", "artalice", "ironlus"], liv: [4, 4], abilita: 0.99, monete: 270,
+        parla: "mauthor", frase: "Senti l'aria? Sta arrivando il temporale." },
+      { titolo: "La squadra finale", boss: true, nemici: ["gokiele", "zeutiz", "reina", "ironlus", "aresorenzo"], liv: [5, 5], abilita: 1, monete: 700, bustina: "leggendaria", bustine: 2,
         parla: "aresorenzo", frase: "Sei arrivato fin qui. Ora dimostra di meritare il posto tra Los Nueve.", vittoria: "Ce l'hai fatta: sei uno di Los Nueve. Dalla città agli Inferi, in tutti i mondi parlano solo di te." },
     ],
   },
@@ -558,6 +558,42 @@ function scrigniCapitolo(k) {
 
 
 
+// TARATURA_STORIA: per ogni tappa [livelli in più o in meno, extra]. Calcolata con una simulazione: la difficoltà
+// sale con regolarità dentro ogni capitolo e da un capitolo all'altro, e il boss finale è il più duro di tutti.
+// Bersagli (squadra tipo — 1 leggendaria, 2 epiche, 1 rara, 1 comune — al livello che ci si aspetta in quel punto):
+// nelle tappe normali si vince dall'85% (prima tappa) al 50% (quinta), un po' meno verso la fine della storia;
+// i boss dal 40% del primo capitolo al 15% circa degli ultimi, e il boss finale è il più duro di tutti.
+// Nei primi 3 capitoli (si sta ancora imparando) la taratura può solo rendere più facile; altrove al massimo +4 livelli
+// per le tappe normali.
+// Si ricalcola con una simulazione (vedi la cronologia del repository, 26/11/2026) se si cambiano carte o capitoli.
+const TARATURA_STORIA = {
+  "c4-0": [1, 0], "c4-2": [-1, 0], "c4-3": [2, 0], "c4-4": [2, 0], "c4-5": [2, 0],
+  "c6-0": [3, 0], "c6-1": [4, 0], "c6-2": [1, 0], "c6-3": [-2, 0], "c6-4": [1, 0], "c6-5": [-3, 0],
+  "c7-0": [1, 0], "c7-1": [1, 0], "c7-2": [3, 0], "c7-3": [-1, 0], "c7-5": [-2, 0],
+  "c8-0": [2, 0], "c8-3": [4, 0], "c8-5": [-2, 0],
+  "c9-0": [2, 0], "c9-1": [2, 0], "c9-3": [1, 0], "c9-4": [-1, 0], "c9-5": [-2, 0],
+  "c10-2": [-4, 0], "c10-5": [-2, 0],
+  "c11-0": [-1, 0], "c11-2": [1, 0],
+  "c12-2": [-2, 0], "c12-4": [-1, 0], "c12-5": [-2, 0],
+  "c16-1": [-2, 0], "c16-2": [1, 0], "c16-3": [3, 0], "c16-4": [-2, 0], "c16-5": [1, 0],
+  "c17-0": [2, 0], "c17-1": [2, 0], "c17-2": [1, 0], "c17-3": [1, 0],
+  "c18-1": [2, 0], "c18-2": [2, 0], "c18-4": [1, 0], "c18-5": [7, 0],
+  "c19-0": [3, 0], "c19-1": [2, 0], "c19-3": [2, 0], "c19-4": [3, 0], "c19-5": [-1, 0],
+  "c20-1": [3, 0], "c20-2": [2, 0], "c20-3": [1, 0], "c20-4": [-3, 0], "c20-5": [1, 0],
+  "c21-0": [4, 0], "c21-1": [2, 0], "c21-2": [1, 0], "c21-3": [2, 0], "c21-5": [-1, 0],
+  "c22-0": [4, 0], "c22-1": [4, 0], "c22-2": [3, 0], "c22-3": [2, 0], "c22-4": [3, 0],
+  "c23-0": [4, 0], "c23-1": [1, 0], "c23-2": [3, 0], "c23-3": [4, 0],
+  "c24-0": [3, 0], "c24-1": [2, 0], "c24-2": [2, 0], "c24-3": [2, 0],
+  "c25-0": [3, 0], "c25-1": [4, 0], "c25-2": [3, 0], "c25-4": [-2, 0],
+  "c26-0": [3, 0], "c26-1": [3, 0], "c26-2": [1, 0], "c26-3": [1, 0], "c26-4": [-1, 0],
+  "c27-0": [3, 0], "c27-1": [3, 0], "c27-4": [-2, 0],
+  "c28-0": [3, 0], "c28-1": [3, 0], "c28-3": [1, 0], "c28-4": [-4, 0],
+  "c13-2": [-2, 0], "c13-3": [2, 0], "c13-4": [-1, 0], "c13-5": [3, 2],
+  "c14-0": [-1, 0], "c14-1": [-3, 0], "c14-2": [-4, 0], "c14-3": [2, 0], "c14-4": [2, 1], "c14-5": [1, 0],
+  "c15-0": [2, 1], "c15-1": [-2, 0], "c15-2": [-1, 0], "c15-3": [-4, 0], "c15-4": [-2, 0], "c15-5": [-1, 0],
+  "c5-0": [-4, 0], "c5-1": [-4, 0], "c5-3": [-3, 0], "c5-4": [-4, 0],
+};
+
 // Livelli dei nemici in base alla posizione nella storia: dalla prima tappa (Lv1–3) al boss finale (Lv30).
 STORIA.forEach((cap, k) => cap.tappe.forEach((t, i) => {
   const g = k * cap.tappe.length + i;
@@ -571,7 +607,12 @@ STORIA.forEach((cap, k) => cap.tappe.forEach((t, i) => {
   const perPers = {}; for (const id of t.nemici) { const c = (typeof PER_ID !== "undefined" ? PER_ID : require("./carte.js").PER_ID)[id]; if (c && c.persona) perPers[c.persona] = (perPers[c.persona] || 0) + 1; }
   const maxP = Math.max(0, ...Object.values(perPers));
   const max = Math.max(0, ...Object.values(perSerie)), meno = (max >= 5 ? 3 : max >= 3 ? 1 : 0) + (maxP >= 3 ? 2 : maxP >= 2 ? 1 : 0);
-  const bb = Math.max(1, b - meno);
+  // nov 2026: taratura tappa per tappa (vedi TARATURA_STORIA): livelli in più o in meno rispetto alla curva e,
+  // per le tappe già al livello 30, nemici con la lode, olografici o Ultra
+  const ta = TARATURA_STORIA[`${cap.id}-${i}`] || [0, 0];
+  const bb = Math.max(1, Math.min(30, b - meno + ta[0]));
+  t.curva = b; t.meno = meno; t.extra = ta[1] || 0;
+  t.livRif = Math.min(30, b + 2);   // il livello che ci si aspetta dal giocatore in quel punto della storia
   t.liv = t.boss ? [Math.min(30, bb + 1), Math.min(30, bb + 2)] : [Math.max(1, bb), Math.min(30, bb + 2)];
 }));
 if (typeof module !== "undefined") module.exports = { STORIA, scrigniCapitolo };
