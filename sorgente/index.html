@@ -2449,9 +2449,16 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 .ord-riga.sel { transform: translateX(6px); box-shadow: 0 0 0 2px var(--oro); }
 /* cornici delle carte */
 .cc-telaio { position: absolute; inset: 0; z-index: 4; pointer-events: none; border-radius: inherit; border: 4px solid transparent; }
+/* nov 2026: con una cornice il bordo sottile della rarità sparisce e la cornice prende il suo posto, sullo stesso profilo
+   della carta (prima restava fuori, e negli angoli tra i due si vedeva un filo scuro) */
+.carta:has(> .cc-telaio) { border-width: 0; }
 .cc-telaio.cc-neon { border-color: #39f3ff; box-shadow: inset 0 0 12px #39f3ff, 0 0 10px #39f3ff; }
 .cc-telaio.cc-ghiaccio { border-color: #d8f2ff; box-shadow: inset 0 0 14px rgba(160, 220, 255, .9); background: linear-gradient(160deg, rgba(255, 255, 255, .25), transparent 25%); }
-.cc-telaio.cc-sakura { border-color: #ff9ab8; box-shadow: inset 0 0 12px rgba(255, 154, 184, .9); background: radial-gradient(circle at 8% 6%, #ffd2df 0 5%, transparent 6%), radial-gradient(circle at 92% 94%, #ffd2df 0 5%, transparent 6%); }
+.cc-telaio.cc-sakura { border-color: #ff9ab8; box-shadow: inset 0 0 12px rgba(255, 154, 184, .9); }
+.cc-orn.cc-sakura { overflow: visible; }
+.cc-orn.cc-sakura::before, .cc-orn.cc-sakura::after { content: "✿"; font: 1.05rem/1 sans-serif; color: #ffd2df; text-shadow: 0 0 5px #ff6f9c, 0 0 1px #c2185b; }
+.cc-orn.cc-sakura::before { top: -2px; left: -1px; transform: rotate(-15deg); } .cc-orn.cc-sakura::after { bottom: -2px; right: -1px; transform: rotate(20deg); }
+.carta.piccola .cc-orn.cc-sakura::before, .carta.piccola .cc-orn.cc-sakura::after { font-size: .8rem; }
 .cc-telaio.cc-oro { border: 4px solid transparent; background: linear-gradient(135deg, #fff3c4, #c9a13a, #fff3c4) border-box; -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; box-shadow: 0 0 14px rgba(242, 193, 78, .7); }
 .cc-telaio.cc-fiamme { border-color: #ff6a1a; box-shadow: inset 0 0 16px #ff4a1a, inset 0 -18px 22px -8px rgba(255, 180, 60, .8); animation: fiammella 1.3s ease-in-out infinite alternate; }
 .cc-telaio.cc-galassia { border-color: #8a4aff; box-shadow: inset 0 0 18px rgba(138, 74, 255, .9); background: radial-gradient(circle at 15% 85%, rgba(224, 200, 255, .5) 0 2px, transparent 3px), radial-gradient(circle at 80% 20%, rgba(255, 255, 255, .6) 0 2px, transparent 3px), radial-gradient(circle at 60% 90%, rgba(255, 255, 255, .5) 0 1.5px, transparent 3px); }
@@ -2468,8 +2475,8 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 /* Legno */
 .cc-telaio.cc-legno { border-width: 6px; background: repeating-linear-gradient(100deg, #7a4a22 0 5px, #5a3214 5px 7px, #946032 7px 13px, #6a3e1a 13px 15px) border-box; }
 .cc-orn.cc-legno { box-shadow: inset 0 0 8px rgba(40, 20, 5, .8); background:
-  radial-gradient(circle at 9px 9px, #efe6d6 0 1.6px, #7a7068 2.2px 2.8px, transparent 3.2px), radial-gradient(circle at calc(100% - 9px) 9px, #efe6d6 0 1.6px, #7a7068 2.2px 2.8px, transparent 3.2px),
-  radial-gradient(circle at 9px calc(100% - 9px), #efe6d6 0 1.6px, #7a7068 2.2px 2.8px, transparent 3.2px), radial-gradient(circle at calc(100% - 9px) calc(100% - 9px), #efe6d6 0 1.6px, #7a7068 2.2px 2.8px, transparent 3.2px); }
+  radial-gradient(circle at 5.5px 5.5px, #efe6d6 0 1.6px, #7a7068 2.2px 2.8px, transparent 3.2px), radial-gradient(circle at calc(100% - 5.5px) 5.5px, #efe6d6 0 1.6px, #7a7068 2.2px 2.8px, transparent 3.2px),
+  radial-gradient(circle at 5.5px calc(100% - 5.5px), #efe6d6 0 1.6px, #7a7068 2.2px 2.8px, transparent 3.2px), radial-gradient(circle at calc(100% - 5.5px) calc(100% - 5.5px), #efe6d6 0 1.6px, #7a7068 2.2px 2.8px, transparent 3.2px); }
 /* Argento */
 .cc-telaio.cc-argento { background: linear-gradient(120deg, #8a939d, #f6f8fa 20%, #a7b0ba 40%, #ffffff 50%, #8a939d 70%, #e8ecf0) border-box; background-size: 250% 250%; animation: cc-scorri 4s linear infinite; }
 .cc-orn.cc-argento { box-shadow: inset 0 0 10px rgba(230, 240, 255, .55); }
@@ -2491,8 +2498,8 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 .cc-orn.cc-smeraldo::before, .cc-orn.cc-rubino::before, .cc-orn.cc-zaffiro::before, .cc-orn.cc-smeraldo::after, .cc-orn.cc-rubino::after, .cc-orn.cc-zaffiro::after {
   top: 50%; width: 11px; height: 11px; transform: translate(-50%, -50%) rotate(45deg); border: 2px solid #f2e2a0; border-radius: 2px;
   background: linear-gradient(135deg, #fff 0 14%, var(--g1) 18%, var(--g2) 55%, var(--g3)); box-shadow: 0 0 8px var(--g2), 0 0 0 1px rgba(0, 0, 0, .5); animation: cc-gemma 2.4s ease-in-out infinite alternate; }
-.cc-orn.cc-smeraldo::before, .cc-orn.cc-rubino::before, .cc-orn.cc-zaffiro::before { left: 8px; }
-.cc-orn.cc-smeraldo::after, .cc-orn.cc-rubino::after, .cc-orn.cc-zaffiro::after { left: calc(100% - 8px); }
+.cc-orn.cc-smeraldo::before, .cc-orn.cc-rubino::before, .cc-orn.cc-zaffiro::before { left: 9px; }
+.cc-orn.cc-smeraldo::after, .cc-orn.cc-rubino::after, .cc-orn.cc-zaffiro::after { left: calc(100% - 9px); }
 /* Veleno */
 .cc-telaio.cc-veleno { background: linear-gradient(180deg, #d6ff5a, #5ad81a 45%, #1a5a0a) border-box; }
 .cc-orn.cc-veleno { box-shadow: inset 0 0 14px rgba(140, 255, 60, .6); }
@@ -2516,7 +2523,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 .cc-telaio.cc-tempesta { border-width: 4px; background: linear-gradient(135deg, #e8f6ff, #3fa8ff 30%, #1a2a6a 50%, #3fa8ff 70%, #e8f6ff) border-box; animation: cc-scatto 2.4s linear infinite; }
 .cc-orn.cc-tempesta { box-shadow: inset 0 0 12px rgba(63, 168, 255, .7); animation: cc-scatto 2.4s linear infinite; }
 .cc-orn.cc-tempesta::before, .cc-orn.cc-tempesta::after { content: "ϟ"; font: 900 1rem/1 sans-serif; color: #fff; text-shadow: 0 0 6px #3fa8ff, 0 0 2px #3fa8ff; }
-.cc-orn.cc-tempesta::before { top: 4px; left: 6px; } .cc-orn.cc-tempesta::after { bottom: 4px; right: 6px; transform: scaleX(-1); }
+.cc-orn.cc-tempesta::before { top: 1px; left: 3px; } .cc-orn.cc-tempesta::after { bottom: 1px; right: 3px; transform: scaleX(-1); }
 /* Ombra */
 .cc-telaio.cc-ombra { background: linear-gradient(135deg, #0a0410, #7a3ac8 40%, #0a0410 60%, #4a1a7a) border-box; }
 .cc-orn.cc-ombra { animation: cc-respira 3s ease-in-out infinite alternate; }
@@ -2529,7 +2536,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 .cc-orn.cc-prisma::before { top: -50%; bottom: -50%; left: -60%; width: 30%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .4), transparent); transform: rotate(20deg); animation: cc-riflesso 3.4s ease-in-out infinite; }
 /* Reale */
 .cc-telaio.cc-reale { border-width: 6px; background: linear-gradient(135deg, #5a1a8a, #a85ae8 30%, #3a0a5a 50%, #a85ae8 70%, #5a1a8a) border-box; }
-.cc-orn.cc-reale::before { inset: 6px; border: 1.5px solid #f2c14e; border-radius: 8px; box-shadow: 0 0 6px rgba(242, 193, 78, .7), inset 0 0 6px rgba(242, 193, 78, .4); }
+.cc-orn.cc-reale::before { inset: 6px; border: 1.5px solid #f2c14e; border-radius: 6px; box-shadow: 0 0 6px rgba(242, 193, 78, .7), inset 0 0 6px rgba(242, 193, 78, .4); }
 .cc-orn.cc-reale::after { content: "♛"; top: 0; left: 50%; transform: translateX(-50%); font: 1rem/1.15 sans-serif; color: #f2c14e; text-shadow: 0 0 6px #f2c14e, 0 1px 1px #000; background: #3a0a5a; padding: 0 7px 2px; border-radius: 0 0 9px 9px; box-shadow: 0 0 0 1.5px #f2c14e; }
 .carta.piccola .cc-orn.cc-reale::after { font-size: .8rem; } .carta.piccola .cc-orn.cc-tempesta::before, .carta.piccola .cc-orn.cc-tempesta::after { font-size: .8rem; }
 .carta.piccola .cc-orn.cc-pixel::before, .carta.piccola .cc-orn.cc-pixel::after { font-size: .45rem; }
@@ -2619,10 +2626,11 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 .cosm-prova-nome { font: 900 1.15rem var(--display); }
 .cc-deco { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
 .cc-deco b { position: absolute; color: #fff3c4; font-size: .9rem; line-height: 1; text-shadow: 0 0 6px #f2c14e, 0 1px 2px #000; }
-.cc-deco b:nth-child(1) { top: 1px; left: 2px; } .cc-deco b:nth-child(2) { top: 1px; right: 2px; } .cc-deco b:nth-child(3) { bottom: 1px; left: 2px; } .cc-deco b:nth-child(4) { bottom: 1px; right: 2px; }
+.cc-deco b { transform: translate(-50%, -50%); } .cc-deco b:nth-child(1) { top: 8px; left: 8px; } .cc-deco b:nth-child(2) { top: 8px; left: calc(100% - 8px); } .cc-deco b:nth-child(3) { top: calc(100% - 8px); left: 8px; } .cc-deco b:nth-child(4) { top: calc(100% - 8px); left: calc(100% - 8px); }
+.carta.piccola .cc-deco b:nth-child(1) { top: 6px; left: 6px; } .carta.piccola .cc-deco b:nth-child(2) { top: 6px; left: calc(100% - 6px); } .carta.piccola .cc-deco b:nth-child(3) { top: calc(100% - 6px); left: 6px; } .carta.piccola .cc-deco b:nth-child(4) { top: calc(100% - 6px); left: calc(100% - 6px); }
 .cc-deco span { position: absolute; left: 50%; bottom: -1px; transform: translateX(-50%); font: 900 .5rem/1 var(--display); letter-spacing: .12em; color: #1a1206; background: linear-gradient(90deg, #fff3c4, #f2c14e); padding: 2px 6px 1px; border-radius: 6px 6px 0 0; }
 .carta.piccola .cc-deco { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
-.cc-deco b { font-size: .62rem; } .carta.piccola .cc-deco span { font-size: .42rem; }
+.carta.piccola .cc-deco b { font-size: .62rem; } .carta.piccola .cc-deco span { font-size: .42rem; }
 @keyframes cc-giro { to { --giro: 360deg; } }
 .cc-scelta { margin-top: 12px; } .cc-scelta > b { display: block; margin-bottom: 4px; }
 .cc-chip-maestro { background: linear-gradient(90deg, #fff3c4, #f2c14e) !important; color: #1a1206 !important; font-weight: 800; }
