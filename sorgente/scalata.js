@@ -127,11 +127,18 @@ const Scalata = (typeof document === "undefined") ? null : (() => {
     return `<section class="modo-box scalata-box"><div class="modo-ico">🗼</div><div>
       <b>La Scalata</b><span class="nota">Come l'Arena, ma tutti partono dal livello 1. A ogni piano vinto sali e scegli un potenziamento; anche il bot si rinforza. I piani non finiscono mai: hai 3 vite, oppure ti fermi e incassi quando vuoi.</span>
       ${s ? `<span class="modo-stato">${s.fase === "fine" ? "Scalata finita: riscuoti il premio" : s.fase === "draft" ? `Scelta ${s.scelte.length + 1} di 5` : `Piano ${s.piano} · ${"❤️".repeat(s.vite)}${s.battaglia ? " · battaglia in corso" : ""}`}</span>` : `<span class="modo-stato">Ingresso ${PremiModalita.INGRESSO_SCALATA} monete · premio in base ai piani superati</span>`}
-      </div><button class="btn ${s ? "primario" : "oro"}" data-fx="spinta" data-azione="${s ? "scalata-vai" : "scalata-entra"}">${s ? "Continua" : "Inizia a salire"}</button></section>`;
+      </div><div class="modo-tasti"><button class="btn ${s ? "primario" : "oro"}" data-fx="spinta" data-azione="${s ? "scalata-vai" : "scalata-entra"}">${s ? "Continua" : "Inizia a salire"}</button>
+      <button class="btn piccolo" data-azione="scalata-regole">Come si gioca</button></div></section>`;
   }
-  function entra() {
+  function entra(confermato) {
     if (st()) { vai("scalata"); return; }
     if (!S.admin && S.monete < PremiModalita.INGRESSO_SCALATA) { mostraAvviso(`L'ingresso costa ${PremiModalita.INGRESSO_SCALATA} monete.`); return; }
+    if (!confermato) { apriModale(`<div class="modo-conferma"><span class="codice-tag">🗼 La Scalata</span><h2>Inizi a salire?</h2>
+      <p>L'ingresso costa <b>${S.admin ? "niente (sei l'admin)" : PremiModalita.INGRESSO_SCALATA + " monete"}</b> e non si restituisce: il premio dipende da quanti piani superi.</p>
+      <p class="nota">Hai 3 vite. Dal secondo piano puoi fermarti quando vuoi con «Mi fermo qui» e incassare.</p>
+      <div class="azioni centro"><button class="btn oro grande" data-fx="spinta" data-azione="scalata-conferma">Sì, inizio${S.admin ? "" : ` (${PremiModalita.INGRESSO_SCALATA} monete)`}</button><button class="btn" data-azione="chiudi">Non ora</button></div>
+      <button class="btn piccolo link" data-azione="scalata-regole">Come si gioca</button></div>`); return; }
+    chiudiModale();
     if (!S.admin) S.monete -= PremiModalita.INGRESSO_SCALATA;
     S.scalata = R.nuova(rng); salva(); aggiornaTesta(); vai("scalata");
   }
@@ -167,7 +174,7 @@ const Scalata = (typeof document === "undefined") ? null : (() => {
         <p class="notte-premio-fine">${S.admin ? "Da admin non ci sono premi." : esc(testoPremio(pr))}</p>
         <button class="btn oro" data-fx="coriandoli" data-azione="scalata-riscuoti">${S.admin ? "Chiudi" : "Riscuoti"}</button></div>`; }
     const prossimo = s.fase !== "fine" && s.fase !== "draft" ? PremiModalita.scalata(R.pianiSuperati(s)) : null;
-    return `<section class="modo scalata"><div class="titolo-riga"><h2>🗼 La Scalata</h2>${s.fase !== "draft" && s.fase !== "fine" ? `<span class="scalata-vite">${"❤️".repeat(s.vite)}${"🖤".repeat(R.VITE - s.vite)}</span>` : ""}</div>
+    return `<section class="modo scalata"><div class="titolo-riga"><h2>🗼 La Scalata</h2><span class="modo-tasti">${s.fase !== "draft" && s.fase !== "fine" ? `<span class="scalata-vite">${"❤️".repeat(s.vite)}${"🖤".repeat(R.VITE - s.vite)}</span>` : ""}<button class="btn piccolo" data-azione="scalata-regole">Come si gioca</button></span></div>
       ${s.squadra ? `<div class="notte-stato"><span class="gettoni">🗼 Piano <b>${s.piano}</b>${prossimo ? ` · se ti fermi ora: ${esc(testoPremio(prossimo))}` : ""}</span><span class="cimeli">${cim(s.cimeli) || `<small class="nota">Ancora nessun cimelio</small>`}</span></div>${s.fase === "potenziamento" && s.scegliCarta != null || s.nuovaScelta ? "" : htmlSquadra(s.squadra)}` : ""}
       ${corpo}</section>`;
   }
@@ -186,6 +193,13 @@ const Scalata = (typeof document === "undefined") ? null : (() => {
     const s = st(); if (!s) return; const vinto = B.vincitore === 0;
     s.battaglia = null; esito = { vinto, piano: s.piano };
     if (vinto) R.vittoria(rng, s); else R.sconfitta(s);
+    if (vinto && !S.admin) {
+      const p = R.pianiSuperati(s), w = Missioni.settimana();
+      Missioni.evento("modo", { n: 1 }); SfidePass.evento({ t: "modo", n: 1, piano: p });
+      // record della settimana per la classifica tra amici (e record di sempre per i trofei)
+      const rs = S.stats.scalataSett && S.stats.scalataSett.sett === w ? S.stats.scalataSett.piano : 0;
+      S.stats.scalataSett = { sett: w, piano: Math.max(rs, p) }; S.stats.scalataMax = Math.max(S.stats.scalataMax || 0, p); Trofei.controlla();
+    }
     salva(); aggiornaBattaglia();
   }
   function htmlFine() {
@@ -223,6 +237,22 @@ const Scalata = (typeof document === "undefined") ? null : (() => {
     if (!S.admin) mostraAvviso(`La Scalata (${p} piani): ${testoPremio(pr)}!`);
     if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 60, forma: "stella", colori: ["#f2c14e", "#3fd8ff", "#ffffff"], velocita: 8, dimensione: 6 }); }
   }
+  function regole() {
+    const P = PremiModalita, righe = [1, 3, 5, 8, 10, 12, 15, 20].map(p => `<tr><td>${p} pian${p > 1 ? "i" : "o"}</td><td>${esc(testoPremio(P.scalata(p)))}</td></tr>`).join("");
+    apriModale(`<div class="modo-regole"><span class="codice-tag">🗼 La Scalata</span><h2>Come si gioca</h2>
+      <ol>
+        <li><b>Ti fai la squadra.</b> Come nell'Arena scegli 5 volte una carta tra 3 (una leggendaria, due epiche, una rara, una comune), ma <b>partono tutte dal livello 1</b>. La tua collezione qui non conta.</li>
+        <li><b>A ogni piano vinto</b> la squadra sale di 1 livello e scegli <b>un potenziamento tra tre</b>, di rarità diverse: livelli, olografica, Ultra, Ascesa o un cimelio. Più sali, più escono potenziamenti rari.</li>
+        <li><b>Anche il bot sale.</b> A ogni piano prende un suo potenziamento (lo vedi prima di combattere), cambia due carte e gioca meglio. Dal piano 13 diventa anche più forte del 5% a piano.</li>
+        <li><b>Ogni 3 piani</b> puoi cambiare una carta: la nuova tiene il livello di quella che lascia.</li>
+        <li><b>Hai 3 vite.</b> Se perdi riprovi lo stesso piano. I piani non finiscono mai: ti fermi alla terza sconfitta, oppure quando vuoi con «Mi fermo qui».</li>
+      </ol>
+      <h3>I cimeli</h3><div class="regole-cimeli">${Object.entries(CIMELI).filter(([, c]) => c.solo !== "notte").map(([, c]) => `<div><span>${c.ico}</span><b>${esc(c.nome)}</b><small>${esc(c.desc)}</small></div>`).join("")}</div>
+      <p class="nota">Quelli leggendari (Insegna, Panino, Canini, Petardo) si sommano se li prendi di nuovo.</p>
+      <h3>I premi</h3><p class="nota">Ingresso ${P.INGRESSO_SCALATA} monete. Il premio cresce con i piani, con una bustina in più ai piani 5, 10 e 15.</p>
+      <table class="regole-premi"><tbody>${righe}</tbody></table>
+      <div class="azioni centro"><button class="btn primario" data-azione="chiudi">Ho capito</button></div></div>`);
+  }
   function info(i) { const s = st(), x = s && s.squadra[i]; if (x) apriSchedaCarta({ id: x.id, liv: x.liv, olo: x.olo, ultra: x.ultra }); }
-  return { vista: "scalata", htmlSfida, entra, html: vista, scegli, combatti, riprendi, prepara, passo, chiudi, htmlFine, scegliPot, suCarta, annullaCarta, nuovaCarta, noCambio, fermati, riscuoti, info, stato: st };
+  return { vista: "scalata", htmlSfida, entra, regole, html: vista, scegli, combatti, riprendi, prepara, passo, chiudi, htmlFine, scegliPot, suCarta, annullaCarta, nuovaCarta, noCambio, fermati, riscuoti, info, stato: st };
 })();

@@ -189,6 +189,7 @@ const SfidePass = (() => {
     { id: "bustine-2", n: 2, xp: 120, testo: "Apri 2 bustine", conta: e => e.t === "bustina" ? 1 : 0 },
     { id: "potenzia-3", n: 3, xp: 120, testo: "Potenzia 3 volte una carta", conta: e => e.t === "potenzia" ? 1 : 0 },
     { id: "amici-1", n: 1, xp: 200, testo: "Vinci contro un amico o dal vivo", conta: e => e.t === "battaglia" && e.vinto && (e.tipo === "amico" || e.tipo === "vivo") ? 1 : 0 },
+    { id: "modi-3", n: 3, xp: 150, testo: "Supera 3 fermate della Lunga Notte o piani della Scalata", conta: e => e.t === "modo" ? e.n : 0 },
   ];
   const SETTIMANA = [
     { id: "vinci-15", n: 15, xp: 600, testo: "Vinci 15 battaglie", conta: e => e.t === "battaglia" && e.vinto ? 1 : 0 },
@@ -200,6 +201,8 @@ const SfidePass = (() => {
     { id: "sinergia-3", n: 3, xp: 600, testo: "Vinci 3 battaglie con 5 carte della stessa serie", conta: e => e.t === "battaglia" && e.vinto && e.serieMax >= 5 ? 1 : 0 },
     { id: "ko-50", n: 50, xp: 500, testo: "Manda KO 50 carte nemiche", conta: e => e.t === "battaglia" ? e.ko : 0 },
     { id: "bustine-8", n: 8, xp: 400, testo: "Apri 8 bustine", conta: e => e.t === "bustina" ? 1 : 0 },
+    { id: "alba-1", n: 1, xp: 700, testo: "Arriva all'alba nella Lunga Notte", conta: e => e.t === "modo" && e.alba ? 1 : 0 },
+    { id: "piano-8", n: 1, xp: 600, testo: "Supera l'ottavo piano della Scalata", conta: e => e.t === "modo" && e.piano >= 8 ? 1 : 0 },
   ];
   const attivo = () => typeof S !== "undefined" && S && !S.admin && S.profilo && S.profilo.nome;
   const scegli = (pool, k, chiave) => {   // sempre le stesse per tutto il giorno (o la settimana), uguali per tutti

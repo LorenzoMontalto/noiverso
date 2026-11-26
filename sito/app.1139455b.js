@@ -801,6 +801,35 @@ function htmlBarraFiltri(dove, extra = "") {
 }
 
 const SCORREVOLI = ".capitoli, .mv-carte, .notte-strada, .pass-pista, .tab-scorri, .tr-tabellone, .st-scorri, .mondo";
+// nov 2026: i nomi delle carte e le etichette dei ruoli non si tagliano mai. Se non entrano, il carattere si
+// rimpicciolisce quanto basta (fino a 7px); se non basta ancora, il nome va a capo. Vale per tutto quello che compare
+// sullo schermo: pagine, finestre, battaglie (un MutationObserver guarda le carte nuove).
+const NOMI_ADATTA = ".carta-nome, .ruolo-tag, .nm-testo > b, .mv-carta > span, .riserva-testo > b";
+function adattaNomi(radice) {
+  const tutti = radice.matches && radice.matches(NOMI_ADATTA) ? [radice] : radice.querySelectorAll ? [...radice.querySelectorAll(NOMI_ADATTA)] : [];
+  const els = tutti.filter(el => el.dataset.adattato !== el.textContent);
+  if (!els.length) return;
+  // prima tutte le letture, poi tutte le scritture (così il browser ricalcola l'impaginazione una volta sola)
+  els.forEach(el => { el.style.fontSize = ""; el.style.whiteSpace = ""; el.style.letterSpacing = ""; });
+  const misure = els.map(el => [el, el.clientWidth, el.scrollWidth]);
+  const troppo = [];
+  for (const [el, w, sw] of misure) { if (!w) continue; el.dataset.adattato = el.textContent;
+    if (sw > w + 1) { const cs = getComputedStyle(el); troppo.push([el, w, sw, parseFloat(cs.fontSize), (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)]); } }
+  // il testo si restringe in proporzione (il padding resta fisso, quindi lo tolgo dal conto)
+  for (const [el, w, sw, fs, pad] of troppo) el.style.fontSize = Math.max(7, Math.floor(fs * Math.max(1, w - pad) / Math.max(1, sw - pad) * 0.97 * 10) / 10) + "px";
+  // seconda passata per gli arrotondamenti (spaziatura tra le lettere), poi, solo se proprio serve, va a capo
+  let ancora = troppo.filter(([el]) => el.scrollWidth > el.clientWidth + 1);
+  for (const [el] of ancora) { el.style.letterSpacing = "0"; el.style.fontSize = Math.max(7, parseFloat(el.style.fontSize) * 0.92) + "px"; }
+  for (const [el] of ancora.filter(([el]) => el.scrollWidth > el.clientWidth + 1)) el.style.whiteSpace = "normal";
+}
+(() => {
+  let coda = new Set(), atteso = false;
+  const fai = () => { atteso = false; const c = coda; coda = new Set(); for (const n of c) if (n.isConnected) adattaNomi(n); };
+  new MutationObserver(mut => { for (const m of mut) for (const n of m.addedNodes) if (n.nodeType === 1) coda.add(n); if (!atteso && coda.size) { atteso = true; requestAnimationFrame(fai); } })
+    .observe(document.body, { childList: true, subtree: true });
+  document.addEventListener("toggle", e => adattaNomi(e.target), true);   // riquadri <details> che si aprono
+  let t; addEventListener("resize", () => { clearTimeout(t); t = setTimeout(() => { document.querySelectorAll("[data-adattato]").forEach(el => delete el.dataset.adattato); adattaNomi(document.body); }, 200); });
+})();
 // nov 2026: ogni cambio di sezione è una voce della cronologia, così il tasto Indietro del telefono torna alla
 // sezione di prima (prima usciva dal gioco). Con Indietro si ritrova anche il punto della pagina dov'eri.
 const posizioni = {};
@@ -810,6 +839,7 @@ function vai(v, indietro = false) {
   if (cambiata && ultimaVistaDisegnata === vista) posizioni[vista] = scrollY;
   if (cambiata) selSq = null;
   if (cambiata && v === "squadra") limSq = PASSO_SQ;
+  if (cambiata && v === "album" && !indietro) limSerieAlb = PASSO_ALB;   // con Indietro tengo le serie già caricate, per ritrovare il punto
   vista = v;
   if (location.hash.slice(1) !== v) {
     try { if (cambiata && location.hash && !indietro) history.pushState(null, "", "#" + v); else history.replaceState(null, "", "#" + v); } catch (e) { location.hash = v; }
@@ -855,6 +885,7 @@ function disegna() {
   if (vista === "pass") dopoPass();
   if (vista === "storia") dopoStoria();
   if (vista === "squadra") avviaAltreCarte();
+  if (vista === "album") avviaAltreAlbum();
 }
 
 // ---------- STRADA (home) ----------
@@ -1497,10 +1528,33 @@ function vistaAlbum() {
       <button class="copertina tutte ${filtroAlbum === "tutte" ? "scelta" : ""}" data-fx="gelatina" data-filtro="tutte" aria-pressed="${filtroAlbum === "tutte"}"><span class="copertina-testo"><b>Tutte le serie</b><small>${tot}/${CARTE.length}</small></span></button>
     </div>
     ${filtroAlbum === "pot" ? "" : Sinergie.htmlMultiversoAlbum()}
-    ${filtroAlbum === "pot" ? htmlSezionePot() : filtroAlbum === "tutte" ? ORDINE_SERIE.map(id => htmlSezioneSerie(id, true)).join("") : htmlSezioneSerie(filtroAlbum, false)}
+    ${filtroAlbum === "pot" ? htmlSezionePot() : filtroAlbum === "tutte" ? htmlTutteSerie() : htmlSezioneSerie(filtroAlbum, false)}
   </section>`;
 }
 
+// nov 2026: «Tutte le serie» si disegna a blocchi di 3 serie (prima tutte e 23 insieme: con la collezione completa
+// erano 7.500 elementi, troppi per i telefoni). Le altre arrivano da sole quando scorri verso il fondo.
+// Con un filtro attivo si vedono solo le carte trovate che passano il filtro, quindi poche: lì disegno tutto.
+const PASSO_ALB = 3;
+let limSerieAlb = PASSO_ALB, osservaAlb = null;
+function htmlTutteSerie() {
+  const fa = filtri.album, filtrando = !!(fa.tipo || fa.ruolo || fa.cerca), quante = filtrando ? ORDINE_SERIE.length : limSerieAlb;
+  return ORDINE_SERIE.slice(0, quante).map(id => htmlSezioneSerie(id, true)).join("")
+    + (quante < ORDINE_SERIE.length ? `<div class="altre-serie" data-altre-album><span>Carico le altre serie…</span></div>` : "");
+}
+function altreSerieAlbum() {
+  const box = $("#vista [data-altre-album]"); if (!box) return;
+  const da = limSerieAlb; limSerieAlb = Math.min(ORDINE_SERIE.length, limSerieAlb + PASSO_ALB);
+  box.insertAdjacentHTML("beforebegin", ORDINE_SERIE.slice(da, limSerieAlb).map(id => htmlSezioneSerie(id, true)).join(""));
+  if (limSerieAlb >= ORDINE_SERIE.length) { box.remove(); if (osservaAlb) osservaAlb.disconnect(); }
+}
+function avviaAltreAlbum() {
+  if (osservaAlb) osservaAlb.disconnect();
+  const box = $("#vista [data-altre-album]"); if (!box) return;
+  if (!("IntersectionObserver" in window)) { while ($("#vista [data-altre-album]")) altreSerieAlbum(); return; }
+  osservaAlb = new IntersectionObserver(v => { if (v.some(x => x.isIntersecting)) altreSerieAlbum(); }, { rootMargin: "900px 0px" });
+  osservaAlb.observe(box);
+}
 // ---------- SQUADRE ----------
 // nov 2026: la lista delle carte in Squadre si disegna a blocchi (prima tutte le 300+ insieme: sui telefoni la pagina
 // usava troppa memoria e il browser la chiudeva). Le altre arrivano da sole quando scorri in fondo.
@@ -1739,6 +1793,7 @@ function disegnaQuieto() {
   main.classList.add("quieta");
   morfaFigli(main, t);
   if (vista === "squadra") avviaAltreCarte();
+  if (vista === "album") avviaAltreAlbum();
 }
 // album: dopo aver toccato una serie, la pagina scende da sola fin dove iniziano le sue carte
 function scorriAlleCarteAlbum() { scorriA("#vista .serie-sezione"); }
@@ -2154,6 +2209,17 @@ function htmlAlbo() {
     ${passate.length ? `<details class="albo"><summary>Albo d'oro (${passate.length})</summary><ul>${passate.map(x => `<li><small>${x.titolo ? `<b>${esc(String(x.titolo))}</b> · ` : ""}${x.dal ? `${esc(data(x.dal))} – ` : "fino al "}${esc(data(x.al))}</small>
       <span>${x.podio.map((p, i) => `${medaglie[i] || ""} <b>${esc(String(p.nome || "Giocatore"))}</b> ${Number(p.punti) || 0}`).join(" · ")}</span></li>`).join("")}</ul></details>` : ""}`;
 }
+// nov 2026: classifiche tra amici delle modalità a corsa — Scalata (piano più alto di questa settimana) e albe della Lunga Notte
+function htmlClassificaModi(righe) {
+  const w = Missioni.settimana(), medaglia = i => ["🥇", "🥈", "🥉"][i] || `${i + 1}.`;
+  const sc = righe.filter(r => r.scalataSett === w && Number(r.scalataPiano) > 0).sort((a, b) => Number(b.scalataPiano) - Number(a.scalataPiano)).slice(0, 10);
+  const al = righe.filter(r => Number(r.albe) > 0).sort((a, b) => Number(b.albe) - Number(a.albe)).slice(0, 10);
+  const riga = (r, i, val) => `<li class="${r.id === Archivio.uid ? "io" : ""}"><span>${medaglia(i)}</span><b data-profilo-amico="${esc(r.id)}" role="button" tabindex="0">${esc(String(r.nome || "Giocatore"))}</b><em>${val}</em></li>`;
+  return `<div class="classifica-modi">
+    <div class="cm-box"><h3>🗼 La Scalata <small>· questa settimana</small></h3>${sc.length ? `<ol>${sc.map((r, i) => riga(r, i, `piano ${Number(r.scalataPiano)}`)).join("")}</ol>` : `<p class="nota">Nessuno ha ancora scalato questa settimana: il primo piano è libero.</p>`}<small class="nota">Si azzera ogni lunedì.</small></div>
+    <div class="cm-box"><h3>🌙 Albe della Lunga Notte</h3>${al.length ? `<ol>${al.map((r, i) => riga(r, i, `${Number(r.albe)} ${Number(r.albe) === 1 ? "alba" : "albe"}`)).join("")}</ol>` : `<p class="nota">Nessuno è ancora arrivato all'alba.</p>`}<small class="nota">Di sempre.</small></div>
+  </div>`;
+}
 function vistaClassifica() {
   if (Archivio.modo !== "cloud") return `
     <section class="vuoto"><h2>Classifica del gruppo</h2>
@@ -2168,6 +2234,7 @@ function vistaClassifica() {
     <p class="nota">Contano solo le sfide dal vivo: +3 punti per ogni vittoria, 0 per le sconfitte. A pari punti sta sopra chi ha il livello giocatore più alto, poi il pass, poi più carte, poi più partite giocate. A fine mese premi ai primi tre: 🥇 ${PREMI_CLASSIFICA[0]} · 🥈 ${PREMI_CLASSIFICA[1]} · 🥉 ${PREMI_CLASSIFICA[2]}.</p>
     ${Gradi.htmlClassifica()}
     ${htmlAlbo()}
+    ${htmlClassificaModi(classificaDati)}
     ${Torneo.htmlTabellone()}
     <table class="classifica">
       <thead><tr><th>#</th><th>Giocatore</th><th>Punti</th><th>Vinte / giocate</th><th>Carte</th><th>Livello</th>${socialeAttivo() ? "<th></th>" : ""}</tr></thead>
@@ -2185,7 +2252,7 @@ function avviaClassifica() {
   Archivio.ascoltaClassifica(async righe => {
     clearTimeout(classificaTimer); classificaErrore = false;
     // ogni salvataggio di un amico tocca la sua riga (anche solo l'ora): ridisegno solo se cambia qualcosa che si vede
-    const firma = JSON.stringify(righe.map(r => [r.id, r.punti, r.vinte_vivo, r.giocate_vivo, r.carte, r.pass, r.livello, r.nome, r.avatar, r.titolo_id, r.cornice, r.stileNome, r.sfondo, String(r.vetrina || "")]));
+    const firma = JSON.stringify(righe.map(r => [r.id, r.punti, r.vinte_vivo, r.giocate_vivo, r.carte, r.pass, r.livello, r.nome, r.avatar, r.titolo_id, r.cornice, r.stileNome, r.sfondo, String(r.vetrina || ""), r.albe, r.scalataSett, r.scalataPiano]));
     const uguale = classificaDati && firma === avviaClassifica._firma;
     avviaClassifica._firma = firma;
     classificaDati = ordinaClassifica(righe);
@@ -2409,7 +2476,7 @@ async function vaiAccesso() {
 // ---------- Da sistemare (solo admin): database da aggiornare e carte senza immagine ----------
 // La versione del database è un'impronta di supabase/schema.sql scritta da costruisci.py sia qui sia nel server:
 // se il server ne restituisce un'altra (o non ha ancora la funzione), schema.sql va eseguito di nuovo.
-const VERSIONE_SCHEMA = "c7fe95d829";
+const VERSIONE_SCHEMA = "1e2a39c44a";
 const StatoServer = (() => {
   let schema = null, mancano = null, quando = 0, inCorso = false;
   async function controlla(forza) {
@@ -3911,7 +3978,7 @@ document.addEventListener("click", e => {
   if (t.dataset.scrigno) { const [k, id] = t.dataset.scrigno.split(":"); riscuotiScrigno(+k, id, t); return; }
   if (t.dataset.edFiltro) { edFiltro = t.dataset.edFiltro; aggiornaEditor(true); return; }
   if (t.dataset.vista) { if (B) return; vai(t.dataset.vista); return; }
-  if (t.dataset.filtro) { filtroAlbum = t.dataset.filtro; disegnaQuieto(); scorriAlleCarteAlbum(); return; }
+  if (t.dataset.filtro) { filtroAlbum = t.dataset.filtro; limSerieAlb = PASSO_ALB; disegnaQuieto(); scorriAlleCarteAlbum(); return; }
   if (t.dataset.filtroSq) { filtroSquadra = t.dataset.filtroSq; disegna(); return; }
   if (t.dataset.filtra) {
     const [dove, campo, val] = t.dataset.filtra.split(":"), f = filtri[dove];
@@ -4026,6 +4093,10 @@ document.addEventListener("click", e => {
     case "adesso-avvento": Avvento.apri(); break;
     case "vai-admin": vai("admin"); break;
     case "notte-entra": case "notte-vai": Notte.entra(); break;
+    case "notte-conferma": Notte.entra(true); break;
+    case "notte-regole": Notte.regole(); break;
+    case "scalata-conferma": Scalata.entra(true); break;
+    case "scalata-regole": Scalata.regole(); break;
     case "notte-riprendi": Notte.riprendi(); break;
     case "notte-salta": Notte.salta(); break;
     case "notte-annulla-lascia": Notte.annullaLascia(); break;

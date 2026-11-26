@@ -237,11 +237,19 @@ const Notte = (typeof document === "undefined") ? null : (() => {
     return `<section class="modo-box notte-box"><div class="modo-ico">🌙</div><div>
       <b>La Lunga Notte</b><span class="nota">Dieci fermate dal tramonto all'alba con carte trovate per strada: la tua collezione non conta. I PV restano tra una battaglia e l'altra, a ogni bivio scegli la strada e raccogli cimeli. Se perdi, la notte finisce.</span>
       ${s ? `<span class="modo-stato">${s.fase === "fine" ? "Notte finita: riscuoti il premio" : `Fermata ${s.fermata} di ${R.FERMATE}${s.battaglia ? " · battaglia in corso" : ""}`}</span>` : `<span class="modo-stato">Ingresso ${PremiModalita.INGRESSO_NOTTE} monete · premio in base alle fermate superate</span>`}
-      </div><button class="btn ${s ? "primario" : "oro"}" data-fx="spinta" data-azione="${s ? "notte-vai" : "notte-entra"}">${s ? "Continua" : "Esci stasera"}</button></section>`;
+      </div><div class="modo-tasti"><button class="btn ${s ? "primario" : "oro"}" data-fx="spinta" data-azione="${s ? "notte-vai" : "notte-entra"}">${s ? "Continua" : "Esci stasera"}</button>
+      <button class="btn piccolo" data-azione="notte-regole">Come si gioca</button></div></section>`;
   }
-  function entra() {
+  // prima di pagare l'ingresso si conferma, così non si parte per sbaglio
+  function entra(confermato) {
     if (st()) { vai("notte"); return; }
     if (!S.admin && S.monete < PremiModalita.INGRESSO_NOTTE) { mostraAvviso(`L'ingresso costa ${PremiModalita.INGRESSO_NOTTE} monete.`); return; }
+    if (!confermato) { apriModale(`<div class="modo-conferma"><span class="codice-tag">🌙 La Lunga Notte</span><h2>Esci stasera?</h2>
+      <p>L'ingresso costa <b>${S.admin ? "niente (sei l'admin)" : PremiModalita.INGRESSO_NOTTE + " monete"}</b> e non si restituisce: il premio dipende da quante fermate superi.</p>
+      <p class="nota">Puoi fermarti quando vuoi con «Torna a casa» e incassare quello che hai guadagnato fino a lì.</p>
+      <div class="azioni centro"><button class="btn oro grande" data-fx="spinta" data-azione="notte-conferma">Sì, esco${S.admin ? "" : ` (${PremiModalita.INGRESSO_NOTTE} monete)`}</button><button class="btn" data-azione="chiudi">Non ora</button></div>
+      <button class="btn piccolo link" data-azione="notte-regole">Come si gioca</button></div>`); return; }
+    chiudiModale();
     if (!S.admin) S.monete -= PremiModalita.INGRESSO_NOTTE;
     S.notte = { v: 1, fase: "partenza", partenze: R.partenze(rng) };
     salva(); aggiornaTesta(); vai("notte");
@@ -306,7 +314,7 @@ const Notte = (typeof document === "undefined") ? null : (() => {
         <p class="notte-premio-fine">${S.admin ? "Da admin non ci sono premi." : esc(testoPremio(p))}</p>
         <button class="btn oro" data-fx="coriandoli" data-azione="notte-riscuoti">${S.admin ? "Chiudi" : "Riscuoti e torna a casa"}</button></div>`; }
     return `<section class="modo notte">
-      <div class="titolo-riga"><h2>🌙 La Lunga Notte</h2>${s.fase !== "fine" && s.fase !== "partenza" ? `<button class="btn piccolo" data-azione="notte-abbandona">Torna a casa</button>` : ""}</div>
+      <div class="titolo-riga"><h2>🌙 La Lunga Notte</h2><span class="modo-tasti"><button class="btn piccolo" data-azione="notte-regole">Come si gioca</button>${s.fase !== "fine" && s.fase !== "partenza" ? `<button class="btn piccolo" data-azione="notte-abbandona">Torna a casa</button>` : ""}</span></div>
       ${s.fase !== "partenza" ? htmlStrada(s) : ""}
       ${s.squadra ? `<div class="notte-stato"><span class="gettoni">🪙 <b>${s.gettoni}</b> gettoni</span><span class="cimeli">${Object.keys(s.cimeli).map(htmlCim).join("") || `<small class="nota">Ancora nessun cimelio</small>`}</span></div>${s.fase === "lascia" ? "" : htmlSquadra(s)}` : ""}
       ${corpo}</section>`;
@@ -325,6 +333,12 @@ const Notte = (typeof document === "undefined") ? null : (() => {
   }
 
   // ---------- azioni ----------
+  // si passa alla fermata dopo: conta per missioni e sfide del pass; all'alba conta anche l'alba
+  function avanzaN(s) {
+    R.avanza(rng, s);
+    if (S.admin) return;
+    Missioni.evento("modo", { n: 1 }); SfidePass.evento({ t: "modo", n: 1, alba: s.finita === "alba" });
+  }
   function scegliPartenza(i) { const s = st(); if (!s || s.fase !== "partenza") return; S.notte = R.nuova(rng, s.partenze[i]); salva(); disegna(); }
   function scegliBivio(i) {
     const s = st(); if (!s || s.fase !== "bivio" || !s.bivio[i]) return;
@@ -373,17 +387,17 @@ const Notte = (typeof document === "undefined") ? null : (() => {
   }
   function scegliPremio(i) {
     const s = st(); if (!s || s.fase !== "premio") return; const x = s.premio[i]; if (!x) return;
-    if (x.cimelio) { s.cimeli[x.cimelio] = (s.cimeli[x.cimelio] || 0) + 1; R.avanza(rng, s); }
+    if (x.cimelio) { s.cimeli[x.cimelio] = (s.cimeli[x.cimelio] || 0) + 1; avanzaN(s); }
     else if (!R.prendiCarta(s, x.carta, x.liv)) { s.lascia = { carta: x.carta, liv: x.liv, torna: "premio" }; s.fase = "lascia"; }
-    else R.avanza(rng, s);
+    else avanzaN(s);
     salva(); disegna(); scrollTo(0, 0);
   }
   function lascia(i) {
     const s = st(); if (!s || s.fase !== "lascia") return;
     const l = s.lascia; R.prendiCarta(s, l.carta, l.liv, i);
     if (l.prezzo) { s.gettoni -= l.prezzo; s.offerta.comprati.push(l.chiave); s.fase = "mercatino"; }
-    else if (l.torna === "imprevisto") R.avanza(rng, s);
-    else R.avanza(rng, s);
+    else if (l.torna === "imprevisto") avanzaN(s);
+    else avanzaN(s);
     s.lascia = null; salva(); disegna();
   }
   function annullaLascia() { const s = st(); if (!s || s.fase !== "lascia") return; s.fase = s.lascia.torna; s.lascia = null; salva(); disegna(); }
@@ -397,7 +411,7 @@ const Notte = (typeof document === "undefined") ? null : (() => {
     if (cosa === "cura") paga(m.cura, "cura", () => R.curaTutti(s, .3));
     if (cosa === "livello") paga(m.livello, "livello", () => R.livelliTutti(s, 1));
   }
-  function bar(cosa) { const s = st(); if (!s || s.fase !== "bar") return; if (cosa === "riposo") R.curaTutti(s, .4); else R.livelliTutti(s, 2); R.avanza(rng, s); salva(); disegna(); scrollTo(0, 0); }
+  function bar(cosa) { const s = st(); if (!s || s.fase !== "bar") return; if (cosa === "riposo") R.curaTutti(s, .4); else R.livelliTutti(s, 2); avanzaN(s); salva(); disegna(); scrollTo(0, 0); }
   function imprevisto(az) {
     const s = st(); if (!s || s.fase !== "imprevisto") return; const sc = s.tappa.scena;
     const cimCaso = () => { const c = R.mescola(Math.random, Object.keys(CIMELI).filter(id => !s.cimeli[id] && CIMELI[id].solo !== "scalata"))[0]; if (c) { s.cimeli[c] = 1; return CIMELI[c].nome; } return ""; };
@@ -412,11 +426,11 @@ const Notte = (typeof document === "undefined") ? null : (() => {
     else if (sc === "vicolo" && az === "accetta") { R.livelliTutti(s, 3); s.squadra.forEach(x => { if (x.pv > 0) x.pv = Math.max(.01, x.pv - .25); }); msg = "+3 livelli a tutti, ma che botte."; }
     else if (sc === "taxi" && az === "uno") { const x = s.squadra.reduce((a, b) => (b.pv < a.pv ? b : a)); x.pv = 1; msg = `${PER_ID[x.id].nome} torna come nuovo.`; }
     else if (sc === "taxi" && az === "tutti") { R.curaTutti(s, .15); msg = "+15% PV a tutti."; }
-    R.avanza(rng, s); salva(); disegna(); scrollTo(0, 0);
+    avanzaN(s); salva(); disegna(); scrollTo(0, 0);
     if (msg) mostraAvviso(msg);
   }
-  function salta() { const s = st(); if (!s || s.fase !== "premio") return; R.avanza(rng, s); salva(); disegna(); }
-  function avanti() { const s = st(); if (!s || s.fase !== "mercatino") return; R.avanza(rng, s); salva(); disegna(); scrollTo(0, 0); }
+  function salta() { const s = st(); if (!s || s.fase !== "premio") return; avanzaN(s); salva(); disegna(); }
+  function avanti() { const s = st(); if (!s || s.fase !== "mercatino") return; avanzaN(s); salva(); disegna(); scrollTo(0, 0); }
   function abbandona(el) {
     const s = st(); if (!s) return;
     if (!el.dataset.sicuro) { el.dataset.sicuro = "1"; el.textContent = "Sicuro? Tocca di nuovo"; return; }
@@ -425,13 +439,29 @@ const Notte = (typeof document === "undefined") ? null : (() => {
   function riscuoti(el) {
     const s = st(); if (!s || s.fase !== "fine") return;
     const f = R.fermateSuperate(s), p = PremiModalita.notte(f);
-    if (!S.admin) { daiPremio(p); aggiungiXP(ridXP(PremiModalita.XP_BATTAGLIA * (s.vinte || 0))); S.stats.notti = (S.stats.notti || 0) + 1; S.stats.notteMax = Math.max(S.stats.notteMax || 0, f); }
+    if (!S.admin) { daiPremio(p); aggiungiXP(ridXP(PremiModalita.XP_BATTAGLIA * (s.vinte || 0))); S.stats.notti = (S.stats.notti || 0) + 1; S.stats.notteMax = Math.max(S.stats.notteMax || 0, f);
+      if (s.finita === "alba") S.stats.albe = (S.stats.albe || 0) + 1; Trofei.controlla(); }
     S.notte = null; salva(); aggiornaTesta(); vai("sfida");
     if (!S.admin) mostraAvviso(`La Lunga Notte (${f} fermate): ${testoPremio(p)}!`);
     if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 60, forma: "stella", colori: ["#f2c14e", "#9a6aff", "#ffffff"], velocita: 8, dimensione: 6 }); }
   }
+  function regole() {
+    const R2 = PremiModalita, righe = [0, 2, 4, 5, 7, 9, 10].map(f => `<tr><td>${f === 10 ? "🌅 Alba" : f + (f === 1 ? " fermata" : " fermate")}</td><td>${esc(testoPremio(R2.notte(f)))}</td></tr>`).join("");
+    apriModale(`<div class="modo-regole"><span class="codice-tag">🌙 La Lunga Notte</span><h2>Come si gioca</h2>
+      <ol>
+        <li><b>Scegli con chi esci.</b> Tre partenze diverse, tutte al livello ${R.LIV0}. Le carte della tua collezione qui non contano: sono quelle che trovi per strada e restano solo per questa notte.</li>
+        <li><b>Dieci fermate fino all'alba.</b> A ogni bivio scegli la strada: 👊 rissa, 🧢 banda rivale (tutti della stessa serie), 🍻 bar (riposi o ti alleni), 🛍️ mercatino, ❓ imprevisto. Alle fermate 5 e 10 c'è un 💀 boss.</li>
+        <li><b>I PV restano.</b> Quello che perdi in una battaglia te lo porti alla successiva. Dopo ogni vittoria tutti recuperano il 20% e salgono di 1 livello; chi era KO torna con il 40%.</li>
+        <li><b>Gettoni, carte e cimeli.</b> Vincendo guadagni gettoni (si spendono al mercatino) e scegli un premio: una carta nuova o un cimelio. La squadra ha al massimo 5 carte.</li>
+        <li><b>Se perdi, la notte finisce.</b> Puoi anche tornare a casa quando vuoi. Il premio dipende dalle fermate superate.</li>
+      </ol>
+      <h3>I cimeli</h3><div class="regole-cimeli">${Object.entries(CIMELI).filter(([, c]) => c.solo !== "scalata").map(([, c]) => `<div><span>${c.ico}</span><b>${esc(c.nome)}</b><small>${esc(c.desc)}</small></div>`).join("")}</div>
+      <h3>I premi</h3><p class="nota">Ingresso ${R2.INGRESSO_NOTTE} monete. Più vai lontano più prendi, con un salto dopo il primo boss e all'alba.</p>
+      <table class="regole-premi"><tbody>${righe}</tbody></table>
+      <div class="azioni centro"><button class="btn primario" data-azione="chiudi">Ho capito</button></div></div>`);
+  }
   function infoCimelio(id) { const c = CIMELI[id]; if (c) mostraAvviso(`${c.ico} ${c.nome}: ${c.desc}.`); }
   function infoCarta(i) { const s = st(), x = s && s.squadra[i]; if (x) apriSchedaCarta({ id: x.id, liv: x.liv }); }
 
-  return { vista: "notte", htmlSfida, entra, html: vista, scegliPartenza, scegliBivio, riprendi, prepara, passo, chiudi, htmlFine, scegliPremio, lascia, annullaLascia, compra, bar, imprevisto, salta, avanti, abbandona, riscuoti, infoCimelio, infoCarta, stato: st };
+  return { vista: "notte", htmlSfida, entra, regole, html: vista, scegliPartenza, scegliBivio, riprendi, prepara, passo, chiudi, htmlFine, scegliPremio, lascia, annullaLascia, compra, bar, imprevisto, salta, avanti, abbandona, riscuoti, infoCimelio, infoCarta, stato: st };
 })();

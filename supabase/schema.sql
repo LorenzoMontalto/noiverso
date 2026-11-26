@@ -901,6 +901,8 @@ language sql immutable as $$
     when 'lode-1' then 'Lodato' when 'bustine-50' then 'Strappabustine' when 'stelle-30' then 'Narratore' when 'stelle-120' then 'Giramondo' when 'ultra-1' then 'Ultra' when 'pass-50' then 'Fedelissimo'
     when 'accessi-7' then 'Sempre presente' when 'amici-10' then 'Bullo di quartiere' when 'boss-20000' then 'Ammazzaboss' when 'scambi-3' then 'Mercante'
     when 'vivo-5' then 'Campione dal vivo'
+    when 'notte-1' then 'Nottambulo' when 'notte-boss' then 'Buttafuori' when 'alba-1' then 'Re della notte' when 'alba-5' then 'Signore dell''alba'
+    when 'scalata-5' then 'Scalatore' when 'scalata-10' then 'Alpinista' when 'scalata-15' then 'Re della Torre' when 'scalata-20' then 'Oltre le nuvole'
   end
 $$;
 -- Il trofeo risulta davvero conquistato? Dove si può, lo verifica sui dati del server (sfide, boss, scambi) o del salvataggio.
@@ -931,6 +933,14 @@ begin
     when t = 'stelle-120' then coalesce((select sum(value::int) from jsonb_each_text(coalesce(d->'storia'->'stelle', '{}'::jsonb)) where value ~ '^[0-9]+$'), 0) >= 120
     when t = 'pass-50' then coalesce((d->'pass'->>'xp')::int, 0) >= 50 * 200
     when t = 'accessi-7' then coalesce((st->>'serieMax')::int, 0) >= 7
+    when t = 'notte-1' then coalesce((st->>'notti')::int, 0) >= 1
+    when t = 'notte-boss' then coalesce((st->>'notteMax')::int, 0) >= 5
+    when t = 'alba-1' then coalesce((st->>'albe')::int, 0) >= 1
+    when t = 'alba-5' then coalesce((st->>'albe')::int, 0) >= 5
+    when t = 'scalata-5' then coalesce((st->>'scalataMax')::int, 0) >= 5
+    when t = 'scalata-10' then coalesce((st->>'scalataMax')::int, 0) >= 10
+    when t = 'scalata-15' then coalesce((st->>'scalataMax')::int, 0) >= 15
+    when t = 'scalata-20' then coalesce((st->>'scalataMax')::int, 0) >= 20
     when t = 'amici-10' then (select count(*) from public.sfide_amici where sfidante = u and vinto) >= 10
     when t = 'boss-20000' then coalesce((select sum(danni) from public.boss_danni where user_id = u), 0) >= 20000
     when t = 'scambi-3' then (select count(*) from public.scambi where (da = u or a = u) and stato = 'accettato') >= 3
@@ -1158,7 +1168,11 @@ begin
                where jsonb_typeof(m->'presi') = 'array'),
     'preferita', coalesce((select k from jsonb_each_text(case when jsonb_typeof(s->'usi') = 'object' then s->'usi' else '{}'::jsonb end) e(k, v)
                where v ~ '^[0-9]{1,9}$' and coalesce((s->'carte'->>k)::int, 0) > 0 order by v::int desc limit 1), ''),
-    'seriePref', case when coalesce(new.dati->>'seriePref', '') ~ '^[a-z0-9]{1,20}$' then new.dati->>'seriePref' else '' end);
+    'seriePref', case when coalesce(new.dati->>'seriePref', '') ~ '^[a-z0-9]{1,20}$' then new.dati->>'seriePref' else '' end,
+    -- nov 2026: Lunga Notte e Scalata (classifica tra amici: albe di sempre e piano più alto della settimana)
+    'albe', case when coalesce(s->'stats'->>'albe', '') ~ '^[0-9]{1,6}$' then (s->'stats'->>'albe')::int else 0 end,
+    'scalataSett', case when coalesce(s->'stats'->'scalataSett'->>'sett', '') ~ '^[0-9]{4}-W[0-9]{2}$' then s->'stats'->'scalataSett'->>'sett' else '' end,
+    'scalataPiano', case when coalesce(s->'stats'->'scalataSett'->>'piano', '') ~ '^[0-9]{1,4}$' then (s->'stats'->'scalataSett'->>'piano')::int else 0 end);
   new.aggiornato := now();
   return new;
 end $$;
@@ -1541,6 +1555,6 @@ grant execute on function public.registra_carte(text[], boolean, text), public.s
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select 'c7fe95d829'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select '1e2a39c44a'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE

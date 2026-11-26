@@ -203,7 +203,7 @@ h2 { font-size: 1.35rem; }
 .carta-piede { position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 10px 9px; background: linear-gradient(transparent, rgba(8, 6, 8, .94) 42%); }
 .carta-nome { font-family: var(--display); font-size: 1.02rem; line-height: 1.1; }
 .carta-sotto { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
-.ruolo-tag { background: var(--rc); color: #120c10; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 4px; }
+.ruolo-tag { background: var(--rc); color: #120c10; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 4px; max-width: 100%; box-sizing: border-box; overflow: hidden; white-space: nowrap; }
 .ruolo-cosa { font-size: .74rem; color: #d9cdd1; }
 .carta.piccola .carta-nome { font-size: .8rem; }
 /* nomi lunghi (es. i titoli dei quadri): testo più piccolo così non copre il tipo in alto */
@@ -279,6 +279,13 @@ h1.neon { font-size: clamp(2.6rem, 8vw, 4.6rem); line-height: .95; margin-bottom
 /* nov 2026: pacco da 5 scontato */
 .pacco5 s { opacity: .55; font-weight: 500; margin-right: 2px; }
 .pacco5 em { font-style: normal; font-size: .72rem; font-weight: 800; background: var(--ok, #4fd38a); color: #08200f; border-radius: 6px; padding: 1px 5px; margin-left: 4px; }
+.altre-serie { text-align: center; padding: 30px 0 60px; color: var(--spento); font-size: .9rem; }
+.classifica-modi { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin: 12px 0; }
+.cm-box { padding: 12px; border-radius: 14px; border: 1px solid var(--linea); background: var(--asfalto); display: grid; gap: 6px; }
+.cm-box h3 { margin: 0; font-size: 1rem; } .cm-box h3 small { font-weight: 500; color: var(--spento); }
+.cm-box ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.cm-box li { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 8px; } .cm-box li.io { background: rgba(242, 193, 78, .12); }
+.cm-box li b { cursor: pointer; overflow-wrap: anywhere; min-width: 0; } .cm-box li em { font-style: normal; color: var(--oro); font-weight: 700; font-size: .88rem; }
 /* nov 2026: Lunga Notte e Scalata */
 .modi-corsa { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin: 14px 0; }
 .modo-box { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; border: 1px solid rgba(154, 106, 255, .45);
@@ -303,7 +310,7 @@ h1.neon { font-size: clamp(2.6rem, 8vw, 4.6rem); line-height: .95; margin-bottom
 .notte-membro img { width: 44px; height: 60px; object-fit: cover; border-radius: 6px; flex: none; background: #000; }
 .notte-membro.ko { opacity: .5; } .notte-membro.spento { opacity: .35; cursor: not-allowed; }
 .notte-membro.vuoto { justify-content: center; border-style: dashed; color: var(--spento); font-size: .8rem; min-height: 72px; cursor: default; }
-.nm-testo { display: grid; gap: 2px; min-width: 0; } .nm-testo b { font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .nm-testo small { font-size: .72rem; color: var(--spento); }
+.nm-testo { display: grid; gap: 2px; min-width: 0; } .nm-testo b { font-size: .86rem; overflow: hidden; white-space: nowrap; } .nm-testo small { font-size: .72rem; color: var(--spento); }
 .nm-pv { display: block; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; } .nm-pv i { display: block; height: 100%; background: linear-gradient(90deg, #4fd38a, #b7f36a); }
 .notte-bivio, .notte-partenze { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
 .notte-opz { display: grid; gap: 6px; padding: 14px; border-radius: 16px; border: 1px solid var(--linea); background: var(--asfalto); color: var(--testo); font: inherit; text-align: left; cursor: pointer; transition: transform .15s, border-color .15s; }
@@ -334,6 +341,15 @@ h1.neon { font-size: clamp(2.6rem, 8vw, 4.6rem); line-height: .95; margin-bottom
 .pot-carta:hover { transform: translateY(-3px); }
 @keyframes pot-entra { from { opacity: 0; transform: rotateY(90deg) scale(.8); } }
 @media (prefers-reduced-motion: reduce) { .pot-carta { animation: none; } }
+.modo-tasti { display: flex; flex-direction: column; align-items: stretch; gap: 6px; flex: none; }
+.titolo-riga .modo-tasti { flex-direction: row; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.modo-conferma, .modo-regole { display: grid; gap: 10px; } .modo-conferma { text-align: center; justify-items: center; }
+.modo-regole ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; line-height: 1.45; } .modo-regole h3 { margin: 6px 0 0; }
+.regole-cimeli { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.regole-cimeli div { display: grid; grid-template-columns: 30px 1fr; column-gap: 8px; align-items: center; padding: 6px 8px; border-radius: 10px; background: rgba(255, 255, 255, .04); }
+.regole-cimeli span { grid-row: span 2; font-size: 1.4rem; text-align: center; } .regole-cimeli b { font-size: .86rem; } .regole-cimeli small { font-size: .76rem; color: var(--spento); }
+.regole-premi { width: 100%; border-collapse: collapse; font-size: .9rem; } .regole-premi td { padding: 5px 8px; border-bottom: 1px solid var(--linea); } .regole-premi td:first-child { font-weight: 700; white-space: nowrap; }
+@media (max-width: 560px) { .modo-tasti { flex-direction: row; flex: 1 1 100%; } .modo-tasti .btn { flex: 1; } }
 /* nov 2026: confronto al massimo */
 .confronto-max { display: flex; align-items: flex-start; gap: 10px; margin: 4px 0 12px; padding: 10px 12px; border: 1px solid rgba(242, 193, 78, .4); border-radius: 12px; background: rgba(242, 193, 78, .06); cursor: pointer; }
 .confronto-max input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--oro); flex: none; }
@@ -652,7 +668,7 @@ body.in-battaglia { overflow: hidden; }
 .mossa.secondaria { background: var(--asfalto); }
 .panchina { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; padding: 1px; }
 .panchina .riserva-btn { min-width: 0; }
-.panchina .riserva-testo { min-width: 0; } .lato-mio .panchina .stat-bat.corto { gap: 5px; } .panchina .riserva-testo b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.panchina .riserva-testo { min-width: 0; } .lato-mio .panchina .stat-bat.corto { gap: 5px; } .panchina .riserva-testo b { white-space: nowrap; overflow: hidden; display: block; }
 .panchina.suggerita .riserva-btn.vantaggio:not(:disabled) { border-color: var(--oro); box-shadow: 0 0 14px rgba(242, 193, 78, .4); }
 .panchina.grande .riserva-btn { padding: 8px 12px 8px 8px; }
 .riserva-btn { position: relative; display: grid; grid-template-columns: 30px auto; gap: 8px; align-items: center; background: var(--asfalto); border: 1px solid var(--linea); border-radius: 10px; padding: 5px 10px 8px 5px; cursor: pointer; text-align: left; }
@@ -1238,7 +1254,7 @@ body.in-accesso { overflow: hidden; }
   .capitoli { grid-template-columns: repeat(6, 156px); }
   .cap-btn small { white-space: nowrap; } .cap-btn b { font-size: .8rem; }
   /* carte piccole: nomi che non escono, niente segno ▲ sopra i nomi */
-  .carta.piccola .carta-nome, .slot .carta-nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .carta.piccola .carta-nome, .slot .carta-nome { white-space: nowrap; }   /* nov 2026: niente puntini: il nome si rimpicciolisce fino a entrare (adattaNomi) */
   .slot .potenziabile em, .carta.piccola .potenziabile em { display: none; }
   .slot .potenziabile, .carta.piccola .potenziabile { padding: 0 5px; }
   .pass-info .serie-nome { font-size: .7rem; }
@@ -1938,7 +1954,7 @@ body.in-accesso { overflow: hidden; }
 .mv-carte { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
 .mv-carta { flex: none; width: 64px; display: grid; gap: 3px; justify-items: center; padding: 3px; border-radius: 10px; border: 2px solid var(--c); background: #0006; color: inherit; font: inherit; cursor: pointer; }
 .mv-carta img { width: 100%; aspect-ratio: 5 / 7; object-fit: cover; border-radius: 7px; }
-.mv-carta span { font-size: .6rem; line-height: 1.1; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+.mv-carta span { font-size: .6rem; line-height: 1.1; text-align: center; overflow: hidden; white-space: nowrap; width: 100%; }
 .mv-carta.buia { cursor: default; opacity: .55; border-style: dashed; }
 .mv-carta.buia i { display: grid; place-items: center; width: 100%; aspect-ratio: 5 / 7; border-radius: 7px; background: #0008; font-style: normal; font-weight: 900; font-size: 1.3rem; color: var(--spento); }
 

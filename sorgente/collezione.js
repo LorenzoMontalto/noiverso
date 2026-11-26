@@ -36,6 +36,15 @@ const Trofei = (() => {
       { id: "stelle-120", nome: "Giramondo", desc: "Prendi 120 stelle nella storia", titolo: "Giramondo", premio: 600, prog: stelleTot, max: 120 },
       { id: "pass-50", nome: "Fedelissimo", desc: "Arriva al livello 50 del pass", titolo: "Fedelissimo", premio: 300, prog: livelloPass, max: 50 },
       { id: "accessi-7", nome: "Sempre presente", desc: "Riscuoti il premio di accesso 7 giorni di fila", titolo: "Sempre presente", premio: 200, prog: () => st("serieMax"), max: 7 },
+      // nov 2026: Lunga Notte e Scalata
+      { id: "notte-1", nome: "Prima uscita", desc: "Finisci una Lunga Notte", titolo: "Nottambulo", premio: 100, prog: () => st("notti"), max: 1 },
+      { id: "notte-boss", nome: "Oltre il buttafuori", desc: "Supera il primo boss della Lunga Notte (fermata 5)", titolo: "Buttafuori", premio: 250, prog: () => st("notteMax"), max: 5 },
+      { id: "alba-1", nome: "Fino all'alba", desc: "Arriva all'alba nella Lunga Notte", titolo: "Re della notte", premio: 500, prog: () => st("albe"), max: 1 },
+      { id: "alba-5", nome: "Cinque albe", desc: "Arriva all'alba 5 volte", titolo: "Signore dell'alba", premio: 1000, prog: () => st("albe"), max: 5 },
+      { id: "scalata-5", nome: "Piano 5", desc: "Supera 5 piani in una Scalata", titolo: "Scalatore", premio: 150, prog: () => st("scalataMax"), max: 5 },
+      { id: "scalata-10", nome: "Piano 10", desc: "Supera 10 piani in una Scalata", titolo: "Alpinista", premio: 400, prog: () => st("scalataMax"), max: 10 },
+      { id: "scalata-15", nome: "Piano 15", desc: "Supera 15 piani in una Scalata", titolo: "Re della Torre", premio: 800, prog: () => st("scalataMax"), max: 15 },
+      { id: "scalata-20", nome: "Oltre le nuvole", desc: "Supera 20 piani in una Scalata", titolo: "Oltre le nuvole", premio: 1500, prog: () => st("scalataMax"), max: 20 },
     );
     // nov 2026: titoli del livello giocatore (ogni 10 livelli, fino al 100)
     if (typeof Livello !== "undefined") for (const L of Object.keys(Livello.TITOLI).map(Number)) v.push({ id: `giocatore-${L}`, nome: `Livello giocatore ${L}`, desc: `Arriva al livello giocatore ${L}`, titolo: Livello.TITOLI[L], premio: 100, prog: () => (S.lv ? Livello.info().liv : 1), max: L });

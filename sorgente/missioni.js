@@ -15,6 +15,7 @@ const Missioni = (() => {
     "tre-stelle": { n: 1, testo: () => "Prendi 3 stelle in una tappa della storia", premio: { monete: 100 } },
     amico:        { n: 1, online: true, testo: () => "Sfida la squadra di un amico", premio: { monete: 100 } },
     boss:         { n: 1, online: true, testo: () => "Attacca il boss del gruppo", premio: { monete: 100 } },
+    modi:         { n: 3, testo: m => `Supera ${m.n} fermate della Lunga Notte o piani della Scalata`, premio: { monete: 120 } },
   };
   const POOL_SETT = {
     vinci:         { n: 15, testo: m => `Vinci ${m.n} battaglie`, premio: { bustine: { epica: 1 } } },
@@ -22,6 +23,7 @@ const Missioni = (() => {
     "amico-vinci": { n: 3, online: true, testo: m => `Batti ${m.n} volte la squadra di un amico`, premio: { bustine: { epica: 1 } } },
     "boss-danni":  { n: 5000, online: true, testo: m => `Fai ${m.n.toLocaleString("it-IT")} danni al boss`, premio: { bustine: { mega: 1 } } },
     stelle:        { n: 10, testo: m => `Prendi ${m.n} stelle nella storia`, premio: { monete: 300 } },
+    modi:          { n: 20, testo: m => `Supera ${m.n} tra fermate della Lunga Notte e piani della Scalata`, premio: { bustine: { epica: 1 } } },
   };
   const BONUS = { bustine: { normale: 1 } };
   // giorno 4: una bustina di una serie a caso (scelta quando la riscuoti)
@@ -77,6 +79,7 @@ const Missioni = (() => {
       if (tipo === "potenzia" && m.tipo === "potenzia") avanza(m, sett);
       if (tipo === "storia" && m.tipo === "tre-stelle" && d.tre) avanza(m, sett);
       if (tipo === "storia" && m.tipo === "stelle" && d.nuove) avanza(m, sett, d.nuove);
+      if (tipo === "modo" && m.tipo === "modi") avanza(m, sett, d.n || 1);
       if (tipo === "amico" && m.tipo === "amico") avanza(m, sett);
       if (tipo === "amico" && m.tipo === "amico-vinci" && d.vinto) avanza(m, sett);
       if (tipo === "boss" && m.tipo === "boss") avanza(m, sett);
@@ -203,5 +206,5 @@ const Missioni = (() => {
     </section>`;
   }
 
-  return { evento, riscuoti, riscuotiAccesso, finestraAccesso, htmlStrada, pronte, aggiorna, accesso };
+  return { evento, riscuoti, riscuotiAccesso, finestraAccesso, htmlStrada, pronte, aggiorna, accesso, settimana };
 })();
