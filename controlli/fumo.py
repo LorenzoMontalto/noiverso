@@ -49,7 +49,7 @@ async def giro(b, nome, w, h, mobile):
     await J("document.querySelector('[data-azione=\"chiudi-riepilogo\"]')?.click()"); await pg.wait_for_timeout(600)
     # le pagine principali
     for v in ["squadra", "album", "negozio", "sfida", "notte", "scalata", "pass", "storia", "classifica", "strada",
-              "modo-storia", "modo-computer", "modo-arena", "modo-settimana", "modo-boss", "modo-bossgiorno", "modo-vivo", "modo-amici"]:
+              "modo-storia", "modo-leggenda", "leggenda", "modo-computer", "modo-arena", "modo-settimana", "modo-boss", "modo-bossgiorno", "modo-vivo", "modo-amici"]:
         await J(f"chiudiModale(); vai('{v}')"); await pg.wait_for_timeout(700)
         controlla(f"[{nome}] pagina {v}", await J(f"vista === '{v}' && document.querySelector('#vista').innerText.length > 40"))
         controlla(f"[{nome}] pagina {v}: niente esce di lato", await J("document.documentElement.scrollWidth <= innerWidth + 1"))

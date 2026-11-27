@@ -903,6 +903,7 @@ language sql immutable as $$
     when 'vivo-5' then 'Campione dal vivo'
     when 'notte-1' then 'Nottambulo' when 'notte-boss' then 'Buttafuori' when 'alba-1' then 'Re della notte' when 'alba-5' then 'Signore dell''alba'
     when 'scalata-5' then 'Scalatore' when 'scalata-10' then 'Alpinista' when 'scalata-15' then 'Re della Torre' when 'scalata-20' then 'Oltre le nuvole'
+    when 'leggenda-1' then 'Leggendario' when 'leggenda-15' then 'Eroe leggendario' when 'leggenda-30' then 'Leggenda vivente'
   end
 $$;
 -- Il trofeo risulta davvero conquistato? Dove si può, lo verifica sui dati del server (sfide, boss, scambi) o del salvataggio.
@@ -941,6 +942,9 @@ begin
     when t = 'scalata-10' then coalesce((st->>'scalataMax')::int, 0) >= 10
     when t = 'scalata-15' then coalesce((st->>'scalataMax')::int, 0) >= 15
     when t = 'scalata-20' then coalesce((st->>'scalataMax')::int, 0) >= 20
+    -- Livello Leggenda: i boss battuti sono le tappe 6 con almeno una stella
+    when t in ('leggenda-1', 'leggenda-15', 'leggenda-30') then (select count(*) from jsonb_each_text(case when jsonb_typeof(d->'leggenda'->'stelle') = 'object' then d->'leggenda'->'stelle' else '{}'::jsonb end) e
+         where e.key ~ '^c[0-9]{1,2}-6$' and e.value ~ '^[1-3]$') >= substring(t from 10)::int
     when t = 'amici-10' then (select count(*) from public.sfide_amici where sfidante = u and vinto) >= 10
     when t = 'boss-20000' then coalesce((select sum(danni) from public.boss_danni where user_id = u), 0) >= 20000
     when t = 'scambi-3' then (select count(*) from public.scambi where (da = u or a = u) and stato = 'accettato') >= 3
@@ -1575,6 +1579,6 @@ grant execute on function public.registra_carte(text[], boolean, text), public.s
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select 'c72aca509e'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select '146c8f6d08'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE

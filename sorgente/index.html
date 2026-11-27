@@ -456,6 +456,22 @@ h1.neon { font-size: clamp(2.6rem, 8vw, 4.6rem); line-height: .95; margin-bottom
 .potenzia-max { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255, 255, 255, .12); }
 .potenzia-max .nota { margin: 0; flex: 1 1 180px; }
 .sta-giocando { display: block; font-size: .7rem; font-weight: 700; color: #5adc8c; }
+/* nov 2026: Storia · Livello Leggenda */
+.tema-leggenda { --c: #f2c14e; background: radial-gradient(ellipse at 50% 20%, #5a0f2a 0%, #250818 45%, #0b040a 100%); }
+.tema-leggenda .cop-sky .palazzi { fill: #12030a; } .tema-leggenda .cop-sky .finestre { fill: #f2c14e; opacity: .5; animation: cop-brilla 5s infinite; }
+.tema-leggenda .cop-stelle { position: absolute; inset: 0 0 45%; } .tema-leggenda .cop-stelle i { background: #ffe9a8; box-shadow: 0 0 6px #f2c14e; }
+.cop-corona { position: absolute; left: 50%; top: 10%; width: 260px; height: 260px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(circle, rgba(242, 193, 78, .35), rgba(242, 193, 78, .08) 45%, transparent 70%); animation: cop-brilla 4s infinite; }
+.gioca .tessera .cop-corona { width: 140px; height: 140px; top: 0; }
+.regola-leggenda { display: flex; gap: 12px; align-items: center; padding: 10px 12px; margin: 0 0 14px; border-radius: 14px; border: 1px solid rgba(242, 193, 78, .5); background: linear-gradient(110deg, rgba(122, 16, 48, .55), rgba(242, 193, 78, .1)); }
+.regola-leggenda .rl-ico { font-size: 1.8rem; flex: none; }
+.regola-leggenda div { display: grid; gap: 1px; } .regola-leggenda small { font-size: .68rem; text-transform: uppercase; letter-spacing: .07em; color: var(--oro); } .regola-leggenda b { font-size: 1rem; } .regola-leggenda span { font-size: .86rem; color: rgba(255, 255, 255, .85); }
+.regola-leggenda.piccola { margin: 6px 0 8px; padding: 8px 10px; text-align: left; } .regola-leggenda.piccola .rl-ico { font-size: 1.4rem; }
+/* la mappa della Leggenda: la stessa, ma di notte e con una luce rossa */
+.storia.leggenda .mondo-tela > svg:first-child { filter: brightness(.55) saturate(.8) hue-rotate(-18deg) contrast(1.1); }
+.storia.leggenda .mondo-tela::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 30%, rgba(122, 16, 48, .25), rgba(10, 2, 8, .35)); mix-blend-mode: multiply; }
+.storia.leggenda .tappa.boss .tappa-num { background: linear-gradient(#7a1030, #f2c14e); color: #fff; }
+.storia.leggenda .titolo-riga h2 { color: var(--oro); text-shadow: 0 0 14px rgba(242, 193, 78, .5); }
+.tappa-modale.leggenda { --c: #f2c14e; }
 /* nov 2026: home compatta */
 .continua { display: grid; grid-template-columns: 54px 1fr auto; gap: 12px; align-items: center; padding: 12px; margin: 0 0 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--c) 50%, var(--linea)); background: linear-gradient(110deg, color-mix(in srgb, var(--c) 22%, var(--asfalto)), var(--asfalto) 70%); }
 .continua img { width: 54px; height: 54px; border-radius: 14px; object-fit: cover; background: #222; }
@@ -2543,6 +2559,14 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 .cc-telaio.cc-reale { border-width: 6px; background: linear-gradient(135deg, #5a1a8a, #a85ae8 30%, #3a0a5a 50%, #a85ae8 70%, #5a1a8a) border-box; }
 .cc-orn.cc-reale::before { inset: 6px; border: 1.5px solid #f2c14e; border-radius: 6px; box-shadow: 0 0 6px rgba(242, 193, 78, .7), inset 0 0 6px rgba(242, 193, 78, .4); }
 .cc-orn.cc-reale::after { content: "♛"; top: 0; left: 50%; transform: translateX(-50%); font: 1rem/1.15 sans-serif; color: #f2c14e; text-shadow: 0 0 6px #f2c14e, 0 1px 1px #000; background: #3a0a5a; padding: 0 7px 2px; border-radius: 0 0 9px 9px; box-shadow: 0 0 0 1.5px #f2c14e; }
+/* Leggenda: oro brunito e porpora che scorrono, corona in cima e stelline negli angoli (premio del Livello Leggenda) */
+.cc-telaio.cc-leggenda { border-width: 6px; -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  background: linear-gradient(120deg, #7a1030, #f2c14e 18%, #fff3c4 24%, #c9902a 32%, #7a1030 50%, #f2c14e 68%, #fff3c4 74%, #c9902a 82%, #7a1030) 0 0 / 300% 100% border-box; animation: cc-leggenda 6s linear infinite; }
+@keyframes cc-leggenda { to { background-position: 300% 0; } }
+.cc-orn.cc-leggenda::before { inset: 6px; border: 1.5px solid rgba(255, 220, 140, .85); border-radius: 6px; box-shadow: 0 0 8px rgba(242, 193, 78, .7), inset 0 0 10px rgba(122, 16, 48, .6); }
+.cc-orn.cc-leggenda::after { content: "♛"; top: 0; left: 50%; transform: translateX(-50%); font: 1.05rem/1.15 sans-serif; color: #fff3c4; text-shadow: 0 0 8px #f2c14e, 0 1px 1px #000; background: linear-gradient(#7a1030, #4a0a1e); padding: 0 8px 2px; border-radius: 0 0 10px 10px; box-shadow: 0 0 0 1.5px #f2c14e, 0 0 10px rgba(242, 193, 78, .6); }
+.carta.piccola .cc-orn.cc-leggenda::after { font-size: .8rem; }
+@media (prefers-reduced-motion: reduce) { .cc-telaio.cc-leggenda { animation: none; } }
 .carta.piccola .cc-orn.cc-reale::after { font-size: .8rem; } .carta.piccola .cc-orn.cc-tempesta::before, .carta.piccola .cc-orn.cc-tempesta::after { font-size: .8rem; }
 .carta.piccola .cc-orn.cc-pixel::before, .carta.piccola .cc-orn.cc-pixel::after { font-size: .45rem; }
 @keyframes cc-scorri { to { background-position: 250% 250%; } }
@@ -2692,6 +2716,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <script src="scena3d.js"></script>
 <script src="mappe.js"></script>
 <script src="storia.js"></script>
+<script src="leggenda.js"></script>
 <script src="tutorial.js"></script>
 <script src="missioni.js"></script>
 <script src="sociale.js"></script>

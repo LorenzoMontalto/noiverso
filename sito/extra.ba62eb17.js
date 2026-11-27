@@ -58,6 +58,7 @@ const Cosmetici = (() => {
     "cc-prisma":         { tipo: "carta", nome: "Cornice carta Prisma", prezzo: 2400, desc: "Arcobaleno che gira e un riflesso che attraversa la carta." },
     "cc-reale":          { tipo: "carta", nome: "Cornice carta Reale", prezzo: 3000, desc: "Velluto viola, filo d'oro e la corona in cima." },
     "cc-natale":         { tipo: "carta", nome: "Cornice carta di Natale", da: "Calendario dell'Avvento (24 dicembre)" },
+    "cc-leggenda":       { tipo: "carta", nome: "Cornice carta Leggenda", da: "Storia · Livello Leggenda (boss finale)", desc: "Oro e porpora, con la corona: per chi ha finito il Livello Leggenda." },
     "cc-fiamme":         { tipo: "carta", nome: "Cornice carta di Fiamme", da: "Livello giocatore 35" },
     "cc-galassia":       { tipo: "carta", nome: "Cornice carta Galassia", da: "Livello giocatore 55" },
     "cc-arcobaleno":     { tipo: "carta", nome: "Cornice carta Arcobaleno", da: "Livello giocatore 80" },
@@ -567,8 +568,9 @@ const Progressi = (() => {
 
 // ---------------- Novità (una volta sola per ogni aggiornamento) ----------------
 const Novita = (() => {
-  const VERSIONE = "2026-11-menu";
+  const VERSIONE = "2026-11-leggenda";
   const SCHEDE = [
+    { ico: "👑", titolo: "Storia · Livello Leggenda", testo: "Hai finito la storia? Ricomincia da capo al Livello Leggenda: stessi capitoli, nemici al 30 con la lode e una regola speciale diversa in ogni capitolo. Dà frammenti, potenziatori universali, tre titoli e, alla fine, la cornice delle carte «Leggenda». La trovi in Gioca, sotto la Storia." },
     { ico: "🧭", titolo: "Il menu è cambiato", testo: "Ora le sezioni sono 5: Home, Gioca, Carte, Negozio e Amici. Dentro Carte trovi Bustine, Album e Squadre; dentro Amici la Classifica e il Pass. Il numerino su una sezione vuol dire che lì c'è qualcosa da fare." },
     { ico: "⚔️", titolo: "Tutto in «Gioca»", testo: "Ogni modalità è un riquadro: tocca e vedi come funziona, quanto costa e a che punto sei. La Storia è il primo riquadro, e in Home c'è sempre il tasto «Continua» per la prossima tappa." },
     { ico: "🌙", titolo: "La Lunga Notte", testo: "Dieci fermate dal tramonto all'alba con carte trovate per strada (le tue qui non contano). I PV restano tra una battaglia e l'altra, ai bivi scegli la strada e raccogli cimeli. Puoi tornare a casa quando vuoi e incassare." },

@@ -532,7 +532,7 @@ const Online = (() => {
     chiudiModale();
     schermoIntero(true);
     avviaSfida({ id: "guarda", nome: d.nomeB, abilita: 0, liv: [1, 30], premio: 0, punti: 0, xp: 0, graffitoNemico: d.gB,
-      spettatore: { nomeA: d.nomeA, nomeB: d.nomeB, sqA: d.sqA, gA: d.gA } }, d.sqA.map(x => x.id), d.sqB).then(() => { avanza(); });
+      spettatore: { nomeA: d.nomeA, nomeB: d.nomeB, sqA: d.sqA, gA: d.gA, campo: d.campo || null, bossGiorno: d.bossGiorno || null, leggenda: d.leggenda || null } }, d.sqA.map(x => x.id), d.sqB).then(() => { avanza(); });
   }
   // chiamata da avviaSfida: la battaglia vera, già portata al punto in cui è adesso (senza animazioni)
   function creaGuarda(sqA, sqB) {

@@ -45,6 +45,10 @@ const Trofei = (() => {
       { id: "scalata-10", nome: "Piano 10", desc: "Supera 10 piani in una Scalata", titolo: "Alpinista", premio: 400, prog: () => st("scalataMax"), max: 10 },
       { id: "scalata-15", nome: "Piano 15", desc: "Supera 15 piani in una Scalata", titolo: "Re della Torre", premio: 800, prog: () => st("scalataMax"), max: 15 },
       { id: "scalata-20", nome: "Oltre le nuvole", desc: "Supera 20 piani in una Scalata", titolo: "Oltre le nuvole", premio: 1500, prog: () => st("scalataMax"), max: 20 },
+      // Storia · Livello Leggenda (i boss battuti: il server li conta sulle stelle salvate)
+      { id: "leggenda-1", nome: "Oltre la storia", desc: "Batti il primo boss del Livello Leggenda", titolo: "Leggendario", premio: 300, prog: () => capitoliLeggenda(), max: 1 },
+      { id: "leggenda-15", nome: "Metà leggenda", desc: "Batti 15 boss del Livello Leggenda", titolo: "Eroe leggendario", premio: 800, prog: () => capitoliLeggenda(), max: 15 },
+      { id: "leggenda-30", nome: "Leggenda vivente", desc: "Finisci il Livello Leggenda (tutti i 30 boss)", titolo: "Leggenda vivente", premio: 2000, prog: () => capitoliLeggenda(), max: 30 },
     );
     // nov 2026: titoli del livello giocatore (ogni 10 livelli, fino al 100)
     if (typeof Livello !== "undefined") for (const L of Object.keys(Livello.TITOLI).map(Number)) v.push({ id: `giocatore-${L}`, nome: `Livello giocatore ${L}`, desc: `Arriva al livello giocatore ${L}`, titolo: Livello.TITOLI[L], premio: 100, prog: () => (S.lv ? Livello.info().liv : 1), max: L });

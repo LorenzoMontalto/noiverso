@@ -107,6 +107,7 @@ function statoNuovo() {
     stats: { vittorie: 0, sconfitte: 0, punti: 0, bustine: 0 },
     pass: { xp: 0, riscossi: [], scelte: {}, bonus: 0, potInSospeso: 0 },
     storia: { stelle: {}, scrigni: [] },
+    leggenda: { stelle: {}, scrigni: [], visti: [] },
     tutorial: { fatto: false },
     liv: {},      // livello di ogni carta (1–30): sale solo potenziandola a mano
     pot: {},      // potenziatori di ogni carta (arrivano dai doppioni)
@@ -808,9 +809,9 @@ const Riepilogo = {
 // ============================================================
 // nov 2026: il menu ha 5 sezioni (Home, Gioca, Carte, Negozio, Amici). Le pagine restano quelle di prima, ma ognuna sta
 // dentro una sezione: «Gioca» è la griglia delle modalità, e ogni modalità ha la sua pagina (modo-…) con «‹ Tutte le modalità».
-const MODI_PAGINA = ["modo-storia", "modo-computer", "modo-arena", "modo-settimana", "modo-boss", "modo-bossgiorno", "modo-amici", "modo-vivo"];
-const VISTE = ["strada", "storia", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin", "notte", "scalata", ...MODI_PAGINA];
-const GRUPPI = { strada: ["strada"], sfida: ["sfida", "storia", "notte", "scalata", ...MODI_PAGINA], carte: ["bustine", "album", "squadra"], negozio: ["negozio"], amici: ["classifica", "pass"], admin: ["admin"] };
+const MODI_PAGINA = ["modo-storia", "modo-leggenda", "modo-computer", "modo-arena", "modo-settimana", "modo-boss", "modo-bossgiorno", "modo-amici", "modo-vivo"];
+const VISTE = ["strada", "storia", "leggenda", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin", "notte", "scalata", ...MODI_PAGINA];
+const GRUPPI = { strada: ["strada"], sfida: ["sfida", "storia", "leggenda", "notte", "scalata", ...MODI_PAGINA], carte: ["bustine", "album", "squadra"], negozio: ["negozio"], amici: ["classifica", "pass"], admin: ["admin"] };
 const VISTA_NAV = v => Object.keys(GRUPPI).find(g => GRUPPI[g].includes(v)) || v;
 const ultimaDelGruppo = {};
 // toccando «Carte» o «Amici» si torna alla pagina dove eri rimasto (Carte apre le Bustine se ce n'è qualcuna da aprire)
@@ -921,7 +922,7 @@ function spostaIndicatore() {
   if (b.scrollIntoView) b.scrollIntoView({ block: "nearest", inline: "nearest" });
 }
 
-const FUNZIONI_VISTE = () => ({ strada: vistaStrada, bustine: vistaBustine, negozio: vistaNegozio, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria, notte: () => Notte.html(), scalata: () => Scalata.html(), ...Object.fromEntries(MODI_PAGINA.map(v => [v, () => vistaModo(v.slice(5))])) });
+const FUNZIONI_VISTE = () => ({ strada: vistaStrada, bustine: vistaBustine, negozio: vistaNegozio, album: vistaAlbum, squadra: vistaSquadra, sfida: vistaSfida, pass: vistaPass, classifica: vistaClassifica, admin: vistaAdmin, storia: vistaStoria, notte: () => Notte.html(), scalata: () => Scalata.html(), leggenda: () => vistaStoria(true), ...Object.fromEntries(MODI_PAGINA.map(v => [v, () => vistaModo(v.slice(5))])) });
 let ultimaVistaDisegnata = "";
 function disegna() {
   aggiornaTesta();
@@ -946,7 +947,7 @@ function disegna() {
   }
   if (vista === "classifica") avviaClassifica();
   if (vista === "pass") dopoPass();
-  if (vista === "storia") dopoStoria();
+  if (vista === "storia" || vista === "leggenda") dopoStoria();
   if (vista === "squadra") avviaAltreCarte();
   if (vista === "album") avviaAltreAlbum();
 }
@@ -2065,6 +2066,9 @@ function tessereGioca() {
   // per iniziare
   const p = prossimaTappa(), sc = scrigniPronti();
   t.push({ g: "inizia", id: "storia", ico: "📖", nome: "Storia", desc: "Il racconto a capitoli: batti i nemici tappa dopo tappa", stato: p ? `Capitolo ${p.k + 1} di ${STORIA.length}` : "Completata!", n: sc, vista: "modo-storia" });
+  { const fin = storiaFinita(), pl = prossimaTappa(true), scl = fin ? scrigniPronti(true) : 0;
+    t.push({ g: "inizia", id: "leggenda", ico: "👑", nome: "Storia · Livello Leggenda", desc: "La storia da capo: nemici al 30 con la lode e una regola speciale in ogni capitolo",
+      stato: !fin ? "🔒 Si sblocca finendo la storia" : pl ? `Capitolo ${pl.k + 1} di ${STORIA.length} · ${stelleTotali(true)} ★` : "Completata!", n: scl, chiusa: !fin, vista: "modo-leggenda" }); }
   t.push({ g: "inizia", id: "computer", ico: "🤖", nome: "Contro il computer", desc: "Allenati con la tua squadra: 4 livelli di difficoltà", stato: "Gratis", vista: "modo-computer" });
   // avventure a pagamento: la tua collezione non conta, conta come giochi
   if (attivoExtra()) { const a = Arena.stato();
@@ -2090,7 +2094,7 @@ function tessereGioca() {
 }
 function vistaSfida() {
   const t = tessereGioca();
-  const GR = [["inizia", "Per iniziare"], ["corse", "Avventure", "Si paga l'ingresso e il premio dipende da quanto vai avanti. Le tue carte qui non contano."], ["eventi", "Eventi"], ["amici", "Con gli amici"]];
+  const GR = [["inizia", "Storia e allenamento"], ["corse", "Avventure", "Si paga l'ingresso e il premio dipende da quanto vai avanti. Le tue carte qui non contano."], ["eventi", "Eventi"], ["amici", "Con gli amici"]];
   // nov 2026: ogni tessera ha lo sfondo della copertina della sua modalità
   const colSett = (SERIE[Settimana.serie()] || {}).colore;
   const tessera = x => `<button class="tessera tema-${x.id}${x.chiusa ? " chiusa" : ""}" data-fx="spinta" ${x.azione ? `data-azione="${x.azione}"` : `data-vista="${x.vista}"`} data-tessera="${x.id}"${x.id === "settimana" && colSett ? ` style="--c:${colSett}"` : ""}>
@@ -2112,6 +2116,7 @@ function decoroModo(id) {
   const sky = `<svg class="cop-sky" viewBox="0 0 1200 260" preserveAspectRatio="xMidYMax slice">${skyline().replace(/^<svg[^>]*>|<\/svg>$/g, "")}</svg>`;
   switch (id) {
     case "storia": return `<span class="cop-sole"></span><span class="cop-stelle">${stelline(26, 5)}</span>${sky}`;
+    case "leggenda": return `<span class="cop-corona"></span><span class="cop-stelle">${stelline(40, 17)}</span>${sky}`;
     case "notte": return `<span class="cop-luna"></span><span class="cop-stelle">${stelline(60, 9)}</span>${sky}`;
     case "computer": return `<span class="cop-griglia"></span><span class="cop-scan"></span>`;
     case "arena": return `<span class="cop-fari"></span><span class="cop-archi"></span>`;
@@ -2141,6 +2146,11 @@ function apriRegoleModo(id) {
   const x = tessereGioca().find(t => t.id === id) || { ico: "", nome: "" };
   const R = {
     storia: [`<b>${STORIA.length} capitoli</b>, ognuno su una mappa: tocca una tappa per vedere i nemici e combattere.`, "Ogni tappa dà fino a <b>3 stelle</b> (vincere, vincere bene, vincere senza KO); con le stelle si aprono gli <b>scrigni</b> del capitolo.", "In fondo a ogni capitolo c'è un <b>boss</b>: battilo per andare avanti. I nemici diventano più forti capitolo dopo capitolo.", "Il campo resta quello della mappa per tutta la battaglia. Le tappe si possono rigiocare per le stelle che mancano."],
+    leggenda: ["Si sblocca <b>battendo il boss finale della storia</b>. Stessi capitoli, stesse tappe e stessi nemici, ma tutti al <b>livello 30 con la lode</b>; dal capitolo 11 anche olografici e dal 21 in versione Ultra.",
+      "Ogni capitolo ha una <b>regola speciale</b> che cambia il modo di giocare (per esempio nemici che si rigenerano, che parano i colpi o che partono con più energia): la trovi sopra la mappa e nella scheda della tappa. Scegli la squadra pensando a quella.",
+      "Il computer gioca molto meglio, e la difficoltà sale fino al boss finale, il più duro di tutto il gioco.",
+      "Stelle e scrigni sono separati da quelli della storia normale. Ogni tappa dà <b>frammenti ◈</b>, i boss anche <b>potenziatori universali ✪</b> e, nei capitoli avanti, bustine; gli scrigni danno frammenti, ✪ e Bustine Leggendarie.",
+      "Trofei e titoli al primo boss, a metà (capitolo 15) e alla fine, con la cornice delle carte «Leggenda»."],
     computer: [`Scegli un avversario tra 4: ${LIVELLI_SFIDA.map(L => `<b>${esc(L.nome)}</b>`).join(", ")}. Più è difficile, più monete ed esperienza vinci.`, "Giochi con la squadra che hai scelto in cima alla pagina (la cambi in Carte › Squadre).", "<b>Classica</b>: 5 contro 5. <b>Rapida</b>: le prime 3 carte, partite più corte e premi ridotti.", "È il posto per allenarsi e far crescere le carte: non toglie e non dà punti in classifica."],
     arena: [`Ingresso <b>${Arena.INGRESSO} monete</b>. Scegli 5 carte, ogni volta tra 3 proposte: tutte al <b>livello 20</b>, anche quelle che non hai. La tua collezione qui non conta.`, "Giochi una partita dopo l'altra finché non perdi <b>3 volte</b> o arrivi a <b>7 vittorie</b>.", "Più vittorie fai, più ricco è il premio:", `<span class="csg-premi">${Arena.PREMI.map((p, i) => `<span><b>${i}</b> ${esc(testoPremio(p))}${p.frammenti ? ` + ${p.frammenti} ◈` : ""}</span>`).join("")}</span>`],
     settimana: ["Ogni settimana una serie è in evidenza: <b>3 sfide</b> (Facile, Media, Difficile) contro squadre fatte solo di carte di quella serie, sul campo della settimana.", "La <b>prima vittoria</b> di ogni sfida nella settimana dà un premio; poi puoi rigiocarle quanto vuoi.", "Ci sono anche missioni speciali sulla serie, e la sua bustina in negozio costa meno."],
@@ -2163,6 +2173,9 @@ function confermaArena() {
 function copertinaPer(id) {
   const x = tessereGioca().find(t => t.id === id) || { ico: "", nome: "", desc: "" };
   const base = { ico: x.ico, titolo: x.nome, sotto: x.desc, stato: x.stato };
+  if (id === "leggenda") { const fin = storiaFinita(), p = prossimaTappa(true);
+    return Object.assign(base, { stato: !fin ? "🔒 Si sblocca battendo il boss finale della storia" : p ? `Capitolo ${p.k + 1} di ${STORIA.length} · ${stelleTotali(true)} ★` : `Completata · ${stelleTotali(true)} ★`,
+      entra: fin ? { testo: stelleTotali(true) ? "Continua" : "Inizia la Leggenda", vista: "leggenda" } : { testo: "🔒 Finisci prima la storia", no: true } }); }
   if (id === "storia") { const p = prossimaTappa(); return Object.assign(base, { stato: p ? `Capitolo ${p.k + 1} di ${STORIA.length} · ${stelleTotali()} ★` : `Completata · ${stelleTotali()} ★`, entra: { testo: p ? (stelleTotali() ? "Continua" : "Inizia") : "Apri la mappa", vista: "storia" } }); }
   if (id === "arena") { if (Arena.stato()) return null; return Object.assign(base, { entra: { testo: `Entra · ${Arena.INGRESSO} monete`, azione: "arena-conferma" } }); }
   if (id === "notte") return Object.assign(base, { entra: { testo: `Esci stasera · ${PremiModalita.INGRESSO_NOTTE} monete`, azione: "notte-entra" } });
@@ -2725,7 +2738,7 @@ async function vaiAccesso() {
 // ---------- Da sistemare (solo admin): database da aggiornare e carte senza immagine ----------
 // La versione del database è un'impronta di supabase/schema.sql scritta da costruisci.py sia qui sia nel server:
 // se il server ne restituisce un'altra (o non ha ancora la funzione), schema.sql va eseguito di nuovo.
-const VERSIONE_SCHEMA = "c72aca509e";
+const VERSIONE_SCHEMA = "146c8f6d08";
 const StatoServer = (() => {
   let schema = null, mancano = null, quando = 0, inCorso = false;
   async function controlla(forza) {
@@ -3259,35 +3272,47 @@ async function avviaProva(id, i) {
 // ============================================================
 //  MODALITÀ STORIA (schermata)
 // ============================================================
+// nov 2026: ogni funzione della storia ha un ultimo argomento «leg»: true = Storia · Livello Leggenda (progressi a parte
+// in S.leggenda), assente = la storia normale. Le pagine sono due: "storia" e "leggenda".
 const chiaveTappa = (k, i) => `${STORIA[k].id}-${i + 1}`;
-const stelleTappa = (k, i) => (S.storia.stelle || {})[chiaveTappa(k, i)] || 0;
+const progStoria = leg => leg ? (S.leggenda || (S.leggenda = { stelle: {}, scrigni: [], visti: [] })) : S.storia;
+const datiTappa = (k, i, leg) => leg ? Leggenda.tappa(k, i) : STORIA[k].tappe[i];
+const stelleTappa = (k, i, leg) => (progStoria(leg).stelle || {})[chiaveTappa(k, i)] || 0;
+// la Leggenda si apre battendo il boss finale della storia
+const storiaFinita = () => stelleTappa(STORIA.length - 1, STORIA[STORIA.length - 1].tappe.length - 1) > 0;
 // sbloccato se hai battuto il boss del capitolo prima (o se ci avevi già giocato: i capitoli nuovi non bloccano chi era già avanti)
-const capitoloSbloccato = k => k === 0 || stelleTappa(k - 1, STORIA[k - 1].tappe.length - 1) > 0 || STORIA[k].tappe.some((_, i) => stelleTappa(k, i) > 0);
-const tappaSbloccata = (k, i) => capitoloSbloccato(k) && (i === 0 || stelleTappa(k, i - 1) > 0);
-const stelleCapitolo = k => STORIA[k].tappe.reduce((a, _, i) => a + stelleTappa(k, i), 0);
-const stelleTotali = () => STORIA.reduce((a, _, k) => a + stelleCapitolo(k), 0);
-function prossimaTappa() {
-  for (let k = 0; k < STORIA.length; k++) for (let i = 0; i < STORIA[k].tappe.length; i++) if (tappaSbloccata(k, i) && !stelleTappa(k, i)) return { k, i };
+const capitoloSbloccato = (k, leg) => (!leg || storiaFinita()) && (k === 0 || stelleTappa(k - 1, STORIA[k - 1].tappe.length - 1, leg) > 0 || STORIA[k].tappe.some((_, i) => stelleTappa(k, i, leg) > 0));
+const tappaSbloccata = (k, i, leg) => capitoloSbloccato(k, leg) && (i === 0 || stelleTappa(k, i - 1, leg) > 0);
+const stelleCapitolo = (k, leg) => STORIA[k].tappe.reduce((a, _, i) => a + stelleTappa(k, i, leg), 0);
+const stelleTotali = leg => STORIA.reduce((a, _, k) => a + stelleCapitolo(k, leg), 0);
+function prossimaTappa(leg) {
+  for (let k = 0; k < STORIA.length; k++) for (let i = 0; i < STORIA[k].tappe.length; i++) if (tappaSbloccata(k, i, leg) && !stelleTappa(k, i, leg)) return { k, i };
   return null;
 }
-const scrigniPronti = () => STORIA.reduce((a, _, k) => a + scrigniCapitolo(k).filter(s => stelleCapitolo(k) >= s.stelle && !S.storia.scrigni.includes(s.id)).length, 0);
-let capStoria = null;
+const scrigniDi = (k, leg) => leg ? Leggenda.scrigni(k) : scrigniCapitolo(k);
+const scrigniPronti = leg => STORIA.reduce((a, _, k) => a + scrigniDi(k, leg).filter(s => stelleCapitolo(k, leg) >= s.stelle && !progStoria(leg).scrigni.includes(s.id)).length, 0);
+// quanti boss della Leggenda hai battuto (per i trofei: il server lo controlla sulle stelle salvate)
+const capitoliLeggenda = () => STORIA.filter((c, k) => stelleTappa(k, c.tappe.length - 1, true) > 0).length;
+const inLeggenda = () => vista === "leggenda";
+let capStoria = null, capLeggenda = null;
 const htmlStelle = (n, max = 3) => Array.from({ length: max }, (_, j) => `<i class="${j < n ? "piena" : ""}">★</i>`).join("");
 
-function vistaStoria() {
-  if (capStoria === null) { const p = prossimaTappa(); capStoria = p ? p.k : STORIA.length - 1; }
-  const k = capStoria, cap = STORIA[k], aperto = capitoloSbloccato(k);
-  let fatte = 0; while (fatte < cap.tappe.length && stelleTappa(k, fatte)) fatte++;
+function vistaStoria(leg = false) {
+  if (leg && !storiaFinita()) return `<section class="vuoto"><h2>Storia · Livello Leggenda</h2><p>Si sblocca battendo il boss finale della storia.</p><button class="btn primario" data-vista="storia">Vai alla storia</button></section>`;
+  if ((leg ? capLeggenda : capStoria) === null) { const p = prossimaTappa(leg), v = p ? p.k : STORIA.length - 1; if (leg) capLeggenda = v; else capStoria = v; }
+  const k = leg ? capLeggenda : capStoria, cap = STORIA[k], aperto = capitoloSbloccato(k, leg), rg = leg ? Leggenda.regola(k) : null;
+  let fatte = 0; while (fatte < cap.tappe.length && stelleTappa(k, fatte, leg)) fatte++;
   return `
-  <section class="storia" style="--c:${cap.colore}">
-    <div class="titolo-riga"><h2>Storia</h2><p class="nota">Stelle raccolte: <b>${stelleTotali()}</b>/${STORIA.length * 18}</p></div>
-    <div class="capitoli">${STORIA.map((c, j) => `<button class="cap-btn ${j === k ? "scelto" : ""} ${capitoloSbloccato(j) ? "" : "chiuso"}" data-fx="gelatina" data-capitolo="${j}" style="--c:${c.colore}" aria-pressed="${j === k}">
-      <span class="cap-sim">${capitoloSbloccato(j) ? c.simbolo : "✕"}</span><span><small>Capitolo ${j + 1}</small><b>${esc(c.titolo)}</b></span><em>${stelleCapitolo(j)}/18 ★</em></button>`).join("")}</div>
+  <section class="storia ${leg ? "leggenda" : ""}" style="--c:${leg ? "#f2c14e" : cap.colore}">
+    <div class="titolo-riga"><h2>${leg ? "Storia · Livello Leggenda" : "Storia"}</h2><p class="nota">Stelle raccolte: <b>${stelleTotali(leg)}</b>/${STORIA.length * 18}</p></div>
+    <div class="capitoli">${STORIA.map((c, j) => `<button class="cap-btn ${j === k ? "scelto" : ""} ${capitoloSbloccato(j, leg) ? "" : "chiuso"}" data-fx="gelatina" data-capitolo="${j}" style="--c:${c.colore}" aria-pressed="${j === k}">
+      <span class="cap-sim">${capitoloSbloccato(j, leg) ? c.simbolo : "✕"}</span><span><small>Capitolo ${j + 1}</small><b>${esc(c.titolo)}</b></span><em>${stelleCapitolo(j, leg)}/18 ★</em></button>`).join("")}</div>
     <div class="cap-testa">
       <span class="serie-stemma" aria-hidden="true">${cap.simbolo}</span>
-      <div><p class="serie-nome">Capitolo ${k + 1}${cap.serie ? ` · ${esc(SERIE[cap.serie].nome)}` : cap.sottotitolo ? ` · ${esc(cap.sottotitolo)}` : " · Finale"}</p><h3>${esc(cap.titolo)}</h3><p class="nota">${esc(cap.intro)}</p></div>
+      <div><p class="serie-nome">Capitolo ${k + 1}${cap.serie ? ` · ${esc(SERIE[cap.serie].nome)}` : cap.sottotitolo ? ` · ${esc(cap.sottotitolo)}` : " · Finale"}${leg ? " · Livello Leggenda" : ""}</p><h3>${esc(cap.titolo)}</h3><p class="nota">${esc(cap.intro)}</p></div>
     </div>
-    ${aperto ? "" : `<p class="consiglio forte"><b>Capitolo bloccato.</b> Batti il boss del capitolo ${k} per aprirlo.</p>`}
+    ${rg ? `<div class="regola-leggenda"><span class="rl-ico" aria-hidden="true">${rg.ico}</span><div><small>Regola speciale del capitolo</small><b>${esc(rg.nome)}</b><span>${esc(rg.desc)}</span></div></div>` : ""}
+    ${aperto ? "" : `<p class="consiglio forte"><b>Capitolo bloccato.</b> Batti il boss del capitolo ${k}${leg ? " del Livello Leggenda" : ""} per aprirlo.</p>`}
     <div class="mondo-cornice">
       <div class="mondo ${aperto ? "" : "chiuso"}" id="mondo" tabindex="0" aria-label="Mappa del capitolo: trascinala per esplorarla">
         <div class="mondo-tela" style="width:${MappeStoria.W}px;height:${MappeStoria.H}px">
@@ -3295,23 +3320,23 @@ function vistaStoria() {
           <svg class="mondo-strada" viewBox="0 0 ${MappeStoria.W} ${MappeStoria.H}" width="${MappeStoria.W}" height="${MappeStoria.H}" aria-hidden="true">
             ${fatte > 0 ? `<path d="${MappeStoria.curva(MappeStoria.NODI[k], fatte)}" class="strada-fatta"/>` : ""}
           </svg>
-          ${cap.tappe.map((t, i) => htmlNodoMappa(k, i, false)).join("")}
+          ${cap.tappe.map((t, i) => htmlNodoMappa(k, i, false, leg)).join("")}
           <canvas class="mondo-nebbia" id="mondo-nebbia" width="900" height="600" aria-hidden="true"></canvas>
-          ${cap.tappe.map((t, i) => htmlNodoMappa(k, i, true)).join("")}
+          ${cap.tappe.map((t, i) => htmlNodoMappa(k, i, true, leg)).join("")}
         </div>
       </div>
       <div class="mondo-hud">
-        <span class="esplorato">Esplorato <b>${Math.round(scoperte(k).length / cap.tappe.length * 100)}%</b></span>
+        <span class="esplorato">Esplorato <b>${Math.round(scoperte(k, leg).length / cap.tappe.length * 100)}%</b></span>
         <span class="nota piccola">Trascina la mappa per esplorarla</span>
         <button class="btn piccolo" data-fx="salto" data-azione="centra-mappa">Vai alla tappa</button>
       </div>
     </div>
     <div class="scrigni">
-      ${scrigniCapitolo(k).map(sc => {
-        const preso = S.storia.scrigni.includes(sc.id), pronto = !preso && stelleCapitolo(k) >= sc.stelle;
+      ${scrigniDi(k, leg).map(sc => {
+        const preso = progStoria(leg).scrigni.includes(sc.id), pronto = !preso && stelleCapitolo(k, leg) >= sc.stelle;
         return `<button class="scrigno ${preso ? "preso" : pronto ? "pronto" : ""}" data-fx="coriandoli" ${pronto ? `data-scrigno="${k}:${sc.id}"` : "disabled"}>
           <span class="scrigno-ico" aria-hidden="true"></span>
-          <span><b>Scrigno da ${sc.stelle} ★</b><small>${esc(sc.testo)} · ${preso ? "aperto" : pronto ? "da aprire!" : `${stelleCapitolo(k)}/${sc.stelle} stelle`}</small></span>
+          <span><b>Scrigno da ${sc.stelle} ★</b><small>${esc(sc.testo)} · ${preso ? "aperto" : pronto ? "da aprire!" : `${stelleCapitolo(k, leg)}/${sc.stelle} stelle`}</small></span>
         </button>`;
       }).join("")}
     </div>
@@ -3319,9 +3344,9 @@ function vistaStoria() {
 }
 
 // Tappe scoperte sulla mappa: quelle già giocate e quella da giocare
-const scoperte = k => STORIA[k].tappe.map((_, i) => i).filter(i => tappaSbloccata(k, i));
-function htmlNodoMappa(k, i, sopraNebbia) {
-  const t = STORIA[k].tappe[i], st = stelleTappa(k, i), libera = tappaSbloccata(k, i);
+const scoperte = (k, leg) => STORIA[k].tappe.map((_, i) => i).filter(i => tappaSbloccata(k, i, leg));
+function htmlNodoMappa(k, i, sopraNebbia, leg) {
+  const t = STORIA[k].tappe[i], st = stelleTappa(k, i, leg), libera = tappaSbloccata(k, i, leg);
   if (libera !== sopraNebbia) return "";
   const [x, y] = MappeStoria.NODI[k][i], stato = st ? "fatta" : libera ? "pronta" : "chiusa";
   return `<button class="tappa ${stato} ${t.boss ? "boss" : ""}" style="left:${x}px;top:${y}px;--i:${i}" data-fx="salto" ${libera ? `data-tappa="${k}:${i}"` : "disabled"} aria-label="Tappa ${i + 1}: ${libera ? esc(t.titolo) : "da scoprire"}${st ? `, ${st} stelle` : ""}">
@@ -3336,12 +3361,12 @@ let animNebbia = null;
 function dopoStoria() {
   const mondo = $("#mondo"), tela = $("#mondo-nebbia");
   if (!mondo || !tela) return;
-  const k = capStoria, cap = STORIA[k], nodi = MappeStoria.NODI[k];
-  S.storia.visti = S.storia.visti || [];
-  const tutte = cap.tappe.every((_, i) => stelleTappa(k, i) > 0);
-  const zone = scoperte(k).map(i => ({ x: nodi[i][0], y: nodi[i][1], fine: stelleTappa(k, i) ? 360 : 270, nuova: !S.storia.visti.includes(chiaveTappa(k, i)) }));
+  const leg = inLeggenda(), P = progStoria(leg), k = leg ? capLeggenda : capStoria, cap = STORIA[k], nodi = MappeStoria.NODI[k];
+  P.visti = P.visti || [];
+  const tutte = cap.tappe.every((_, i) => stelleTappa(k, i, leg) > 0);
+  const zone = scoperte(k, leg).map(i => ({ x: nodi[i][0], y: nodi[i][1], fine: stelleTappa(k, i, leg) ? 360 : 270, nuova: !P.visti.includes(chiaveTappa(k, i)) }));
   // ogni tappa giocata scopre anche la strada verso la successiva
-  scoperte(k).forEach(i => { if (stelleTappa(k, i) && nodi[i + 1]) zone.push({ x: (nodi[i][0] + nodi[i + 1][0]) / 2, y: (nodi[i][1] + nodi[i + 1][1]) / 2, fine: 230, nuova: false }); });
+  scoperte(k, leg).forEach(i => { if (stelleTappa(k, i, leg) && nodi[i + 1]) zone.push({ x: (nodi[i][0] + nodi[i + 1][0]) / 2, y: (nodi[i][1] + nodi[i + 1][1]) / 2, fine: 230, nuova: false }); });
   cancelAnimationFrame(animNebbia);
   const t0 = performance.now(), dur = ridotto ? 0 : 1600;
   const disegnaNebbia = ora => {
@@ -3351,7 +3376,7 @@ function dopoStoria() {
   };
   animNebbia = requestAnimationFrame(disegnaNebbia);
   const nuove = zone.filter(z => z.nuova).length;
-  scoperte(k).forEach(i => { const c = chiaveTappa(k, i); if (!S.storia.visti.includes(c)) S.storia.visti.push(c); });
+  scoperte(k, leg).forEach(i => { const c = chiaveTappa(k, i); if (!P.visti.includes(c)) P.visti.push(c); });
   if (nuove) salva();
   // centra sulla tappa da giocare (o sull'ultima)
   centraMappa(nuove ? "smooth" : "auto");
@@ -3365,27 +3390,28 @@ function dopoStoria() {
 function centraMappa(modo = "smooth") {
   const mondo = $("#mondo");
   if (!mondo) return;
-  const k = capStoria, lista = scoperte(k), i = lista.find(j => !stelleTappa(k, j)) ?? lista[lista.length - 1] ?? 0;
+  const leg = inLeggenda(), k = leg ? capLeggenda : capStoria, lista = scoperte(k, leg), i = lista.find(j => !stelleTappa(k, j, leg)) ?? lista[lista.length - 1] ?? 0;
   const [x, y] = MappeStoria.NODI[k][i];
   mondo.scrollTo({ left: x - mondo.clientWidth / 2, top: y - mondo.clientHeight / 2, behavior: modo });
 }
 
 let scriviTimer = null;
 function apriTappa(k, i) {
-  const cap = STORIA[k], t = cap.tappe[i], chi = PER_ID[t.parla], st = stelleTappa(k, i);
+  const leg = inLeggenda(), cap = STORIA[k], t = datiTappa(k, i, leg), chi = PER_ID[t.parla], st = stelleTappa(k, i, leg), rg = leg ? Leggenda.regola(k) : null;
   const n = carteBattaglia();
   const premio = st ? `Rigiocando: ${Math.round(t.monete * .25)} monete · 20 XP` :
-    `Prima vittoria: ${t.monete} monete · ${Math.round(t.monete * .8)} XP${t.bustina ? ` · ${t.bustine > 1 ? t.bustine + " × " : ""}${TIPI_BUSTINA[t.bustina].nome}` : ""}`;
+    `Prima vittoria: ${t.monete} monete · ${Math.round(t.monete * .8)} XP${t.framm ? ` · ${t.framm} frammenti ◈` : ""}${t.potU ? ` · ${t.potU} ✪` : ""}${t.bustina ? ` · ${t.bustine > 1 ? t.bustine + " × " : ""}${TIPI_BUSTINA[t.bustina].nome}` : ""}`;
   apriModale(`
-    <div class="tappa-modale" style="--c:${cap.colore}">
+    <div class="tappa-modale ${leg ? "leggenda" : ""}" style="--c:${cap.colore}">
       <div class="scena">
         <img class="scena-foto" src="${imgCarta(chi.id)}" alt="">
         <div class="fumetto"><b>${esc(chi.nome)}</b><p id="fumetto-testo" data-testo="${esc(t.frase)}"></p></div>
       </div>
-      <p class="serie-nome">Capitolo ${k + 1} · ${t.boss ? "Boss" : `Tappa ${i + 1}`}</p>
+      <p class="serie-nome">Capitolo ${k + 1}${leg ? " · Leggenda" : ""} · ${t.boss ? "Boss" : `Tappa ${i + 1}`}</p>
       <h2>${esc(t.titolo)}</h2>
-      <p class="nota">Avversari al livello ${t.liv[0] === t.liv[1] ? t.liv[0] : `${t.liv[0]}–${t.liv[1]}`} · Difficoltà ${"★".repeat(Math.max(1, Math.round(t.abilita * 5)))}${n === 3 ? " · Modalità rapida: primi 3 avversari" : ""}</p>
-      <div class="tappa-nemici">${t.nemici.slice(0, n).map(id => htmlCarta(PER_ID[id], { piccola: true, liv: t.liv[1], lode: false })).join("")}</div>
+      ${rg ? `<div class="regola-leggenda piccola"><span class="rl-ico" aria-hidden="true">${rg.ico}</span><div><small>Regola del capitolo</small><b>${esc(rg.nome)}</b><span>${esc(rg.desc)}</span></div></div>` : ""}
+      <p class="nota">${leg ? `Avversari al livello 30 con la lode${t.nemici[0].olo ? ", olografici" : ""}${t.nemici[0].ultra ? " e in versione Ultra se ce l'hanno" : ""}${t.forza > 0 ? ` · più forti del ${t.forza}%` : ""}` : `Avversari al livello ${t.liv[0] === t.liv[1] ? t.liv[0] : `${t.liv[0]}–${t.liv[1]}`}`} · Difficoltà ${"★".repeat(Math.max(1, Math.round(t.abilita * 5)))}${n === 3 ? " · Modalità rapida: primi 3 avversari" : ""}</p>
+      <div class="tappa-nemici">${t.nemici.slice(0, n).map(e => typeof e === "object" ? htmlCarta(PER_ID[e.id], { piccola: true, liv: e.liv, lode: e.lode, olo: e.olo, ultra: e.ultra && !!PER_ID[e.id].ultra }) : htmlCarta(PER_ID[e], { piccola: true, liv: t.liv[1], lode: false })).join("")}</div>
       <p class="tappa-premio">${premio}</p>
       <p class="nota piccola">★ vinci · ★★ vinci con almeno ${Math.ceil(n * .6)} personaggi in piedi · ★★★ vinci senza KO${st ? ` · Il tuo record: ${htmlStelle(st)}` : ""}</p>
       <div class="tappa-scelta" id="tappa-scelta" data-luogo="${k}:${i}">${htmlSceltaTappa(k, i, -1)}</div>
@@ -3406,32 +3432,41 @@ function htmlSceltaTappa(k, i, scelta) {
     ${htmlListaSquadre("data-tappa-squadra", scelta)}
     ${q ? `<button class="btn primario grande" data-fx="spinta" data-tappa-via="${k}:${i}">Combatti con ${esc(q.nome || `Squadra ${scelta + 1}`)}</button>` : ""}`;
 }
-function avviaStoria(k, i) {
-  const cap = STORIA[k], t = cap.tappe[i];
+function avviaStoria(k, i, leg = inLeggenda()) {
+  const cap = STORIA[k], t = datiTappa(k, i, leg);
   chiudiModale();
   // la squadra l'hai già scelta nella tappa: niente seconda finestra
-  avviaSfida({ id: "storia", nome: t.titolo, abilita: t.abilita, liv: t.liv, premio: 0, punti: 0, xp: 0, storia: { k, i }, campo: STORIA[k].campo, graffitoNemico: t.boss ? Graffiti.aCaso(k + 1) : null }, null, t.nemici, true)
+  avviaSfida({ id: "storia", nome: t.titolo, abilita: t.abilita, liv: t.liv, premio: 0, punti: 0, xp: 0, storia: { k, i, leg }, campo: STORIA[k].campo, graffitoNemico: t.boss ? Graffiti.aCaso(leg ? 5 : k + 1) : null }, null, t.nemici.map(e => typeof e === "object" ? Object.assign({}, e) : e), true)
     .then(() => { if (B) aggiungiRegistro({ testo: `${PER_ID[t.parla].nome}: «${t.frase}»`, avviso: true }); });
 }
 
 function chiudiStoria() {
-  const { k, i } = livelloAttuale.storia, t = STORIA[k].tappe[i], key = chiaveTappa(k, i);
-  const prima = !S.storia.stelle[key];
+  const { k, i, leg } = livelloAttuale.storia, t = datiTappa(k, i, leg), key = chiaveTappa(k, i), P = progStoria(leg);
+  const prima = !P.stelle[key];
   const esito = { vinto: B.vincitore === 0, stelle: 0, monete: 0, xp: 0, bustina: "", prima };
-  livelloAttuale.espCarte = premiaCarte((1 + t.indice * .06) * (t.boss ? 1.3 : 1), esito.vinto);
+  livelloAttuale.espCarte = premiaCarte((1 + (leg ? 179 : t.indice) * .06) * (t.boss ? 1.3 : 1), esito.vinto);
   if (esito.vinto) {
     const n = B.lati[0].squadra.length, vivi = B.vivi(0).length;
     esito.stelle = vivi === n ? 3 : vivi >= Math.ceil(n * .6) ? 2 : 1;
     if (prima) {
       esito.monete = t.monete; esito.xp = ridXP(Math.round(t.monete * .8));
-      if (t.bustina) { S.inventario[t.bustina] += t.bustine || 1; esito.bustina = `${t.bustine > 1 ? t.bustine + " × " : ""}${TIPI_BUSTINA[t.bustina].nome}`; }
+      if (t.bustina) { S.inventario[t.bustina] = (S.inventario[t.bustina] || 0) + (t.bustine || 1); esito.bustina = `${t.bustine > 1 ? t.bustine + " × " : ""}${TIPI_BUSTINA[t.bustina].nome}`; }
+      // Leggenda: frammenti a ogni tappa, potenziatori universali ai boss (si aggiungono dopo il riepilogo)
+      if (t.framm) { esito.framm = t.framm; Frammenti.aggiungi(t.framm, false); }
+      if (t.potU) { esito.potU = t.potU; S.jolly = Math.max(0, Math.floor(S.jolly || 0)) + t.potU; }
       S.stats.punti += t.boss ? 3 : 1;
     } else { esito.monete = Math.round(t.monete * .25); esito.xp = ridXP(20); }
-    const nuove = Math.max(0, esito.stelle - (S.storia.stelle[key] || 0));
-    S.storia.stelle[key] = Math.max(S.storia.stelle[key] || 0, esito.stelle);
+    const nuove = Math.max(0, esito.stelle - (P.stelle[key] || 0));
+    P.stelle[key] = Math.max(P.stelle[key] || 0, esito.stelle);
+    if (leg && t.boss && prima) {
+      // trofei e premi della Leggenda: il boss finale dà anche la cornice delle carte «Leggenda»
+      S.stats.leggendaCap = capitoliLeggenda();
+      if (k === STORIA.length - 1) { Cosmetici.sblocca("cc-leggenda"); esito.cornice = true; }
+      Trofei.controlla();
+    }
     S.stats.vittorie++;
     Missioni.evento("vittoria", { squadra: B.lati[0].squadra.map(x => x.id) });
-    Missioni.evento("storia", { tre: esito.stelle === 3, nuove });
+    if (!leg) Missioni.evento("storia", { tre: esito.stelle === 3, nuove });
     if (arena) arena.vittoria(0);
     setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 70, forma: "stella", colori: ["#f2c14e", "#fff3c4", STORIA[k].colore], velocita: 8, dimensione: 7, durata: 1600 }); } }, 50);
   } else { esito.xp = ridXP(10); S.stats.sconfitte++; }
@@ -3446,15 +3481,16 @@ function chiudiStoria() {
 }
 
 function htmlFineStoria() {
-  const { k, i } = livelloAttuale.storia, t = STORIA[k].tappe[i], e = livelloAttuale.esito || {};
+  const { k, i, leg } = livelloAttuale.storia, t = datiTappa(k, i, leg), e = livelloAttuale.esito || {};
   const prossima = i + 1 < STORIA[k].tappe.length ? { k, i: i + 1 } : k + 1 < STORIA.length ? { k: k + 1, i: 0 } : null;
-  const avanti = e.vinto && prossima && tappaSbloccata(prossima.k, prossima.i);
+  const avanti = e.vinto && prossima && tappaSbloccata(prossima.k, prossima.i, leg);
   return `<div class="fine storia-fine ${e.vinto ? "vinto" : "perso"}" style="--c:${STORIA[k].colore}">
     <b>${e.vinto ? (t.boss ? "Boss sconfitto!" : "Tappa superata!") : "Sconfitta"}</b>
     ${e.vinto ? `<div class="stelle-grandi">${htmlStelle(e.stelle)}</div>` : ""}
     ${e.vinto && t.vittoria ? `<p class="storia-frase">${esc(t.vittoria)}</p>` : ""}
     ${htmlEspCarte()}
-    <span>${e.vinto ? `${e.prima ? "Prima vittoria" : "Rigiocata"}: +${e.monete} monete · +${e.xp} XP${e.bustina ? ` · ${esc(e.bustina)}` : ""}` : `+${e.xp} XP · Riprova: puoi cambiare squadra dalla mappa.`}</span>
+    <span>${e.vinto ? `${e.prima ? "Prima vittoria" : "Rigiocata"}: +${e.monete} monete · +${e.xp} XP${e.framm ? ` · +${e.framm} ◈` : ""}${e.potU ? ` · +${e.potU} ✪` : ""}${e.bustina ? ` · ${esc(e.bustina)}` : ""}` : `+${e.xp} XP · Riprova: puoi cambiare squadra dalla mappa.`}</span>
+    ${e.cornice ? `<p class="storia-frase">👑 Hai finito il Livello Leggenda: la cornice delle carte «Leggenda» è tua.</p>` : ""}
     <div class="azioni centro">
       ${avanti ? `<button class="btn primario" data-fx="onda" data-azione="storia-avanti">${prossima.k !== k ? "Capitolo successivo" : "Prossima tappa"}</button>` : ""}
       <button class="btn ${avanti ? "" : "primario"}" data-fx="onda" data-azione="rivincita">${e.vinto && e.stelle < 3 ? "Rigioca per le stelle" : "Riprova"}</button>
@@ -3464,15 +3500,17 @@ function htmlFineStoria() {
 }
 
 async function riscuotiScrigno(k, id, el) {
-  const sc = scrigniCapitolo(k).find(s => s.id === id);
-  if (!sc || S.storia.scrigni.includes(id) || stelleCapitolo(k) < sc.stelle) return;
-  S.storia.scrigni.push(id);
+  const leg = inLeggenda(), sc = scrigniDi(k, leg).find(s => s.id === id), P = progStoria(leg);
+  if (!sc || P.scrigni.includes(id) || stelleCapitolo(k, leg) < sc.stelle) return;
+  P.scrigni.push(id);
   if (sc.monete) { S.monete += sc.monete; FX.volaMonete(el, $(".monete"), 10); }
-  if (sc.bustina) { S.inventario[sc.bustina]++; FX.volaIcona(el, $('.nav [data-vista="carte"]'), "b-normale"); }
+  if (sc.bustina) { S.inventario[sc.bustina] = (S.inventario[sc.bustina] || 0) + 1; FX.volaIcona(el, $('.nav [data-vista="carte"]'), "b-normale"); }
+  if (sc.frammenti) Frammenti.aggiungi(sc.frammenti);
+  if (sc.potU) { S.jolly = Math.max(0, Math.floor(S.jolly || 0)) + sc.potU; mostraAvviso(`+${sc.potU} potenziatori universali ✪`); }
   salva(); aggiornaTesta();
   el.classList.add("si-apre");
   await attesa(700);
-  if (vista === "storia") disegna();
+  if (vista === "storia" || vista === "leggenda") disegna();
 }
 
 // ============================================================
@@ -3574,6 +3612,8 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   const bossG = L.spettatore ? L.spettatore.bossGiorno : L.bossGiorno;   // boss del giorno: corazza e punto debole
   if (bossG) BossGiorno.prepara(B, bossG);
   B.zaino = L.spettatore || L.arena || L.modo ? null : Zaino.perBattaglia();
+  const legB = L.spettatore ? L.spettatore.leggenda : L.storia && L.storia.leg ? { k: L.storia.k, i: L.storia.i } : null;
+  if (legB) Leggenda.prepara(B, legB.k, legB.i);
   if (L.modo) {
     L.modo.prepara(B);
     // ripresa dopo un F5: rigioco le mosse già fatte (stesso seme = stessi risultati), così non si può ricaricare per riprovare
@@ -3583,7 +3623,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
   if (L.bossGruppo) Boss.prepara(B);
   if (!L.spettatore && !L.vivo && !L.provaAdmin && !S.admin && !L.modo)
     Online.iniziaDiretta({ seme, sqA: mia, sqB: nemici, gA: gMio, gB: gNem, nomeA: (S.profilo.nome || "Giocatore").slice(0, 22), nomeB: `${L.nome} (computer)`,
-      bossPv: L.bossGruppo ? B.lati[1].squadra[0].pvMax : null, campo: campoFisso || null, bossGiorno: L.bossGiorno || null });
+      bossPv: L.bossGruppo ? B.lati[1].squadra[0].pvMax : null, campo: campoFisso || null, bossGiorno: L.bossGiorno || null, leggenda: legB });
   document.body.classList.add("in-battaglia");
   $("#app").classList.add("in-battaglia");
   const main = $("#vista");
@@ -4147,8 +4187,8 @@ function esciBattaglia() {
   $("#app").classList.remove("in-battaglia");
   schermoIntero(false);
   const L = livelloAttuale, daStoria = L && L.storia;
-  if (daStoria) capStoria = daStoria.k;
-  vai(daStoria ? "storia" : L && L.modo ? L.modo.vista : (L && L.da) || "sfida");
+  if (daStoria) { if (daStoria.leg) capLeggenda = daStoria.k; else capStoria = daStoria.k; }
+  vai(daStoria ? (daStoria.leg ? "leggenda" : "storia") : L && L.modo ? L.modo.vista : (L && L.da) || "sfida");
   // i due boss sono separati: si torna al riquadro di quello appena combattuto
   if (L && L.bossGruppo) scorriA("#vista [data-boss-box]");
   else if (L && L.bossGiorno) scorriA("#vista .boss-giorno");
@@ -4216,7 +4256,7 @@ document.addEventListener("click", e => {
   }
   if (t.dataset.profilo) { entra("partita", t.dataset.profilo); return; }
   if (t.dataset.admin) { azioneAdmin(t.dataset.admin, t); return; }
-  if (t.dataset.capitolo !== undefined) { capStoria = +t.dataset.capitolo; disegna(); scorriA("#vista .cap-testa"); return; }
+  if (t.dataset.capitolo !== undefined) { if (inLeggenda()) capLeggenda = +t.dataset.capitolo; else capStoria = +t.dataset.capitolo; disegna(); scorriA("#vista .cap-testa"); return; }
   if (t.dataset.tappa) { const [k, i] = t.dataset.tappa.split(":").map(Number); apriTappa(k, i); return; }
   if (t.dataset.tappaSquadra !== undefined) {
     const q = +t.dataset.tappaSquadra, box = $("#tappa-scelta");
@@ -4423,11 +4463,11 @@ document.addEventListener("click", e => {
     case "accetta-invito": scegliSquadra(() => Online.rispondi(true), "Con quale squadra accetti la sfida?"); break;
     case "vai-squadre": { const c = scegliSquadra.poi; scegliSquadra.poi = null; chiudiModale(); if (c && Online.rifiutaSeInvito) Online.rifiutaSeInvito(); if (!B) schermoIntero(false); vai("squadra"); break; }
     case "rifiuta-invito": Online.rispondi(false); break;
-    case "rivincita": chiudiArena(); if (livelloAttuale.storia) avviaStoria(livelloAttuale.storia.k, livelloAttuale.storia.i); else if (livelloAttuale.rifai) livelloAttuale.rifai(); else avviaSfida(livelloAttuale.id); break;
+    case "rivincita": chiudiArena(); if (livelloAttuale.storia) avviaStoria(livelloAttuale.storia.k, livelloAttuale.storia.i, !!livelloAttuale.storia.leg); else if (livelloAttuale.rifai) livelloAttuale.rifai(); else avviaSfida(livelloAttuale.id); break;
     case "boss-giorno": BossGiorno.avvia(); break;
     case "storia-avanti": {
-      const { k, i } = livelloAttuale.storia, p = i + 1 < STORIA[k].tappe.length ? { k, i: i + 1 } : { k: k + 1, i: 0 };
-      esciBattaglia(); capStoria = p.k; disegna(); setTimeout(() => apriTappa(p.k, p.i), 250); break;
+      const { k, i, leg } = livelloAttuale.storia, p = i + 1 < STORIA[k].tappe.length ? { k, i: i + 1 } : { k: k + 1, i: 0 };
+      esciBattaglia(); if (leg) capLeggenda = p.k; else capStoria = p.k; disegna(); setTimeout(() => apriTappa(p.k, p.i), 250); break;
     }
     case "vai-storia": vai("storia"); break;
     case "centra-mappa": centraMappa(); break;
@@ -4541,6 +4581,7 @@ function applicaSalvataggio(salvato) {
       profilo: Object.assign(n.profilo, salvato.profilo || {}),
       impostazioni: Object.assign(n.impostazioni, salvato.impostazioni || {}),
       storia: { stelle: Object.assign({}, (salvato.storia || {}).stelle), scrigni: [...((salvato.storia || {}).scrigni || [])], visti: [...((salvato.storia || {}).visti || [])] },
+      leggenda: { stelle: Object.assign({}, (salvato.leggenda || {}).stelle), scrigni: [...((salvato.leggenda || {}).scrigni || [])], visti: [...((salvato.leggenda || {}).visti || [])] },
       // chi giocava già prima che ci fosse il tutorial non se lo vede partire: riceve solo un avviso
       tutorial: Object.assign({}, salvato.tutorial || (salvato.stats && salvato.stats.bustine > 0 ? { fatto: true, nuovoPerTe: true } : { fatto: false })),
     });
