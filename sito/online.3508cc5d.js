@@ -128,6 +128,8 @@ const Online = (() => {
     </aside>`;
   }
   const eOnline = id => !!presenti[id];
+  // nov 2026: se un amico sta giocando (dal vivo o contro il computer) la sua partita si può guardare anche dalla classifica
+  const partitaDi = id => { const x = presenti[id]; return x && x.stato === "in-battaglia" && x.partita ? { partita: String(x.partita), contro: String(x.contro || "") } : null; };
   const quantiOnline = () => Object.keys(presenti).length;
 
   function htmlAmici() {
@@ -704,6 +706,6 @@ const Online = (() => {
     annuncia();
   }
 
-  return { htmlStrada, iniziaDiretta, loggaDiretta, fineDiretta, chiudiDiretta, htmlDiretta, get inDiretta() { return !!D; }, guarda, creaGuarda, rigioca, htmlGuarda, chiudiGuarda, htmlFineGuarda, esciGuarda, get inGuarda() { return !!G; }, mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, rifiutaSeInvito, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
+  return { partitaDi, htmlStrada, iniziaDiretta, loggaDiretta, fineDiretta, chiudiDiretta, htmlDiretta, get inDiretta() { return !!D; }, guarda, creaGuarda, rigioca, htmlGuarda, chiudiGuarda, htmlFineGuarda, esciGuarda, get inGuarda() { return !!G; }, mandaReazione, avvia, htmlAmici, eOnline, quantiOnline, sfida, annullaInvito, rispondi, rifiutaSeInvito, creaBattaglia, scegli, sostituisci, oggettoUsato, htmlBanner, inAttesa, scelta, resa, chiudi, htmlFine, esci,
     get inPartita() { return !!P; } };
 })();

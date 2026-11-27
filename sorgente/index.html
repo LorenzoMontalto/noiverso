@@ -455,6 +455,7 @@ h1.neon { font-size: clamp(2.6rem, 8vw, 4.6rem); line-height: .95; margin-bottom
 .modo-testa .cop-regole.piatta { font-size: .74rem; }
 .potenzia-max { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255, 255, 255, .12); }
 .potenzia-max .nota { margin: 0; flex: 1 1 180px; }
+.sta-giocando { display: block; font-size: .7rem; font-weight: 700; color: #5adc8c; }
 /* nov 2026: home compatta */
 .continua { display: grid; grid-template-columns: 54px 1fr auto; gap: 12px; align-items: center; padding: 12px; margin: 0 0 14px; border-radius: 16px; border: 1px solid color-mix(in srgb, var(--c) 50%, var(--linea)); background: linear-gradient(110deg, color-mix(in srgb, var(--c) 22%, var(--asfalto)), var(--asfalto) 70%); }
 .continua img { width: 54px; height: 54px; border-radius: 14px; object-fit: cover; background: #222; }
@@ -2313,7 +2314,9 @@ body.in-accesso { overflow: hidden; }
 .cosm-nome-fuoco { background: linear-gradient(90deg, #ffd24d, #ff6a1a, #ff2e46); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .cosm-nome-arcobaleno { background: linear-gradient(90deg, #ff2e46, #f2c14e, #5adc8c, #39f3ff, #c9a4ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .cosm-nome-arena { color: #ff8fa0; text-shadow: 0 0 8px rgba(255, 46, 70, .8); }
-.cosm-chip.cosm-nome-fuoco, .cosm-chip.cosm-nome-arcobaleno { color: transparent; }
+/* nov 2026: il colore del nome sta sulla scritta dentro il bottone: selezionato, il bottone cambia sfondo ma il nome resta visibile */
+.cosm-chip[aria-pressed="true"] { box-shadow: 0 0 0 1px var(--neon), 0 0 12px rgba(255, 46, 70, .35); }
+.cosm-chip[aria-pressed="true"]::before { content: "✓ "; color: var(--neon); font-weight: 800; }
 .cosm-riga { margin: 8px 0; } .cosm-riga > b { display: block; font-size: .85rem; margin-bottom: 4px; }
 .maestria-box, .crea-box { margin-top: 12px; background: var(--muro); border: 1px solid var(--linea); border-radius: 12px; padding: 10px 12px; }
 .maestria-box > b { color: var(--oro); font-size: 1rem; letter-spacing: .05em; }
@@ -2603,7 +2606,7 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 .cosm-cornice-neve .avatar { border-color: #ffffff; box-shadow: 0 0 0 3px #c8102e, 0 0 14px #bfe8ff; }
 .cornice-avatar.cosm-cornice-neve { position: relative; } .cornice-avatar.cosm-cornice-neve::after { content: "❄"; position: absolute; top: -6px; right: -6px; font-size: .9em; color: #fff; text-shadow: 0 0 6px #8fd8ff; pointer-events: none; }
 .cosm-nome-natale { background: linear-gradient(90deg, #ff4a5a, #ffffff, #3adc7a, #ffffff, #ff4a5a) 0 0 / 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: av-nome 4s linear infinite; }
-.cosm-chip.cosm-nome-natale { color: transparent; }
+
 @keyframes av-nome { to { background-position: 200% 0; } }
 .cosm-sfondo-natale { background: radial-gradient(circle at 30% 20%, #fff 0 1.2px, transparent 2px) 0 0 / 28px 28px, radial-gradient(circle at 70% 60%, #fff 0 1px, transparent 1.6px) 0 0 / 34px 34px,
   radial-gradient(120% 40% at 50% 115%, #f4fbff 0 55%, transparent 56%), radial-gradient(circle at 82% 18%, #fff8d8 0 7%, transparent 8%), linear-gradient(180deg, #0a1430, #1a3060 70%, #2a4a7a); }

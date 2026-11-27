@@ -136,7 +136,7 @@ const Cosmetici = (() => {
       const miei = Object.keys(CAT).filter(id => CAT[id].tipo === tipo && ha(id));
       return `<div class="cosm-riga"><b>${nomeTipo}</b><div class="filtri">
         <button class="chip" data-cosm-usa="${tipo}:" aria-pressed="${!s[tipo]}">Nessuno</button>
-        ${miei.map(id => `<button class="chip cosm-chip ${tipo === "nome" ? classeNome(id) : ""}" data-cosm-usa="${tipo}:${id}" aria-pressed="${s[tipo] === id}">${esc(CAT[id].nome)}</button>`).join("")}
+        ${miei.map(id => `<button class="chip cosm-chip" data-cosm-usa="${tipo}:${id}" aria-pressed="${s[tipo] === id}">${tipo === "nome" ? `<span class="${classeNome(id)}">${esc(CAT[id].nome)}</span>` : esc(CAT[id].nome)}</button>`).join("")}
         ${miei.length ? "" : `<span class="nota">Ancora nessuno: si trovano nel negozio, con i livelli, i gradi e l'Arena.</span>`}</div></div>`;
     }).join("") + (() => { const n = Object.keys(CAT).filter(id => CAT[id].tipo === "carta" && ha(id)).length, m = possedute().filter(c => Maestria.stelle(c.id) >= 5).length;
       return `<div class="cosm-riga"><b>Cornici delle carte</b><p class="nota">Ne hai ${n}${m ? `, più ${m} ${m === 1 ? "Cornice del Maestro" : "Cornici del Maestro"} (una per ogni carta con 5 stelle)` : ""}. Si mettono dal dettaglio di ogni carta.</p></div>`; })();
