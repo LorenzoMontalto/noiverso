@@ -520,7 +520,9 @@ function apriDettaglio(id) {
           <div class="potenzia-riga">
             <span class="costi"><span class="${inf.pronta ? "ok" : "manca"}">${inf.servePot} potenziatori</span><span class="${monOk ? "ok" : "manca"}">${inf.serveMon} monete</span></span>
             <button class="btn primario" data-fx="stelle" data-azione="potenzia" data-id="${id}" ${inf.puoi ? "" : "disabled"}>Potenzia</button>
-          </div>`; })() : ""}
+          </div>${(() => { const m = potenziaMassimo(id); return m.livelli >= 2 ? `
+          <div class="potenzia-max"><span class="nota">Con quello che hai arrivi al <b>livello ${m.a}</b>: ${m.pot} potenziatori${S.admin ? "" : ` e ${m.mon} monete`}.</span>
+            <button class="btn oro" data-fx="stelle" data-azione="potenzia-max" data-id="${id}">Potenzia al massimo (Lv ${m.a})</button></div>` : ""; })()}`; })() : ""}
           ${copie ? Jolly.htmlDettaglio(id) : ""}
           ${htmlAscesa(id)}
           ${haOlo(c.id) ? `<p class="olo-nota">✦ <b>Olografica</b>: +5% di PV e di danni in battaglia. Ne esce una ogni 50 carte circa.</p>` : ""}
@@ -532,6 +534,31 @@ function apriDettaglio(id) {
     </div>`);
 }
 
+// nov 2026: fin dove può salire una carta adesso, livello dopo livello, con i potenziatori e le monete che hai.
+// Esempio: livello 5, 40 potenziatori e 600 monete → sale finché il livello dopo costa più di quello che resta.
+function potenziaMassimo(id) {
+  const inf = infoCarta(id);
+  let l = inf.liv, pot = inf.pot, mon = S.admin ? Infinity : S.monete, spPot = 0, spMon = 0;
+  if (!S.carte[id] || l >= LIVELLO_MAX) return { a: l, livelli: 0, pot: 0, mon: 0 };
+  while (l < LIVELLO_MAX && pot >= potPerLivello(l) && mon >= monetePerLivello(l)) {
+    pot -= potPerLivello(l); mon -= monetePerLivello(l); spPot += potPerLivello(l); spMon += monetePerLivello(l); l++;
+  }
+  return { a: l, livelli: l - inf.liv, pot: spPot, mon: spMon };
+}
+function potenziaAlMassimo(id, el) {
+  const da = infoCarta(id).liv, m = potenziaMassimo(id);
+  if (m.livelli < 1) return;
+  S.pot[id] = ((S.pot || {})[id] || 0) - m.pot;
+  if (!S.admin) S.monete -= m.mon;
+  S.liv[id] = m.a;
+  for (let i = 0; i < m.livelli; i++) Missioni.evento("potenzia", { id });   // conta come tanti potenziamenti, come a mano
+  salva();
+  if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 70, forma: "stella", colori: ["#f2c14e", "#6fe3a0", "#3fd8ff", "#ffffff"], velocita: 8, dimensione: 6, durata: 1300 }); }
+  disegna(); apriDettaglio(id);
+  const lb = $("#livello-box"); if (lb) FX.riavvia(lb, "sale");
+  mostraAvviso(`${PER_ID[id].nome} sale dal livello ${da} al ${m.a}!`);
+  if (m.a === LIVELLO_MAX) mostraAvviso(`${PER_ID[id].nome} è al livello 30! Ora giocaci in battaglia per prendere la lode.`);
+}
 // Potenzia a mano una carta di un livello
 function potenziaCarta(id, el, restaQui) {
   const inf = infoCarta(id);
@@ -4405,6 +4432,7 @@ document.addEventListener("click", e => {
     case "vai-storia": vai("storia"); break;
     case "centra-mappa": centraMappa(); break;
     case "potenzia": potenziaCarta(t.dataset.id, t); break;
+    case "potenzia-max": potenziaAlMassimo(t.dataset.id, t); break;
     case "ascesa": ascendiCarta(t.dataset.id, false); break;
     case "ascesa-ok": ascendiCarta(t.dataset.id, true, t); break;
     case "rifai-tutorial": chiudiModale(); if (!B) setTimeout(() => Tutorial.avvia(), 150); break;
