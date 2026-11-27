@@ -60,7 +60,8 @@ const Scena3D = (() => {
   // Faccia della carta disegnata su canvas: foto, cornice, nome, ruolo
   const cacheFronte = {};
   async function texFronte(c, liv, lode, olo, ultra, stelle = 0, cc = "") {
-    const k = c.id + ":" + liv + (lode ? "L" : "") + (olo ? "O" : "") + (ultra ? "U" : "") + (stelle ? "S" + stelle : "") + (cc ? "C" + cc : "");
+    // nov 2026: nella chiave anche la rarità, sennò una carta ascesa riusava la faccia disegnata con la rarità di prima
+    const k = c.id + ":" + c.rarita + ":" + liv + (lode ? "L" : "") + (olo ? "O" : "") + (ultra ? "U" : "") + (stelle ? "S" + stelle : "") + (cc ? "C" + cc : "") + (c.stile ? ":" + c.stile : "");
     if (cacheFronte[k]) return cacheFronte[k];
     await font();
     const W = 512, H = 716, cv = document.createElement("canvas");
