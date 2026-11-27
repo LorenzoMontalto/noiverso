@@ -63,13 +63,13 @@ const Settimana = (() => {
     return S.settimana;
   }
   const SFIDE = [
-    { nome: "Facile",    liv: [8, 12],  rarita: ["comune", "rara"],                  abilita: .6,  premio: { monete: 250 } },
-    { nome: "Media",     liv: [16, 20], rarita: ["rara", "epica"],                   abilita: .8,  get premio() { return { monete: 500, bustine: { [`serie-${serie()}`]: 1 } }; } },
-    { nome: "Difficile", liv: [26, 30], rarita: ["epica", "leggendaria"],            abilita: .95, premio: { monete: 900, bustine: { leggendaria: 1 } } },
+    { nome: "Facile",    liv: [8, 12],  rarita: ["comune", "rara"],                  abilita: .6,  premio: { monete: piuMonete(250) } },
+    { nome: "Media",     liv: [16, 20], rarita: ["rara", "epica"],                   abilita: .8,  get premio() { return { monete: piuMonete(500), bustine: { [`serie-${serie()}`]: 1 } }; } },
+    { nome: "Difficile", liv: [26, 30], rarita: ["epica", "leggendaria"],            abilita: .95, premio: { monete: piuMonete(900), bustine: { leggendaria: 1 } } },
   ];
   const MISSIONI = [
-    { id: "vinci", n: 5, testo: s => `Vinci 5 battaglie con almeno 3 carte ${s} in squadra`, premio: { monete: 300 } },
-    { id: "bustine", n: 3, testo: s => `Apri 3 bustine ${s}`, premio: { monete: 350 } },
+    { id: "vinci", n: 5, testo: s => `Vinci 5 battaglie con almeno 3 carte ${s} in squadra`, premio: { monete: piuMonete(300) } },
+    { id: "bustine", n: 3, testo: s => `Apri 3 bustine ${s}`, premio: { monete: piuMonete(350) } },
     { id: "potenzia", n: 5, testo: s => `Potenzia 5 volte carte ${s}`, premio: { bustine: { epica: 1 } } },
   ];
   let avvisatoAdmin = false;
@@ -241,7 +241,7 @@ const BossGiorno = (() => {
     L.dopoVittoria = () => {
       if (battutoOggi()) return "Oggi l'avevi già battuto: il premio grosso torna domani con un boss nuovo.";
       S.bossGiorno = { chiave: g.chiave, vinto: true }; S.stats.bossGiorno = (S.stats.bossGiorno || 0) + 1;
-      const p = { monete: 600, bustine: { leggendaria: 1 } }; daiPremio(p);
+      const p = { monete: piuMonete(600), bustine: { leggendaria: 1 } }; daiPremio(p);
       return `Boss del giorno sconfitto! ${testoPremio(p)}.`;
     };
     schermoIntero(true);

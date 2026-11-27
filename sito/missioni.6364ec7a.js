@@ -8,26 +8,26 @@
 const Missioni = (() => {
   const XP_GIORNO = 8, XP_SETT = 30;   // nov 2026: un quinto di prima (il pass sale con le Sfide del pass)
   const POOL = {
-    vinci:        { n: 2, testo: m => `Vinci ${m.n} battaglie`, premio: { monete: 80 } },
-    serie:        { n: 1, testo: m => `Vinci con almeno 2 carte ${SERIE[m.serie] ? SERIE[m.serie].nome : ""} in squadra`, premio: { monete: 100 } },
-    bustina:      { n: 2, testo: m => `Apri ${m.n} bustine`, premio: { monete: 60 } },
-    potenzia:     { n: 1, testo: () => "Potenzia una carta", premio: { monete: 80 } },
-    "tre-stelle": { n: 1, testo: () => "Prendi 3 stelle in una tappa della storia", premio: { monete: 100 } },
-    amico:        { n: 1, online: true, testo: () => "Sfida la squadra di un amico", premio: { monete: 100 } },
-    boss:         { n: 1, online: true, testo: () => "Attacca il boss del gruppo", premio: { monete: 100 } },
-    modi:         { n: 3, testo: m => `Supera ${m.n} fermate della Lunga Notte o piani della Scalata`, premio: { monete: 120 } },
+    vinci:        { n: 2, testo: m => `Vinci ${m.n} battaglie`, premio: { monete: piuMonete(80) } },
+    serie:        { n: 1, testo: m => `Vinci con almeno 2 carte ${SERIE[m.serie] ? SERIE[m.serie].nome : ""} in squadra`, premio: { monete: piuMonete(100) } },
+    bustina:      { n: 2, testo: m => `Apri ${m.n} bustine`, premio: { monete: piuMonete(60) } },
+    potenzia:     { n: 1, testo: () => "Potenzia una carta", premio: { monete: piuMonete(80) } },
+    "tre-stelle": { n: 1, testo: () => "Prendi 3 stelle in una tappa della storia", premio: { monete: piuMonete(100) } },
+    amico:        { n: 1, online: true, testo: () => "Sfida la squadra di un amico", premio: { monete: piuMonete(100) } },
+    boss:         { n: 1, online: true, testo: () => "Attacca il boss del gruppo", premio: { monete: piuMonete(100) } },
+    modi:         { n: 3, testo: m => `Supera ${m.n} fermate della Lunga Notte o piani della Scalata`, premio: { monete: piuMonete(120) } },
   };
   const POOL_SETT = {
     vinci:         { n: 15, testo: m => `Vinci ${m.n} battaglie`, premio: { bustine: { epica: 1 } } },
-    bustina:       { n: 8, testo: m => `Apri ${m.n} bustine`, premio: { monete: 300 } },
+    bustina:       { n: 8, testo: m => `Apri ${m.n} bustine`, premio: { monete: piuMonete(300) } },
     "amico-vinci": { n: 3, online: true, testo: m => `Batti ${m.n} volte la squadra di un amico`, premio: { bustine: { epica: 1 } } },
     "boss-danni":  { n: 5000, online: true, testo: m => `Fai ${m.n.toLocaleString("it-IT")} danni al boss`, premio: { bustine: { mega: 1 } } },
-    stelle:        { n: 10, testo: m => `Prendi ${m.n} stelle nella storia`, premio: { monete: 300 } },
+    stelle:        { n: 10, testo: m => `Prendi ${m.n} stelle nella storia`, premio: { monete: piuMonete(300) } },
     modi:          { n: 20, testo: m => `Supera ${m.n} tra fermate della Lunga Notte e piani della Scalata`, premio: { bustine: { epica: 1 } } },
   };
   const BONUS = { bustine: { normale: 1 } };
   // giorno 4: una bustina di una serie a caso (scelta quando la riscuoti)
-  const ACCESSI = [{ monete: 100 }, { bustine: { normale: 1 } }, { monete: 150 }, { serieCaso: true }, { monete: 200 }, { bustine: { mega: 1 } }, { bustine: { epica: 1 } }];
+  const ACCESSI = [{ monete: piuMonete(100) }, { bustine: { normale: 1 } }, { monete: piuMonete(150) }, { serieCaso: true }, { monete: piuMonete(200) }, { bustine: { mega: 1 } }, { bustine: { epica: 1 } }];
 
   const online = () => !!window.NOIVERSO_SUPABASE && Archivio.modo === "cloud";
   const giorno = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;

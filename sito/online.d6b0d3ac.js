@@ -655,7 +655,7 @@ const Online = (() => {
   function chiudi() {
     const L = livelloAttuale, vinto = B.vincitore === 0;
     L.espCarte = premiaCarte(1.8, vinto);
-    const e = { vinto, monete: vinto ? 100 : 30, xp: ridXP(vinto ? 130 : 50) };
+    const e = { vinto, monete: piuMonete(vinto ? 100 : 30), xp: ridXP(vinto ? 130 : 50) };
     if (vinto) { S.stats.vittorie++; S.stats.vinteVivo = (S.stats.vinteVivo || 0) + 1; if (arena) arena.vittoria(0); }
     else S.stats.sconfitte++;
     S.monete += e.monete;

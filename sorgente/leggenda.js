@@ -93,7 +93,7 @@ const Leggenda = (() => {
   function tappa(k, i) {
     const t = STORIA[k].tappe[i], p = avanzamento(k, i), g = k * N_TAPPE + i;
     const olo = k >= 10, ultra = k >= 20;
-    const monete = Math.round((100 + 2 * g) / 10) * 10 * (t.boss ? 2 : 1);
+    const monete = piuMonete(Math.round((100 + 2 * g) / 10) * 10 * (t.boss ? 2 : 1));
     const framm = (15 + Math.floor(g / 6)) * (t.boss ? 3 : 1);
     const potU = t.boss ? 5 + Math.floor(k / 3) : 0;
     const bustina = !t.boss ? "" : k === STORIA.length - 1 ? "ultra" : k >= 20 ? "leggendaria" : k >= 10 ? "epica" : "";

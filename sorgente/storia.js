@@ -551,7 +551,7 @@ const STORIA = [
 function scrigniCapitolo(k) {
   const cap = STORIA[k];
   return [
-    { id: `${cap.id}-9`, stelle: 9, monete: 100 + 50 * k, testo: `${100 + 50 * k} monete` },
+    { id: `${cap.id}-9`, stelle: 9, monete: piuMonete(100 + 50 * k), testo: `${piuMonete(100 + 50 * k)} monete` },
     { id: `${cap.id}-18`, stelle: 18, bustina: k >= 3 ? "leggendaria" : "epica", testo: k >= 3 ? "Bustina Leggendaria" : "Bustina Epica" },
   ];
 }
@@ -612,6 +612,7 @@ STORIA.forEach((cap, k) => cap.tappe.forEach((t, i) => {
   const ta = TARATURA_STORIA[`${cap.id}-${i}`] || [0, 0];
   const bb = Math.max(1, Math.min(30, b - meno + ta[0]));
   t.curva = b; t.meno = meno; t.extra = ta[1] || 0;
+  if (!t.moneteBase) { t.moneteBase = t.monete; t.monete = typeof piuMonete === "function" ? piuMonete(t.monete) : t.monete; }   // +50% (carte.js)
   t.livRif = Math.min(30, b + 2);   // il livello che ci si aspetta dal giocatore in quel punto della storia
   t.liv = t.boss ? [Math.min(30, bb + 1), Math.min(30, bb + 2)] : [Math.max(1, bb), Math.min(30, bb + 2)];
 }));

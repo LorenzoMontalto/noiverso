@@ -49,9 +49,9 @@ const Amici = (() => {
     const g = new Date().toDateString();
     if (!S.amiciOggi || S.amiciOggi.giorno !== g) S.amiciOggi = { giorno: g, vinte: 0 };
     else S.amiciOggi = Object.assign({}, S.amiciOggi);
-    const e = { vinto, monete: 10, xp: XP_SCONFITTA, stato: a.prova ? "prova" : "invio" };
+    const e = { vinto, monete: piuMonete(10), xp: XP_SCONFITTA, stato: a.prova ? "prova" : "invio" };
     if (vinto) {
-      e.monete = S.amiciOggi.vinte < VINTE_PAGATE ? 90 : 20; e.xp = ridXP(110);
+      e.monete = piuMonete(S.amiciOggi.vinte < VINTE_PAGATE ? 90 : 20); e.xp = ridXP(110);
       S.amiciOggi.vinte++; S.stats.vittorie++; if (!a.prova) S.stats.vinteAmici = (S.stats.vinteAmici || 0) + 1;
       if (arena) arena.vittoria(0);
       setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 70, forma: "coriandolo", colori: ["#f2c14e", "#ff2e46", "#3fd8ff", "#ffffff"], velocita: 8, dimensione: 5, durata: 1500 }); } }, 200);
@@ -137,7 +137,7 @@ const Amici = (() => {
 // ---------------- BOSS DEL GRUPPO ----------------
 const Boss = (() => {
   let stato = null, errore = null, inCarica = false;
-  const PREMIO = { monete: 300, bustine: { leggendaria: 1 } }, PREMIO_MVP = { bustine: { epica: 1 } };
+  const PREMIO = { monete: piuMonete(300), bustine: { leggendaria: 1 } }, PREMIO_MVP = { bustine: { epica: 1 } };
 
   function cartaBoss(sett) {
     const leg = CARTE.filter(c => c.rarita === "leggendaria");
@@ -222,7 +222,7 @@ const Boss = (() => {
     // anche quando la squadra cade i danni fatti contano: le carte scese in campo prendono comunque potenziatori
     L.espCarte = premiaCarte(1.5, B.vincitore === 0, true);
     if (B.vincitore !== 0) S.stats.sconfitte++;
-    const e = { danni, contati: Math.min(danni, 6000), monete: Math.min(150, 30 + Math.round(danni / 40)), xp: ridXP(80), stato: b.prova ? "prova" : "invio" };
+    const e = { danni, contati: Math.min(danni, 6000), monete: piuMonete(Math.min(150, 30 + Math.round(danni / 40))), xp: ridXP(80), stato: b.prova ? "prova" : "invio" };
     S.monete += e.monete;
     const su = aggiungiXP(e.xp);
     L.esito = e;

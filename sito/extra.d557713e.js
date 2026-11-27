@@ -149,11 +149,11 @@ const Cosmetici = (() => {
 // Ogni carta ha 5 obiettivi suoi. Ogni obiettivo raggiunto è una stella: monete, potenziatori, punti Fama e, alla quinta, la Cornice del Maestro per quella carta.
 const Maestria = (() => {
   const OBIETTIVI = [
-    { k: "v", n: 3,    testo: "Vinci 3 battaglie con questa carta scesa in campo", monete: 25,  pot: 5,  fama: 10 },
-    { k: "d", n: 1500, testo: "Fai 1.500 danni con questa carta", monete: 50, pot: 10, fama: 20 },
-    { k: "o", n: 10,   testo: "Manda KO 10 carte nemiche con questa carta", monete: 75, pot: 15, fama: 30 },
-    { k: "f", n: 10,   testo: "Usa 10 volte la sua mossa finale", monete: 100, pot: 20, fama: 40 },
-    { k: "v", n: 25,   testo: "Vinci 25 battaglie con questa carta scesa in campo", monete: 150, pot: 30, fama: 60, frammenti: 30 },
+    { k: "v", n: 3,    testo: "Vinci 3 battaglie con questa carta scesa in campo", monete: piuMonete(25),  pot: 5,  fama: 10 },
+    { k: "d", n: 1500, testo: "Fai 1.500 danni con questa carta", monete: piuMonete(50), pot: 10, fama: 20 },
+    { k: "o", n: 10,   testo: "Manda KO 10 carte nemiche con questa carta", monete: piuMonete(75), pot: 15, fama: 30 },
+    { k: "f", n: 10,   testo: "Usa 10 volte la sua mossa finale", monete: piuMonete(100), pot: 20, fama: 40 },
+    { k: "v", n: 25,   testo: "Vinci 25 battaglie con questa carta scesa in campo", monete: piuMonete(150), pot: 30, fama: 60, frammenti: 30 },
   ];
   const dati = id => (S.maestria && S.maestria[id]) || { v: 0, d: 0, o: 0, f: 0, presi: [] };
   const stelle = id => dati(id).presi.length;
@@ -307,9 +307,45 @@ const Vetrina = (() => {
       <h2 class="${Cosmetici.classeNome(r.stileNome)}">${esc(String(r.nome || "Giocatore"))}</h2>${r.titolo ? `<span class="nota">«${esc(r.titolo)}»</span>` : ""}</div></div>
       ${htmlRiquadro({ vetrina: r.vetrina || [], sfondo: r.sfondo, livello: num(r.livello), punti: num(r.punti), vittorie: num(r.vittorie), sconfitte: num(r.sconfitte), stelle: num(r.stelle), preferita: r.preferita, serie: r.seriePref,
         albe: r.albe, notteMax: r.notteMax, scalataMax: r.scalataMax, arenaMax: r.arenaMax, arene: r.arene, dett: r.vetrinaDett })}
-      <div class="azioni centro"><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
+      <div class="azioni centro">${r.id && r.id !== Archivio.uid ? `<button class="btn primario" data-fx="spinta" data-album-amico="${esc(r.id)}">📒 Vedi il suo album</button>` : ""}<button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }
-  return { fineBattaglia, preferita, seriePreferita, lista, metti, htmlProfilo, apriAmico, htmlRiquadro };
+  // nov 2026: l'album di un amico, letto dal server (album_amico): tutte le carte, con quanto le ha potenziate
+  let albumA = null;
+  async function apriAlbumAmico(id) {
+    apriModale(`<div class="album-amico"><p class="nota">Apro l'album…</p></div>`);
+    let d;
+    try { d = await rpcSociale("album_amico", { amico: id }); }
+    catch (e) { const el = $("#modale-corpo .album-amico"); if (el) el.innerHTML = `<p class="nota">Non riesco a leggere il suo album adesso. ${String(e && e.message || "").includes("function") ? "Hai eseguito di nuovo schema.sql su Supabase?" : "Riprova tra poco."}</p><div class="azioni centro"><button class="btn" data-azione="chiudi">Chiudi</button></div>`; return; }
+    const carte = d && d.carte && typeof d.carte === "object" ? d.carte : {};
+    const serie = ORDINE_SERIE.filter(s => CARTE.some(c => c.serie === s));
+    const conta = s => CARTE.filter(c => c.serie === s && carte[c.id]).length;
+    albumA = { id, nome: String(d && d.nome || "Giocatore"), carte, serie: serie.find(s => conta(s)) || serie[0], solo: false };
+    disegnaAlbumAmico();
+  }
+  function disegnaAlbumAmico() {
+    const el = $("#modale-corpo .album-amico"); if (!el || !albumA) return;
+    const A = albumA, C = A.carte, ids = Object.keys(C).filter(k => PER_ID[k]);
+    const al30 = ids.filter(k => num(C[k][0]) >= LIVELLO_MAX).length, lode = ids.filter(k => C[k][1]).length;
+    const nSerie = s => CARTE.filter(c => c.serie === s).length, hSerie = s => CARTE.filter(c => c.serie === s && C[c.id]).length;
+    const lista = CARTE.filter(c => c.serie === A.serie && (!A.solo || C[c.id])).sort((a, b) => rangoRarita(b.rarita) - rangoRarita(a.rarita));
+    const carta = c => { const x = C[c.id];
+      if (!x) return `<div class="aa-carta">${htmlCarta(c, { piccola: true, coperta: true })}</div>`;
+      const cc = typeof x[6] === "string" && (Cosmetici.CAT[x[6]] || x[6] === Cosmetici.MAESTRO) ? x[6] : "";
+      return `<div class="aa-carta">${htmlCarta(c, { piccola: true, liv: Math.min(LIVELLO_MAX, num(x[0]) || 1), lode: !!x[1], olo: !!x[2], ultra: !!x[3] && !!c.ultra, rar: rarDopo(c.rarita, num(x[4])), stelle: Math.min(5, num(x[5])), cc })}</div>`; };
+    el.innerHTML = `<span class="codice-tag">Album</span><h2>L'album di ${esc(A.nome)}</h2>
+      <div class="aa-numeri"><div><b>${ids.length}<small>/${CARTE.length}</small></b><span>carte</span></div><div><b>${al30}</b><span>al livello 30</span></div><div><b>${lode}</b><span>con la lode</span></div></div>
+      <div class="aa-filtri"><label class="filtro-ruolo"><span class="filtri-etichetta">Serie</span><select data-aa-serie aria-label="Serie">
+        ${ORDINE_SERIE.filter(s => nSerie(s)).map(s => `<option value="${s}" ${s === A.serie ? "selected" : ""}>${SERIE[s].simbolo} ${esc(SERIE[s].nome)} · ${hSerie(s)}/${nSerie(s)}</option>`).join("")}</select></label>
+        <label class="aa-solo"><input type="checkbox" data-aa-solo ${A.solo ? "checked" : ""}> Solo quelle che ha</label></div>
+      <div class="aa-griglia">${lista.length ? lista.map(carta).join("") : `<p class="nota">Di questa serie non ha ancora nessuna carta.</p>`}</div>
+      <div class="azioni centro"><button class="btn" data-azione="chiudi">Chiudi</button></div>`;
+  }
+  document.addEventListener("change", e => {
+    if (!albumA || !e.target.closest(".album-amico")) return;
+    if (e.target.matches("[data-aa-serie]")) { albumA.serie = e.target.value; disegnaAlbumAmico(); }
+    else if (e.target.matches("[data-aa-solo]")) { albumA.solo = e.target.checked; disegnaAlbumAmico(); }
+  });
+  return { fineBattaglia, preferita, seriePreferita, lista, metti, htmlProfilo, apriAmico, htmlRiquadro, apriAlbumAmico };
 })();
 
 // ---------------- Gradi della stagione ----------------
@@ -318,11 +354,11 @@ const Vetrina = (() => {
 const Gradi = (() => {
   const GRADI = [
     { nome: "Bronzo", da: 0, ico: "🥉", premio: null },
-    { nome: "Argento", da: 9, ico: "🥈", premio: { monete: 300 } },
-    { nome: "Oro", da: 21, ico: "🥇", premio: { monete: 600, bustine: { epica: 1 } } },
-    { nome: "Platino", da: 36, ico: "💠", premio: { monete: 1000, bustine: { epica: 2 } }, cosm: "cc-diamante" },
-    { nome: "Diamante", da: 54, ico: "💎", premio: { monete: 1500, bustine: { leggendaria: 1 } }, cosm: "cornice-diamante" },
-    { nome: "Leggenda", da: 75, ico: "👑", premio: { monete: 2500, bustine: { leggendaria: 1, ultra: 1 } }, cosm: "cornice-leggenda" },
+    { nome: "Argento", da: 9, ico: "🥈", premio: { monete: piuMonete(300) } },
+    { nome: "Oro", da: 21, ico: "🥇", premio: { monete: piuMonete(600), bustine: { epica: 1 } } },
+    { nome: "Platino", da: 36, ico: "💠", premio: { monete: piuMonete(1000), bustine: { epica: 2 } }, cosm: "cc-diamante" },
+    { nome: "Diamante", da: 54, ico: "💎", premio: { monete: piuMonete(1500), bustine: { leggendaria: 1 } }, cosm: "cornice-diamante" },
+    { nome: "Leggenda", da: 75, ico: "👑", premio: { monete: piuMonete(2500), bustine: { leggendaria: 1, ultra: 1 } }, cosm: "cornice-leggenda" },
   ];
   const indice = p => { let i = 0; GRADI.forEach((g, k) => { if (p >= g.da) i = k; }); return i; };
   const nome = p => `${GRADI[indice(p)].ico} ${GRADI[indice(p)].nome}`;
@@ -569,8 +605,10 @@ const Progressi = (() => {
 
 // ---------------- Novità (una volta sola per ogni aggiornamento) ----------------
 const Novita = (() => {
-  const VERSIONE = "2026-11-premi";
+  const VERSIONE = "2026-11-album";
   const SCHEDE = [
+    { ico: "🪙", titolo: "Più monete per tutti", testo: "Battaglie, storia, missioni, premi di accesso, pass, eventi, boss e sfide con gli amici danno il 50% di monete in più: per esempio battere il Boss dà 180 monete invece di 120. Così portare le carte al livello 30 è molto più alla portata." },
+    { ico: "📒", titolo: "L'album degli amici", testo: "Tocca il nome di un amico in classifica e poi «Vedi il suo album»: vedi tutte le carte che ha, a che livello, con la lode, olografiche, Ultra e con le cornici." },
     { ico: "💰", titolo: "Premi raddoppiati", testo: "Arena, Lunga Notte e Scalata ora danno circa il doppio: per esempio l'Arena con 3 vittorie dà 620 monete e una bustina (prima 350), l'alba della Notte una Bustina Leggendaria, 400 monete e 60 frammenti. E anche uscire presto rende quasi l'ingresso." },
     { ico: "👑", titolo: "Storia · Livello Leggenda", testo: "Hai finito la storia? Ricomincia da capo al Livello Leggenda: stessi capitoli, nemici al 30 con la lode e una regola speciale diversa in ogni capitolo. Dà frammenti, potenziatori universali, tre titoli e, alla fine, la cornice delle carte «Leggenda». La trovi in Gioca, sotto la Storia." },
     { ico: "🧭", titolo: "Il menu è cambiato", testo: "Ora le sezioni sono 5: Home, Gioca, Carte, Negozio e Amici. Dentro Carte trovi Bustine, Album e Squadre; dentro Amici la Classifica e il Pass. Il numerino su una sezione vuol dire che lì c'è qualcosa da fare." },

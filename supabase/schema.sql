@@ -295,6 +295,34 @@ create or replace function public.segna_sfide_viste() returns void
 language sql security definer set search_path = public as $$
   update public.sfide_amici set visto = true where sfidato = auth.uid() and not visto;
 $$;
+-- nov 2026: l'album di un amico (dal suo profilo): ogni carta che ha, con livello, lode, olografica, Ultra, ascese,
+-- stelle di maestria e cornice. Compatto: { id: [livello, lode 0/1, olo 0/1, ultra 0/1, ascese, stelle, cornice] }.
+create or replace function public.album_amico(amico uuid) returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare d jsonb;
+begin
+  if auth.uid() is null then raise exception 'Devi fare l''accesso'; end if;
+  select dati into d from public.salvataggi where user_id = amico and slot = 'partita';
+  if d is null then raise exception 'Questo giocatore non ha ancora un salvataggio'; end if;
+  return jsonb_build_object(
+    'nome', coalesce(nullif(d->'profilo'->>'nome', ''), 'Giocatore'),
+    'carte', coalesce((select jsonb_object_agg(x, jsonb_build_array(
+        least(30, greatest(1, case when d->'liv'->>x ~ '^[0-9]{1,2}$' then (d->'liv'->>x)::int else 1 end)),
+        case when d->'liv'->>x ~ '^[0-9]{1,2}$' and (d->'liv'->>x)::int >= 30 and coalesce(d->'lodeXp'->>x, '') ~ '^[0-9]{1,7}$' and (d->'lodeXp'->>x)::int >= 2000 then 1 else 0 end,
+        case when coalesce(d->'olo'->>x, '') = 'true' then 1 else 0 end,
+        case when coalesce(d->'ultra'->>x, '') = 'true' then 1 else 0 end,
+        case when coalesce(d->'asc'->>x, '') ~ '^[0-3]$' then (d->'asc'->>x)::int else 0 end,
+        case when jsonb_typeof(d->'maestria'->x->'presi') = 'array' then least(5, jsonb_array_length(d->'maestria'->x->'presi')) else 0 end,
+        case when coalesce(d->'cosm'->'carte'->>x, '') ~ '^cc-[a-z0-9-]{1,30}$'
+              and ((d->'cosm'->'carte'->>x) <> 'cc-maestro' and coalesce(d->'cosm'->'have'->>(d->'cosm'->'carte'->>x), '') = 'true'
+                or (d->'cosm'->'carte'->>x) = 'cc-maestro' and jsonb_typeof(d->'maestria'->x->'presi') = 'array' and jsonb_array_length(d->'maestria'->x->'presi') >= 5)
+             then d->'cosm'->'carte'->>x else '' end))
+      from jsonb_object_keys(case when jsonb_typeof(d->'carte') = 'object' then d->'carte' else '{}'::jsonb end) x
+      where x ~ '^[a-z0-9_-]{1,40}$' and coalesce(d->'carte'->>x, '') ~ '^[0-9]{1,6}$' and (d->'carte'->>x)::int > 0), '{}'::jsonb));
+end $$;
+revoke all on function public.album_amico(uuid) from public, anon;
+grant execute on function public.album_amico(uuid) to authenticated;
+
 revoke all on function public.punti_amici(uuid), public.squadra_amico(uuid), public.registra_sfida(uuid, boolean), public.segna_sfide_viste() from public, anon;
 grant execute on function public.punti_amici(uuid), public.squadra_amico(uuid), public.registra_sfida(uuid, boolean), public.segna_sfide_viste() to authenticated;
 
@@ -1579,6 +1607,6 @@ grant execute on function public.registra_carte(text[], boolean, text), public.s
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select '146c8f6d08'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select 'b60141e777'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE

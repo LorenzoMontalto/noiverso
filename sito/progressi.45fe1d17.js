@@ -39,7 +39,7 @@ const Livello = (() => {
     return { liv: L, punti: p, dentro: p - totaleA(L), serve: L < MAX ? serve(L) : 0, max: L >= MAX };
   }
   function premio(L) {
-    const p = { monete: 50 + 5 * L }, b = {};   // nov 2026: era 50 + 10 × L (troppe monete con maestria e Arena)
+    const p = { monete: piuMonete(50 + 5 * L) }, b = {};   // nov 2026: era 50 + 10 × L (troppe monete con maestria e Arena)
     if (L % 5 === 0) b.epica = 1;
     if (L % 10 === 0) b.leggendaria = 1;
     if (L % 25 === 0) b.ultra = 1;   // 25, 50, 75, 100

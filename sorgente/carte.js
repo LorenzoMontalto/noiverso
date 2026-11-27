@@ -966,6 +966,12 @@ const POT_DOPPIONE = { comune: 10, rara: 12, epica: 24, leggendaria: 60, jolly: 
 // quindi comprare bustine non diventa mai un modo per fare soldi.
 const MONETE_DOPPIONE_30 = { comune: 25, rara: 30, epica: 60, leggendaria: 150, jolly: 50 };
 const potPerLivello = L => 3 + Math.floor(L / 2);
+// nov 2026 (27): +50% di monete da tutte le fonti di gioco (battaglie, storia e Leggenda, missioni, accessi, pass, eventi,
+// boss, amici, dal vivo, maestria, gradi, trofei), perché portare le carte al 30 costava troppo. Non tocca: Arena, Notte e
+// Scalata (già raddoppiate), i doppioni al 30 (legati al prezzo delle bustine), i codici e i rimborsi.
+// Esempio: vittoria contro il Boss 120 → 180 monete; tappa della storia da 150 → 225.
+const PIU_MONETE = 1.5;
+const piuMonete = n => Math.round((+n || 0) * PIU_MONETE / 5) * 5;
 
 // ---------------- Ascesa ----------------
 // Una carta comune, rara o epica arrivata al 30 può salire alla rarità successiva pagando monete:

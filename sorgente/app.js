@@ -77,12 +77,12 @@ function premioPass(l) {
   if (SCELTE_PASS[l]) return { scelta: SCELTE_PASS[l] };
   if (l % 5 === 0) return { bustine: { epica: 1 } };
   if (l % 3 === 0) return { bustine: { normale: 1 } };
-  return { monete: 40 + l * 3 };
+  return { monete: piuMonete(40 + l * 3) };
 }
 // Scrigno a sorpresa dopo il livello 100
 function premioCasuale() {
   const x = Math.random() * 100;
-  if (x < 38) return { monete: 150 + Math.floor(Math.random() * 6) * 50 };
+  if (x < 38) return { monete: piuMonete(150 + Math.floor(Math.random() * 6) * 50) };
   if (x < 62) return { bustine: { normale: 1 } };
   if (x < 80) return { bustine: { epica: 1 } };
   if (x < 94) return { pot: 25, casuale: true };
@@ -2542,7 +2542,7 @@ const usa3D = () => Scena3D.disponibile && imp().grafica !== "2d";
 const carteBattaglia = () => imp().modalita === "rapida" ? 3 : CARTE_SQUADRA;
 function premiSfida(L) {
   const r = imp().modalita === "rapida";
-  return { monete: r ? Math.round(L.premio * .6) : L.premio, punti: r ? Math.max(1, Math.round(L.punti / 2)) : L.punti, xp: ridXP(r ? Math.round(L.xp * .6) : L.xp) };
+  return { monete: piuMonete(r ? Math.round(L.premio * .6) : L.premio), punti: r ? Math.max(1, Math.round(L.punti / 2)) : L.punti, xp: ridXP(r ? Math.round(L.xp * .6) : L.xp) };
 }
 function applicaImpostazioni() {
   const i = imp();
@@ -4170,7 +4170,7 @@ function chiudiSfida() {
     livelloAttuale.extraFine = livelloAttuale.dopoVittoria ? livelloAttuale.dopoVittoria() : "";
     if (arena) arena.vittoria(0);
     setTimeout(() => { const el = $(".fine b"); if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 60, forma: "coriandolo", colori: ["#f2c14e", "#ff2e46", "#3fd8ff", "#ffffff"], velocita: 8, dimensione: 5, durata: 1500 }); } }, 50);
-  } else { S.monete += 10; S.stats.sconfitte++; su = aggiungiXP(XP_SCONFITTA); livelloAttuale.extraFine = livelloAttuale.dopoSconfitta ? livelloAttuale.dopoSconfitta() : ""; }
+  } else { S.monete += piuMonete(10); S.stats.sconfitte++; su = aggiungiXP(XP_SCONFITTA); livelloAttuale.extraFine = livelloAttuale.dopoSconfitta ? livelloAttuale.dopoSconfitta() : ""; }
   salva();
   Archivio.pubblicaClassifica();
   aggiornaTesta();
@@ -4222,7 +4222,7 @@ document.addEventListener("click", e => {
   if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
   if (e.target.id === "avviso") { if (mostraAvviso._salta) { mostraAvviso._salta = false; return; } mostraAvviso.prossimo(); return; }
-  const t = e.target.closest("[data-negozio-scheda],[data-notte-partenza],[data-notte-bivio],[data-notte-premio],[data-notte-lascia],[data-notte-compra-carta],[data-notte-compra-cim],[data-notte-imp],[data-notte-carta],[data-cimelio-info],[data-scalata-scegli],[data-scalata-pot],[data-scalata-carta],[data-scalata-nuova],[data-scalata-info],[data-titolo-profilo],[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-album-amico],[data-negozio-scheda],[data-notte-partenza],[data-notte-bivio],[data-notte-premio],[data-notte-lascia],[data-notte-compra-carta],[data-notte-compra-cim],[data-notte-imp],[data-notte-carta],[data-cimelio-info],[data-scalata-scegli],[data-scalata-pot],[data-scalata-carta],[data-scalata-nuova],[data-scalata-info],[data-titolo-profilo],[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -4271,6 +4271,7 @@ document.addEventListener("click", e => {
   if (t.dataset.scrigno) { const [k, id] = t.dataset.scrigno.split(":"); riscuotiScrigno(+k, id, t); return; }
   if (t.dataset.edFiltro) { edFiltro = t.dataset.edFiltro; aggiornaEditor(true); return; }
   if (t.dataset.negozioScheda) { negozioScheda = t.dataset.negozioScheda; disegna(); return; }
+  if (t.dataset.albumAmico) { Vetrina.apriAlbumAmico(t.dataset.albumAmico); return; }
   if (t.dataset.vista) { if (B) return; vai(t.dataset.vista); return; }
   if (t.dataset.filtro) { filtroAlbum = t.dataset.filtro; limSerieAlb = PASSO_ALB; disegnaQuieto(); scorriAlleCarteAlbum(); return; }
   if (t.dataset.filtroSq) { filtroSquadra = t.dataset.filtroSq; disegna(); return; }

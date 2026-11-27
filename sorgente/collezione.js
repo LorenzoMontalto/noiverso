@@ -58,7 +58,7 @@ const Trofei = (() => {
       { id: "vivo-5", nome: "Campione dal vivo", desc: "Vinci 5 sfide dal vivo contro gli amici", titolo: "Campione dal vivo", premio: 400, prog: () => st("vinteVivo"), max: 5 },
       { id: "scambi-3", nome: "Mercante", desc: "Completa 3 scambi con gli amici", titolo: "Mercante", premio: 200, prog: () => st("scambi"), max: 3 },
     );
-    return v;
+    return v.map(t => Object.assign(t, { premio: piuMonete(t.premio) }));   // +50% di monete (carte.js)
   }
   const presi = () => S.trofei || {};
   const raggiunto = t => t.prog() >= t.max;
