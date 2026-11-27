@@ -69,6 +69,7 @@ function testoPremio(p) {
   const parti = [];
   if (p.monete) parti.push(`${p.monete} monete`);
   for (const [t, n] of Object.entries(p.bustine || {})) if (n) parti.push(NOMI_BUSTINE[t] ? `${n > 1 ? n + " " : ""}${NOMI_BUSTINE[t][n > 1 ? 1 : 0]}` : `${n > 1 ? n + " × " : ""}${TIPI_BUSTINA[t] ? TIPI_BUSTINA[t].nome : t}`);
+  if (p.frammenti) parti.push(`${p.frammenti} frammenti ◈`);
   if (p.pot) parti.push(p.casuale ? `+${p.pot} potenziatori${p.carta ? " a " + PER_ID[p.carta].nome : ""}` : `+${p.pot} potenziatori a una carta a scelta`);
   return parti.join(" + ");
 }
@@ -2326,6 +2327,7 @@ function daiPremio(p) {
   const r = { monete: 0, bustine: 0 };
   if (p.monete) { S.monete += p.monete; r.monete += p.monete; }
   for (const [t, n] of Object.entries(p.bustine || {})) { S.inventario[t] = (S.inventario[t] || 0) + n; r.bustine += n; }
+  if (p.frammenti) Frammenti.aggiungi(p.frammenti, false);   // Lunga Notte all'alba, Scalata dal piano 20
   if (p.pot && p.casuale) {
     const ok = possedute().filter(c => infoCarta(c.id).liv < LIVELLO_MAX);
     if (ok.length) { const c = ok[Math.floor(Math.random() * ok.length)]; S.pot[c.id] = (S.pot[c.id] || 0) + p.pot; p.carta = c.id; }
@@ -2888,7 +2890,7 @@ function testoSegnalazione(x) {
     "sempre-vinte": [1, `${n(d.quante)} sfide tra amici in 2 settimane, tutte vinte. Può essere solo molto forte: guarda se ci sono anche altre segnalazioni.`],
     "boss-alto": [2, `Media di ${n(d.media)} danni per attacco al boss in ${n(d.colpi)} attacchi (il massimo è 6.000).`],
     livello: [1, `In un solo salvataggio i punti del livello giocatore sono passati da ${n(d.da)} a ${n(d.a)}: una battaglia ne dà al massimo un centinaio.`],
-    frammenti: [1, `In un solo salvataggio i frammenti sono passati da ${n(d.da)} a ${n(d.a)}: anche un'Arena perfetta ne dà 100.`],
+    frammenti: [1, `In un solo salvataggio i frammenti sono passati da ${n(d.da)} a ${n(d.a)}: anche un'Arena perfetta ne dà 160.`],
     carte: [1, `In un solo salvataggio ha trovato ${n(d.nuove)} carte nuove: anche aprendo tante bustine di fila è strano.`],
     rimedio: [0, `Hai già fatto: ${esc(String(d.cosa || ""))}${d.quante !== undefined ? ` (${n(d.quante)})` : ""}.`],
   }[x.tipo] || [1, esc(x.tipo)];

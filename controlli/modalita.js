@@ -48,8 +48,9 @@ function sceltaDraft(rng, proposta, scelte, tipo) {
 
 // ---------- Arena (com'è nel gioco: livello 20, 7 vittorie o 3 sconfitte) ----------
 const ARENA = { INGRESSO: 300, GIRI: ["leggendaria", "epica", "epica", "rara", "comune"], ABILITA: [.6, .68, .75, .82, .88, .93, .96],
-  PREMI: [{ monete: 100 }, { monete: 150 }, { monete: 250 }, { monete: 350, bustine: { normale: 1 } }, { monete: 450, bustine: { epica: 1 } },
-    { monete: 600, bustine: { epica: 1 }, frammenti: 20 }, { monete: 800, bustine: { leggendaria: 1 }, frammenti: 40 }, { monete: 1000, bustine: { leggendaria: 1 }, frammenti: 100 }] };
+  // copia di Arena.PREMI (extra.js): tenerle uguali
+  PREMI: [{ monete: 220 }, { monete: 330 }, { monete: 480 }, { monete: 620, bustine: { normale: 1 } }, { monete: 780, bustine: { epica: 1 } },
+    { monete: 1000, bustine: { epica: 1 }, frammenti: 40 }, { monete: 1300, bustine: { leggendaria: 1 }, frammenti: 80 }, { monete: 1700, bustine: { leggendaria: 1 }, frammenti: 160 }] };
 const casuale = (rng, rar, escl = []) => { const p = CARTE.filter(c => c.rarita === rar && !SERIE[c.serie].jolly && !escl.includes(c.id)); return p[Math.floor(rng() * p.length)].id; };
 function arena(rng, tipo) {
   const scelte = []; for (const r of ARENA.GIRI) { const prop = [0, 1, 2].map(() => casuale(rng, r, scelte)); scelte.push(sceltaDraft(rng, prop, scelte, tipo)); }

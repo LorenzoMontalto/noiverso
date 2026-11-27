@@ -367,12 +367,13 @@ const Gradi = (() => {
 const Arena = (() => {
   const INGRESSO = 300, MAX_VINTE = 7, MAX_PERSE = 3;
   const GIRI = ["leggendaria", "epica", "epica", "rara", "comune"];   // la rarità delle 3 carte proposte a ogni scelta
-  const PREMI = [{ monete: 100 }, { monete: 150 }, { monete: 250 }, { monete: 350, bustine: { normale: 1 } }, { monete: 450, bustine: { epica: 1 } },
-    { monete: 600, bustine: { epica: 1 }, frammenti: 20 }, { monete: 800, bustine: { leggendaria: 1 }, frammenti: 40 }, { monete: 1000, bustine: { leggendaria: 1 }, frammenti: 100 }];
+  // nov 2026 (27): premi alzati, circa il doppio al minuto (prima 100 · 150 · 250 · 350+N · 450+E · 600+E · 800+L · 1000+L)
+  const PREMI = [{ monete: 220 }, { monete: 330 }, { monete: 480 }, { monete: 620, bustine: { normale: 1 } }, { monete: 780, bustine: { epica: 1 } },
+    { monete: 1000, bustine: { epica: 1 }, frammenti: 40 }, { monete: 1300, bustine: { leggendaria: 1 }, frammenti: 80 }, { monete: 1700, bustine: { leggendaria: 1 }, frammenti: 160 }];
   const ABILITA = [.6, .68, .75, .82, .88, .93, .96];
   const stato = () => S.arena && typeof S.arena === "object" ? S.arena : null;
   const casuali = (rar, n, escludi = []) => { const pool = CARTE.filter(c => c.rarita === rar && !escludi.includes(c.id)); const out = []; while (out.length < n && pool.length) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id); return out; };
-  const testoPremio2 = p => testoPremio(p) + (p.frammenti ? ` + ${p.frammenti} ◈` : "");
+  const testoPremio2 = p => testoPremio(p);   // i frammenti ora li scrive testoPremio
   function entra() {
     if (!attivoExtra() || stato()) return;
     if (S.monete < INGRESSO) { mostraAvviso(`L'ingresso costa ${INGRESSO} monete.`); return; }
@@ -568,15 +569,11 @@ const Progressi = (() => {
 
 // ---------------- Novità (una volta sola per ogni aggiornamento) ----------------
 const Novita = (() => {
-  const VERSIONE = "2026-11-leggenda";
+  const VERSIONE = "2026-11-premi";
   const SCHEDE = [
+    { ico: "💰", titolo: "Premi raddoppiati", testo: "Arena, Lunga Notte e Scalata ora danno circa il doppio: per esempio l'Arena con 3 vittorie dà 620 monete e una bustina (prima 350), l'alba della Notte una Bustina Leggendaria, 400 monete e 60 frammenti. E anche uscire presto rende quasi l'ingresso." },
     { ico: "👑", titolo: "Storia · Livello Leggenda", testo: "Hai finito la storia? Ricomincia da capo al Livello Leggenda: stessi capitoli, nemici al 30 con la lode e una regola speciale diversa in ogni capitolo. Dà frammenti, potenziatori universali, tre titoli e, alla fine, la cornice delle carte «Leggenda». La trovi in Gioca, sotto la Storia." },
     { ico: "🧭", titolo: "Il menu è cambiato", testo: "Ora le sezioni sono 5: Home, Gioca, Carte, Negozio e Amici. Dentro Carte trovi Bustine, Album e Squadre; dentro Amici la Classifica e il Pass. Il numerino su una sezione vuol dire che lì c'è qualcosa da fare." },
-    { ico: "⚔️", titolo: "Tutto in «Gioca»", testo: "Ogni modalità è un riquadro: tocca e vedi come funziona, quanto costa e a che punto sei. La Storia è il primo riquadro, e in Home c'è sempre il tasto «Continua» per la prossima tappa." },
-    { ico: "🌙", titolo: "La Lunga Notte", testo: "Dieci fermate dal tramonto all'alba con carte trovate per strada (le tue qui non contano). I PV restano tra una battaglia e l'altra, ai bivi scegli la strada e raccogli cimeli. Puoi tornare a casa quando vuoi e incassare." },
-    { ico: "🗼", titolo: "La Scalata", testo: "Scegli 5 carte che partono dal livello 1 e sali piano dopo piano: a ogni vittoria la squadra cresce e scegli un potenziamento. Hai 3 vite. Il piano più alto della settimana va nella classifica degli amici." },
-    { ico: "🃏", titolo: "Jolly", testo: "Carte bianche rarissime che non hanno una serie: in squadra si uniscono alla sinergia che scegli tu. Se ne trovi uno, la bustina si accende di bianco." },
-    { ico: "🏅", titolo: "Trofei, record e confronto", testo: "Nuovi trofei e titoli per la Notte e la Scalata, i tuoi record nel profilo (anche quelli degli amici) e il tasto «Confronta» anche dal dettaglio di una carta nell'Album. Le regole complete sono in Home › «Come si gioca»." },
   ];
   let i = 0;
   function controlla() {

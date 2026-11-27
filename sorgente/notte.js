@@ -195,17 +195,20 @@ const NotteRegole = (() => {
 const PremiModalita = {
   INGRESSO_NOTTE: 300,
   // f = fermate superate (0-10); 10 = alba
-  NOTTE: [{ monete: 170 }, { monete: 200 }, { monete: 240 }, { monete: 260 }, { monete: 190, bustine: { normale: 1 } },
-    { monete: 170, bustine: { epica: 1 } }, { monete: 210, bustine: { epica: 1 } }, { monete: 270, bustine: { epica: 1 } }, { monete: 300, bustine: { epica: 1 } },
-    { monete: 320, bustine: { epica: 1 } }, { monete: 100, bustine: { leggendaria: 1 } }],
-  notte(f) { const p = this.NOTTE[Math.max(0, Math.min(10, f))]; return { monete: p.monete, bustine: Object.assign({}, p.bustine || {}) }; },
+  // nov 2026 (27): premi alzati (circa il doppio al minuto, come Arena e Scalata) perché le modalità a corsa invoglino di più
+  NOTTE: [{ monete: 220 }, { monete: 270 }, { monete: 330 }, { monete: 380 }, { monete: 330, bustine: { normale: 1 } },
+    { monete: 300, bustine: { epica: 1 } }, { monete: 360, bustine: { epica: 1 } }, { monete: 440, bustine: { epica: 1 } }, { monete: 500, bustine: { epica: 1 } },
+    { monete: 560, bustine: { epica: 1 } }, { monete: 400, bustine: { leggendaria: 1 }, frammenti: 60 }],
+  notte(f) { const p = this.NOTTE[Math.max(0, Math.min(10, f))]; return { monete: p.monete, bustine: Object.assign({}, p.bustine || {}), ...(p.frammenti ? { frammenti: p.frammenti } : {}) }; },
   INGRESSO_SCALATA: 300,
   // p = piani superati: cresce con il tempo che serve ad arrivarci (circa 2,8 minuti a piano, di più in alto)
   scalata(p) {
-    const r = { monete: Math.round((150 + 98 * p + 1.75 * p * p - (p >= 10 ? 150 : 0) - (p >= 15 ? 600 : 0)) / 10) * 10, bustine: {} };
+    // nov 2026 (27): circa il doppio al minuto rispetto a prima, e dal piano 20 anche frammenti
+    const r = { monete: Math.round((240 + 170 * p + 3 * p * p - (p >= 10 ? 200 : 0) - (p >= 15 ? 700 : 0)) / 10) * 10, bustine: {} };
     if (p >= 5) r.bustine.normale = 1;
     if (p >= 10) r.bustine.epica = 1;
     if (p >= 15) r.bustine.leggendaria = 1;
+    if (p >= 20) r.frammenti = 50 + 10 * (p - 20);
     return r;
   },
   XP_BATTAGLIA: 60,   // XP del pass per ogni battaglia vinta, come in Arena
