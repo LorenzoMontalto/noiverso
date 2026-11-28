@@ -216,6 +216,14 @@ h2 { font-size: 1.35rem; }
 .pot-mancano { align-self: center; }
 .copertina.copertina-pot { --c: #6fe3a0; border-color: #6fe3a0; }
 .copertina-pot .pot-grande { display: block; font-size: 1.8rem; color: #6fe3a0; text-shadow: 0 0 14px rgba(111, 227, 160, .8); }
+/* nov 2026: «Da potenziare» in cima all'album, largo quanto tutta la riga */
+#vista .serie-copertine .copertina-pot { grid-column: 1 / -1; order: -2; min-height: 64px; align-content: center; justify-items: center;
+  background: linear-gradient(135deg, rgba(111, 227, 160, .16), rgba(111, 227, 160, .05)); }
+#vista .serie-copertine .copertina-pot .copertina-testo { flex-wrap: nowrap; justify-content: center; gap: 12px; }
+#vista .serie-copertine .copertina-pot .pot-grande { font-size: 1.6rem; }
+#vista .serie-copertine .copertina-pot .copertina-testo b { font-size: 1.15rem; }
+#vista .serie-copertine .copertina-pot .copertina-testo small { margin: 0; color: #a8f0c6; white-space: nowrap; }
+#vista .serie-copertine .copertina-pot .copertina-testo > * { order: 0; flex: none; }
 .sezione-pot { --c: #6fe3a0; }
 @keyframes pot-pulsa { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 .esp-barra.pot i { background: linear-gradient(90deg, #6fe3a0, #3fd8ff); }
@@ -2777,12 +2785,12 @@ body.trascinando, body.trascinando * { cursor: grabbing !important; }
 <script src="reazioni.4a0e6db8.js"></script>
 <script src="eventi.a388519e.js"></script>
 <script src="progressi.45fe1d17.js"></script>
-<script src="extra.2a2c4378.js"></script>
+<script src="extra.97aa8c42.js"></script>
 <script src="avvento.355b1396.js"></script>
 <script src="notte.c6a2a364.js"></script>
 <script src="scalata.0c485016.js"></script>
 <script src="giorno.0f249344.js"></script>
-<script src="app.6b0040e8.js"></script>
+<script src="app.82c86c4e.js"></script>
 <script>
   // app installabile: avvio veloce e immagini già in memoria
   if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));

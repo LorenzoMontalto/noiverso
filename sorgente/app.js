@@ -1545,6 +1545,8 @@ function mostraApertura2D(esiti, graffito) {
 
 // ---------- ALBUM (diviso per serie) ----------
 const ORDINE_SERIE = Object.keys(SERIE);
+// nell'album le serie Jolly vengono per prime (l'ordine vero delle serie non cambia: lo usano eventi e sorteggi)
+const ORDINE_ALBUM = [...ORDINE_SERIE.filter(k => SERIE[k].jolly), ...ORDINE_SERIE.filter(k => !SERIE[k].jolly)];
 function statSerie(id) {
   const cs = CARTE.filter(c => c.serie === id), mie = cs.filter(c => S.carte[c.id]);
   return { tot: cs.length, mie: mie.length, pct: Math.round(mie.length / cs.length * 100), carte: cs };
@@ -1628,7 +1630,7 @@ function vistaAlbum() {
     ${htmlBarraFiltri("album")}${filtri.album.tipo || filtri.album.ruolo || filtri.album.cerca ? `<p class="nota">Con un filtro attivo vedi solo le carte che hai già trovato.${filtroAlbum === "pot" ? "" : " Tocca una serie qui sotto per cercare solo lì."}</p>` : ""}
     <div class="serie-copertine">
       ${htmlCopertinaPot()}
-      ${ORDINE_SERIE.map((id, k) => {
+      ${ORDINE_ALBUM.map((id, k) => {
         const se = SERIE[id], st = statSerie(id);
         const anteprima = [...st.carte].sort((a, b) => (S.carte[b.id] ? 1 : 0) - (S.carte[a.id] ? 1 : 0) || rangoRarita(b.rarita) - rangoRarita(a.rarita)).slice(0, 3);
         return `<button class="copertina ${filtroAlbum === id ? "scelta" : ""}" data-inclina data-fx="gelatina" data-filtro="${id}" style="--c:${se.colore};--i:${k}" aria-pressed="${filtroAlbum === id}">
@@ -1650,15 +1652,15 @@ function vistaAlbum() {
 const PASSO_ALB = 3;
 let limSerieAlb = PASSO_ALB, osservaAlb = null;
 function htmlTutteSerie() {
-  const fa = filtri.album, filtrando = !!(fa.tipo || fa.ruolo || fa.cerca), quante = filtrando ? ORDINE_SERIE.length : limSerieAlb;
-  return ORDINE_SERIE.slice(0, quante).map(id => htmlSezioneSerie(id, true)).join("")
-    + (quante < ORDINE_SERIE.length ? `<div class="altre-serie" data-altre-album><span>Carico le altre serie…</span></div>` : "");
+  const fa = filtri.album, filtrando = !!(fa.tipo || fa.ruolo || fa.cerca), quante = filtrando ? ORDINE_ALBUM.length : limSerieAlb;
+  return ORDINE_ALBUM.slice(0, quante).map(id => htmlSezioneSerie(id, true)).join("")
+    + (quante < ORDINE_ALBUM.length ? `<div class="altre-serie" data-altre-album><span>Carico le altre serie…</span></div>` : "");
 }
 function altreSerieAlbum() {
   const box = $("#vista [data-altre-album]"); if (!box) return;
-  const da = limSerieAlb; limSerieAlb = Math.min(ORDINE_SERIE.length, limSerieAlb + PASSO_ALB);
-  box.insertAdjacentHTML("beforebegin", ORDINE_SERIE.slice(da, limSerieAlb).map(id => htmlSezioneSerie(id, true)).join(""));
-  if (limSerieAlb >= ORDINE_SERIE.length) { box.remove(); if (osservaAlb) osservaAlb.disconnect(); }
+  const da = limSerieAlb; limSerieAlb = Math.min(ORDINE_ALBUM.length, limSerieAlb + PASSO_ALB);
+  box.insertAdjacentHTML("beforebegin", ORDINE_ALBUM.slice(da, limSerieAlb).map(id => htmlSezioneSerie(id, true)).join(""));
+  if (limSerieAlb >= ORDINE_ALBUM.length) { box.remove(); if (osservaAlb) osservaAlb.disconnect(); }
 }
 function avviaAltreAlbum() {
   if (osservaAlb) osservaAlb.disconnect();

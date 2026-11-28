@@ -332,7 +332,7 @@ const Vetrina = (() => {
     try { d = await rpcSociale("album_amico", { amico: id }); }
     catch (e) { const el = $("#modale-corpo .album-amico"); if (el) el.innerHTML = `<p class="nota">Non riesco a leggere il suo album adesso. ${String(e && e.message || "").includes("function") ? "Hai eseguito di nuovo schema.sql su Supabase?" : "Riprova tra poco."}</p><div class="azioni centro"><button class="btn" data-azione="chiudi">Chiudi</button></div>`; return; }
     const carte = d && d.carte && typeof d.carte === "object" ? d.carte : {};
-    const serie = ORDINE_SERIE.filter(s => CARTE.some(c => c.serie === s));
+    const serie = ORDINE_ALBUM.filter(s => CARTE.some(c => c.serie === s));
     const conta = s => CARTE.filter(c => c.serie === s && carte[c.id]).length;
     albumA = { id, nome: String(d && d.nome || "Giocatore"), carte, serie: serie.find(s => conta(s)) || serie[0], solo: false };
     disegnaAlbumAmico();
@@ -350,7 +350,7 @@ const Vetrina = (() => {
     el.innerHTML = `<span class="codice-tag">Album</span><h2>L'album di ${esc(A.nome)}</h2>
       <div class="aa-numeri"><div><b>${ids.length}<small>/${CARTE.length}</small></b><span>carte</span></div><div><b>${al30}</b><span>al livello 30</span></div><div><b>${lode}</b><span>con la lode</span></div></div>
       <div class="aa-filtri"><label class="filtro-ruolo"><span class="filtri-etichetta">Serie</span><select data-aa-serie aria-label="Serie">
-        ${ORDINE_SERIE.filter(s => nSerie(s)).map(s => `<option value="${s}" ${s === A.serie ? "selected" : ""}>${SERIE[s].simbolo} ${esc(SERIE[s].nome)} · ${hSerie(s)}/${nSerie(s)}</option>`).join("")}</select></label>
+        ${ORDINE_ALBUM.filter(s => nSerie(s)).map(s => `<option value="${s}" ${s === A.serie ? "selected" : ""}>${SERIE[s].simbolo} ${esc(SERIE[s].nome)} · ${hSerie(s)}/${nSerie(s)}</option>`).join("")}</select></label>
         <label class="aa-solo"><input type="checkbox" data-aa-solo ${A.solo ? "checked" : ""}> Solo quelle che ha</label></div>
       <div class="aa-griglia">${lista.length ? lista.map(carta).join("") : `<p class="nota">Di questa serie non ha ancora nessuna carta.</p>`}</div>
       <div class="azioni centro"><button class="btn" data-azione="chiudi">Chiudi</button></div>`;
