@@ -6,6 +6,39 @@
 //  Progressi separati (S.leggenda): stelle, scrigni e tappe viste hanno il loro registro.
 // ============================================================
 
+// nov 2026: un consiglio per ogni regola, su come scegliere la squadra o come giocare (si vede sopra la mappa e nella tappa)
+const CONSIGLI_LEGGENDA = {
+  c1: "Nei primi turni arrivano subito mosse forti: apri con una carta resistente (Tank o Difesa) e porta una Stratega per recuperare energia.",
+  c2: "Sotto metà dei PV diventano pericolosi: tieni l'energia per la mossa forte e finiscili appena scendono sotto la metà.",
+  c3: "Rompi l'armatura con una mossa gratis o debole, poi colpisci forte. Le mosse a più colpi (×2, ×3) la consumano col primo colpetto.",
+  c4: "Si curano a ogni turno: servono danni continui. Bruciature e carte Forza chiudono la partita prima che recuperino.",
+  c5: "Un po' di tutto: un Tank per reggere l'inizio, una mossa debole per togliere lo scudo e attaccanti forti per battere la cura.",
+  c6: "Le bruciature fanno male il doppio: porta un Guaritore e cambia la carta bruciata prima che perda troppi PV.",
+  c7: "Niente zaino: porta un Guaritore e una Stratega, che fanno il lavoro di cibo e lattine.",
+  c8: "Parti con meno energia: una Stratega e le mosse gratis forti ti salvano nei primi turni.",
+  c9: "Attaccano quasi sempre per primi: metti in campo carte che reggono il primo colpo (Tank, Difesa alta).",
+  c10: "Stordire e indebolire non funziona: lascia a casa chi vive di quegli effetti e porta danni puri o bruciature.",
+  c11: "Più danni fanno, più si curano: Difesa alta e Carica (−30% danni subiti) ti fanno perdere meno PV e li curano meno.",
+  c12: "I primi 4 turni sono i più duri: entra con una carta resistente e passa agli attaccanti quando l'energia nemica si calma.",
+  c13: "Nemici più forti in tutto: porta le carte di livello più alto e sfrutta il vantaggio di tipo (+30% di danni).",
+  c14: "I critici fanno malissimo, ma chi è in svantaggio di tipo non fa critici: scegli carte che battono il tipo dei nemici.",
+  c15: "Al primo turno arriva subito la mossa più forte: apri con la carta più resistente, non con l'attaccante migliore.",
+  c16: "Fanno tanti critici, ma in svantaggio di tipo non ne fanno: porta carte che battono il loro tipo (guarda le frecce ▲).",
+  c17: "Qui il tipo conta poco: punta sulle carte più forti di statistiche (livello alto, lode) più che sul vantaggio di tipo.",
+  c18: "Ogni tanto un colpo va a vuoto: meglio tante mosse medie che puntare tutta l'energia su una sola mossa da 5.",
+  c19: "Più restano in campo, più picchiano: mandali KO in fretta con le mosse forti, non tirarla per le lunghe.",
+  c20: "Un nemico può rialzarsi dopo il KO: tieni un po' di energia per il colpo di grazia.",
+  c21: "I tuoi effetti valgono la metà: porta carte che fanno danni puri più che bruciature e stordimenti.",
+  c22: "Colpiscono spesso due volte: Difesa alta e Carica riducono anche il secondo colpo.",
+  c23: "Quando rientrano si curano: mandali KO uno alla volta senza lasciarli a metà.",
+  c24: "Il primo colpo di ogni nemico appena entrato è fortissimo: quando ne cade uno, tieni in campo una carta resistente.",
+  c25: "Sotto il 35% dei PV diventano duri: tieni la mossa forte per portarli da un terzo dei PV dritti a zero.",
+  c26: "Più nemici cadono, più gli ultimi picchiano: conserva PV e Guaritore per la fine della partita.",
+  c27: "Quando hanno 5 energia arriva il colpo forte: in quel momento usa Carica o metti in campo la carta più resistente.",
+  c28: "Un nemico può restare a 1 PV: le mosse a più colpi o una mossa gratis finiscono il lavoro.",
+  c29: "In vantaggio di tipo picchiano fortissimo: non lasciare in campo una carta che il nemico batte (guarda ▲▼ in panchina) e cambia.",
+  c30: "A volte salti il turno quando entra un nemico: porta carte resistenti e non restare con pochi PV contando sul turno dopo.",
+};
 // Le regole speciali: una per capitolo (la chiave è l'id del capitolo). Valgono per i nemici, alcune anche per te.
 // Usano gli stessi meccanismi delle sinergie e del boss del giorno: x.sin.* (vedi motore.js), scudo, furia, energia.
 const REGOLE_LEGGENDA = {
@@ -87,7 +120,7 @@ const Leggenda = (() => {
   const N_TAPPE = 6;
   // dove sei nella Leggenda, da 0 (prima tappa) a 1 (boss finale)
   const avanzamento = (k, i) => (k * N_TAPPE + i) / (STORIA.length * N_TAPPE - 1);
-  const regola = k => REGOLE_LEGGENDA[STORIA[k].id] || { ico: "", nome: "", desc: "", applica: () => {} };
+  const regola = k => Object.assign({ consiglio: CONSIGLI_LEGGENDA[STORIA[k].id] || "" }, REGOLE_LEGGENDA[STORIA[k].id] || { ico: "", nome: "", desc: "", applica: () => {} });
   const forza = (k, i) => (TARATURA_LEGGENDA[`${STORIA[k].id}-${i}`] || 0);
   // la tappa in versione Leggenda: stessi nemici, tutti al 30 con la lode; olografici dal capitolo 11, anche Ultra dal 21
   function tappa(k, i) {

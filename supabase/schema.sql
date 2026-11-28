@@ -1605,8 +1605,103 @@ end $$;
 revoke all on function public.registra_carte(text[], boolean, text), public.statistiche_carte(), public.azzera_statistiche_carte() from public, anon;
 grant execute on function public.registra_carte(text[], boolean, text), public.statistiche_carte(), public.azzera_statistiche_carte() to authenticated;
 
+-- ---------------- Regali tra amici (nov 2026) ----------------
+-- Ogni giorno (ora di Roma) ognuno può mandare UN regalo gratis a un amico: vale 3 potenziatori universali ✪.
+-- Chi lo riceve lo riscuote dalla home. Uno solo al giorno per chi manda (unique), non a sé stessi, non dall'admin.
+create table if not exists public.regali (
+  id      bigint generated always as identity primary key,
+  da      uuid not null references auth.users (id) on delete cascade,
+  a       uuid not null references auth.users (id) on delete cascade,
+  giorno  date not null,
+  creato  timestamptz not null default now(),
+  riscosso boolean not null default false,
+  unique (da, giorno)
+);
+create index if not exists regali_a on public.regali (a, riscosso);
+alter table public.regali enable row level security;
+revoke all on public.regali from anon, authenticated;
+
+create or replace function public.manda_regalo(amico uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); oggi date := (now() at time zone 'Europe/Rome')::date;
+begin
+  if me is null then raise exception 'Devi fare l''accesso'; end if;
+  if amico is null or amico = me then raise exception 'Non puoi mandare un regalo a te stesso'; end if;
+  if exists (select 1 from public.amministratori where user_id = me) then raise exception 'L''admin non manda regali'; end if;
+  if not exists (select 1 from public.salvataggi where user_id = amico and slot = 'partita') then raise exception 'Giocatore non trovato'; end if;
+  if exists (select 1 from public.regali where da = me and giorno = oggi) then raise exception 'Hai già mandato il regalo di oggi'; end if;
+  insert into public.regali (da, a, giorno) values (me, amico, oggi);
+end $$;
+
+-- a chi ho mandato il regalo oggi, e i regali arrivati a me non ancora riscossi (con il nome di chi li manda)
+create or replace function public.regali_stato() returns jsonb
+language plpgsql stable security definer set search_path = public as $$
+declare me uuid := auth.uid(); oggi date := (now() at time zone 'Europe/Rome')::date;
+begin
+  if me is null then raise exception 'Devi fare l''accesso'; end if;
+  return jsonb_build_object(
+    'mandato', (select a from public.regali where da = me and giorno = oggi),
+    'arrivati', coalesce((select jsonb_agg(jsonb_build_object('nome', coalesce(nullif(s.dati->'profilo'->>'nome', ''), 'Giocatore'), 'giorno', r.giorno) order by r.creato)
+       from public.regali r left join public.salvataggi s on s.user_id = r.da and s.slot = 'partita'
+       where r.a = me and not r.riscosso and r.giorno > oggi - 30), '[]'::jsonb));
+end $$;
+
+-- segna come riscossi i regali arrivati (al massimo quelli degli ultimi 30 giorni) e dice quanti erano
+create or replace function public.riscuoti_regali() returns integer
+language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); n int; oggi date := (now() at time zone 'Europe/Rome')::date;
+begin
+  if me is null then raise exception 'Devi fare l''accesso'; end if;
+  if exists (select 1 from public.amministratori where user_id = me) then return 0; end if;
+  with x as (update public.regali set riscosso = true where a = me and not riscosso and giorno > oggi - 30 returning 1)
+  select count(*) into n from x;
+  return n;
+end $$;
+revoke all on function public.manda_regalo(uuid), public.regali_stato(), public.riscuoti_regali() from public, anon;
+grant execute on function public.manda_regalo(uuid), public.regali_stato(), public.riscuoti_regali() to authenticated;
+
+-- ---------------- Enigma del giorno (nov 2026) ----------------
+-- Tutti giocano la stessa battaglia del giorno: si tiene il minor numero di turni con cui ognuno l'ha vinta.
+-- Il giorno deve essere oggi (ora di Roma). Meno di 5 turni è impossibile: i nemici sono 5 e ne cade al massimo
+-- uno per turno (ne è in campo uno alla volta).
+create table if not exists public.enigma (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  giorno  date not null,
+  turni   integer not null check (turni between 5 and 200),
+  quando  timestamptz not null default now(),
+  primary key (user_id, giorno)
+);
+alter table public.enigma enable row level security;
+revoke all on public.enigma from anon, authenticated;
+
+create or replace function public.registra_enigma(giorno date, turni integer) returns integer
+language plpgsql security definer set search_path = public as $$
+declare me uuid := auth.uid(); oggi date := (now() at time zone 'Europe/Rome')::date; m int;
+begin
+  if me is null then raise exception 'Devi fare l''accesso'; end if;
+  if exists (select 1 from public.amministratori where user_id = me) then return null; end if;
+  if registra_enigma.giorno is distinct from oggi then raise exception 'L''enigma è quello di oggi'; end if;
+  if turni is null or turni < 5 or turni > 200 then raise exception 'Risultato non valido'; end if;
+  insert into public.enigma as e (user_id, giorno, turni) values (me, oggi, registra_enigma.turni)
+    on conflict on constraint enigma_pkey do update set turni = least(e.turni, excluded.turni),
+      quando = case when excluded.turni < e.turni then now() else e.quando end
+    returning e.turni into m;
+  return m;
+end $$;
+
+-- classifica del giorno: chi ha vinto in meno turni (a parità, chi ci è arrivato prima)
+create or replace function public.classifica_enigma(giorno date) returns jsonb
+language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', e.user_id, 'nome', coalesce(nullif(s.dati->'profilo'->>'nome', ''), 'Giocatore'), 'turni', e.turni) order by e.turni, e.quando), '[]'::jsonb)
+  from (select * from public.enigma where enigma.giorno = classifica_enigma.giorno order by turni, quando limit 50) e
+  left join public.salvataggi s on s.user_id = e.user_id and s.slot = 'partita'
+  where auth.uid() is not null;
+$$;
+revoke all on function public.registra_enigma(date, integer), public.classifica_enigma(date) from public, anon;
+grant execute on function public.registra_enigma(date, integer), public.classifica_enigma(date) to authenticated;
+
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select 'b60141e777'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select '3a11a9eca4'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE

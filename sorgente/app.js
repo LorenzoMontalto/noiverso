@@ -810,7 +810,7 @@ const Riepilogo = {
 // ============================================================
 // nov 2026: il menu ha 5 sezioni (Home, Gioca, Carte, Negozio, Amici). Le pagine restano quelle di prima, ma ognuna sta
 // dentro una sezione: «Gioca» è la griglia delle modalità, e ogni modalità ha la sua pagina (modo-…) con «‹ Tutte le modalità».
-const MODI_PAGINA = ["modo-storia", "modo-leggenda", "modo-computer", "modo-arena", "modo-settimana", "modo-boss", "modo-bossgiorno", "modo-amici", "modo-vivo"];
+const MODI_PAGINA = ["modo-storia", "modo-leggenda", "modo-computer", "modo-arena", "modo-settimana", "modo-boss", "modo-bossgiorno", "modo-enigma", "modo-amici", "modo-vivo"];
 const VISTE = ["strada", "storia", "leggenda", "bustine", "negozio", "album", "squadra", "sfida", "pass", "classifica", "admin", "notte", "scalata", ...MODI_PAGINA];
 const GRUPPI = { strada: ["strada"], sfida: ["sfida", "storia", "leggenda", "notte", "scalata", ...MODI_PAGINA], carte: ["bustine", "album", "squadra"], negozio: ["negozio"], amici: ["classifica", "pass"], admin: ["admin"] };
 const VISTA_NAV = v => Object.keys(GRUPPI).find(g => GRUPPI[g].includes(v)) || v;
@@ -964,6 +964,8 @@ function coseDaFare() {
   const tr = Trofei.pronti(); if (tr) v.push({ ico: "🏆", t: pl(tr, "1 trofeo da riscuotere", "# trofei da riscuotere"), az: "vai-trofei" });
   const mi = Missioni.pronte(); if (mi) v.push({ ico: "✔", t: pl(mi, "1 missione da riscuotere", "# missioni da riscuotere"), az: "vai-missioni" });
   const r = daRiscuotere(); if (r) v.push({ ico: "🎁", t: pl(r, "1 premio del pass", "# premi del pass"), az: "vai-pass" });
+  try { const ra = Regali.arrivati(); if (ra) v.push({ ico: "🎁", t: pl(ra, "1 regalo da un amico", "# regali dagli amici"), az: "regali-riscuoti" }); } catch (e) {}
+  try { if (!S.admin && !Enigma.fattoOggi() && possedute().length) v.push({ ico: "🧩", t: "L'enigma di oggi", az: "vai-enigma" }); } catch (e) {}
   const u = Jolly.n(); if (u && possedute().some(c => infoCarta(c.id).liv < LIVELLO_MAX)) v.push({ ico: "✪", t: pl(u, "1 potenziatore universale da usare", "# potenziatori universali da usare"), az: "jolly-apri" });
   return v;
 }
@@ -2085,6 +2087,7 @@ function tessereGioca() {
     t.push({ g: "eventi", id: "boss", ico: "👹", nome: "Boss della settimana", desc: "Un boss gigante che tutto il gruppo colpisce insieme", stato: !b ? "…" : pr ? "Premio da riscuotere" : `Attacchi oggi ${colpi} di 3`, n: b && !S.admin && (pr || colpi < 3) ? (pr ? 1 : 3 - colpi) : 0, vista: "modo-boss" }); }
   const bg = BossGiorno.sbloccato();
   t.push({ g: "eventi", id: "bossgiorno", ico: "☠️", nome: "Boss del giorno", desc: "Un boss diverso ogni giorno, molto forte", stato: !bg ? "🔒 Si sblocca finendo la storia" : BossGiorno.battutoOggi() ? "Battuto oggi ✓" : "Nuovo oggi", chiusa: !bg, vista: "modo-bossgiorno" });
+  { const m = Enigma.mio(); t.push({ g: "eventi", id: "enigma", ico: "🧩", nome: "Enigma del giorno", desc: "La stessa battaglia per tutti: vincila nel minor numero di turni", stato: m && m.migliore ? `Il tuo migliore oggi: ${m.migliore} turni` : "Nuovo oggi", n: !S.admin && !(m && m.migliore) ? 1 : 0, vista: "modo-enigma" }); }
   // con gli amici
   if (soc) {
     const on = Online.quantiOnline();
@@ -2126,6 +2129,7 @@ function decoroModo(id) {
     case "boss": { const b = Boss.stato; let img = ""; try { if (b && b.settimana) img = `<img class="cop-boss" src="${imgCarta(Boss.carta ? Boss.carta(b.settimana).id : "")}" alt="">`; } catch (e) {} return `${img}<span class="cop-crepe"></span>`; }
     case "bossgiorno": { let img = ""; try { if (BossGiorno.sbloccato()) img = `<img class="cop-boss" src="${imgCarta(BossGiorno.oggi().id)}" alt="">`; } catch (e) {} return `${img}<span class="cop-nebbia"></span>`; }
     case "vivo": return `<span class="cop-radar"><i></i><i></i><i></i></span>`;
+    case "enigma": return `<span class="cop-pezzi">${Array.from({ length: 14 }, () => "<b>🧩</b>").join("")}</span>`;
     case "amici": return `<span class="cop-bolle">${stelline(14, 21)}</span>`;
   }
   return "";
@@ -2158,6 +2162,10 @@ function apriRegoleModo(id) {
     boss: ["Un boss gigante che <b>tutto il gruppo</b> colpisce insieme durante la settimana.", "Hai <b>3 attacchi al giorno</b>; ogni attacco fa al massimo 6.000 danni.", "Se cade entro domenica, chi ha partecipato riceve 300 monete e una Bustina Leggendaria; chi ha fatto più danni anche una Bustina Epica.", "Lunedì arriva un boss nuovo."],
     bossgiorno: ["Si sblocca <b>finendo la storia</b> (battendo il boss dell'ultimo capitolo).", "Ogni giorno un boss diverso, al livello 30 con la lode, con delle guardie. Ha una <b>corazza</b> e un <b>punto debole</b> che cambiano ogni giorno: leggili prima di scegliere la squadra.", "La prima vittoria del giorno dà 600 monete, una Bustina Leggendaria e 5 potenziatori a ogni carta che scende in campo."],
     vivo: ["Sfidi un amico <b>connesso adesso</b>: si gioca insieme, turno per turno.", "È l'unica modalità che dà punti in classifica: <b>+3</b> per ogni vittoria, 0 per le sconfitte. I punti del mese danno il grado, da Bronzo a Leggenda.", "Durante la partita puoi mandare reazioni; gli altri amici possono guardarla."],
+    enigma: ["Ogni giorno una battaglia <b>uguale per tutti</b>: la tua squadra (5 carte al livello 22) e l'avversario sono già decisi, anche il campo. La tua collezione qui non conta.",
+      "Vinci nel <b>minor numero di turni</b>: puoi riprovare quante volte vuoi, conta il tuo risultato migliore del giorno.",
+      `La <b>prima vittoria</b> del giorno dà ${piuMonete(150)} monete. Giocando online entri nella classifica di oggi con gli amici.`,
+      "Niente zaino e niente graffiti: conta solo come usi le carte. Il giorno cambia a mezzanotte (ora italiana)."],
     amici: ["Combatti contro la <b>squadra di un amico</b>, guidata dal computer: lui non deve essere online.", "Le sue carte hanno i livelli veri che ha lui.", "Se vinci gli rubi un punto in classifica."],
   }[id] || [];
   apriModale(`<div class="modo-regole"><span class="codice-tag">${x.ico} ${esc(x.nome)}</span><h2>Come si gioca</h2><ol>${R.map(r => `<li>${r}</li>`).join("")}</ol>
@@ -2216,6 +2224,7 @@ function vistaModo(id) {
   else if (id === "settimana") corpo = htmlPrimaPartita() + Settimana.htmlSfida();
   else if (id === "boss") corpo = htmlPrimaPartita() + Boss.htmlGrande();
   else if (id === "bossgiorno") corpo = (BossGiorno.sbloccato() ? htmlPrimaPartita() : "") + BossGiorno.htmlSfida();
+  else if (id === "enigma") corpo = Enigma.htmlPagina();
   else if (id === "vivo") corpo = htmlPrimaPartita() + Online.htmlAmici() + `<p class="nota">Le sfide dal vivo sono le uniche che danno punti in classifica: +3 per ogni vittoria.</p>`;
   return `<section class="modo-pagina modo-${id}">${testa}${corpo}</section>`;
 }
@@ -2634,7 +2643,7 @@ async function entra(slot, profiloLocale, daRicarica) {
   if (slot !== "admin") Missioni.finestraAccesso();
   Zaino.carica(); Reazioni.carica(); Sinergie.carica(); Settimana.carica(); Torneo.carica(true);
   Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); });
-  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); ritiraPremiClassifica(); }
+  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); ritiraPremiClassifica(); Regali.carica(); }
   Boss.carica();
 }
 
@@ -3313,7 +3322,7 @@ function vistaStoria(leg = false) {
       <span class="serie-stemma" aria-hidden="true">${cap.simbolo}</span>
       <div><p class="serie-nome">Capitolo ${k + 1}${cap.serie ? ` · ${esc(SERIE[cap.serie].nome)}` : cap.sottotitolo ? ` · ${esc(cap.sottotitolo)}` : " · Finale"}${leg ? " · Livello Leggenda" : ""}</p><h3>${esc(cap.titolo)}</h3><p class="nota">${esc(cap.intro)}</p></div>
     </div>
-    ${rg ? `<div class="regola-leggenda"><span class="rl-ico" aria-hidden="true">${rg.ico}</span><div><small>Regola speciale del capitolo</small><b>${esc(rg.nome)}</b><span>${esc(rg.desc)}</span></div></div>` : ""}
+    ${rg ? `<div class="regola-leggenda"><span class="rl-ico" aria-hidden="true">${rg.ico}</span><div><small>Regola speciale del capitolo</small><b>${esc(rg.nome)}</b><span>${esc(rg.desc)}</span>${rg.consiglio ? `<em class="rl-consiglio">💡 ${esc(rg.consiglio)}</em>` : ""}</div></div>` : ""}
     ${aperto ? "" : `<p class="consiglio forte"><b>Capitolo bloccato.</b> Batti il boss del capitolo ${k}${leg ? " del Livello Leggenda" : ""} per aprirlo.</p>`}
     <div class="mondo-cornice">
       <div class="mondo ${aperto ? "" : "chiuso"}" id="mondo" tabindex="0" aria-label="Mappa del capitolo: trascinala per esplorarla">
@@ -3411,7 +3420,7 @@ function apriTappa(k, i) {
       </div>
       <p class="serie-nome">Capitolo ${k + 1}${leg ? " · Leggenda" : ""} · ${t.boss ? "Boss" : `Tappa ${i + 1}`}</p>
       <h2>${esc(t.titolo)}</h2>
-      ${rg ? `<div class="regola-leggenda piccola"><span class="rl-ico" aria-hidden="true">${rg.ico}</span><div><small>Regola del capitolo</small><b>${esc(rg.nome)}</b><span>${esc(rg.desc)}</span></div></div>` : ""}
+      ${rg ? `<div class="regola-leggenda piccola"><span class="rl-ico" aria-hidden="true">${rg.ico}</span><div><small>Regola del capitolo</small><b>${esc(rg.nome)}</b><span>${esc(rg.desc)}</span>${rg.consiglio ? `<em class="rl-consiglio">💡 ${esc(rg.consiglio)}</em>` : ""}</div></div>` : ""}
       <p class="nota">${leg ? `Avversari al livello 30 con la lode${t.nemici[0].olo ? ", olografici" : ""}${t.nemici[0].ultra ? " e in versione Ultra se ce l'hanno" : ""}${t.forza > 0 ? ` · più forti del ${t.forza}%` : ""}` : `Avversari al livello ${t.liv[0] === t.liv[1] ? t.liv[0] : `${t.liv[0]}–${t.liv[1]}`}`} · Difficoltà ${"★".repeat(Math.max(1, Math.round(t.abilita * 5)))}${n === 3 ? " · Modalità rapida: primi 3 avversari" : ""}</p>
       <div class="tappa-nemici">${t.nemici.slice(0, n).map(e => typeof e === "object" ? htmlCarta(PER_ID[e.id], { piccola: true, liv: e.liv, lode: e.lode, olo: e.olo, ultra: e.ultra && !!PER_ID[e.id].ultra }) : htmlCarta(PER_ID[e], { piccola: true, liv: t.liv[1], lode: false })).join("")}</div>
       <p class="tappa-premio">${premio}</p>
@@ -3426,13 +3435,19 @@ function apriTappa(k, i) {
 }
 
 // In fondo alla tappa: prima scegli la squadra, poi compare "Combatti con …"
+// una tua carta come entra in battaglia (livello, lode, olografica, Ultra, ascese, maestria, cornice; il Jolly con la sua modalità)
+function voceMia(id, conJolly = true) {
+  const sq = squadraAttiva();
+  return { id, ...(PER_ID[id] && PER_ID[id].rarita === "jolly" && conJolly ? { js: sq.jolly || "", jm: sq.jollyModo || "rinforzo", jt: sq.jollyTipo || "" } : {}), liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id), cc: S.admin ? "" : Cosmetici.corniceCarta(id) };
+}
 function htmlSceltaTappa(k, i, scelta) {
   const n = carteBattaglia(), pronte = (S.squadre || []).some(q => q.carte.length >= n);
   if (!pronte) return `<p class="consiglio forte">Ti serve una squadra da ${n} per combattere.</p><button class="btn primario" data-azione="vai-squadra">Prepara la squadra</button>`;
   const q = S.squadre[scelta];
   return `<p class="tappa-scegli-titolo">${q ? "Squadra scelta:" : "Scegli con quale squadra combattere:"}</p>
     ${htmlListaSquadre("data-tappa-squadra", scelta)}
-    ${q ? `<button class="btn primario grande" data-fx="spinta" data-tappa-via="${k}:${i}">Combatti con ${esc(q.nome || `Squadra ${scelta + 1}`)}</button>` : ""}`;
+    ${q ? `<button class="btn primario grande" data-fx="spinta" data-tappa-via="${k}:${i}">Combatti con ${esc(q.nome || `Squadra ${scelta + 1}`)}</button>` : ""}
+    <button class="btn piccolo sm-tasto" data-fx="stelle" data-sm-tappa="${k}:${i}">✨ Trova la squadra migliore per questa tappa</button>`;
 }
 function avviaStoria(k, i, leg = inLeggenda()) {
   const cap = STORIA[k], t = datiTappa(k, i, leg);
@@ -3597,7 +3612,7 @@ async function avviaSfida(idLivello, carteForzate, nemiciForzati, giaScelta) {
     : livelloAttuale.vivo ? livelloAttuale.vivo.mia.map(x => Object.assign({}, x))   // dal vivo: la squadra letta dal server
     : Lp && Lp.squadraMia ? Lp.squadraMia.map(x => Object.assign({}, x))   // Lunga Notte e Scalata: la squadra della modalità, non della collezione
     : Lp && Lp.arena ? carteForzate.slice(0, n).map(id => ({ id, liv: 20, lode: false, olo: false, ultra: false, asc: 0 }))   // Arena: tutti uguali al livello 20
-    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => ({ id, ...(PER_ID[id] && PER_ID[id].rarita === "jolly" && !carteForzate ? { js: squadraAttiva().jolly || "", jm: squadraAttiva().jollyModo || "rinforzo", jt: squadraAttiva().jollyTipo || "" } : {}), liv: livello(id) || 1, lode: haLode(id), olo: haOlo(id), ultra: haUltra(id), asc: (S.asc || {})[id] || 0, stelle: S.admin ? 0 : Maestria.stelle(id), cc: S.admin ? "" : Cosmetici.corniceCarta(id) }));
+    : (carteForzate || squadraAttiva().carte).slice(0, n).map(id => voceMia(id, !carteForzate));
   const L = livelloAttuale;
   const tS = L.storia && STORIA[L.storia.k].tappe[L.storia.i], ex = (tS && tS.extra) || 0;   // storia: in fondo i nemici possono avere lode, olografica, Ultra
   const nemici = nemiciForzati ? nemiciForzati.slice(0, n).map(id => { if (typeof id === "object") return id; const liv = L.liv[0] + Math.floor(Math.random() * (L.liv[1] - L.liv[0] + 1));
@@ -4222,7 +4237,7 @@ document.addEventListener("click", e => {
   if (Trascina.appena()) { e.preventDefault(); e.stopPropagation(); return; }
   if (e.target.closest && e.target.closest('#mondo[data-trascinato]')) return;
   if (e.target.id === "avviso") { if (mostraAvviso._salta) { mostraAvviso._salta = false; return; } mostraAvviso.prossimo(); return; }
-  const t = e.target.closest("[data-album-amico],[data-negozio-scheda],[data-notte-partenza],[data-notte-bivio],[data-notte-premio],[data-notte-lascia],[data-notte-compra-carta],[data-notte-compra-cim],[data-notte-imp],[data-notte-carta],[data-cimelio-info],[data-scalata-scegli],[data-scalata-pot],[data-scalata-carta],[data-scalata-nuova],[data-scalata-info],[data-titolo-profilo],[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
+  const t = e.target.closest("[data-album-amico],[data-sm-tappa],[data-regalo],[data-negozio-scheda],[data-notte-partenza],[data-notte-bivio],[data-notte-premio],[data-notte-lascia],[data-notte-compra-carta],[data-notte-compra-cim],[data-notte-imp],[data-notte-carta],[data-cimelio-info],[data-scalata-scegli],[data-scalata-pot],[data-scalata-carta],[data-scalata-nuova],[data-scalata-info],[data-titolo-profilo],[data-rb-carta],[data-jolly-serie],[data-jolly-modo],[data-jolly-tipo],[data-cosm-compra],[data-cc-usa],[data-ord-tocca],[data-arena-info],[data-cosm-usa],[data-crea],[data-mistero],[data-arena-scegli],[data-offerta-sp],[data-profilo-amico],[data-tappa-squadra],[data-compra-oggetto],[data-sfida-vivo],[data-zaino-posto],[data-zaino-metti],[data-usa-oggetto],[data-compra-graffito],[data-emoji-per],[data-bomboletta],[data-scegli-graffito],[data-scheda-album],[data-trofeo],[data-titolo],[data-scambio-amico],[data-scambio-chiedo],[data-scambio-offro],[data-scambio-indietro],[data-scambio-accetta],[data-scambio-rifiuta],[data-scambio-annulla],[data-scambio-ritira],[data-reazione],[data-reazioni],[data-guarda],[data-slot],[data-sq-az],[data-sfida-amico],[data-missione],[data-boss-premio],[data-compra],[data-riapri-codice],[data-capitolo],[data-tappa],[data-tappa-via],[data-scrigno],[data-ed-filtro],[data-avatar],[data-imp],[data-profilo],[data-admin],#profilo-btn,[data-azione],[data-vista],[data-filtro],[data-filtro-sq],[data-filtra],[data-dettaglio],[data-scegli],[data-sfida],[data-mossa],[data-cambia],[data-sostituisci],[data-apri],[data-riscuoti],[data-pass-scelta],[data-pot-carta],[data-squadra],[data-squadra-sfida],[data-sposta],[data-togli],.gira,.carta[role=button],[data-campo-scelto],[data-sfida-settimana],[data-riscuoti-settimana],[data-admin-evidenza],[data-torneo],[data-scegli-squadra]");
   if (!t) {
     if (e.target.id === "modale" && !$("#modale").dataset.bloccata) chiudiModale();
     return;
@@ -4260,6 +4275,8 @@ document.addEventListener("click", e => {
   if (t.dataset.admin) { azioneAdmin(t.dataset.admin, t); return; }
   if (t.dataset.capitolo !== undefined) { if (inLeggenda()) capLeggenda = +t.dataset.capitolo; else capStoria = +t.dataset.capitolo; disegna(); scorriA("#vista .cap-testa"); return; }
   if (t.dataset.tappa) { const [k, i] = t.dataset.tappa.split(":").map(Number); apriTappa(k, i); return; }
+  if (t.dataset.smTappa) { const [k, i] = t.dataset.smTappa.split(":").map(Number); SquadraMigliore.apri({ k, i, leg: inLeggenda() }); return; }
+  if (t.dataset.regalo) { Regali.manda(t.dataset.regalo, t.dataset.regaloNome || "il tuo amico"); return; }
   if (t.dataset.tappaSquadra !== undefined) {
     const q = +t.dataset.tappaSquadra, box = $("#tappa-scelta");
     S.attiva = q; salva();
@@ -4388,6 +4405,12 @@ document.addEventListener("click", e => {
     case "vai-trofei": chiudiModale(); albumScheda = "trofei"; vai("album"); break;
     case "vai-missioni": { const el = $(".oggi"); if (el) el.scrollIntoView({ behavior: ridotto ? "auto" : "smooth", block: "start" }); break; }
     case "consiglio-calcola": Consiglio.calcola(); break;
+    case "sm-usa": SquadraMigliore.usa(); break;
+    case "sm-torna": SquadraMigliore.torna(); break;
+    case "enigma-gioca": { const era = !!B; if (era) esciBattaglia(); setTimeout(() => Enigma.gioca(), era ? 150 : 0); break; }
+    case "framm-cambia": Frammenti.cambia(t.dataset.n, t); break;
+    case "regali-riscuoti": Regali.riscuoti(); break;
+    case "vai-enigma": vai("modo-enigma"); break;
     case "altre-squadra": altreCarteSquadra(); break;
     case "jolly-apri": Jolly.apri(); break;
     case "adesso-potenzia": filtri.squadra.pot = true; vai("squadra"); break;

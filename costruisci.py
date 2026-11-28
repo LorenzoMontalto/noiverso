@@ -5,7 +5,7 @@ così ogni aggiornamento arriva subito a tutti, senza copie vecchie in memoria."
 import hashlib, os, re, shutil
 QUI = os.path.dirname(os.path.abspath(__file__))
 SRC, OUT = os.path.join(QUI, "sorgente"), os.path.join(QUI, "sito")
-CODICE = ["carte", "motore", "effetti", "suoni", "scena3d", "mappe", "storia", "leggenda", "tutorial", "missioni", "sociale", "collezione", "graffiti", "zaino", "online", "reazioni", "eventi", "progressi", "extra", "avvento", "notte", "scalata", "app", "supabase-ponte", "immagini"]
+CODICE = ["carte", "motore", "effetti", "suoni", "scena3d", "mappe", "storia", "leggenda", "tutorial", "missioni", "sociale", "collezione", "graffiti", "zaino", "online", "reazioni", "eventi", "progressi", "extra", "avvento", "notte", "scalata", "giorno", "app", "supabase-ponte", "immagini"]
 LIBRERIE = ["three.min", "supabase.min"]
 
 # Il server deve sapere la rarità di ogni carta (per gli scambi): la copia da carte.js dentro schema.sql

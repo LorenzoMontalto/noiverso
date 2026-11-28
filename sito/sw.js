@@ -1,9 +1,9 @@
 // Service worker di Noiverso: fa partire il gioco in fretta e tiene in memoria codice e immagini.
 // La pagina principale arriva sempre dalla rete (così gli aggiornamenti arrivano subito);
 // i file con il codice hanno nel nome un'impronta, quindi una volta scaricati non cambiano più.
-const VERSIONE = "65b63fab";
+const VERSIONE = "2d6f9376";
 const CACHE = "noiverso-" + VERSIONE;
-const BASE = ["./", "installa.html", "manifest.webmanifest", "icone/icona-192.png", "icone/icona-512.png", "icone/apple-touch-icon.png", "carte.343d30c1.js", "motore.a252ab6e.js", "effetti.9fb9bc7f.js", "suoni.48664f04.js", "scena3d.7689bb1d.js", "mappe.8922ee6b.js", "storia.9c526031.js", "leggenda.d3eeec04.js", "tutorial.b7098382.js", "missioni.6364ec7a.js", "sociale.33bf169c.js", "collezione.96041abb.js", "graffiti.e550f7a5.js", "zaino.ba1e8b12.js", "online.d6b0d3ac.js", "reazioni.4a0e6db8.js", "eventi.e70d99a2.js", "progressi.45fe1d17.js", "extra.d557713e.js", "avvento.355b1396.js", "notte.c6a2a364.js", "scalata.0c485016.js", "app.e64e9d68.js", "supabase-ponte.7c0d3cac.js", "immagini.1e35aa5a.js", "three.min.9274bbce.js", "supabase.min.8816af04.js"];
+const BASE = ["./", "installa.html", "manifest.webmanifest", "icone/icona-192.png", "icone/icona-512.png", "icone/apple-touch-icon.png", "carte.343d30c1.js", "motore.a252ab6e.js", "effetti.9fb9bc7f.js", "suoni.48664f04.js", "scena3d.7689bb1d.js", "mappe.8922ee6b.js", "storia.9c526031.js", "leggenda.009ded68.js", "tutorial.b7098382.js", "missioni.6364ec7a.js", "sociale.33bf169c.js", "collezione.96041abb.js", "graffiti.e550f7a5.js", "zaino.ba1e8b12.js", "online.d6b0d3ac.js", "reazioni.4a0e6db8.js", "eventi.e70d99a2.js", "progressi.45fe1d17.js", "extra.75e37565.js", "avvento.355b1396.js", "notte.c6a2a364.js", "scalata.0c485016.js", "giorno.6b808332.js", "app.674edfbe.js", "supabase-ponte.7c0d3cac.js", "immagini.1e35aa5a.js", "three.min.9274bbce.js", "supabase.min.8816af04.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(BASE)).then(() => self.skipWaiting()));

@@ -233,10 +233,25 @@ const Frammenti = (() => {
       <p>Servono a <b>creare le carte che ti mancano</b>: nell'album tocca una carta coperta. Su ognuna c'è scritto quanti frammenti costa.</p>
       <table class="fi-tab"><thead><tr><th>Rarità</th><th>Costa</th><th>Doppione al 30 dà</th></tr></thead><tbody>
         ${[...ORDINE_RARITA, "jolly"].map(r => `<tr><td>${esc(RARITA[r].nome)}</td><td><b>◈ ${COSTO[r].toLocaleString("it-IT")}</b></td><td>+${DA_DOPPIONE[r]} ◈</td></tr>`).join("")}</tbody></table>
-      <p class="nota">Arrivano dai doppioni delle carte già al livello 30, dall'Arena e dalla quinta stella di maestria. Ti mancano ${mancano.length} carte${creabili ? `: <b>${creabili}</b> le puoi già creare` : ""}.</p>
+      <p class="nota">Arrivano dai doppioni delle carte già al livello 30, dall'Arena, dalla Lunga Notte, dalla Scalata, dalla Leggenda e dalla quinta stella di maestria. Ti mancano ${mancano.length} carte${creabili ? `: <b>${creabili}</b> le puoi già creare` : ""}.</p>
+      <div class="fi-cambio"><h3>Cambia in potenziatori universali ✪</h3>
+        <p class="nota">Ogni <b>${PER_CAMBIO} ◈</b> diventano <b>1 ✪</b>, che vale come un potenziatore per <b>qualsiasi</b> carta. Utile se ti mancano poche carte e i frammenti avanzano.</p>
+        <div class="azioni centro">${[1, 5, 25].map(n => `<button class="btn piccolo ${q >= n * PER_CAMBIO ? "oro" : ""}" data-fx="stelle" data-azione="framm-cambia" data-n="${n}" ${q >= n * PER_CAMBIO ? "" : "disabled"}>${n} ✪ · ${(n * PER_CAMBIO).toLocaleString("it-IT")} ◈</button>`).join("")}
+          ${Math.floor(q / PER_CAMBIO) > 25 ? `<button class="btn piccolo oro" data-fx="stelle" data-azione="framm-cambia" data-n="${Math.floor(q / PER_CAMBIO)}">Tutti: ${Math.floor(q / PER_CAMBIO)} ✪</button>` : ""}</div></div>
       <div class="azioni centro"><button class="btn primario" data-azione="vai-album">Vai all'album</button><button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }
-  return { DA_DOPPIONE, COSTO, quanti, aggiungi, daEsiti, crea, apriMistero, apriInfo };
+  // nov 2026: frammenti → potenziatori universali ✪ (20 a 1). Esempio: 500 ◈ diventano 25 ✪.
+  const PER_CAMBIO = 20;
+  function cambia(n, el) {
+    n = Math.max(1, Math.floor(+n || 0));
+    if (!attivoExtra() || S.admin) return;
+    if (quanti() < n * PER_CAMBIO) { mostraAvviso(`Servono ${n * PER_CAMBIO} frammenti.`); return; }
+    S.framm = quanti() - n * PER_CAMBIO; S.jolly = Math.max(0, Math.floor(S.jolly || 0)) + n;
+    salva(); aggiornaTesta();
+    if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 40, forma: "stella", colori: ["#c9a4ff", "#ffffff", "#9ad8ff"], velocita: 6, dimensione: 5 }); }
+    mostraAvviso(`${n * PER_CAMBIO} ◈ → ${n} potenziatori universali ✪ (ora ne hai ${S.jolly}).`); apriInfo();
+  }
+  return { DA_DOPPIONE, COSTO, quanti, aggiungi, daEsiti, crea, apriMistero, apriInfo, cambia, PER_CAMBIO };
 })();
 
 // ---------------- Statistiche e vetrina ----------------
@@ -307,7 +322,7 @@ const Vetrina = (() => {
       <h2 class="${Cosmetici.classeNome(r.stileNome)}">${esc(String(r.nome || "Giocatore"))}</h2>${r.titolo ? `<span class="nota">«${esc(r.titolo)}»</span>` : ""}</div></div>
       ${htmlRiquadro({ vetrina: r.vetrina || [], sfondo: r.sfondo, livello: num(r.livello), punti: num(r.punti), vittorie: num(r.vittorie), sconfitte: num(r.sconfitte), stelle: num(r.stelle), preferita: r.preferita, serie: r.seriePref,
         albe: r.albe, notteMax: r.notteMax, scalataMax: r.scalataMax, arenaMax: r.arenaMax, arene: r.arene, dett: r.vetrinaDett })}
-      <div class="azioni centro">${r.id && r.id !== Archivio.uid ? `<button class="btn primario" data-fx="spinta" data-album-amico="${esc(r.id)}">📒 Vedi il suo album</button>` : ""}<button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
+      <div class="azioni centro">${r.id && r.id !== Archivio.uid ? `<button class="btn primario" data-fx="spinta" data-album-amico="${esc(r.id)}">📒 Vedi il suo album</button>${Regali.htmlTasto(r)}` : ""}<button class="btn" data-azione="chiudi">Chiudi</button></div></div>`);
   }
   // nov 2026: l'album di un amico, letto dal server (album_amico): tutte le carte, con quanto le ha potenziate
   let albumA = null;
@@ -605,8 +620,16 @@ const Progressi = (() => {
 
 // ---------------- Novità (una volta sola per ogni aggiornamento) ----------------
 const Novita = (() => {
-  const VERSIONE = "2026-11-album";
-  const SCHEDE = [
+  const VERSIONE = "2026-11-enigma", PRIMA = "2026-11-album";
+  const NUOVE = [
+    { ico: "🧩", titolo: "Enigma del giorno", testo: "In Gioca › Eventi: ogni giorno la stessa battaglia per tutti, con squadra e avversario già decisi. Vincila nel minor numero di turni: puoi riprovare quanto vuoi e c'è la classifica di oggi con gli amici. La prima vittoria del giorno dà monete." },
+    { ico: "🎁", titolo: "Regali tra amici", testo: "Ogni giorno puoi mandare un regalo gratis a un amico: tocca il suo nome in classifica e «Manda un regalo». Vale 3 potenziatori universali ✪. I regali che ricevi li trovi nella Home." },
+    { ico: "◈", titolo: "Frammenti in potenziatori", testo: "Ti avanzano frammenti? Tocca ◈ in alto: ogni 20 frammenti diventano 1 potenziatore universale ✪, che vale per qualsiasi carta." },
+    { ico: "✨", titolo: "La squadra giusta per la tappa", testo: "Nella scheda di una tappa (storia e Leggenda) c'è «Trova la squadra migliore per questa tappa»: il gioco prova le tue carte contro quei nemici, con il loro campo e la regola, e ti propone la squadra che vince di più." },
+    { ico: "💡", titolo: "Consigli per la Leggenda", testo: "Sotto la regola di ogni capitolo della Leggenda ora c'è un consiglio su quali carte portare e come giocarla." },
+  ];
+  let SCHEDE = [];
+  const VECCHIE = [
     { ico: "🪙", titolo: "Più monete per tutti", testo: "Battaglie, storia, missioni, premi di accesso, pass, eventi, boss e sfide con gli amici danno il 50% di monete in più: per esempio battere il Boss dà 180 monete invece di 120. Così portare le carte al livello 30 è molto più alla portata." },
     { ico: "📒", titolo: "L'album degli amici", testo: "Tocca il nome di un amico in classifica e poi «Vedi il suo album»: vedi tutte le carte che ha, a che livello, con la lode, olografiche, Ultra e con le cornici." },
     { ico: "💰", titolo: "Premi raddoppiati", testo: "Arena, Lunga Notte e Scalata ora danno circa il doppio: per esempio l'Arena con 3 vittorie dà 620 monete e una bustina (prima 350), l'alba della Notte una Bustina Leggendaria, 400 monete e 60 frammenti. E anche uscire presto rende quasi l'ingresso." },
@@ -619,6 +642,7 @@ const Novita = (() => {
     if (typeof Tutorial !== "undefined" && Tutorial.attivo) { setTimeout(controlla, 20000); return; }
     if (!$("#modale").hidden || (typeof B !== "undefined" && B)) return;
     if (!(S.stats.vittorie + S.stats.sconfitte)) { S.novita = VERSIONE; return; }   // chi è appena arrivato le scopre col tutorial
+    SCHEDE = NUOVE.concat(S.novita === PRIMA ? [] : VECCHIE);   // chi non aveva visto le novità di prima le vede dopo queste
     i = 0; mostra();
   }
   function mostra() {
@@ -632,7 +656,7 @@ const Novita = (() => {
   const avanti = () => { i = Math.min(SCHEDE.length - 1, i + 1); mostra(); };
   const indietro = () => { i = Math.max(0, i - 1); mostra(); };
   const fine = () => { S.novita = VERSIONE; salva(); chiudiModale(); };
-  const rivedi = () => { i = 0; mostra(); };
+  const rivedi = () => { SCHEDE = NUOVE.concat(VECCHIE); i = 0; mostra(); };
   return { controlla, avanti, indietro, fine, rivedi };
 })();
 
