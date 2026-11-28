@@ -29,6 +29,7 @@ const SERIE = {
   colori: { nome: "Colori", colore: "#ff4fd8", simbolo: "🎨", desc: "Un colore per ognuno, dipinto sull'Italia più bella: girasoli e colline toscane, il mare di Capri, la costiera al tramonto, Roma di notte. Insieme fanno l'arcobaleno." },
   arte: { nome: "Opere d'Arte", colore: "#d8a84a", simbolo: "🖼", desc: "Il museo più strano del mondo: nei quadri più famosi della storia, al posto dei soliti volti, ci sono i tuoi amici. Cornici d'oro, vernice ancora fresca e guai a toccare." },
   ospiti: { nome: "Jolly", colore: "#ffffff", simbolo: "🃏", jolly: true, desc: "Le carte matte del mazzo: non appartengono a nessuna serie, e proprio per questo stanno bene in tutte. Un Jolly diventa quello che ti serve: rinforza una sinergia, cambia tipo per sorprendere l'avversario o si imbuca a metà battaglia per rovinargli i piani. Rarissimi, e al massimo uno per squadra." },
+  pirati: { nome: "Pirati", colore: "#2f8fa8", simbolo: "⚓", desc: "Bandiere nere, mappe del tesoro e cannoni carichi: i tuoi amici prendono il mare e assaltano tutto quello che galleggia. Rum, pappagalli, gambe di legno e nessuna regola, tranne una: il bottino si divide. Forse." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -811,6 +812,37 @@ const CARTE = [
     mosse: [m("Colpo di Cassa", 0, 28), m("Beat in Loop", 0, 0, { eff: { tipo: "energia", val: 3 } }), m("Il Drop", 5, 86, { eff: { tipo: "stordisci", val: 30 } })] },
   { id: "yaska", nome: "Yaska.wav", serie: "ospiti", rarita: "jolly", stile: "FOR", ruolo: "incendiario", frase: "La rapper ospite: entra nel gruppo, registra un pezzo e porta il caos. Ogni barra è una scintilla, ogni ritornello un incendio.",
     mosse: [m("Barra Rovente", 0, 26, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Dissing", 2, 34, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Traccia di Fuoco", 5, 82, { eff: { tipo: "brucia", val: 6, turni: 3 } })] },
+  // ---------------- Pirati (nov 2026) ----------------
+  { id: "capbarbaludo", nome: "Capitan Barbaludo", serie: "pirati", rarita: "leggendaria", stile: "FOR", ruolo: "capo", frase: "Barba nera intrecciata, micce accese sotto il cappello e una ciurma che lo seguirebbe fino in fondo al mare. Quando urla «All'arrembaggio!», a bordo non resta nessuno.",
+    mosse: [m("Sciabolata", 0, 34), m("All’Arrembaggio!", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Bandiera Nera", 5, 96)] },
+  { id: "giulisirena", nome: "Giulisirena", serie: "pirati", rarita: "leggendaria", stile: "DIF", ruolo: "stregone", frase: "Metà ciurma giura di averla vista seduta sugli scogli. L'altra metà non è mai tornata a raccontarlo: basta una nota del suo canto e il mare si alza.",
+    mosse: [m("Canto della Sirena", 0, 32), m("Richiamo degli Abissi", 2, 26, { eff: { tipo: "indebolisci", val: 35, turni: 2 } }), m("Tempesta dei Sette Mari", 5, 94, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "cannonessia", nome: "Cannonessia", serie: "pirati", rarita: "leggendaria", stile: "VEL", ruolo: "tiratore", frase: "La cannoniera più veloce dei sette mari: carica, mira e spara prima che tu abbia finito di dire «terra!». Non sbaglia mai un colpo, nemmeno con la nave che balla.",
+    mosse: [m("Colpo di Moschetto", 0, 32, { penetra: 20 }), m("Fumo da Sparo", 2, 0, { eff: { tipo: "nebbia" } }), m("Bordata", 5, 96, { penetra: 25 })] },
+  { id: "vikysciabola", nome: "Vikysciabola", serie: "pirati", rarita: "epica", stile: "FOR", ruolo: "picchiatore", frase: "Due sciabole e zero pazienza. Salta da una nave all'altra appesa a una cima e atterra sempre a lama sguainata.",
+    mosse: [m("Doppia Sciabola", 0, 32), m("Grido di Battaglia", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Mulinello d’Acciaio", 5, 90)] },
+  { id: "ritimone", nome: "Ritimone", serie: "pirati", rarita: "epica", stile: "DIF", ruolo: "difensore", frase: "Le mani sul timone e gli occhi sull'orizzonte: la nave va dove dice lei, anche in mezzo all'uragano. E per salire a bordo devi passare da lei.",
+    mosse: [m("Colpo di Timone", 0, 30), m("Virata", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Rotta nella Tempesta", 5, 88, { eff: { tipo: "stordisci", val: 30 } })] },
+  { id: "aurorum", nome: "Aurorum", serie: "pirati", rarita: "epica", stile: "VEL", ruolo: "incendiario", frase: "Una bottiglia di rum in una mano e una miccia nell'altra. Non beve mai: le bottiglie le usa per tutt'altro.",
+    mosse: [m("Bottiglia Infuocata", 0, 28, { eff: { tipo: "brucia", val: 3, turni: 2 } }), m("Polveriera", 2, 26, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Santabarbara", 5, 82, { eff: { tipo: "brucia", val: 5, turni: 3 } })] },
+  { id: "tiziancora", nome: "Tiziancora", serie: "pirati", rarita: "epica", stile: "DIF", ruolo: "tank", frase: "Porta l'ancora della nave sulla spalla come fosse uno zainetto. Quando la pianta per terra non lo sposta più nessuno, nemmeno la marea.",
+    mosse: [m("Ancorata", 0, 30), m("Fondale", 2, 24, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("Ancora Gettata", 5, 88)] },
+  { id: "senebottino", nome: "Senèbottino", serie: "pirati", rarita: "rara", stile: "VEL", ruolo: "ladro", frase: "Ti stringe la mano per fare amicizia. Quando la riapri ti mancano un anello, la bussola e mezza energia.",
+    mosse: [m("Mano Lesta", 0, 28, { eff: { tipo: "ruba", val: 1 } }), m("Sgambetto", 2, 22, { eff: { tipo: "stordisci", val: 30 } }), m("Forziere Svuotato", 5, 80, { eff: { tipo: "ruba", val: 1 } })] },
+  { id: "pipagallo", nome: "Pipagallo", serie: "pirati", rarita: "rara", stile: "VEL", ruolo: "imprevedibile", frase: "Metà pirata, metà pappagallo, tutto rumore. Ripete tutto quello che dici, ma più forte, e becca chi lo prende in giro.",
+    mosse: [m("Beccata", 0, 28), m("Strilli", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Stormo Impazzito", 5, 13, { colpi: 6 })] },
+  { id: "alicorsara", nome: "Alicorsara", serie: "pirati", rarita: "rara", stile: "FOR", ruolo: "assassino", frase: "Ha una lettera del re che le permette di assaltare qualsiasi nave. Dice lei. La lettera non l'ha mai vista nessuno, il pugnale sì.",
+    mosse: [m("Pugnale tra i Denti", 0, 30), m("Nebbia sul Porto", 2, 0, { eff: { tipo: "nebbia" } }), m("Abbordaggio Notturno", 5, 82)] },
+  { id: "diegobussola", nome: "Diegobussola", serie: "pirati", rarita: "rara", stile: "DIF", ruolo: "stratega", frase: "Col cannocchiale vede la nave nemica tre giorni prima che arrivi. Ha già calcolato la rotta, il vento e dove nasconderà il bottino.",
+    mosse: [m("Colpo di Cannocchiale", 0, 26), m("Mappa del Tesoro", 0, 0, { eff: { tipo: "energia", val: 3 } }), m("La X Segna il Punto", 5, 80, { eff: { tipo: "indebolisci", val: 25, turni: 2 } })] },
+  { id: "samozzo", nome: "Samozzo", serie: "pirati", rarita: "comune", stile: "VEL", ruolo: "schivatore", frase: "Il mozzo più giovane della nave: pulisce il ponte, si arrampica sull'albero maestro in tre secondi e nessuno riesce mai ad acchiapparlo.",
+    mosse: [m("Spazzolata", 0, 26), m("Su per l’Albero", 2, 0, { eff: { tipo: "nebbia" } }), m("Secchiata", 5, 76)] },
+  { id: "maurigamba", nome: "Maurigamba", serie: "pirati", rarita: "comune", stile: "FOR", ruolo: "picchiatore", frase: "Ha perso la gamba contro uno squalo, dice lui. Lo squalo racconta un'altra storia. Adesso la gamba è di legno e fa malissimo.",
+    mosse: [m("Calcio di Legno", 0, 28), m("Toc Toc Toc", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Gamba Tesa", 5, 78)] },
+  { id: "simonfantasma", nome: "Simonfantasma", serie: "pirati", rarita: "comune", stile: "FOR", ruolo: "stregone", frase: "Affondato cent'anni fa con tutto il suo tesoro, non se n'è mai fatto una ragione. Ogni notte di nebbia torna a bordo, trascinando le catene, a riprenderselo.",
+    mosse: [m("Catena Arrugginita", 0, 26), m("Maledizione del Forziere", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Nave Fantasma", 5, 13, { colpi: 6 })] },
+  { id: "lollocambusa", nome: "Lollocambusa", serie: "pirati", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "Il cuoco di bordo: con due patate e un barile di gallette tiene in piedi tutta la ciurma. Meglio non chiedere cosa c'è nello stufato.",
+    mosse: [m("Mestolata", 0, 26), m("Zuppa di Bordo", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Pentolone", 5, 76, { eff: { tipo: "stordisci", val: 30 } })] },
 ];
 
 
@@ -892,6 +924,9 @@ const PERSONE = {
   // Opere d'Arte
   monnarita: "Rita", urlosamu: "Samuele", aliceperla: "Alice", bonaparte: "Tiziano", lollante: "Lorenzo", seneberta: "Senè", pipsgothic: "Pips",
   auroraermellino: "Aurora", giuvvsage: "Giulia", vikith: "Viky", mortesimons: "Simone", diegazzo: "Diego", dinoludovico: "Ludovico", damaalessiott: "Alessia", pecorella: "Maurizio",
+  // Pirati
+  capbarbaludo: "Ludovico", giulisirena: "Giulia", cannonessia: "Alessia", vikysciabola: "Viky", ritimone: "Rita", aurorum: "Aurora", tiziancora: "Tiziano",
+  senebottino: "Senè", pipagallo: "Pips", alicorsara: "Alice", diegobussola: "Diego", samozzo: "Samuele", maurigamba: "Maurizio", simonfantasma: "Simone", lollocambusa: "Lorenzo",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -906,7 +941,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // (ma conviene darla prima a chi ne ha meno: lo mostra il riquadro «Versioni Ultra» nel pannello admin).
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta", "lollimpo", "aurormo", "monnarita"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta", "lollimpo", "aurormo", "monnarita", "capbarbaludo"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, ruolo: c.ruolo, persona: c.persona, ultra: c.ultra, mosse: c.mosse.map(m => m.nome) }]));
 function applicaConfigCarte(cfg) {

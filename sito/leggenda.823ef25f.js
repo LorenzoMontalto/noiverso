@@ -38,6 +38,7 @@ const CONSIGLI_LEGGENDA = {
   c28: "Un nemico può restare a 1 PV: le mosse a più colpi o una mossa gratis finiscono il lavoro.",
   c29: "In vantaggio di tipo picchiano fortissimo: non lasciare in campo una carta che il nemico batte (guarda ▲▼ in panchina) e cambia.",
   c30: "A volte salti il turno quando entra un nemico: porta carte resistenti e non restare con pochi PV contando sul turno dopo.",
+  c31: "Ti rubano energia colpendoti: spendila presto invece di accumularla per la mossa da 5, e porta chi schiva o para (Schivatore, Star Wars) o una Stratega per rifarla.",
 };
 // Le regole speciali: una per capitolo (la chiave è l'id del capitolo). Valgono per i nemici, alcune anche per te.
 // Usano gli stessi meccanismi delle sinergie e del boss del giorno: x.sin.* (vedi motore.js), scudo, furia, energia.
@@ -68,6 +69,7 @@ const REGOLE_LEGGENDA = {
   c28: { ico: "🍀", nome: "Fortuna sfacciata", desc: "Quando un colpo li manderebbe KO, i nemici hanno il 25% di probabilità di restare in piedi con 1 PV.", applica: B => nemici(B, x => { x.sin.miracolo = Math.max(x.sin.miracolo || 0, 25); }) },
   c29: { ico: "🎨", nome: "Contrasti", desc: "Quando colpiscono in vantaggio di tipo, i nemici fanno il 40% di danni in più.", applica: B => nemici(B, x => { x.sin.contrasto = Math.max(x.sin.contrasto || 0, 40); }) },
   c30: { ico: "🖼️", nome: "Capolavori", desc: "Quando un nemico entra in campo hai il 35% di probabilità di restare incantato e saltare il turno.", applica: B => nemici(B, x => { x.sin.incanto = Math.max(x.sin.incanto || 0, 35); }) },
+  c31: { ico: "🏴", nome: "All'arrembaggio", desc: "Quando un attacco nemico va a segno, il 25% delle volte ti ruba 1 energia.", applica: B => nemici(B, x => { x.sin.bottino = Math.max(x.sin.bottino || 0, 25); }) },
   c13: { ico: "🪞", nome: "Lo specchio", desc: "I nemici hanno il 10% in più di PV, attacco e difesa.", applica: B => nemici(B, x => { x.pvMax = Math.round(x.pvMax * 1.1); x.pv = x.pvMax; x.att *= 1.1; x.dif *= 1.1; }) },
   c14: { ico: "🚂", nome: "A tutta velocità", desc: "I nemici fanno più critici (+10%) e i loro critici fanno il doppio dei danni.", applica: B => nemici(B, x => { x.sin.crit = (x.sin.crit || 0) + 10; x.sin.critX = Math.max(x.sin.critX || 1.5, 2); }) },
   c15: { ico: "⏳", nome: "Il tempo si ferma", desc: "I nemici partono con 5 energia: possono usare subito la mossa più forte.", applica: B => { B.lati[1].energia = Math.max(B.lati[1].energia, 5); } },
@@ -110,6 +112,7 @@ const TARATURA_LEGGENDA = {
   "c28-0": 23, "c28-1": 20, "c28-2": 7, "c28-3": 10, "c28-4": -4, "c28-5": -1,
   "c29-0": 11, "c29-1": 19, "c29-2": 11, "c29-3": 15, "c29-4": 10, "c29-5": 2,
   "c30-0": 24, "c30-1": 25, "c30-2": 15, "c30-3": 4, "c30-4": -3, "c30-5": -4,
+  "c31-0": 35, "c31-1": 25, "c31-2": 23, "c31-3": 8, "c31-4": 1, "c31-5": 2,
   "c13-0": 1, "c13-1": 2, "c13-2": -10, "c13-3": 1, "c13-4": -9, "c13-5": 17,
   "c14-0": 20, "c14-1": 10, "c14-2": -3, "c14-3": 14, "c14-4": 19, "c14-5": 3,
   "c15-0": 33, "c15-1": 8, "c15-2": 12, "c15-3": -8, "c15-4": 15, "c15-5": 9,

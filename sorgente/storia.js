@@ -468,11 +468,29 @@ const STORIA = [
       { titolo: "La sala dei capolavori", nemici: ["urlosamu", "aliceperla", "lollante", "seneberta", "pipsgothic"], liv: [1, 1], abilita: 0.95, monete: 380,
         parla: "urlosamu", frase: "AAAAAAH! …scusa, faccio sempre così quando arriva un visitatore." },
       { titolo: "La Gioconda", boss: true, nemici: ["monnarita", "urlosamu", "aliceperla", "bonaparte", "seneberta"], liv: [1, 1], abilita: 0.97, monete: 680, bustina: "leggendaria",
-        parla: "monnarita", frase: "Tutti vengono qui per guardarmi. Ma sono io che guardo te, da qualunque parte ti metti.", vittoria: "Monnarita sorride, come sempre, e ti fa l'occhiolino: «Torna quando vuoi, la fila la salti». Dietro il quadro, appoggiato al muro, c'è un mappamondo di vetro che non riflette il museo… ma mondi diversi." }
+        parla: "monnarita", frase: "Tutti vengono qui per guardarmi. Ma sono io che guardo te, da qualunque parte ti metti.", vittoria: "Monnarita sorride, come sempre, e ti fa l'occhiolino: «Torna quando vuoi, la fila la salti». Nell'ultima sala c'è un quadro con una nave in mezzo alla tempesta: l'acqua comincia a uscire dalla cornice e in un attimo ti ritrovi bagnato fradicio, sul ponte, con il vento in faccia." }
     ],
   },
 
 
+  {
+    id: "c31", campo: "pioggia", titolo: "I sette mari", serie: "pirati", colore: "#2f8fa8", simbolo: "⚓",
+    intro: "Il quadro ti ha trascinato in mezzo al mare. All'orizzonte c'è una nave con la bandiera nera, e a bordo ci sono i tuoi amici, diventati pirati. Il capitano ha nascosto un tesoro su un'isola che non sta su nessuna mappa: per arrivarci devi farti strada tra taverne, contrabbandieri, sirene e cannonate.",
+    tappe: [
+      { titolo: "La taverna del porto", nemici: ["samozzo", "maurigamba", "lollocambusa", "simonfantasma", "pipagallo"], liv: [1, 1], abilita: 0.9, monete: 340,
+        parla: "lollocambusa", frase: "Prima di salpare si mangia. Se lo stufato non ti piace, puoi sempre combattere." },
+      { titolo: "Il mercato dei contrabbandieri", nemici: ["senebottino", "alicorsara", "lollocambusa", "diegobussola", "samozzo"], liv: [1, 1], abilita: 0.92, monete: 350,
+        parla: "senebottino", frase: "Bella bussola. Ah, era tua? Allora te la rivendo a metà prezzo." },
+      { titolo: "La scogliera delle sirene", nemici: ["pipagallo", "simonfantasma", "ritimone", "maurigamba", "senebottino"], liv: [1, 1], abilita: 0.93, monete: 360, bustina: "epica",
+        parla: "pipagallo", frase: "Arrembaggio! Arrembaggio! …scusa, me l'hanno insegnato e non riesco più a smettere." },
+      { titolo: "La battaglia navale", nemici: ["vikysciabola", "aurorum", "alicorsara", "diegobussola", "tiziancora"], liv: [1, 1], abilita: 0.94, monete: 370,
+        parla: "vikysciabola", frase: "Due sciabole, una per mano. Scegli tu da quale vuoi essere battuto." },
+      { titolo: "La nave del capitano", nemici: ["cannonessia", "giulisirena", "tiziancora", "aurorum", "ritimone"], liv: [1, 1], abilita: 0.95, monete: 380,
+        parla: "cannonessia", frase: "Venti cannoni carichi e il vento a favore. Vuoi davvero salire a bordo?" },
+      { titolo: "Il tesoro di Barbaludo", boss: true, nemici: ["capbarbaludo", "cannonessia", "giulisirena", "vikysciabola", "aurorum"], liv: [1, 1], abilita: 0.97, monete: 680, bustina: "leggendaria",
+        parla: "capbarbaludo", frase: "Questo tesoro l'ho rubato a un re, a un drago e a mia nonna. Pensi davvero di portarmelo via?", vittoria: "Barbaludo scoppia a ridere, pianta la sciabola nella sabbia e apre il forziere: niente oro, solo un mappamondo di vetro che non riflette il mare… ma mondi diversi." }
+    ],
+  },
   {
     id: "c13", campo: "notte", titolo: "Lo specchio dei mondi", sottotitolo: "Multiverso", colore: "#c38bff", simbolo: "∞",
     intro: "Tocchi il mappamondo di vetro e la sua superficie si muove come acqua, sempre più grande. Ci entri e ti ritrovi nel Multiverso: ogni amico è lì in tutte le sue versioni, e insieme sono più forti.",

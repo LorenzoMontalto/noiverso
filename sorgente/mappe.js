@@ -36,6 +36,7 @@ const MappeStoria = (() => {
     [[200, 1040], [560, 860], [1000, 1000], [1440, 860], [1360, 500], [820, 380]],     // Olimpo degli inutili (Dei Inutili)
     [[220, 1040], [560, 880], [1000, 1020], [1460, 860], [1320, 480], [760, 360]],     // l'Italia a colori (Colori)
     [[220, 1040], [580, 860], [1020, 1010], [1460, 840], [1340, 460], [780, 340]],     // il museo dei capolavori (Opere d'Arte)
+    [[230, 1010], [600, 830], [1010, 990], [1450, 860], [1460, 470], [880, 300]],     // i sette mari (Pirati)
     [[240, 980], [560, 760], [900, 920], [1220, 700], [1500, 880], [900, 300]],     // specchio dei mondi
     [[150, 900], [450, 760], [760, 860], [1060, 700], [1360, 820], [1640, 560]],    // treno tra i mondi
     [[900, 1080], [1290, 860], [560, 760], [1230, 560], [600, 420], [900, 190]],    // torre del tempo
@@ -115,6 +116,9 @@ const MappeStoria = (() => {
     [[150, 1180, "⌂", "Biglietteria"], [300, 925, "♟", "Statua"], [470, 610, "▣", "Ritratti"], [960, 1110, "▭", "Panchina"],
      [1690, 1080, "☼", "Il Guardiano"], [1640, 700, "⚔", "Battaglie"], [1360, 250, "✦", "Lucernario"], [1060, 600, "⚠", "Allarme Laser"],
      [780, 110, "♛", "La Gioconda"], [400, 430, "❦", "Cordone di Velluto"]],
+    [[120, 1140, "⚓", "Porto dei Pirati"], [380, 760, "♣", "Taverna dello Sgombro"], [760, 1130, "⚖", "Mercato Nero"], [1180, 690, "≋", "Scogliera delle Sirene"],
+     [1700, 1060, "☠", "Relitto"], [1680, 560, "⛵", "Battaglia Navale"], [1080, 140, "✕", "La X del Tesoro"], [360, 330, "♪", "Isola dei Pappagalli"],
+     [640, 520, "◎", "Gorgo"], [1560, 220, "☼", "Faro"]],
     [[120, 1110, "◇", "Lo specchio"], [380, 600, "✦", "Mondo di Giulia"], [760, 1110, "✧", "Mondo di Viky"], [1300, 540, "⌘", "Labirinto"],
      [1660, 1010, "◈", "Mondo di Senè"], [900, 150, "∞", "Il Cuore del Multiverso"], [300, 260, "◐", "Frammenti"], [1600, 280, "◑", "Specchi rotti"]],
     [[100, 1050, "⌂", "Stazione"], [330, 560, "☕", "Carrozza Ristorante"], [760, 1060, "☾", "Carrozza Letto"], [1060, 520, "⌒", "Ponte Sospeso"],
@@ -1006,6 +1010,50 @@ const MappeStoria = (() => {
     for (let k = 0; k < 16; k++) { const x = r() * W, y = r() * H; s += `<path d="${blob(x, y, 8 + r() * 12, 6 + r() * 10, r, 9, .6)}" fill="${vern[k % vern.length]}" opacity=".45"/>`; }
     return s;
   }
+  function pirati(r) {
+    // i sette mari visti dall'alto: acqua profonda con le onde, isolette con palme, la nave del capitano, un relitto,
+    // il gorgo, il faro e l'isola del tesoro con la X, collegate da una rotta tratteggiata sulla mappa
+    let s = `<defs><radialGradient id="mareP" cx=".5" cy=".55" r=".75"><stop offset="0" stop-color="#1c6f96"/><stop offset=".6" stop-color="#11506f"/><stop offset="1" stop-color="#0a2c42"/></radialGradient>
+      <radialGradient id="secca"><stop offset="0" stop-color="#4fc3d8" stop-opacity=".55"/><stop offset="1" stop-color="#4fc3d8" stop-opacity="0"/></radialGradient></defs>
+      <rect width="${W}" height="${H}" fill="url(#mareP)"/>`;
+    for (let k = 0; k < 170; k++) { const x = r() * W, y = r() * H; s += `<path d="M${f(x)},${f(y)} q12,-9 24,0 t24,0" stroke="#7fd0e8" stroke-width="2.5" fill="none" opacity="${(.15 + r() * .3).toFixed(2)}"/>`; }
+    // isole: [x, y, larghezza, altezza]
+    const isole = [[180, 1060, 240, 120], [600, 870, 200, 110], [1020, 1020, 220, 110], [1460, 880, 230, 120], [1480, 480, 190, 110], [360, 330, 170, 100], [880, 280, 330, 190]];
+    for (const [x, y, w, h] of isole) {
+      s += `<ellipse cx="${x}" cy="${y}" rx="${w * .9}" ry="${h * .9}" fill="url(#secca)"/>`;
+      s += `<path d="${blob(x, y, w * .55, h * .55, r, 18, .25)}" fill="#e8d39a" stroke="#c9ad6a" stroke-width="4"/>`;
+      s += `<path d="${blob(x, y - 6, w * .36, h * .32, r, 14, .3)}" fill="#3f9a4e"/>`;
+      for (let k = 0; k < 3; k++) {   // palme
+        const px = x - w * .2 + r() * w * .4, py = y - h * .15 + r() * h * .2;
+        s += `<path d="M${f(px)},${f(py)} q6,-26 2,-46" stroke="#7a5230" stroke-width="7" fill="none" stroke-linecap="round"/>`;
+        for (const a of [-70, -30, 10, 50, 100]) s += `<path d="M${f(px + 2)},${f(py - 46)} q${f(Math.cos(a * Math.PI / 180) * 20)},${f(Math.sin(a * Math.PI / 180) * 20 - 10)} ${f(Math.cos(a * Math.PI / 180) * 38)},${f(Math.sin(a * Math.PI / 180) * 38)}" stroke="#2f8a3a" stroke-width="8" fill="none" stroke-linecap="round"/>`;
+      }
+    }
+    // la rotta tratteggiata da un'isola all'altra, fino al tesoro
+    const rotta = [[110, 1160], [230, 1010], [600, 830], [1010, 990], [1450, 860], [1460, 470], [880, 300]];
+    s += `<path d="${curva(rotta)}" stroke="#f4e2b8" stroke-width="7" stroke-dasharray="22 16" fill="none" opacity=".75"/>`;
+    // la X del tesoro e il forziere
+    s += `<path d="M965,205 L1025,265 M1025,205 L965,265" stroke="#c0392b" stroke-width="16" stroke-linecap="round"/>`;
+    s += `<g transform="translate(880 300)"><rect x="-46" y="-26" width="92" height="56" rx="6" fill="#8a5a2b" stroke="#3a2410" stroke-width="5"/><path d="M-46,-26 Q0,-62 46,-26" fill="#a06a34" stroke="#3a2410" stroke-width="5"/><rect x="-8" y="-12" width="16" height="20" fill="#f2c14e" stroke="#3a2410" stroke-width="3"/>${[-30, -12, 8, 26].map(x => `<circle cx="${x}" cy="-40" r="7" fill="#f2c14e" stroke="#b8862a" stroke-width="2"/>`).join("")}</g>`;
+    // la nave del capitano con la bandiera nera, e una nave nemica
+    const nave = (x, y, sc, vela, bandiera) => `<g transform="translate(${x} ${y}) scale(${sc})"><path d="M-110,0 L110,0 L80,46 L-80,46Z" fill="#6a3f1e" stroke="#2a160a" stroke-width="5"/>${[-60, -20, 20, 60].map(cx => `<circle cx="${cx}" cy="20" r="7" fill="#1a0f08"/>`).join("")}<rect x="-6" y="-150" width="12" height="150" fill="#4a2a12"/><path d="M-70,-130 Q0,-100 70,-130 L60,-30 Q0,-10 -60,-30Z" fill="${vela}" stroke="#8a7a5a" stroke-width="4"/><path d="M6,-150 L60,-140 L6,-128Z" fill="${bandiera}"/></g>`;
+    s += nave(1690, 600, .9, "#efe6cf", "#111");
+    s += nave(1290, 640, .6, "#d9c7a0", "#c0392b");
+    // palle di cannone e fumo tra le due navi
+    for (let k = 0; k < 5; k++) s += `<circle cx="${f(1380 + k * 50)}" cy="${f(560 - Math.sin(k / 4 * Math.PI) * 60)}" r="7" fill="#222"/>`;
+    for (let k = 0; k < 6; k++) s += `<circle cx="${f(1560 + r() * 80)}" cy="${f(560 + r() * 60)}" r="${f(16 + r() * 18)}" fill="#e8e8e8" opacity=".35"/>`;
+    // relitto mezzo affondato
+    s += `<g transform="translate(1700 1060) rotate(-18)"><path d="M-90,0 L90,0 L60,34 L-60,34Z" fill="#4a3220" stroke="#1a0f08" stroke-width="4" opacity=".85"/><rect x="-5" y="-90" width="10" height="90" fill="#3a2414"/><path d="M5,-88 L40,-78 L5,-66Z" fill="#111"/></g>`;
+    // il gorgo
+    for (let k = 0; k < 5; k++) s += `<ellipse cx="640" cy="520" rx="${30 + k * 22}" ry="${18 + k * 13}" fill="none" stroke="#bfe9f5" stroke-width="3" opacity="${(.55 - k * .09).toFixed(2)}" transform="rotate(${k * 14} 640 520)"/>`;
+    // i tentacoli del mostro marino
+    for (const [x, y, a] of [[520, 640, -20], [760, 650, 25]]) s += `<path d="M${x},${y} q${a},-60 ${a * 2},-30 q${a},30 ${a * .5},60" stroke="#7a2a5a" stroke-width="14" fill="none" stroke-linecap="round" opacity=".85"/>`;
+    // il faro su uno scoglio
+    s += `<path d="${blob(1560, 250, 70, 34, r)}" fill="#4a4a4a"/><path d="M1545,245 L1552,140 L1568,140 L1575,245Z" fill="#f4f4f4" stroke="#c0392b" stroke-width="5"/><circle cx="1560" cy="134" r="12" fill="#ffe08a"/><path d="M1560,134 L1380,80 L1390,190Z" fill="#ffe08a" opacity=".18"/>`;
+    // rosa dei venti in basso a sinistra
+    s += `<g transform="translate(150 200)"><circle r="70" fill="#0d2c4a" stroke="#d8c890" stroke-width="4"/><path d="M0,-62 L12,0 L0,62 L-12,0Z M-62,0 L0,-12 L62,0 L0,12Z" fill="#d8c890"/><text y="-76" text-anchor="middle" font-size="26" fill="#d8c890">N</text></g>`;
+    return s;
+  }
   function sakura(r) {
     // la valle dei kami: luna rossa, Fuji, ciliegi in fiore, torii, pagoda, dojo, lago dell'Orochi, vetta del tengu e santuario
     let s = `<defs><linearGradient id="cieloJp" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#140a1e"/><stop offset=".6" stop-color="#4a1a3a"/><stop offset="1" stop-color="#b24a5a"/></linearGradient>
@@ -1172,7 +1220,7 @@ const MappeStoria = (() => {
     s += `<g transform="translate(1660 1060)"><circle r="70" fill="#0d2c4a" stroke="#d8c890" stroke-width="4"/><path d="M0,-62 L12,0 L0,62 L-12,0Z M-62,0 L0,-12 L62,0 L0,12Z" fill="#d8c890"/><text y="-74" text-anchor="middle" font-size="26" fill="#d8c890">N</text></g>`;
     return s;
   }
-  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, farwest, rovine, sakura, circo, inutili, colori, arte, specchi, treno, torre, dimensione];
+  const TERRENI = [citta, isola, metropoli, olimpo, castello, porto, deserto, lunapark, vulcano, inferi, lavoro, springfield, barbacasa, galassia, elementi, notte, futuro, tavolo, mondo, farwest, rovine, sakura, circo, inutili, colori, arte, pirati, specchi, treno, torre, dimensione];
 
   const cache = {};
   function svg(k) {
@@ -1200,7 +1248,7 @@ const MappeStoria = (() => {
     // colore di base e colore delle nuvole per ogni capitolo
     const NEBBIE = [["#2b2433", "214,196,232"], ["#9fb4c8", "255,255,255"], ["#363e4e", "200,214,236"], ["#c9d4de", "255,255,255"], ["#1c2638", "205,220,245"],
       ["#162230", "180,210,235"], ["#c9a86a", "255,240,210"], ["#22102e", "240,180,255"], ["#2a1410", "255,190,150"], ["#1e0608", "255,120,110"], ["#b8c4cc", "255,255,255"],
-      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"], ["#3a1c10", "255,214,170"], ["#1c0c08", "255,170,130"], ["#1a0a1e", "255,200,220"], ["#12082a", "220,190,255"], ["#d98aa8", "255,240,245"], ["#3a2a7a", "255,220,250"], ["#2a2630", "240,225,200"],
+      ["#4a6a8a", "255,250,220"], ["#6a4a6a", "255,220,240"], ["#070a1c", "180,200,255"], ["#1c2a34", "200,255,235"], ["#100c1c", "200,190,240"], ["#0a0818", "170,220,255"], ["#2a1a0e", "255,230,180"], ["#123c66", "230,245,255"], ["#3a1c10", "255,214,170"], ["#1c0c08", "255,170,130"], ["#1a0a1e", "255,200,220"], ["#12082a", "220,190,255"], ["#d98aa8", "255,240,245"], ["#3a2a7a", "255,220,250"], ["#2a2630", "240,225,200"], ["#0e2a3c", "200,235,250"],
       ["#160a26", "220,190,255"], ["#2a3240", "200,225,255"], ["#1a1206", "255,225,150"], ["#24123c", "214,170,255"]];
     const [base, nuv] = NEBBIE[k] || NEBBIE[0];
     g.fillStyle = base; g.fillRect(0, 0, W, H);

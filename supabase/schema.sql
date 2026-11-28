@@ -692,6 +692,21 @@ create or replace function public.rarita_base(carta text) returns text language 
     when 'michele' then 'jolly'
     when 'tomm' then 'jolly'
     when 'yaska' then 'jolly'
+    when 'capbarbaludo' then 'leggendaria'
+    when 'giulisirena' then 'leggendaria'
+    when 'cannonessia' then 'leggendaria'
+    when 'vikysciabola' then 'epica'
+    when 'ritimone' then 'epica'
+    when 'aurorum' then 'epica'
+    when 'tiziancora' then 'epica'
+    when 'senebottino' then 'rara'
+    when 'pipagallo' then 'rara'
+    when 'alicorsara' then 'rara'
+    when 'diegobussola' then 'rara'
+    when 'samozzo' then 'comune'
+    when 'maurigamba' then 'comune'
+    when 'simonfantasma' then 'comune'
+    when 'lollocambusa' then 'comune'
   end;
 $$;
 -- FINE RARITA
@@ -983,7 +998,7 @@ language sql immutable as $$
     when 'vittoria-1' then 'Recluta' when 'vittorie-50' then 'Veterano' when 'vittorie-200' then 'Leggenda'
     when 'carte-25' then 'Collezionista' when 'carte-50' then 'Archivista' when 'carte-tutte' then 'Completista'
     when 'serie-eroi' then 'Supereroe' when 'serie-db' then 'Guerriero leggendario' when 'serie-dei' then 'Divinità'
-    when 'serie-nueve' then 'Boss della mala' when 'serie-maghi' then 'Arcimago' when 'serie-demoni' then 'Signore degli Inferi' when 'serie-mestieri' then 'Stacanovista' when 'serie-simpson' then 'Re di Springfield' when 'serie-barbapapa' then 'Barbatrucco' when 'serie-starwars' then 'Maestro Jedi' when 'serie-elementi' then 'Avatar degli Elementi' when 'serie-creature' then 'Signore della Notte' when 'serie-cyborg' then 'Cyborg Supremo' when 'serie-carte' then 'Re del Mazzo' when 'serie-paesi' then 'Cittadino del Mondo' when 'serie-farwest' then 'Sceriffo della Frontiera' when 'serie-apocalisse' then 'Ultimo Sopravvissuto' when 'serie-giappone' then 'Shogun del Sol Levante' when 'serie-circo' then 'Direttore del Circo Stellare' when 'serie-inutili' then 'Re del Dolce Far Niente' when 'serie-colori' then 'Maestro dell''Arcobaleno' when 'serie-arte' then 'Curatore del Museo' when 'serie-ospiti' then 'Amico di Tutti' when 'giocatore-10' then 'Veterano' when 'giocatore-20' then 'Campione' when 'giocatore-30' then 'Gran Maestro' when 'giocatore-40' then 'Leggenda vivente' when 'giocatore-50' then 'Mito del Noiverso' when 'giocatore-60' then 'Signore delle carte' when 'giocatore-70' then 'Imbattibile' when 'giocatore-80' then 'Leggenda del gruppo' when 'giocatore-90' then 'Semidio' when 'giocatore-100' then 'Il Numero Uno'
+    when 'serie-nueve' then 'Boss della mala' when 'serie-maghi' then 'Arcimago' when 'serie-demoni' then 'Signore degli Inferi' when 'serie-mestieri' then 'Stacanovista' when 'serie-simpson' then 'Re di Springfield' when 'serie-barbapapa' then 'Barbatrucco' when 'serie-starwars' then 'Maestro Jedi' when 'serie-elementi' then 'Avatar degli Elementi' when 'serie-creature' then 'Signore della Notte' when 'serie-cyborg' then 'Cyborg Supremo' when 'serie-carte' then 'Re del Mazzo' when 'serie-paesi' then 'Cittadino del Mondo' when 'serie-farwest' then 'Sceriffo della Frontiera' when 'serie-apocalisse' then 'Ultimo Sopravvissuto' when 'serie-giappone' then 'Shogun del Sol Levante' when 'serie-circo' then 'Direttore del Circo Stellare' when 'serie-inutili' then 'Re del Dolce Far Niente' when 'serie-colori' then 'Maestro dell''Arcobaleno' when 'serie-arte' then 'Curatore del Museo' when 'serie-pirati' then 'Terrore dei Sette Mari' when 'serie-ospiti' then 'Amico di Tutti' when 'giocatore-10' then 'Veterano' when 'giocatore-20' then 'Campione' when 'giocatore-30' then 'Gran Maestro' when 'giocatore-40' then 'Leggenda vivente' when 'giocatore-50' then 'Mito del Noiverso' when 'giocatore-60' then 'Signore delle carte' when 'giocatore-70' then 'Imbattibile' when 'giocatore-80' then 'Leggenda del gruppo' when 'giocatore-90' then 'Semidio' when 'giocatore-100' then 'Il Numero Uno'
     when 'olo-1' then 'Brillante' when 'olo-5' then 'Arcobaleno' when 'livello-10' then 'Allenatore' when 'livello-30' then 'Maestro'
     when 'lode-1' then 'Lodato' when 'bustine-50' then 'Strappabustine' when 'stelle-30' then 'Narratore' when 'stelle-120' then 'Giramondo' when 'ultra-1' then 'Ultra' when 'pass-50' then 'Fedelissimo'
     when 'accessi-7' then 'Sempre presente' when 'amici-10' then 'Bullo di quartiere' when 'boss-20000' then 'Ammazzaboss' when 'scambi-3' then 'Mercante'
@@ -1759,6 +1774,6 @@ grant execute on function public.registra_enigma(date, integer), public.classifi
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select '0a4715a86a'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select '4505a25137'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE

@@ -620,8 +620,9 @@ const Progressi = (() => {
 
 // ---------------- Novità (una volta sola per ogni aggiornamento) ----------------
 const Novita = (() => {
-  const VERSIONE = "2026-11-boss", ENIGMA = "2026-11-enigma", PRIMA = "2026-11-album";
+  const VERSIONE = "2026-11-pirati", BOSS = "2026-11-boss", ENIGMA = "2026-11-enigma", PRIMA = "2026-11-album";
   const NUOVE = [
+    { ico: "⚓", titolo: "Nuova serie: i Pirati", testo: "15 carte nuove: Capitan Barbaludo, Giulisirena, Cannonessia, Pipagallo e tutta la ciurma. La loro sinergia è il bottino: quando colpiscono possono rubare energia al nemico. C'è anche un capitolo nuovo della storia, «I sette mari», con la sua regola nella Leggenda." },
     { ico: "👹", titolo: "Boss della settimana senza fine", testo: "Quando il gruppo abbatte il boss della settimana ne arriva subito un altro, un po' più forte, fino a domenica: si continua ad attaccare e ogni boss dà il suo premio. Il premio cresce a ogni boss abbattuto, e se a fine settimana l'ultimo boss è ancora in piedi chi l'ha colpito riceve lo stesso un premio di consolazione. C'è anche il record del gruppo, i boss abbattuti in una settimana: chi colpisce il boss che lo batte prende un premio in più." },
     { ico: "🧩", titolo: "Enigma del giorno", testo: "In Gioca › Eventi: ogni giorno la stessa battaglia per tutti, con squadra e avversario già decisi. Vincila nel minor numero di turni: puoi riprovare quanto vuoi e c'è la classifica di oggi con gli amici. La prima vittoria del giorno dà monete." },
     { ico: "🎁", titolo: "Regali tra amici", testo: "Ogni giorno puoi mandare un regalo gratis a un amico: tocca il suo nome in classifica e «Manda un regalo». Vale 3 potenziatori universali ✪. I regali che ricevi li trovi nella Home." },
@@ -644,7 +645,7 @@ const Novita = (() => {
     if (!$("#modale").hidden || (typeof B !== "undefined" && B)) return;
     if (!(S.stats.vittorie + S.stats.sconfitte)) { S.novita = VERSIONE; return; }   // chi è appena arrivato le scopre col tutorial
     // chi aveva già visto quelle dell'Enigma vede solo il boss; chi non aveva visto le novità di prima le vede dopo queste
-    SCHEDE = S.novita === ENIGMA ? NUOVE.slice(0, 1) : NUOVE.concat(S.novita === PRIMA ? [] : VECCHIE);
+    SCHEDE = S.novita === BOSS ? NUOVE.slice(0, 1) : S.novita === ENIGMA ? NUOVE.slice(0, 2) : NUOVE.concat(S.novita === PRIMA ? [] : VECCHIE);
     i = 0; mostra();
   }
   function mostra() {
