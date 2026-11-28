@@ -837,25 +837,27 @@ revoke all on public.boss_settimana, public.boss_danni from anon;
 create or replace function public.settimana_attuale() returns text
 language sql stable as $$ select to_char(now() at time zone 'Europe/Rome', 'IYYY-"W"IW') $$;
 
+-- nov 2026: PV fissi, non dipendono più da quanti giocano. Il boss n° n della settimana ha 30.000 + 5.000 × (n − 1) PV:
+-- 1° 30.000, 2° 35.000, 3° 40.000, 4° 45.000...
+create or replace function public.pv_boss(n integer) returns integer
+language sql immutable as $$ select (30000 + 5000 * (greatest(coalesce(n, 1), 1) - 1))::int $$;
 create or replace function public.pv_boss_nuovo() returns integer
-language sql stable security definer set search_path = public as $$
-  select greatest(20000, 6000 * (select count(*) from public.salvataggi where slot = 'partita' and aggiornato > now() - interval '14 days'))::int;
-$$;
--- il boss di questa settimana, se era stato creato con i PV vecchi (troppi), si abbassa
-update public.boss_settimana set pv_max = least(pv_max, public.pv_boss_nuovo()) where settimana = to_char(now() at time zone 'Europe/Rome', 'IYYY-"W"IW');
--- nov 2026: più boss nella stessa settimana. Quando il gruppo abbatte un boss ne arriva subito un altro (più forte del
--- 25% a ogni giro), fino a domenica: si continua ad attaccare e ognuno dà il suo premio. Gli attacchi restano 3 al giorno
+language sql immutable as $$ select public.pv_boss(1) $$;
+-- nov 2026: più boss nella stessa settimana. Quando il gruppo abbatte un boss ne arriva subito un altro (5.000 PV in
+-- più a ogni giro), fino a domenica: si continua ad attaccare e ognuno dà il suo premio. Gli attacchi restano 3 al giorno
 -- a testa in tutto (non 3 per boss). Ogni boss ha la sua riga: il primo usa la settimana come chiave ("2026-W48"),
 -- i successivi "2026-W48-2", "2026-W48-3"... Record: il massimo di boss abbattuti in una settimana.
--- Esempio: 5 giocatori → primo boss 30.000 PV, secondo 37.500, terzo 45.000.
+-- PV: 30.000 il primo, poi 5.000 in più per ogni boss (35.000, 40.000...).
 alter table public.boss_settimana add column if not exists iso text;
 alter table public.boss_settimana add column if not exists numero integer not null default 1;
 update public.boss_settimana set iso = settimana where iso is null;
 create index if not exists boss_settimana_iso on public.boss_settimana (iso, numero);
 
--- correzione: i boss successivi creati con i PV ricalcolati (troppi) tornano al +25% per boss rispetto al primo
-update public.boss_settimana b set pv_max = round(p.pv_max * (1 + 0.25 * (b.numero - 1)))::int
-  from public.boss_settimana p where p.settimana = b.iso and b.numero > 1 and b.pv_max > round(p.pv_max * (1 + 0.25 * (b.numero - 1)));
+-- correzione: i boss della settimana in corso non ancora abbattuti prendono i PV fissi (quelli già abbattuti restano
+-- come sono, così i loro premi restano validi)
+update public.boss_settimana b set pv_max = public.pv_boss(b.numero)
+  where b.iso = to_char(now() at time zone 'Europe/Rome', 'IYYY-"W"IW') and b.pv_max <> public.pv_boss(b.numero)
+    and (select coalesce(sum(d.danni), 0) from public.boss_danni d where d.settimana = b.settimana) < b.pv_max;
 
 -- quanti boss sono caduti in una settimana
 create or replace function public.boss_caduti(sett text) returns integer
@@ -867,19 +869,15 @@ $$;
 -- il boss di adesso della settimana: l'ultimo; se è già caduto, crea il successivo
 create or replace function public.boss_corrente() returns public.boss_settimana
 language plpgsql security definer set search_path = public as $$
-declare s text := public.settimana_attuale(); b public.boss_settimana; tot int; pv1 int;
+declare s text := public.settimana_attuale(); b public.boss_settimana; tot int;
 begin
-  -- i PV crescono con quanti giocano: 6.000 per ogni giocatore attivo nelle ultime 2 settimane (almeno 20.000)
-  insert into public.boss_settimana (settimana, pv_max, iso, numero) values (s, public.pv_boss_nuovo(), s, 1) on conflict (settimana) do nothing;
-  -- i boss successivi partono dai PV del PRIMO boss della settimana (non ricalcolati: nel frattempo gli attivi
-  -- possono essere cambiati). Esempio: primo 30.000 → secondo 37.500 → terzo 45.000 → quarto 52.500.
-  select pv_max into pv1 from public.boss_settimana where settimana = s;
+  insert into public.boss_settimana (settimana, pv_max, iso, numero) values (s, public.pv_boss(1), s, 1) on conflict (settimana) do nothing;
   loop
     select * into b from public.boss_settimana where iso = s order by numero desc limit 1;
     select coalesce(sum(danni), 0) into tot from public.boss_danni where settimana = b.settimana;
     exit when tot < b.pv_max or b.numero >= 50;
     insert into public.boss_settimana (settimana, pv_max, iso, numero)
-      values (s || '-' || (b.numero + 1), round(pv1 * (1 + 0.25 * b.numero))::int, s, b.numero + 1)
+      values (s || '-' || (b.numero + 1), public.pv_boss(b.numero + 1), s, b.numero + 1)
       on conflict (settimana) do nothing;
   end loop;
   return b;
@@ -1761,6 +1759,6 @@ grant execute on function public.registra_enigma(date, integer), public.classifi
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select '870e60a545'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select '0a4715a86a'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE
