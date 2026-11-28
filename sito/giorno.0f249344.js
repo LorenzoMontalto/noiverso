@@ -177,23 +177,33 @@ const Enigma = (() => {
   }
   const mio = () => (S.enigma && S.enigma.giorno === oggi()) ? S.enigma : null;   // { giorno, migliore (turni), inviato (turni confermati dal server), tentativi, premiato }
   let classifica = null, ultimo = null, erroreInvio = "", inCorso = false, caricataAlle = 0;
-  async function caricaClassifica() {
+  async function caricaClassifica(controlla = true) {
     if (!socialeAttivo()) return;
     try { classifica = { giorno: oggi(), righe: await rpcSociale("classifica_enigma", { giorno: oggi() }) || [] }; }
     catch (e) { classifica = { giorno: oggi(), righe: classifica && classifica.righe || [], errore: String(e.message || e) }; }
     caricataAlle = Date.now();
+    // controllo finale: ho un risultato di oggi ma in classifica non ci sono (e non è piena)? Allora il server non
+    // l'ha salvato davvero: lo rimando subito, una volta sola per apertura (niente giri infiniti)
+    const m = mio();
+    if (controlla && m && m.migliore && !S.admin && !classifica.errore && Array.isArray(classifica.righe) && classifica.righe.length < 50
+        && !classifica.righe.some(r => r.id === Archivio.uid)) { m.inviato = 0; return invia(false); }
     if (vista === VISTA && !B) disegnaQuieto();
   }
   // manda al server il risultato migliore di oggi se non l'ha ancora ricevuto (anche se un invio prima era fallito,
-  // per esempio offline o prima di aggiornare il database), poi ricarica la classifica
-  async function invia() {
+  // per esempio offline o prima di aggiornare il database), poi ricarica la classifica.
+  // Vale come ricevuto solo se il server risponde con il numero di turni che ha salvato (una versione vecchia
+  // del database poteva rispondere «niente» senza salvare).
+  async function invia(controlla = true) {
     const m = mio();
-    if (inCorso || !m || !m.migliore || m.inviato === m.migliore || !socialeAttivo() || S.admin) return caricaClassifica();
+    if (inCorso || !m || !m.migliore || m.inviato === m.migliore || !socialeAttivo() || S.admin) return caricaClassifica(controlla);
     inCorso = true;
-    try { await rpcSociale("registra_enigma", { giorno: m.giorno, turni: m.migliore }); m.inviato = m.migliore; erroreInvio = ""; salva(); }
-    catch (e) { erroreInvio = String(e.message || e); }
+    try {
+      const salvato = await rpcSociale("registra_enigma", { giorno: m.giorno, turni: m.migliore });
+      if (Number.isFinite(+salvato) && +salvato > 0 && +salvato <= m.migliore) { m.inviato = m.migliore; erroreInvio = ""; salva(); }
+      else erroreInvio = "il server non ha salvato il risultato (esegui di nuovo schema.sql su Supabase)";
+    } catch (e) { erroreInvio = String(e.message || e); }
     inCorso = false;
-    return caricaClassifica();
+    return caricaClassifica(controlla);
   }
   function gioca() {
     const E = delGiorno();
@@ -236,6 +246,7 @@ const Enigma = (() => {
       <div class="cm-box en-classifica"><h3>🧩 Classifica di oggi</h3>${!socialeAttivo() ? `<p class="nota">La classifica si vede solo giocando online.</p>` : righe === null ? `<p class="nota">Carico…</p>` : righe.length
         ? `<ol>${righe.slice(0, 15).map((r, i) => `<li class="${r.id === Archivio.uid ? "io" : ""}"><span>${["🥇", "🥈", "🥉"][i] || i + 1 + "."}</span><b>${esc(String(r.nome || "Giocatore"))}</b><em>${num(r.turni)} turni</em></li>`).join("")}</ol>`
         : `<p class="nota">${classifica.errore ? "" : "Nessuno l'ha ancora risolto oggi: il primo posto è libero."}</p>`}
+        ${S.admin ? `<p class="nota">Sei nello slot admin: i risultati di qui non vanno in classifica.</p>` : ""}
         ${socialeAttivo() && (classifica.errore || erroreInvio) ? `<p class="nota errore">Non riesco ${erroreInvio ? "a mandare il tuo risultato" : "a leggere la classifica"}: ${esc(erroreInvio || classifica.errore)}. Riprovo da solo quando riapri questa pagina.</p>` : ""}
         ${m && m.migliore && m.inviato !== m.migliore && socialeAttivo() && !S.admin && !erroreInvio ? `<p class="nota">Sto mandando il tuo risultato…</p>` : ""}</div>
     </div>`;
