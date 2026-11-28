@@ -620,8 +620,9 @@ const Progressi = (() => {
 
 // ---------------- Novità (una volta sola per ogni aggiornamento) ----------------
 const Novita = (() => {
-  const VERSIONE = "2026-11-enigma", PRIMA = "2026-11-album";
+  const VERSIONE = "2026-11-boss", ENIGMA = "2026-11-enigma", PRIMA = "2026-11-album";
   const NUOVE = [
+    { ico: "👹", titolo: "Boss della settimana senza fine", testo: "Quando il gruppo abbatte il boss della settimana ne arriva subito un altro, un po' più forte, fino a domenica: si continua ad attaccare e ogni boss dà il suo premio. C'è anche il record del gruppo, i boss abbattuti in una settimana: chi colpisce il boss che lo batte prende un premio in più." },
     { ico: "🧩", titolo: "Enigma del giorno", testo: "In Gioca › Eventi: ogni giorno la stessa battaglia per tutti, con squadra e avversario già decisi. Vincila nel minor numero di turni: puoi riprovare quanto vuoi e c'è la classifica di oggi con gli amici. La prima vittoria del giorno dà monete." },
     { ico: "🎁", titolo: "Regali tra amici", testo: "Ogni giorno puoi mandare un regalo gratis a un amico: tocca il suo nome in classifica e «Manda un regalo». Vale 3 potenziatori universali ✪. I regali che ricevi li trovi nella Home." },
     { ico: "◈", titolo: "Frammenti in potenziatori", testo: "Ti avanzano frammenti? Tocca ◈ in alto: ogni 20 frammenti diventano 1 potenziatore universale ✪, che vale per qualsiasi carta." },
@@ -642,7 +643,8 @@ const Novita = (() => {
     if (typeof Tutorial !== "undefined" && Tutorial.attivo) { setTimeout(controlla, 20000); return; }
     if (!$("#modale").hidden || (typeof B !== "undefined" && B)) return;
     if (!(S.stats.vittorie + S.stats.sconfitte)) { S.novita = VERSIONE; return; }   // chi è appena arrivato le scopre col tutorial
-    SCHEDE = NUOVE.concat(S.novita === PRIMA ? [] : VECCHIE);   // chi non aveva visto le novità di prima le vede dopo queste
+    // chi aveva già visto quelle dell'Enigma vede solo il boss; chi non aveva visto le novità di prima le vede dopo queste
+    SCHEDE = S.novita === ENIGMA ? NUOVE.slice(0, 1) : NUOVE.concat(S.novita === PRIMA ? [] : VECCHIE);
     i = 0; mostra();
   }
   function mostra() {

@@ -138,6 +138,9 @@ const Amici = (() => {
 const Boss = (() => {
   let stato = null, errore = null, inCarica = false;
   const PREMIO = { monete: piuMonete(300), bustine: { leggendaria: 1 } }, PREMIO_MVP = { bustine: { epica: 1 } };
+  // nov 2026: quando un boss cade ne arriva subito un altro (sul server). Un boss che batte il record del gruppo
+  // (più boss abbattuti in una settimana che mai) dà in più questo premio a tutti quelli che l'hanno colpito.
+  const PREMIO_RECORD = { monete: piuMonete(200), bustine: { leggendaria: 1 } };
 
   function cartaBoss(sett) {
     const leg = CARTE.filter(c => c.rarita === "leggendaria");
@@ -160,6 +163,12 @@ const Boss = (() => {
     if (B) return;
     for (const el of document.querySelectorAll("[data-boss-box]")) el.outerHTML = el.dataset.bossBox === "grande" ? htmlGrande() : htmlCompatto();
   }
+  // "2026-W40" → "settimana del 28 set" (il lunedì di quella settimana ISO)
+  function lunediDi(w) {
+    const m = /^(\d{4})-W(\d{2})/.exec(String(w)); if (!m) return String(w);
+    const g4 = new Date(Date.UTC(+m[1], 0, 4)), lun = new Date(g4 - ((g4.getUTCDay() + 6) % 7) * 864e5 + (+m[2] - 1) * 7 * 864e5);
+    return "settimana del " + lun.toLocaleDateString("it-IT", { day: "numeric", month: "short", timeZone: "UTC" });
+  }
   const rimasti = () => stato ? Math.max(0, stato.pv_max - stato.danni) : 0;
   const tempo = () => { if (!stato) return ""; const ms = new Date(stato.fine) - new Date(), g = Math.floor(ms / 864e5), h = Math.floor(ms / 36e5) % 24; return ms <= 0 ? "finito" : g ? `${g} g e ${h} h` : `${h} h`; };
 
@@ -172,23 +181,26 @@ const Boss = (() => {
     if (stato && !inCarica && (caricatoIl !== giornoRoma() || Date.now() - caricatoAlle > 5 * 60e3)) setTimeout(() => carica(), 0);
     if (!stato) { if (!errore) setTimeout(() => carica(), 0); return `<div class="boss-box" data-boss-box="${tipo}"><p class="nota">${errore ? esc(errore) : "Cerco il boss della settimana…"}</p></div>`; }
     const c = cartaBoss(stato.settimana), r = rimasti(), pct = Math.round(r / stato.pv_max * 100), caduto = r <= 0;
+    if (caduto && !inCarica) setTimeout(() => carica(true), 1500);   // il server ha già pronto il prossimo boss
+    const n = stato.numero || 1, cad = stato.caduti || 0, rec = stato.record || 0;
     const colpi = stato.colpi_oggi || 0, premi = stato.da_riscuotere || [];
     const top = (stato.classifica || []).slice(0, grande ? 10 : 3);
     return `<div class="boss-box ${caduto ? "caduto" : ""}" data-boss-box="${tipo}">
       <div class="boss-testa">
         <img src="${imgCarta(c.id)}" alt="">
-        <div><small class="boss-etichetta">Boss della settimana · finisce tra ${tempo()}</small>
+        <div><small class="boss-etichetta">${n > 1 ? `Boss n° ${n} della settimana` : "Boss della settimana"} · finisce tra ${tempo()}</small>
           <b>${esc(c.nome)} Gigante</b>
           <div class="boss-pv"><i style="--p:${pct}%"></i><span>${caduto ? "SCONFITTO!" : `${r.toLocaleString("it-IT")} / ${stato.pv_max.toLocaleString("it-IT")} PV`}</span></div>
         </div>
       </div>
       ${premi.length ? `<button class="btn oro" data-fx="coriandoli" data-boss-premio="${esc(premi[0])}">Riscuoti il premio del boss!</button>` : ""}
-      ${caduto ? `<p class="nota">Il gruppo l'ha battuto. Lunedì arriva un nuovo boss.</p>` : `<div class="boss-azioni">
+      <div class="boss-record"><span>☠ Abbattuti questa settimana: <b>${cad}</b></span><span>🏆 Record del gruppo: <b>${Math.max(rec, cad)}</b>${cad > rec && cad > 1 ? " · nuovo record!" : rec && stato.record_settimana ? ` <small>(${esc(lunediDi(stato.record_settimana))})</small>` : ""}</span></div>
+      ${caduto ? `<p class="nota">Il gruppo l'ha battuto! Sta arrivando il prossimo boss…</p>` : `<div class="boss-azioni">
         <button class="btn primario" data-fx="spinta" data-azione="attacca-boss" ${colpi >= 3 && !S.admin ? "disabled" : ""}>${colpi >= 3 && !S.admin ? "Attacchi finiti per oggi" : "Attacca"}</button>
         <span class="nota">Attacchi oggi: ${S.admin ? "prova admin" : `${colpi}/3`}</span></div>`}
       ${top.length ? `<ol class="boss-classifica">${top.map((x, i) => `<li class="${x.id === Archivio.uid ? "io" : ""}"><span>${i + 1}</span>${htmlAvatar(String(x.avatar || ""), "mini")}<b>${esc(String(x.nome))}</b><em>${Number(x.danni).toLocaleString("it-IT")}</em></li>`).join("")}</ol>`
         : `<p class="nota">Nessuno l'ha ancora colpito. Sii il primo!</p>`}
-      ${grande ? `<p class="nota piccola">Tutti colpiscono lo stesso boss: 3 attacchi al giorno a testa, al massimo 6.000 danni ad attacco. Se cade entro domenica, chi ha partecipato riceve ${testoPremio(PREMIO)} e una bomboletta; chi ha fatto più danni anche ${testoPremio(PREMIO_MVP)}.</p>` : ""}
+      ${grande ? `<p class="nota piccola">Tutti colpiscono lo stesso boss: 3 attacchi al giorno a testa, al massimo 6.000 danni ad attacco. Quando cade ne arriva subito un altro, più forte, fino a domenica. Ogni boss abbattuto dà a chi l'ha colpito ${testoPremio(PREMIO)} e una bomboletta; a chi gli ha fatto più danni anche ${testoPremio(PREMIO_MVP)}. Se batte il record del gruppo, in più ${testoPremio(PREMIO_RECORD)}.</p>` : ""}
     </div>`;
   }
 
@@ -200,7 +212,7 @@ const Boss = (() => {
     if (!socialeAttivo() || B) return;
     await carica(true);
     if (!stato) { mostraAvviso(errore || "Non trovo il boss."); return; }
-    if (rimasti() <= 0) { mostraAvviso("Il boss è già stato sconfitto."); return; }
+    if (rimasti() <= 0) { mostraAvviso("Il boss è appena caduto: sta arrivando il prossimo, riprova tra un attimo."); return; }
     if (!S.admin && (stato.colpi_oggi || 0) >= 3) { mostraAvviso("Oggi hai già attaccato il boss 3 volte: torna domani."); return; }
     if (squadraAttiva().carte.length < CARTE_SQUADRA) { mostraAvviso("Prima prepara una squadra completa."); vai("squadra"); return; }
     const c = cartaBoss(stato.settimana);
@@ -231,7 +243,7 @@ const Boss = (() => {
     salva(); aggiornaTesta(); aggiornaBattaglia();
     if (su) setTimeout(() => mostraAvviso(`Pass: livello ${su} raggiunto!`), 900);
     if (!b.prova) {
-      try { const r = await rpcSociale("colpisci_boss", { danni: e.contati }); stato = r; e.stato = "ok"; e.sconfittoOra = r.sconfitto_ora; e.rimasti = Math.max(0, r.pv_max - r.danni); }
+      try { const r = await rpcSociale("colpisci_boss", { danni: e.contati }); stato = r; e.stato = "ok"; e.sconfittoOra = r.sconfitto_ora; e.numero = r.abbattuto_numero || 1; e.prossimo = r.numero || 2; e.rimasti = Math.max(0, r.pv_max - r.danni); }
       catch (err) { e.stato = err.message; }
       aggiornaBattaglia();
       if (e.sconfittoOra) setTimeout(() => { FX.esplosione(innerWidth / 2, innerHeight / 3, { n: 120, forma: "stella", colori: ["#f2c14e", "#fff3c4", "#ff2e46"], velocita: 10, dimensione: 6 }); }, 400);
@@ -243,7 +255,7 @@ const Boss = (() => {
     if (!e) return `<div class="fine boss-fine"><b>${B.vincitore === 0 ? "Boss abbattuto!" : "Sconfitta"}</b><span class="nota">Conto i danni…</span></div>`;
     const info = e.stato === "prova" ? `<small class="nota">Prova da admin: i danni non contano.</small>`
       : e.stato === "invio" ? `<small class="nota">Registro i danni…</small>`
-      : e.stato === "ok" ? (e.sconfittoOra ? `<span class="punti-amico">Colpo finale! Il boss è caduto: tutti quelli che l'hanno colpito ricevono il premio.</span>` : `<span class="nota">Al boss restano ${Number(e.rimasti).toLocaleString("it-IT")} PV.</span>`)
+      : e.stato === "ok" ? (e.sconfittoOra ? `<span class="punti-amico">Colpo finale! Il boss${e.numero > 1 ? ` n° ${e.numero}` : ""} è caduto: tutti quelli che l'hanno colpito ricevono il premio. È già arrivato il boss n° ${e.prossimo}.</span>` : `<span class="nota">Al boss restano ${Number(e.rimasti).toLocaleString("it-IT")} PV.</span>`)
       : `<small class="errore">${esc(e.stato)}</small>`;
     return `<div class="fine ${B.vincitore === 0 ? "vinto" : "perso boss-fine"}">
       <b>${B.vincitore === 0 ? "Boss abbattuto!" : "Sconfitta"}</b>
@@ -260,16 +272,18 @@ const Boss = (() => {
       const r = await rpcSociale("riscatta_boss", { sett });
       const p = JSON.parse(JSON.stringify(PREMIO));
       if (r.posizione === 1) for (const [t, n] of Object.entries(PREMIO_MVP.bustine)) p.bustine[t] = (p.bustine[t] || 0) + n;
+      if (r.record) { p.monete = (p.monete || 0) + PREMIO_RECORD.monete; for (const [t, n] of Object.entries(PREMIO_RECORD.bustine)) p.bustine[t] = (p.bustine[t] || 0) + n; }
       daiPremio(p);
       const gr = Graffiti.dai(Graffiti.pesca());
       salva(); aggiornaTesta();
       if (el) { const [x, y] = FX.centro(el); FX.esplosione(x, y, { n: 80, forma: "coriandolo", colori: ["#f2c14e", "#ff2e46", "#3fd8ff", "#fff"], velocita: 9, dimensione: 5 }); }
-      apriModale(`<div class="codice-modale"><span class="codice-tag">Boss sconfitto</span><h2>${r.posizione === 1 ? "Sei l'MVP!" : "Missione compiuta"}</h2>
+      apriModale(`<div class="codice-modale"><span class="codice-tag">${r.numero > 1 ? `Boss n° ${r.numero} sconfitto` : "Boss sconfitto"}</span><h2>${r.posizione === 1 ? "Sei l'MVP!" : "Missione compiuta"}</h2>
+        ${r.record ? `<p class="punti-amico">🏆 Nuovo record del gruppo: ${r.numero} boss abbattuti in una settimana! Premio in più per tutti.</p>` : ""}
         <p>Siete stati in ${r.partecipanti} a colpirlo. Tu hai fatto <b>${Number(r.danni).toLocaleString("it-IT")}</b> danni (${r.posizione}° posto).</p>
         <p class="codice-premio">Hai ricevuto: <b>${esc(testoPremio(p))} + graffito «${esc(Graffiti.info(gr.id).nome)}»</b></p>
         <div class="azioni centro"><button class="btn primario" data-azione="chiudi">Grande!</button></div></div>`);
       carica(true);
     } catch (e) { mostraAvviso(e.message); carica(true); }
   }
-  return { carta: cartaBoss, carica, htmlCompatto, htmlGrande, attacca, prepara, chiudi, htmlFine, riscatta, get stato() { return stato; } };
+  return { PREMIO, PREMIO_MVP, PREMIO_RECORD, carta: cartaBoss, carica, htmlCompatto, htmlGrande, attacca, prepara, chiudi, htmlFine, riscatta, get stato() { return stato; } };
 })();

@@ -808,8 +808,8 @@ where x.stato = 'aperto' and (
   or public.pot_liberi(x.a, x.chiedo, x.id) < coalesce(public.costo_scambio(x.chiedo), 0));
 
 -- ---------------- Boss del gruppo ----------------
--- Ogni settimana (da lunedì a domenica) un boss con tanti PV che tutti colpiscono insieme.
--- 3 attacchi al giorno a testa, al massimo 6000 danni per attacco. Se cade, premio per chi ha partecipato.
+-- Ogni settimana (da lunedì a domenica) un boss con tanti PV che tutti colpiscono insieme; quando cade ne arriva un altro.
+-- 3 attacchi al giorno a testa, al massimo 6000 danni per attacco. Ogni boss che cade dà il premio a chi l'ha colpito.
 create table if not exists public.boss_settimana (
   settimana text primary key,
   pv_max    integer not null,
@@ -843,62 +843,108 @@ language sql stable security definer set search_path = public as $$
 $$;
 -- il boss di questa settimana, se era stato creato con i PV vecchi (troppi), si abbassa
 update public.boss_settimana set pv_max = least(pv_max, public.pv_boss_nuovo()) where settimana = to_char(now() at time zone 'Europe/Rome', 'IYYY-"W"IW');
+-- nov 2026: più boss nella stessa settimana. Quando il gruppo abbatte un boss ne arriva subito un altro (più forte del
+-- 25% a ogni giro), fino a domenica: si continua ad attaccare e ognuno dà il suo premio. Gli attacchi restano 3 al giorno
+-- a testa in tutto (non 3 per boss). Ogni boss ha la sua riga: il primo usa la settimana come chiave ("2026-W48"),
+-- i successivi "2026-W48-2", "2026-W48-3"... Record: il massimo di boss abbattuti in una settimana.
+-- Esempio: 5 giocatori → primo boss 30.000 PV, secondo 37.500, terzo 45.000.
+alter table public.boss_settimana add column if not exists iso text;
+alter table public.boss_settimana add column if not exists numero integer not null default 1;
+update public.boss_settimana set iso = settimana where iso is null;
+create index if not exists boss_settimana_iso on public.boss_settimana (iso, numero);
+
+-- quanti boss sono caduti in una settimana
+create or replace function public.boss_caduti(sett text) returns integer
+language sql stable security definer set search_path = public as $$
+  select count(*)::int from public.boss_settimana b
+  where b.iso = sett and (select coalesce(sum(d.danni), 0) from public.boss_danni d where d.settimana = b.settimana) >= b.pv_max;
+$$;
+
+-- il boss di adesso della settimana: l'ultimo; se è già caduto, crea il successivo
+create or replace function public.boss_corrente() returns public.boss_settimana
+language plpgsql security definer set search_path = public as $$
+declare s text := public.settimana_attuale(); b public.boss_settimana; tot int;
+begin
+  -- i PV crescono con quanti giocano: 6.000 per ogni giocatore attivo nelle ultime 2 settimane (almeno 20.000)
+  insert into public.boss_settimana (settimana, pv_max, iso, numero) values (s, public.pv_boss_nuovo(), s, 1) on conflict (settimana) do nothing;
+  loop
+    select * into b from public.boss_settimana where iso = s order by numero desc limit 1;
+    select coalesce(sum(danni), 0) into tot from public.boss_danni where settimana = b.settimana;
+    exit when tot < b.pv_max or b.numero >= 50;
+    insert into public.boss_settimana (settimana, pv_max, iso, numero)
+      values (s || '-' || (b.numero + 1), round(public.pv_boss_nuovo() * (1 + 0.25 * b.numero))::int, s, b.numero + 1)
+      on conflict (settimana) do nothing;
+  end loop;
+  return b;
+end $$;
+
 create or replace function public.boss_attuale() returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare s text := public.settimana_attuale(); oggi date := (now() at time zone 'Europe/Rome')::date; b public.boss_settimana; tot int;
+declare s text := public.settimana_attuale(); oggi date := (now() at time zone 'Europe/Rome')::date; b public.boss_settimana; tot int; rec int; rec_sett text;
 begin
   if auth.uid() is null then raise exception 'Devi fare l''accesso'; end if;
-  -- i PV crescono con quanti giocano: 6.000 per ogni giocatore attivo nelle ultime 2 settimane (almeno 20.000).
-  -- Un attacco fa in media 700-800 danni: servono circa 8 attacchi a testa nella settimana (se ne hanno 21).
-  insert into public.boss_settimana (settimana, pv_max)
-    values (s, public.pv_boss_nuovo())
-    on conflict (settimana) do nothing;
-  select * into b from public.boss_settimana where settimana = s;
-  select coalesce(sum(danni), 0) into tot from public.boss_danni where settimana = s;
+  b := public.boss_corrente();
+  select coalesce(sum(danni), 0) into tot from public.boss_danni where settimana = b.settimana;
+  -- record delle settimane passate (quella in corso si confronta a parte)
+  select n, w into rec, rec_sett from (select iso w, public.boss_caduti(iso) n from (select distinct iso from public.boss_settimana where iso < s) x) y
+    order by n desc, w limit 1;
   return jsonb_build_object(
-    'settimana', s, 'pv_max', b.pv_max, 'danni', tot,
+    'settimana', b.settimana, 'iso', s, 'numero', b.numero, 'pv_max', b.pv_max, 'danni', tot,
+    'caduti', public.boss_caduti(s), 'record', coalesce(rec, 0), 'record_settimana', rec_sett,
     'fine', ((date_trunc('week', now() at time zone 'Europe/Rome') + interval '7 days') at time zone 'Europe/Rome'),
-    'colpi_oggi', coalesce((select case when giorno = oggi then colpi_oggi else 0 end from public.boss_danni where settimana = s and user_id = auth.uid()), 0),
-    'classifica', coalesce((select jsonb_agg(jsonb_build_object('id', d.user_id, 'danni', d.danni, 'nome', coalesce(c.dati->>'nome', 'Giocatore'), 'avatar', coalesce(c.dati->>'avatar', '')) order by d.danni desc)
-       from public.boss_danni d left join public.classifica c on c.user_id = d.user_id where d.settimana = s and d.danni > 0), '[]'::jsonb),
-    -- premi da riscuotere: boss sconfitti (anche delle settimane passate) a cui hai partecipato
-    'da_riscuotere', coalesce((select jsonb_agg(x.settimana) from public.boss_danni x join public.boss_settimana y using (settimana)
+    -- attacchi di oggi: contano quelli a tutti i boss della settimana
+    'colpi_oggi', coalesce((select sum(colpi_oggi) from public.boss_danni d join public.boss_settimana x using (settimana)
+       where x.iso = s and d.user_id = auth.uid() and d.giorno = oggi), 0),
+    -- classifica della settimana: danni a tutti i boss insieme
+    'classifica', coalesce((select jsonb_agg(jsonb_build_object('id', t.user_id, 'danni', t.danni, 'nome', coalesce(c.dati->>'nome', 'Giocatore'), 'avatar', coalesce(c.dati->>'avatar', '')) order by t.danni desc)
+       from (select d.user_id, sum(d.danni)::int danni from public.boss_danni d join public.boss_settimana x using (settimana) where x.iso = s group by d.user_id having sum(d.danni) > 0) t
+       left join public.classifica c on c.user_id = t.user_id), '[]'::jsonb),
+    -- premi da riscuotere: boss abbattuti (anche delle settimane passate) a cui hai partecipato
+    'da_riscuotere', coalesce((select jsonb_agg(x.settimana order by y.iso, y.numero) from public.boss_danni x join public.boss_settimana y using (settimana)
        where x.user_id = auth.uid() and x.danni > 0 and not x.riscosso
          and (select sum(z.danni) from public.boss_danni z where z.settimana = x.settimana) >= y.pv_max), '[]'::jsonb));
 end $$;
 
 create or replace function public.colpisci_boss(danni integer) returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare s text := public.settimana_attuale(); oggi date := (now() at time zone 'Europe/Rome')::date; r public.boss_danni; pv int; tot int; d int := least(greatest(coalesce(danni, 0), 0), 6000);
+declare s text := public.settimana_attuale(); oggi date := (now() at time zone 'Europe/Rome')::date; b public.boss_settimana; r public.boss_danni; tot int; oggi_n int;
+  d int := least(greatest(coalesce(danni, 0), 0), 6000);
 begin
   if auth.uid() is null then raise exception 'Devi fare l''accesso'; end if;
-  perform public.boss_attuale();
-  select pv_max into pv from public.boss_settimana where settimana = s;
-  select coalesce(sum(x.danni), 0) into tot from public.boss_danni x where x.settimana = s;
-  if tot >= pv then raise exception 'Il boss di questa settimana è già stato sconfitto'; end if;
-  insert into public.boss_danni (settimana, user_id) values (s, auth.uid()) on conflict do nothing;
-  select * into r from public.boss_danni where settimana = s and user_id = auth.uid() for update;
-  if r.giorno = oggi and r.colpi_oggi >= 3 then raise exception 'Oggi hai già attaccato il boss 3 volte: torna domani'; end if;
+  b := public.boss_corrente();
+  -- un attacco alla volta per giocatore (due telefoni insieme non superano il limite)
+  perform pg_advisory_xact_lock(hashtext('boss:' || auth.uid()::text));
+  select coalesce(sum(colpi_oggi), 0) into oggi_n from public.boss_danni d join public.boss_settimana x using (settimana)
+    where x.iso = s and d.user_id = auth.uid() and d.giorno = oggi;
+  if oggi_n >= 3 then raise exception 'Oggi hai già attaccato il boss 3 volte: torna domani'; end if;
+  select coalesce(sum(x.danni), 0) into tot from public.boss_danni x where x.settimana = b.settimana;
+  insert into public.boss_danni (settimana, user_id) values (b.settimana, auth.uid()) on conflict do nothing;
+  select * into r from public.boss_danni where settimana = b.settimana and user_id = auth.uid() for update;
   update public.boss_danni set danni = r.danni + d, colpi = r.colpi + 1,
     colpi_oggi = case when r.giorno = oggi then r.colpi_oggi + 1 else 1 end, giorno = oggi
-    where settimana = s and user_id = auth.uid();
-  return public.boss_attuale() || jsonb_build_object('registrati', d, 'sconfitto_ora', tot < pv and tot + d >= pv);
+    where settimana = b.settimana and user_id = auth.uid();
+  return public.boss_attuale() || jsonb_build_object('registrati', d, 'sconfitto_ora', tot < b.pv_max and tot + d >= b.pv_max,
+    'abbattuto', b.settimana, 'abbattuto_numero', b.numero);
 end $$;
 
+-- premio di un boss abbattuto. Se quel boss ha fatto il record (per esempio il 4° boss di una settimana quando prima
+-- il massimo era 3), il premio è più ricco: lo dice «record»
 create or replace function public.riscatta_boss(sett text) returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare r public.boss_danni; pv int; tot int; pos int; n int;
+declare r public.boss_danni; b public.boss_settimana; tot int; pos int; n int; prima int;
 begin
   select * into r from public.boss_danni where settimana = sett and user_id = auth.uid() for update;
-  select pv_max into pv from public.boss_settimana where settimana = sett;
+  select * into b from public.boss_settimana where settimana = sett;
   select coalesce(sum(danni), 0), count(*) filter (where danni > 0) into tot, n from public.boss_danni where settimana = sett;
-  if r is null or r.danni <= 0 or tot < pv then raise exception 'Non c''è nessun premio da riscuotere'; end if;
+  if r is null or b is null or r.danni <= 0 or tot < b.pv_max then raise exception 'Non c''è nessun premio da riscuotere'; end if;
   if r.riscosso then raise exception 'Premio già riscosso'; end if;
   update public.boss_danni set riscosso = true where settimana = sett and user_id = auth.uid();
   select count(*) + 1 into pos from public.boss_danni where settimana = sett and danni > r.danni;
-  return jsonb_build_object('settimana', sett, 'posizione', pos, 'partecipanti', n, 'danni', r.danni);
+  select coalesce(max(public.boss_caduti(iso)), 0) into prima from (select distinct iso from public.boss_settimana where iso < b.iso) x;
+  return jsonb_build_object('settimana', sett, 'numero', b.numero, 'posizione', pos, 'partecipanti', n, 'danni', r.danni,
+    'record', b.numero > prima and b.numero >= 2);
 end $$;
-revoke all on function public.boss_attuale(), public.colpisci_boss(integer), public.riscatta_boss(text) from public, anon;
+revoke all on function public.boss_attuale(), public.colpisci_boss(integer), public.riscatta_boss(text), public.boss_corrente(), public.boss_caduti(text) from public, anon;
 grant execute on function public.boss_attuale(), public.colpisci_boss(integer), public.riscatta_boss(text) to authenticated;
 
 -- ---------------- Controlli contro i trucchi ----------------
@@ -1344,7 +1390,7 @@ create or replace function public.azzera_boss_di(u uuid) returns void
 language plpgsql security definer set search_path = public as $$
 begin
   if not public.sono_admin() then raise exception 'Solo l''admin'; end if;
-  update public.boss_danni set danni = 0 where user_id = u and settimana = public.settimana_attuale();
+  update public.boss_danni set danni = 0 where user_id = u and settimana in (select settimana from public.boss_settimana where iso = public.settimana_attuale());
   insert into public.registro (user_id, tipo, dettagli) values (u, 'rimedio', jsonb_build_object('cosa', 'danni al boss azzerati'));
 end $$;
 revoke all on function public.segnalazioni(), public.annulla_sfide_di(uuid, integer), public.azzera_boss_di(uuid), public.titolo_valido(uuid, text, jsonb) from public, anon;
@@ -1700,6 +1746,6 @@ grant execute on function public.registra_enigma(date, integer), public.classifi
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select 'd681ff7298'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select '502da174b5'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE
