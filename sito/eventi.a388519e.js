@@ -21,7 +21,7 @@ function hashTesto(t) { let h = 2166136261; for (const ch of String(t)) { h ^= c
 // Il boss del giorno si sceglie tra le serie uscite prima di quel giorno, con un sorteggio che non dipende da quante sono.
 const INIZIO_GIRI = new Date(2026, 10, 9);   // lunedì 9 novembre 2026: così la settimana del 23 novembre è quella degli Dei
 // Serie nuove: giorno di uscita ("AAAA-MM-GG"). Entrano nel giro successivo e tra i boss dal giorno dopo. Le altre ci sono da sempre.
-const USCITA_SERIE = { giappone: "2026-11-24", circo: "2026-11-24", inutili: "2026-11-25", colori: "2026-11-25", arte: "2026-11-25", ospiti: "2026-11-25", pirati: "2026-11-28" };   // quando esce una serie nuova: AAAA-MM-GG
+const USCITA_SERIE = { giappone: "2026-11-24", circo: "2026-11-24", inutili: "2026-11-25", colori: "2026-11-25", arte: "2026-11-25", ospiti: "2026-11-25", pirati: "2026-11-28", folklore: "2026-11-28" };   // quando esce una serie nuova: AAAA-MM-GG
 const uscitaPrima = (s, d) => { const u = USCITA_SERIE[s]; if (!u) return true; const [a, m, g] = u.split("-").map(Number); return new Date(a, m - 1, g) < d; };
 // le serie Jolly (Jolly) non fanno da serie della settimana né da boss del giorno: hanno poche carte e nessuna leggendaria
 const SERIE_EVENTI = () => ORDINE_SERIE.filter(k => !SERIE[k].jolly);
@@ -175,7 +175,7 @@ const Settimana = (() => {
 
 const BossGiorno = (() => {
   // il boss di ogni serie: una sua leggendaria, ingigantita
-  const BOSS = { eroi: "ironlus", db: "gokiele", dei: "zeutiz", nueve: "reina", maghi: "simoldemort", demoni: "lollifer", mestieri: "ludhacker", simpson: "lollart", barbapapa: "ritamma", starwars: "giueia", elementi: "auraria", creature: "vikyeletro", cyborg: "alessiai", carte: "maurire", paesi: "simonusa", farwest: "seneloon", apocalisse: "dieghunter", giappone: "samuruele", circo: "simoonauta", inutili: "lollimpo", colori: "aurormo", arte: "monnarita", pirati: "capbarbaludo" };
+  const BOSS = { eroi: "ironlus", db: "gokiele", dei: "zeutiz", nueve: "reina", maghi: "simoldemort", demoni: "lollifer", mestieri: "ludhacker", simpson: "lollart", barbapapa: "ritamma", starwars: "giueia", elementi: "auraria", creature: "vikyeletro", cyborg: "alessiai", carte: "maurire", paesi: "simonusa", farwest: "seneloon", apocalisse: "dieghunter", giappone: "samuruele", circo: "simoonauta", inutili: "lollimpo", colori: "aurormo", arte: "monnarita", pirati: "capbarbaludo", folklore: "pipsmammone" };
   const CORAZZE = {
     corazza:  { nome: "Corazza", desc: t => `Subisce il 40% di danni in meno dalle carte che non battono il suo tipo (${STILI[t].nome}).` },
     rigenera: { nome: "Rigenerazione", desc: () => "Ogni turno recupera il 6% dei PV, a meno che non stia bruciando." },

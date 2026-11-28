@@ -30,6 +30,7 @@ const SERIE = {
   arte: { nome: "Opere d'Arte", colore: "#d8a84a", simbolo: "🖼", desc: "Il museo più strano del mondo: nei quadri più famosi della storia, al posto dei soliti volti, ci sono i tuoi amici. Cornici d'oro, vernice ancora fresca e guai a toccare." },
   ospiti: { nome: "Jolly", colore: "#ffffff", simbolo: "🃏", jolly: true, desc: "Le carte matte del mazzo: non appartengono a nessuna serie, e proprio per questo stanno bene in tutte. Un Jolly diventa quello che ti serve: rinforza una sinergia, cambia tipo per sorprendere l'avversario o si imbuca a metà battaglia per rovinargli i piani. Rarissimi, e al massimo uno per squadra." },
   pirati: { nome: "Pirati", colore: "#2f8fa8", simbolo: "⚓", desc: "Bandiere nere, mappe del tesoro e cannoni carichi: i tuoi amici prendono il mare e assaltano tutto quello che galleggia. Rum, pappagalli, gambe di legno e nessuna regola, tranne una: il bottino si divide. Forse." },
+  folklore: { nome: "Leggende Italiane", colore: "#6f8f3a", simbolo: "🧹", desc: "Le creature delle storie che raccontavano i nonni: la Befana, le streghe di Benevento, il Monaciello dei vicoli di Napoli, il Babau sotto il letto e il Gatto Mammone. Stanotte sono tornate tutte, e hanno la faccia dei tuoi amici." },
 };
 
 // peso = probabilità relativa di uscire nelle prime 3 carte della bustina
@@ -843,6 +844,37 @@ const CARTE = [
     mosse: [m("Catena Arrugginita", 0, 26), m("Maledizione del Forziere", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Nave Fantasma", 5, 13, { colpi: 6 })] },
   { id: "lollocambusa", nome: "Lollocambusa", serie: "pirati", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "Il cuoco di bordo: con due patate e un barile di gallette tiene in piedi tutta la ciurma. Meglio non chiedere cosa c'è nello stufato.",
     mosse: [m("Mestolata", 0, 26), m("Zuppa di Bordo", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Pentolone", 5, 76, { eff: { tipo: "stordisci", val: 30 } })] },
+  // ---------------- Leggende Italiane (nov 2026) ----------------
+  { id: "pipsmammone", nome: "Pips Mammone", serie: "folklore", rarita: "leggendaria", stile: "FOR", ruolo: "picchiatore", frase: "Il gatto nero gigante delle storie dei nonni: se non fai i compiti viene a prenderti. È più grande di una casa e fa le fusa come un terremoto.",
+    mosse: [m("Zampata", 0, 34), m("Fusa Minacciose", 2, 0, { eff: { tipo: "potenzia", val: 30, turni: 3 } }), m("Gatto Mammone", 5, 98)] },
+  { id: "janaviky", nome: "Janaviky", serie: "folklore", rarita: "leggendaria", stile: "DIF", ruolo: "stregone", frase: "La strega di Benevento: di notte passa sotto le porte come un soffio di vento, intreccia le criniere dei cavalli e vola al noce per il sabba. Una scopa davanti alla porta la ferma a contarne i fili fino all'alba.",
+    mosse: [m("Treccia Stregata", 0, 32), m("Unguento di Benevento", 2, 26, { eff: { tipo: "indebolisci", val: 35, turni: 2 } }), m("Sabba sotto il Noce", 5, 94, { eff: { tipo: "stordisci", val: 35 } })] },
+  { id: "befane", nome: "Befanè", serie: "folklore", rarita: "leggendaria", stile: "VEL", ruolo: "tiratore", frase: "Vien di notte con le scarpe tutte rotte… e una mira infallibile. A chi è stato buono porta i dolci, agli altri tira il carbone. Dritto in fronte.",
+    mosse: [m("Carbone", 0, 32, { penetra: 20 }), m("Volo sulla Scopa", 2, 0, { eff: { tipo: "nebbia" } }), m("Calza Piena", 5, 96, { penetra: 25 })] },
+  { id: "ludorco", nome: "Ludorco", serie: "folklore", rarita: "epica", stile: "FOR", ruolo: "capo", frase: "«Ucci ucci, sento odor di cristianucci!» Il re degli orchi delle fiabe: quando ha fame chiama tutta la banda, e la banda arriva di corsa.",
+    mosse: [m("Clava", 0, 32), m("Ucci Ucci", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Fame da Orco", 5, 90)] },
+  { id: "bellambrita", nome: "Bella ’Mbrita", serie: "folklore", rarita: "epica", stile: "DIF", ruolo: "difensore", frase: "Lo spirito buono delle case napoletane: si affaccia alla finestra al tramonto e protegge chi ci abita. Salutala quando entri: se si offende, la casa si rivolta contro di te.",
+    mosse: [m("Scialle Protettivo", 0, 30), m("Casa Benedetta", 2, 0, { eff: { tipo: "scudo", val: 50 } }), m("Spirito della Casa", 5, 88, { eff: { tipo: "stordisci", val: 30 } })] },
+  { id: "aurofatua", nome: "Aurofatua", serie: "folklore", rarita: "epica", stile: "VEL", ruolo: "incendiario", frase: "Una fiammella azzurra che danza sulle paludi di notte. Se la segui ti perdi, se provi a prenderla ti bruci.",
+    mosse: [m("Fiammella Blu", 0, 28, { eff: { tipo: "brucia", val: 3, turni: 2 } }), m("Luci nella Palude", 2, 26, { eff: { tipo: "brucia", val: 4, turni: 2 } }), m("Fuoco Fatuo", 5, 82, { eff: { tipo: "brucia", val: 5, turni: 3 } })] },
+  { id: "colalice", nome: "Colalice", serie: "folklore", rarita: "epica", stile: "DIF", ruolo: "tank", frase: "Metà ragazza e metà pesce, è scesa in fondo al mare per reggere la colonna che tiene su la Sicilia. Da allora non si è più spostata, e non sarai certo tu a farla muovere.",
+    mosse: [m("Colpo di Coda", 0, 30), m("Abissi dello Stretto", 2, 24, { eff: { tipo: "indebolisci", val: 30, turni: 2 } }), m("La Colonna di Sicilia", 5, 88)] },
+  { id: "monaciellollo", nome: "Monaciellollo", serie: "folklore", rarita: "rara", stile: "VEL", ruolo: "ladro", frase: "Il piccolo monaco dei vicoli di Napoli: a chi gli sta simpatico lascia monete sotto il cuscino, agli altri le porta via. Con te non ha ancora deciso.",
+    mosse: [m("Mano Furtiva", 0, 28, { eff: { tipo: "ruba", val: 1 } }), m("Tonaca Svolazzante", 2, 22, { eff: { tipo: "stordisci", val: 30 } }), m("Monete Sparite", 5, 80, { eff: { tipo: "ruba", val: 1 } })] },
+  { id: "tizzamurello", nome: "Tizzamurello", serie: "folklore", rarita: "rara", stile: "VEL", ruolo: "imprevedibile", frase: "Il folletto dispettoso che vive dentro i muri: di notte sposta le sedie, nasconde le chiavi e bussa dove non c'è nessuno. Non sai mai da dove arriva il prossimo dispetto.",
+    mosse: [m("Dispetto", 0, 28), m("Rumori nel Muro", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Casa Sottosopra", 5, 13, { colpi: 6 })] },
+  { id: "samannaro", nome: "Samannaro", serie: "folklore", rarita: "rara", stile: "FOR", ruolo: "assassino", frase: "Di giorno è il ragazzo più tranquillo del paese. Poi esce la luna piena, e conviene chiudere bene la porta e non aprire a nessuno, nemmeno se bussa tre volte.",
+    mosse: [m("Morso", 0, 30), m("Luna Piena", 2, 0, { eff: { tipo: "nebbia" } }), m("Ululato", 5, 82)] },
+  { id: "giulibilla", nome: "Giulibilla", serie: "folklore", rarita: "rara", stile: "DIF", ruolo: "stratega", frase: "La profetessa che vive in una grotta sui monti: conosce già il tuo futuro, e anche la tua prossima mossa. Te la dice pure, ma in rima e al contrario.",
+    mosse: [m("Responso", 0, 26), m("La Grotta della Sibilla", 0, 0, { eff: { tipo: "energia", val: 3 } }), m("Profezia", 5, 80, { eff: { tipo: "indebolisci", val: 25, turni: 2 } })] },
+  { id: "scazzadiego", nome: "Scazzadiego", serie: "folklore", rarita: "comune", stile: "VEL", ruolo: "schivatore", frase: "Il folletto pugliese col cappello rosso: salta sulla pancia di chi dorme e scappa via ridendo. Se gli rubi il cappello ti dice dov'è un tesoro. Auguri a prenderlo.",
+    mosse: [m("Saltello", 0, 26), m("Cappello Rosso", 2, 0, { eff: { tipo: "nebbia" } }), m("Scherzo Notturno", 5, 76)] },
+  { id: "mauribau", nome: "Mauribau", serie: "folklore", rarita: "comune", stile: "FOR", ruolo: "picchiatore", frase: "«Se non mangi la minestra arriva il Babau!» Eccolo: alto, peloso, con gli occhi gialli. Ma in fondo ci resta male se non hai paura di lui.",
+    mosse: [m("Bu!", 0, 28), m("Ombra sotto il Letto", 2, 0, { eff: { tipo: "potenzia", val: 25, turni: 3 } }), m("Babau", 5, 78)] },
+  { id: "morgalessia", nome: "Morgalessia", serie: "folklore", rarita: "comune", stile: "FOR", ruolo: "stregone", frase: "Nello Stretto di Messina, nelle giornate più calde, fa apparire città intere sospese sopra il mare. Tu ci credi, ci vai incontro… e intanto lei ti colpisce da tutt'altra parte.",
+    mosse: [m("Specchio d’Acqua", 0, 26), m("Miraggio", 2, 22, { eff: { tipo: "indebolisci", val: 25, turni: 2 } }), m("Città nel Cielo", 5, 13, { colpi: 6 })] },
+  { id: "simanguana", nome: "Simanguana", serie: "folklore", rarita: "comune", stile: "DIF", ruolo: "guaritore", frase: "Lo spirito delle sorgenti di montagna: ha i piedi di capra, lava i panni nel torrente cantando e la sua acqua guarisce qualsiasi ferita. Basta non farlo arrabbiare.",
+    mosse: [m("Spruzzo di Fonte", 0, 26), m("Acqua della Sorgente", 2, 0, { eff: { tipo: "cura", val: 30 } }), m("Cascata Alpina", 5, 76, { eff: { tipo: "stordisci", val: 30 } })] },
 ];
 
 
@@ -927,6 +959,9 @@ const PERSONE = {
   // Pirati
   capbarbaludo: "Ludovico", giulisirena: "Giulia", cannonessia: "Alessia", vikysciabola: "Viky", ritimone: "Rita", aurorum: "Aurora", tiziancora: "Tiziano",
   senebottino: "Senè", pipagallo: "Pips", alicorsara: "Alice", diegobussola: "Diego", samozzo: "Samuele", maurigamba: "Maurizio", simonfantasma: "Simone", lollocambusa: "Lorenzo",
+  // Leggende Italiane
+  pipsmammone: "Pips", janaviky: "Viky", befane: "Senè", ludorco: "Ludovico", bellambrita: "Rita", aurofatua: "Aurora", colalice: "Alice",
+  monaciellollo: "Lorenzo", tizzamurello: "Tiziano", samannaro: "Samuele", giulibilla: "Giulia", scazzadiego: "Diego", mauribau: "Maurizio", morgalessia: "Alessia", simanguana: "Simone",
 };
 CARTE.forEach(c => { c.persona = PERSONE[c.id] || ""; });
 
@@ -941,7 +976,7 @@ const RARITA_PRIMA_NOV26 = {"freezovico": "epica", "gohanlollo": "epica", "bulse
 // (ma conviene darla prima a chi ne ha meno: lo mostra il riquadro «Versioni Ultra» nel pannello admin).
 // Supereroi Iron Lus, Mafiosi La Reina, Dragon Ball Gokiele (Samuele), Dei Zeu Tiz (Tiziano), Maghi Simoldemort (Simone),
 // Demoni Lollifer (Lorenzo), Mestieri Ludhacker (Ludovico), Simpson Alisa (Alice), Barbapapà Ritamma (Rita), Star Wars Giueia (Giulia).
-const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta", "lollimpo", "aurormo", "monnarita", "capbarbaludo"];
+const ULTRA_DI_PARTENZA = ["ironlus", "reina", "gokiele", "zeutiz", "simoldemort", "lollifer", "ludhacker", "alisa", "ritamma", "giueia", "auraria", "vikyeletro", "alessiai", "maurire", "pipscozia", "seneloon", "dieghunter", "samuruele", "simoonauta", "lollimpo", "aurormo", "monnarita", "capbarbaludo", "pipsmammone"];
 CARTE.forEach(c => { c.ultra = ULTRA_DI_PARTENZA.includes(c.id); });
 const CARTE_ORIGINALI = Object.fromEntries(CARTE.map(c => [c.id, { serie: c.serie, rarita: c.rarita, stile: c.stile, ruolo: c.ruolo, persona: c.persona, ultra: c.ultra, mosse: c.mosse.map(m => m.nome) }]));
 function applicaConfigCarte(cfg) {

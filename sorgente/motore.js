@@ -94,6 +94,8 @@ const SINERGIE_BASE = {
   arte: { tipo: "incanto", v2: 35, v3: 50, v5: 80, testo: v => `incanto: quando entrano in campo il nemico ha ${_il(v)} di probabilità di restare incantato ad ammirarle e saltare il prossimo turno` },
   // Pirati: bottino. Quando un loro attacco va a segno hanno v% di probabilità di rubare 1 energia al nemico.
   pirati: { tipo: "bottino", v2: 18, v3: 27, v5: 40, testo: v => `bottino: quando un loro attacco va a segno hanno ${_il(v)} di probabilità di rubare 1 energia al nemico` },
+  // Leggende Italiane: malocchio. Quando le colpiscono, v% delle volte chi attacca perde metà dei danni che ha fatto.
+  folklore: { tipo: "malocchio", v2: 12, v3: 18, v5: 28, testo: v => `malocchio: quando le colpiscono, ${_il(v)} delle volte il colpo torna indietro e chi attacca perde metà dei danni che ha fatto` },
   mestieri: { tipo: "vel",      v2: 6, v3: 18, v5: 37, testo: (v, liv) => `+${v}% velocità${liv >= 3 ? " e la squadra parte con +1 energia" : ""}` },
 };
 const SINERGIE = JSON.parse(JSON.stringify(SINERGIE_BASE, (k, v) => typeof v === "function" ? undefined : v));
@@ -238,6 +240,7 @@ class Battaglia {
         else if (s.tipo === "contrasto") x.sin.contrasto = s.val;
         else if (s.tipo === "incanto") x.sin.incanto = s.val;
         else if (s.tipo === "bottino") x.sin.bottino = s.val;
+        else if (s.tipo === "malocchio") x.sin.malocchio = s.val;
         else if (s.tipo === "duello") { x.sin.duello = s.val; x.pronta = true; }
         else if (s.tipo === "schermo") { x.sin.schermo = s.val; if (s.liv >= 3) x.sin.rimbalza = 1; }
         else if (s.tipo === "forma") { x.sin.forma = s.val; }
@@ -517,6 +520,14 @@ class Battaglia {
       if (a.c.ruolo === "ladro" && O.energia > 0 && m.costo >= 2) {   // nov 2026: prima era il 20% a ogni colpo (troppo poco)
         O.energia--; L.energia = Math.min(ENERGIA_MAX, L.energia + 1);
         this._log(`${a.c.nome} ruba 1 energia.`, { lato: l });
+      }
+      // Leggende Italiane (sinergia e regola della Leggenda): malocchio, a volte il colpo torna indietro su chi l'ha dato
+      // (metà dei danni fatti). Esempio: colpo da 80 PV → chi attacca perde 40 PV.
+      if (d.sin && d.sin.malocchio && totale > 0 && a.pv > 0 && this.rng() < d.sin.malocchio / 100) {
+        const rif = Math.max(1, Math.round(totale / 2));
+        a.pv = Math.max(0, a.pv - rif);
+        this._log(`Malocchio! Il colpo torna indietro: ${a.c.nome} perde ${rif} PV.`, { lato: 1 - l, colpo: l, danno: rif });
+        if (a.pv <= 0) this._rialza(l, a);
       }
       // Pirati (sinergia e regola della Leggenda): bottino, a volte il colpo porta via 1 energia al nemico
       if (a.sin && a.sin.bottino && totale > 0 && a.pv > 0 && O.energia > 0 && this.rng() < a.sin.bottino / 100) {

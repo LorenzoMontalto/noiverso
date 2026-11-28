@@ -488,7 +488,25 @@ const STORIA = [
       { titolo: "La nave del capitano", nemici: ["cannonessia", "giulisirena", "tiziancora", "aurorum", "ritimone"], liv: [1, 1], abilita: 0.95, monete: 380,
         parla: "cannonessia", frase: "Venti cannoni carichi e il vento a favore. Vuoi davvero salire a bordo?" },
       { titolo: "Il tesoro di Barbaludo", boss: true, nemici: ["capbarbaludo", "cannonessia", "giulisirena", "vikysciabola", "aurorum"], liv: [1, 1], abilita: 0.97, monete: 680, bustina: "leggendaria",
-        parla: "capbarbaludo", frase: "Questo tesoro l'ho rubato a un re, a un drago e a mia nonna. Pensi davvero di portarmelo via?", vittoria: "Barbaludo scoppia a ridere, pianta la sciabola nella sabbia e apre il forziere: niente oro, solo un mappamondo di vetro che non riflette il mare… ma mondi diversi." }
+        parla: "capbarbaludo", frase: "Questo tesoro l'ho rubato a un re, a un drago e a mia nonna. Pensi davvero di portarmelo via?", vittoria: "Barbaludo scoppia a ridere, pianta la sciabola nella sabbia e apre il forziere: niente oro, solo una vecchia carta dell'Italia con un paesino cerchiato in rosso e, appoggiata sopra, una scopa che si alza da sola. Ci sali, e la scopa parte verso la notte." }
+    ],
+  },
+  {
+    id: "c32", campo: "notte", titolo: "La notte delle leggende", serie: "folklore", colore: "#6f8f3a", simbolo: "🧹",
+    intro: "La scopa ti lascia in un paesino addormentato, in una notte senza luna. Qui le storie che raccontavano i nonni sono vere: folletti nei muri, streghe che volano verso il noce, il Babau sotto il letto. E hanno tutte la faccia dei tuoi amici. Per tornare a casa devi arrivare all'alba.",
+    tappe: [
+      { titolo: "I vicoli di Napoli", nemici: ["monaciellollo", "scazzadiego", "mauribau", "morgalessia", "simanguana"], liv: [1, 1], abilita: 0.9, monete: 340,
+        parla: "monaciellollo", frase: "Ti ho lasciato una moneta sotto il cuscino. Ah no, scusa: te l'ho presa." },
+      { titolo: "La masseria in Puglia", nemici: ["scazzadiego", "tizzamurello", "simanguana", "mauribau", "giulibilla"], liv: [1, 1], abilita: 0.92, monete: 350,
+        parla: "scazzadiego", frase: "Vuoi il mio cappello rosso? Prima devi prendermi. Nessuno ci è mai riuscito." },
+      { titolo: "Lo Stretto di Messina", nemici: ["morgalessia", "colalice", "samannaro", "simanguana", "tizzamurello"], liv: [1, 1], abilita: 0.93, monete: 360, bustina: "epica",
+        parla: "morgalessia", frase: "Vedi quella città sopra il mare? Non esiste. Io sì, però." },
+      { titolo: "I monti della Sibilla", nemici: ["giulibilla", "samannaro", "aurofatua", "ludorco", "bellambrita"], liv: [1, 1], abilita: 0.94, monete: 370,
+        parla: "giulibilla", frase: "So già come finisce questa battaglia. Vuoi saperlo? No? Peccato, era una bella rima." },
+      { titolo: "Il noce di Benevento", nemici: ["janaviky", "befane", "ludorco", "aurofatua", "colalice"], liv: [1, 1], abilita: 0.95, monete: 380,
+        parla: "janaviky", frase: "Stanotte c'è il sabba e tu non sei invitato. Ma visto che sei arrivato fin qui…" },
+      { titolo: "La notte del Gatto Mammone", boss: true, nemici: ["pipsmammone", "janaviky", "befane", "ludorco", "bellambrita"], liv: [1, 1], abilita: 0.97, monete: 680, bustina: "leggendaria",
+        parla: "pipsmammone", frase: "Non hai fatto i compiti, vero? Lo sapevo. Lo so sempre.", vittoria: "Il Gatto Mammone si accuccia e comincia a fare le fusa come un vecchio gatto di casa. Sorge il sole, e tra le sue zampe brilla qualcosa: un mappamondo di vetro che non riflette il paese… ma mondi diversi." }
     ],
   },
   {
