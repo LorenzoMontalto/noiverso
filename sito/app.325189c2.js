@@ -2752,7 +2752,7 @@ async function vaiAccesso() {
 // ---------- Da sistemare (solo admin): database da aggiornare e carte senza immagine ----------
 // La versione del database è un'impronta di supabase/schema.sql scritta da costruisci.py sia qui sia nel server:
 // se il server ne restituisce un'altra (o non ha ancora la funzione), schema.sql va eseguito di nuovo.
-const VERSIONE_SCHEMA = "19b57eac95";
+const VERSIONE_SCHEMA = "870e60a545";
 const StatoServer = (() => {
   let schema = null, mancano = null, quando = 0, inCorso = false;
   async function controlla(forza) {

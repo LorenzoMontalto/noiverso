@@ -853,6 +853,10 @@ alter table public.boss_settimana add column if not exists numero integer not nu
 update public.boss_settimana set iso = settimana where iso is null;
 create index if not exists boss_settimana_iso on public.boss_settimana (iso, numero);
 
+-- correzione: i boss successivi creati con i PV ricalcolati (troppi) tornano al +25% per boss rispetto al primo
+update public.boss_settimana b set pv_max = round(p.pv_max * (1 + 0.25 * (b.numero - 1)))::int
+  from public.boss_settimana p where p.settimana = b.iso and b.numero > 1 and b.pv_max > round(p.pv_max * (1 + 0.25 * (b.numero - 1)));
+
 -- quanti boss sono caduti in una settimana
 create or replace function public.boss_caduti(sett text) returns integer
 language sql stable security definer set search_path = public as $$
@@ -863,16 +867,19 @@ $$;
 -- il boss di adesso della settimana: l'ultimo; se è già caduto, crea il successivo
 create or replace function public.boss_corrente() returns public.boss_settimana
 language plpgsql security definer set search_path = public as $$
-declare s text := public.settimana_attuale(); b public.boss_settimana; tot int;
+declare s text := public.settimana_attuale(); b public.boss_settimana; tot int; pv1 int;
 begin
   -- i PV crescono con quanti giocano: 6.000 per ogni giocatore attivo nelle ultime 2 settimane (almeno 20.000)
   insert into public.boss_settimana (settimana, pv_max, iso, numero) values (s, public.pv_boss_nuovo(), s, 1) on conflict (settimana) do nothing;
+  -- i boss successivi partono dai PV del PRIMO boss della settimana (non ricalcolati: nel frattempo gli attivi
+  -- possono essere cambiati). Esempio: primo 30.000 → secondo 37.500 → terzo 45.000 → quarto 52.500.
+  select pv_max into pv1 from public.boss_settimana where settimana = s;
   loop
     select * into b from public.boss_settimana where iso = s order by numero desc limit 1;
     select coalesce(sum(danni), 0) into tot from public.boss_danni where settimana = b.settimana;
     exit when tot < b.pv_max or b.numero >= 50;
     insert into public.boss_settimana (settimana, pv_max, iso, numero)
-      values (s || '-' || (b.numero + 1), round(public.pv_boss_nuovo() * (1 + 0.25 * b.numero))::int, s, b.numero + 1)
+      values (s || '-' || (b.numero + 1), round(pv1 * (1 + 0.25 * b.numero))::int, s, b.numero + 1)
       on conflict (settimana) do nothing;
   end loop;
   return b;
@@ -1754,6 +1761,6 @@ grant execute on function public.registra_enigma(date, integer), public.classifi
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select '19b57eac95'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select '870e60a545'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE
