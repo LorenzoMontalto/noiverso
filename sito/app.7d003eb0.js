@@ -4130,9 +4130,13 @@ async function sostituisciGiocatore(i) {
 // I doppioni restano il modo principale per averne tanti.
 const JOLLY_MONETE = 15;   // monete per ogni carta 30 e lode che vince
 const potVittoria = mult => Math.max(1, Math.min(5, Math.round(mult)));
-// potSempre: le carte scese in campo prendono potenziatori anche se si perde (attacco al boss del gruppo)
-function premiaCarte(mult, vinto, potSempre) {
+// potSempre: le carte scese in campo prendono potenziatori anche se si perde.
+// comeVinta (boss della settimana, nov 2026): le carte vengono premiate come in una vittoria (potenziatori, XP verso la
+// lode, potenziatori universali per le carte 30 e lode) anche se la squadra cade: il boss non si batte da soli.
+// Statistiche, pass e maestria contano invece il risultato vero.
+function premiaCarte(mult, vinto, potSempre, comeVinta) {
   if (livelloAttuale && !livelloAttuale.spettatore && !livelloAttuale.arena) StatCarte.registra(vinto, livelloAttuale.vivo ? "vivo" : "pc");
+  const reale = vinto; vinto = vinto || !!comeVinta;
   const xp = Math.round((vinto ? 50 : 20) * mult * (carteBattaglia() === 3 ? .6 : 1));
   // sconfitta: 1 potenziatore a ogni carta scesa in campo, se la battaglia è durata almeno 3 turni e non ti sei arreso
   // (così non si possono fare potenziatori arrendendosi subito una battaglia dopo l'altra)
@@ -4151,8 +4155,8 @@ function premiaCarte(mult, vinto, potSempre) {
     const dopo = infoCarta(x.id);
     return { id: x.id, xp: verso ? xp : 0, pot, jolly, prontaNuova: !prima.pronta && dopo.pronta, liv: dopo.liv, lode: dopo.lode, lodeNuova: !prima.lode && dopo.lode };
   }).filter(Boolean);
-  try { Livello.fineBattaglia(vinto, risultati); SfidePass.fineBattaglia(vinto); } catch (e) { /* i progressi sono un extra */ }
-  try { if (!(livelloAttuale && livelloAttuale.arena)) Maestria.fineBattaglia(vinto); Vetrina.fineBattaglia(vinto); } catch (e) { console.error(e); }
+  try { Livello.fineBattaglia(reale, risultati); SfidePass.fineBattaglia(reale); } catch (e) { /* i progressi sono un extra */ }
+  try { if (!(livelloAttuale && livelloAttuale.arena)) Maestria.fineBattaglia(reale); Vetrina.fineBattaglia(reale); } catch (e) { console.error(e); }
   return risultati;
 }
 function htmlEspCarte() {

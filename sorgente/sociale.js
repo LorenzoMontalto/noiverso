@@ -240,10 +240,14 @@ const Boss = (() => {
   async function chiudi() {
     const L = livelloAttuale, b = L.bossGruppo, x = B.lati[1].squadra[0];
     const danni = Math.max(0, Math.round(b.pvInizio - Math.max(0, x.pv)));
-    // anche quando la squadra cade i danni fatti contano: le carte scese in campo prendono comunque potenziatori
-    L.espCarte = premiaCarte(1.5, B.vincitore === 0, true);
+    // nov 2026: premi come una vittoria contro il livello più difficile (Leggenda), anche quando la squadra cade:
+    // le carte scese in campo prendono potenziatori (3 a testa; le 30 e lode potenziatori universali), e monete ed XP
+    // sono quelli della Leggenda (300 monete, 40 XP) più un extra per i danni (1 moneta ogni 40 danni, fino a 150).
+    // Esempio: 2.000 danni → 300 + 50 × 1,5 = 375 monete.
+    const LG = LIVELLI_SFIDA.find(x => x.id === "leggenda") || { premio: 200, xp: 200, xpCarte: 2.6 };
+    L.espCarte = premiaCarte(LG.xpCarte, B.vincitore === 0, true, true);
     if (B.vincitore !== 0) S.stats.sconfitte++;
-    const e = { danni, contati: Math.min(danni, 6000), monete: piuMonete(Math.min(150, 30 + Math.round(danni / 40))), xp: ridXP(80), stato: b.prova ? "prova" : "invio" };
+    const e = { danni, contati: Math.min(danni, 6000), monete: piuMonete(LG.premio + Math.min(150, Math.round(danni / 40))), xp: ridXP(LG.xp), stato: b.prova ? "prova" : "invio" };
     S.monete += e.monete;
     const su = aggiungiXP(e.xp);
     L.esito = e;
