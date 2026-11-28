@@ -899,10 +899,15 @@ begin
     'classifica', coalesce((select jsonb_agg(jsonb_build_object('id', t.user_id, 'danni', t.danni, 'nome', coalesce(c.dati->>'nome', 'Giocatore'), 'avatar', coalesce(c.dati->>'avatar', '')) order by t.danni desc)
        from (select d.user_id, sum(d.danni)::int danni from public.boss_danni d join public.boss_settimana x using (settimana) where x.iso = s group by d.user_id having sum(d.danni) > 0) t
        left join public.classifica c on c.user_id = t.user_id), '[]'::jsonb),
-    -- premi da riscuotere: boss abbattuti (anche delle settimane passate) a cui hai partecipato
+    -- premi da riscuotere: boss abbattuti (anche delle settimane passate) a cui hai partecipato, e boss rimasti in
+    -- piedi a fine settimana (premio di consolazione, ultime 8 settimane)
     'da_riscuotere', coalesce((select jsonb_agg(x.settimana order by y.iso, y.numero) from public.boss_danni x join public.boss_settimana y using (settimana)
        where x.user_id = auth.uid() and x.danni > 0 and not x.riscosso
-         and (select sum(z.danni) from public.boss_danni z where z.settimana = x.settimana) >= y.pv_max), '[]'::jsonb));
+         and ((select sum(z.danni) from public.boss_danni z where z.settimana = x.settimana) >= y.pv_max
+           or (y.iso < s and y.iso >= to_char(now() - interval '56 days', 'IYYY-"W"IW')))), '[]'::jsonb),
+    'consolazione', coalesce((select jsonb_agg(x.settimana) from public.boss_danni x join public.boss_settimana y using (settimana)
+       where x.user_id = auth.uid() and x.danni > 0 and not x.riscosso and y.iso < s and y.iso >= to_char(now() - interval '56 days', 'IYYY-"W"IW')
+         and (select sum(z.danni) from public.boss_danni z where z.settimana = x.settimana) < y.pv_max), '[]'::jsonb));
 end $$;
 
 create or replace function public.colpisci_boss(danni integer) returns jsonb
@@ -927,22 +932,25 @@ begin
     'abbattuto', b.settimana, 'abbattuto_numero', b.numero);
 end $$;
 
--- premio di un boss abbattuto. Se quel boss ha fatto il record (per esempio il 4° boss di una settimana quando prima
--- il massimo era 3), il premio è più ricco: lo dice «record»
+-- premio di un boss: abbattuto (premio pieno, più ricco a ogni boss della settimana; «record» se quel boss ha battuto
+-- il record del gruppo) oppure rimasto in piedi a fine settimana (consolazione: «sconfitto» falso e «pct», quanto
+-- l'avete distrutto da 0 a 1). Esempio: boss da 30.000 PV con 21.000 danni → pct 0,7.
 create or replace function public.riscatta_boss(sett text) returns jsonb
 language plpgsql security definer set search_path = public as $$
-declare r public.boss_danni; b public.boss_settimana; tot int; pos int; n int; prima int;
+declare r public.boss_danni; b public.boss_settimana; tot int; pos int; n int; prima int; vinto boolean;
 begin
   select * into r from public.boss_danni where settimana = sett and user_id = auth.uid() for update;
   select * into b from public.boss_settimana where settimana = sett;
   select coalesce(sum(danni), 0), count(*) filter (where danni > 0) into tot, n from public.boss_danni where settimana = sett;
-  if r is null or b is null or r.danni <= 0 or tot < b.pv_max then raise exception 'Non c''è nessun premio da riscuotere'; end if;
+  vinto := b is not null and tot >= b.pv_max;
+  if r is null or b is null or r.danni <= 0 or not (vinto or b.iso < public.settimana_attuale()) then raise exception 'Non c''è nessun premio da riscuotere'; end if;
   if r.riscosso then raise exception 'Premio già riscosso'; end if;
   update public.boss_danni set riscosso = true where settimana = sett and user_id = auth.uid();
   select count(*) + 1 into pos from public.boss_danni where settimana = sett and danni > r.danni;
   select coalesce(max(public.boss_caduti(iso)), 0) into prima from (select distinct iso from public.boss_settimana where iso < b.iso) x;
   return jsonb_build_object('settimana', sett, 'numero', b.numero, 'posizione', pos, 'partecipanti', n, 'danni', r.danni,
-    'record', b.numero > prima and b.numero >= 2);
+    'sconfitto', vinto, 'pct', round(least(1, tot::numeric / greatest(1, b.pv_max)), 3),
+    'record', vinto and b.numero > prima and b.numero >= 2);
 end $$;
 revoke all on function public.boss_attuale(), public.colpisci_boss(integer), public.riscatta_boss(text), public.boss_corrente(), public.boss_caduti(text) from public, anon;
 grant execute on function public.boss_attuale(), public.colpisci_boss(integer), public.riscatta_boss(text) to authenticated;
@@ -1746,6 +1754,6 @@ grant execute on function public.registra_enigma(date, integer), public.classifi
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select '502da174b5'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select '19b57eac95'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE

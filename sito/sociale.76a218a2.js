@@ -137,7 +137,16 @@ const Amici = (() => {
 // ---------------- BOSS DEL GRUPPO ----------------
 const Boss = (() => {
   let stato = null, errore = null, inCarica = false;
-  const PREMIO = { monete: piuMonete(300), bustine: { leggendaria: 1 } }, PREMIO_MVP = { bustine: { epica: 1 } };
+  // nov 2026: il premio cresce a ogni boss abbattuto nella settimana. Boss n:
+  //   monete 300 + 100 per ogni boss prima (×1,5), Bustine Leggendarie 1 + una ogni due boss, frammenti dal secondo.
+  //   Esempi: 1° → 450 monete + 1 Leggendaria · 2° → 600 + 1 Leggendaria + 25 ◈ · 3° → 750 + 2 Leggendarie + 50 ◈
+  const premioBoss = n => { n = Math.max(1, +n || 1);
+    return Object.assign({ monete: piuMonete(300 + 100 * (n - 1)), bustine: { leggendaria: 1 + Math.floor((n - 1) / 2) } }, n > 1 ? { frammenti: 25 * (n - 1) } : {}); };
+  // consolazione per un boss rimasto in piedi a fine settimana: dipende da quanto l'avete distrutto (pct da 0 a 1) e da che
+  // boss era. Esempio: 1° boss distrutto al 60% → 60 + 40 + 144 = 240 → 360 monete e una Bustina Epica (dal 50% in su).
+  const premioConsolazione = (n, pct) => { n = Math.max(1, +n || 1); pct = Math.max(0, Math.min(1, +pct || 0));
+    return { monete: piuMonete(Math.round((60 + 40 * n + 240 * pct) / 10) * 10), bustine: pct >= .5 ? { epica: 1 } : { normale: 1 } }; };
+  const PREMIO = premioBoss(1), PREMIO_MVP = { bustine: { epica: 1 } };
   // nov 2026: quando un boss cade ne arriva subito un altro (sul server). Un boss che batte il record del gruppo
   // (più boss abbattuti in una settimana che mai) dà in più questo premio a tutti quelli che l'hanno colpito.
   const PREMIO_RECORD = { monete: piuMonete(200), bustine: { leggendaria: 1 } };
@@ -193,14 +202,14 @@ const Boss = (() => {
           <div class="boss-pv"><i style="--p:${pct}%"></i><span>${caduto ? "SCONFITTO!" : `${r.toLocaleString("it-IT")} / ${stato.pv_max.toLocaleString("it-IT")} PV`}</span></div>
         </div>
       </div>
-      ${premi.length ? `<button class="btn oro" data-fx="coriandoli" data-boss-premio="${esc(premi[0])}">Riscuoti il premio del boss!</button>` : ""}
+      ${premi.length ? `<button class="btn oro" data-fx="coriandoli" data-boss-premio="${esc(premi[0])}">${(stato.consolazione || []).includes(premi[0]) ? "Riscuoti il premio di consolazione" : "Riscuoti il premio del boss!"}${premi.length > 1 ? ` (${premi.length})` : ""}</button>` : ""}
       <div class="boss-record"><span>☠ Abbattuti questa settimana: <b>${cad}</b></span><span>🏆 Record del gruppo: <b>${Math.max(rec, cad)}</b>${cad > rec && cad > 1 ? " · nuovo record!" : rec && stato.record_settimana ? ` <small>(${esc(lunediDi(stato.record_settimana))})</small>` : ""}</span></div>
       ${caduto ? `<p class="nota">Il gruppo l'ha battuto! Sta arrivando il prossimo boss…</p>` : `<div class="boss-azioni">
         <button class="btn primario" data-fx="spinta" data-azione="attacca-boss" ${colpi >= 3 && !S.admin ? "disabled" : ""}>${colpi >= 3 && !S.admin ? "Attacchi finiti per oggi" : "Attacca"}</button>
         <span class="nota">Attacchi oggi: ${S.admin ? "prova admin" : `${colpi}/3`}</span></div>`}
       ${top.length ? `<ol class="boss-classifica">${top.map((x, i) => `<li class="${x.id === Archivio.uid ? "io" : ""}"><span>${i + 1}</span>${htmlAvatar(String(x.avatar || ""), "mini")}<b>${esc(String(x.nome))}</b><em>${Number(x.danni).toLocaleString("it-IT")}</em></li>`).join("")}</ol>`
         : `<p class="nota">Nessuno l'ha ancora colpito. Sii il primo!</p>`}
-      ${grande ? `<p class="nota piccola">Tutti colpiscono lo stesso boss: 3 attacchi al giorno a testa, al massimo 6.000 danni ad attacco. Quando cade ne arriva subito un altro, più forte, fino a domenica. Ogni boss abbattuto dà a chi l'ha colpito ${testoPremio(PREMIO)} e una bomboletta; a chi gli ha fatto più danni anche ${testoPremio(PREMIO_MVP)}. Se batte il record del gruppo, in più ${testoPremio(PREMIO_RECORD)}.</p>` : ""}
+      ${grande ? `<p class="nota piccola">Tutti colpiscono lo stesso boss: 3 attacchi al giorno a testa, al massimo 6.000 danni ad attacco. Quando cade ne arriva subito un altro, più forte, fino a domenica, e il premio cresce: abbattere questo boss (n° ${n}) dà a chi l'ha colpito ${testoPremio(premioBoss(n))} e una bomboletta; il prossimo darà ${testoPremio(premioBoss(n + 1))}. A chi ha fatto più danni a un boss anche ${testoPremio(PREMIO_MVP)}; se batte il record del gruppo, in più ${testoPremio(PREMIO_RECORD)}. Se a fine settimana l'ultimo boss è ancora in piedi, chi l'ha colpito riceve lunedì un premio di consolazione, più ricco quanto più l'avete distrutto.</p>` : ""}
     </div>`;
   }
 
@@ -270,7 +279,16 @@ const Boss = (() => {
   async function riscatta(sett, el) {
     try {
       const r = await rpcSociale("riscatta_boss", { sett });
-      const p = JSON.parse(JSON.stringify(PREMIO));
+      const vinto = r.sconfitto !== false;
+      if (!vinto) {   // boss rimasto in piedi: consolazione, niente MVP, record e graffito
+        const p = premioConsolazione(r.numero, r.pct); daiPremio(p); salva(); aggiornaTesta();
+        apriModale(`<div class="codice-modale"><span class="codice-tag">Premio di consolazione</span><h2>Il boss${r.numero > 1 ? ` n° ${r.numero}` : ""} è sopravvissuto</h2>
+          <p>La settimana è finita con il boss al ${Math.round((1 - r.pct) * 100)}% dei PV: l'avete distrutto per il <b>${Math.round(r.pct * 100)}%</b>. Siete stati in ${r.partecipanti} a colpirlo, tu con <b>${Number(r.danni).toLocaleString("it-IT")}</b> danni.</p>
+          <p class="codice-premio">Hai ricevuto: <b>${esc(testoPremio(p))}</b></p>
+          <div class="azioni centro"><button class="btn primario" data-azione="chiudi">Grazie!</button></div></div>`);
+        carica(true); return;
+      }
+      const p = premioBoss(r.numero);
       if (r.posizione === 1) for (const [t, n] of Object.entries(PREMIO_MVP.bustine)) p.bustine[t] = (p.bustine[t] || 0) + n;
       if (r.record) { p.monete = (p.monete || 0) + PREMIO_RECORD.monete; for (const [t, n] of Object.entries(PREMIO_RECORD.bustine)) p.bustine[t] = (p.bustine[t] || 0) + n; }
       daiPremio(p);
@@ -285,5 +303,5 @@ const Boss = (() => {
       carica(true);
     } catch (e) { mostraAvviso(e.message); carica(true); }
   }
-  return { PREMIO, PREMIO_MVP, PREMIO_RECORD, carta: cartaBoss, carica, htmlCompatto, htmlGrande, attacca, prepara, chiudi, htmlFine, riscatta, get stato() { return stato; } };
+  return { PREMIO, PREMIO_MVP, PREMIO_RECORD, premioBoss, premioConsolazione, carta: cartaBoss, carica, htmlCompatto, htmlGrande, attacca, prepara, chiudi, htmlFine, riscatta, get stato() { return stato; } };
 })();
