@@ -175,13 +175,25 @@ const Enigma = (() => {
     cache = { giorno: g, mia, nemici: loro.map(id => ({ id, liv, lode: false })), campo, liv };
     return cache;
   }
-  const mio = () => (S.enigma && S.enigma.giorno === oggi()) ? S.enigma : null;   // { giorno, migliore (turni), tentativi, premiato }
-  let classifica = null, ultimo = null;
+  const mio = () => (S.enigma && S.enigma.giorno === oggi()) ? S.enigma : null;   // { giorno, migliore (turni), inviato (turni confermati dal server), tentativi, premiato }
+  let classifica = null, ultimo = null, erroreInvio = "", inCorso = false, caricataAlle = 0;
   async function caricaClassifica() {
     if (!socialeAttivo()) return;
     try { classifica = { giorno: oggi(), righe: await rpcSociale("classifica_enigma", { giorno: oggi() }) || [] }; }
-    catch (e) { classifica = { giorno: oggi(), righe: [], errore: true }; }
+    catch (e) { classifica = { giorno: oggi(), righe: classifica && classifica.righe || [], errore: String(e.message || e) }; }
+    caricataAlle = Date.now();
     if (vista === VISTA && !B) disegnaQuieto();
+  }
+  // manda al server il risultato migliore di oggi se non l'ha ancora ricevuto (anche se un invio prima era fallito,
+  // per esempio offline o prima di aggiornare il database), poi ricarica la classifica
+  async function invia() {
+    const m = mio();
+    if (inCorso || !m || !m.migliore || m.inviato === m.migliore || !socialeAttivo() || S.admin) return caricaClassifica();
+    inCorso = true;
+    try { await rpcSociale("registra_enigma", { giorno: m.giorno, turni: m.migliore }); m.inviato = m.migliore; erroreInvio = ""; salva(); }
+    catch (e) { erroreInvio = String(e.message || e); }
+    inCorso = false;
+    return caricaClassifica();
   }
   function gioca() {
     const E = delGiorno();
@@ -196,11 +208,12 @@ const Enigma = (() => {
     m.tentativi++;
     let premio = 0, record = false;
     if (vinto) {
-      if (!m.migliore || turni < m.migliore) { m.migliore = turni; record = true; if (socialeAttivo() && !S.admin) rpcSociale("registra_enigma", { giorno: g, turni }).then(caricaClassifica).catch(() => {}); }
+      if (!m.migliore || turni < m.migliore) { m.migliore = turni; record = true; }
       if (!m.premiato && !S.admin) { premio = piuMonete(150); S.monete += premio; m.premiato = true; aggiungiXP(ridXP(80)); }
     }
     S.enigma = m; ultimo = { vinto, turni, premio, record };
     salva(); aggiornaBattaglia();
+    if (vinto) invia();
   }
   function htmlFine() {
     const e = ultimo || { vinto: B.vincitore === 0, turni: Math.max(1, B.turno - 1) };
@@ -210,7 +223,10 @@ const Enigma = (() => {
   }
   function htmlPagina() {
     const E = delGiorno(), m = mio();
-    if (!classifica || classifica.giorno !== oggi()) { classifica = { giorno: oggi(), righe: null }; caricaClassifica(); }
+    // a ogni apertura della pagina: rimanda il risultato se serve e ricarica la classifica (gli amici giocano nel frattempo)
+    if (!classifica || classifica.giorno !== oggi()) classifica = { giorno: oggi(), righe: null };
+    // (al massimo ogni 10 secondi: ridisegnare la pagina dopo il caricamento non fa ripartire un altro caricamento)
+    if (!inCorso && Date.now() - caricataAlle > 10000) { caricataAlle = Date.now(); invia(); }
     const righe = classifica.righe;
     return `<div class="enigma">
       <p class="nota">Ogni giorno la stessa battaglia per tutti: squadra e avversario sono già decisi. Vinci nel <b>minor numero di turni</b>: puoi riprovare quanto vuoi, conta il risultato migliore. La prima vittoria del giorno dà ${piuMonete(150)} monete.</p>
@@ -219,9 +235,11 @@ const Enigma = (() => {
       <div class="azioni centro"><button class="btn oro grande" data-fx="spinta" data-azione="enigma-gioca">${m && m.migliore ? `Riprova (il tuo migliore: ${m.migliore} turni)` : m ? "Riprova" : "Gioca l'enigma"}</button></div>
       <div class="cm-box en-classifica"><h3>🧩 Classifica di oggi</h3>${!socialeAttivo() ? `<p class="nota">La classifica si vede solo giocando online.</p>` : righe === null ? `<p class="nota">Carico…</p>` : righe.length
         ? `<ol>${righe.slice(0, 15).map((r, i) => `<li class="${r.id === Archivio.uid ? "io" : ""}"><span>${["🥇", "🥈", "🥉"][i] || i + 1 + "."}</span><b>${esc(String(r.nome || "Giocatore"))}</b><em>${num(r.turni)} turni</em></li>`).join("")}</ol>`
-        : `<p class="nota">${classifica.errore ? "Non riesco a leggere la classifica (hai eseguito di nuovo schema.sql su Supabase?)." : "Nessuno l'ha ancora risolto oggi: il primo posto è libero."}</p>`}</div>
+        : `<p class="nota">${classifica.errore ? "" : "Nessuno l'ha ancora risolto oggi: il primo posto è libero."}</p>`}
+        ${socialeAttivo() && (classifica.errore || erroreInvio) ? `<p class="nota errore">Non riesco ${erroreInvio ? "a mandare il tuo risultato" : "a leggere la classifica"}: ${esc(erroreInvio || classifica.errore)}. Riprovo da solo quando riapri questa pagina.</p>` : ""}
+        ${m && m.migliore && m.inviato !== m.migliore && socialeAttivo() && !S.admin && !erroreInvio ? `<p class="nota">Sto mandando il tuo risultato…</p>` : ""}</div>
     </div>`;
   }
   const fattoOggi = () => !!(mio() && mio().migliore);
-  return { vista: VISTA, delGiorno, gioca, prepara, chiudi, htmlFine, htmlPagina, fattoOggi, oggi, mio };
+  return { vista: VISTA, invia, delGiorno, gioca, prepara, chiudi, htmlFine, htmlPagina, fattoOggi, oggi, mio };
 })();

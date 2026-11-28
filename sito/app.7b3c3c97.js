@@ -2643,7 +2643,7 @@ async function entra(slot, profiloLocale, daRicarica) {
   if (slot !== "admin") Missioni.finestraAccesso();
   Zaino.carica(); Reazioni.carica(); Sinergie.carica(); Settimana.carica(); Torneo.carica(true);
   Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); });
-  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); ritiraPremiClassifica(); Regali.carica(); }
+  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); ritiraPremiClassifica(); Regali.carica(); Enigma.invia(); }
   Boss.carica();
 }
 
@@ -2749,7 +2749,7 @@ async function vaiAccesso() {
 // ---------- Da sistemare (solo admin): database da aggiornare e carte senza immagine ----------
 // La versione del database è un'impronta di supabase/schema.sql scritta da costruisci.py sia qui sia nel server:
 // se il server ne restituisce un'altra (o non ha ancora la funzione), schema.sql va eseguito di nuovo.
-const VERSIONE_SCHEMA = "3a11a9eca4";
+const VERSIONE_SCHEMA = "d681ff7298";
 const StatoServer = (() => {
   let schema = null, mancano = null, quando = 0, inCorso = false;
   async function controlla(forza) {

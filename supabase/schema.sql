@@ -1607,7 +1607,8 @@ grant execute on function public.registra_carte(text[], boolean, text), public.s
 
 -- ---------------- Regali tra amici (nov 2026) ----------------
 -- Ogni giorno (ora di Roma) ognuno può mandare UN regalo gratis a un amico: vale 3 potenziatori universali ✪.
--- Chi lo riceve lo riscuote dalla home. Uno solo al giorno per chi manda (unique), non a sé stessi, non dall'admin.
+-- Chi lo riceve lo riscuote dalla home. Uno solo al giorno per chi manda (unique), non a sé stessi.
+-- (Lo slot admin lo esclude il gioco, come per il resto: l'account dell'admin gioca anche normalmente.)
 create table if not exists public.regali (
   id      bigint generated always as identity primary key,
   da      uuid not null references auth.users (id) on delete cascade,
@@ -1627,7 +1628,6 @@ declare me uuid := auth.uid(); oggi date := (now() at time zone 'Europe/Rome')::
 begin
   if me is null then raise exception 'Devi fare l''accesso'; end if;
   if amico is null or amico = me then raise exception 'Non puoi mandare un regalo a te stesso'; end if;
-  if exists (select 1 from public.amministratori where user_id = me) then raise exception 'L''admin non manda regali'; end if;
   if not exists (select 1 from public.salvataggi where user_id = amico and slot = 'partita') then raise exception 'Giocatore non trovato'; end if;
   if exists (select 1 from public.regali where da = me and giorno = oggi) then raise exception 'Hai già mandato il regalo di oggi'; end if;
   insert into public.regali (da, a, giorno) values (me, amico, oggi);
@@ -1652,7 +1652,6 @@ language plpgsql security definer set search_path = public as $$
 declare me uuid := auth.uid(); n int; oggi date := (now() at time zone 'Europe/Rome')::date;
 begin
   if me is null then raise exception 'Devi fare l''accesso'; end if;
-  if exists (select 1 from public.amministratori where user_id = me) then return 0; end if;
   with x as (update public.regali set riscosso = true where a = me and not riscosso and giorno > oggi - 30 returning 1)
   select count(*) into n from x;
   return n;
@@ -1679,7 +1678,6 @@ language plpgsql security definer set search_path = public as $$
 declare me uuid := auth.uid(); oggi date := (now() at time zone 'Europe/Rome')::date; m int;
 begin
   if me is null then raise exception 'Devi fare l''accesso'; end if;
-  if exists (select 1 from public.amministratori where user_id = me) then return null; end if;
   if registra_enigma.giorno is distinct from oggi then raise exception 'L''enigma è quello di oggi'; end if;
   if turni is null or turni < 5 or turni > 200 then raise exception 'Risultato non valido'; end if;
   insert into public.enigma as e (user_id, giorno, turni) values (me, oggi, registra_enigma.turni)
@@ -1702,6 +1700,6 @@ grant execute on function public.registra_enigma(date, integer), public.classifi
 
 -- ---------------- Versione del database ----------------
 -- INIZIO VERSIONE (scritto da costruisci.py: non modificarlo a mano)
-create or replace function public.versione_schema() returns text language sql immutable as $$ select '3a11a9eca4'::text $$;
+create or replace function public.versione_schema() returns text language sql immutable as $$ select 'd681ff7298'::text $$;
 grant execute on function public.versione_schema() to anon, authenticated;
 -- FINE VERSIONE

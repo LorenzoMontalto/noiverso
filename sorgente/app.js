@@ -2643,7 +2643,7 @@ async function entra(slot, profiloLocale, daRicarica) {
   if (slot !== "admin") Missioni.finestraAccesso();
   Zaino.carica(); Reazioni.carica(); Sinergie.carica(); Settimana.carica(); Torneo.carica(true);
   Graffiti.carica().then(() => { if (slot !== "admin") Graffiti.regaloIniziale(); });
-  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); ritiraPremiClassifica(); Regali.carica(); }
+  if (slot !== "admin") { Amici.controllaRicevute(); Scambi.ritira(); Scambi.carica(); Online.avvia(); ritiraPremiClassifica(); Regali.carica(); Enigma.invia(); }
   Boss.carica();
 }
 
